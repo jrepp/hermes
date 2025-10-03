@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"net/http"
 	"time"
 
@@ -99,7 +100,7 @@ func ApprovalHandler(
 			}
 
 			// Authorize request.
-			userEmail := r.Context().Value("userEmail").(string)
+			userEmail := pkgauth.MustGetUserEmail(r.Context())
 			if doc.Status != "In-Review" {
 				http.Error(w,
 					"Can only request changes of documents in the \"In-Review\" status",
@@ -376,7 +377,7 @@ func ApprovalHandler(
 			}
 
 			// Authorize request.
-			userEmail := r.Context().Value("userEmail").(string)
+			userEmail := pkgauth.MustGetUserEmail(r.Context())
 			if doc.Status != "In-Review" && doc.Status != "Approved" {
 				http.Error(w,
 					`Document status must be "In-Review" or "Approved" to approve`,

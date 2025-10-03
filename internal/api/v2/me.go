@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/hashicorp-forge/hermes/internal/server"
-	"github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
+	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 )
 
 // handleGetUserProfileGoogle handles the GET request for user profile data using Google Workspace.
@@ -262,9 +262,9 @@ func MeHandler(srv server.Server) http.Handler {
 			http.Error(w, userErrMsg, httpCode)
 		}
 
-		// Authorize request
-		userEmail := r.Context().Value("userEmail").(string)
-		if userEmail == "" {
+		// Authorize request.
+		userEmail, ok := pkgauth.GetUserEmail(r.Context())
+		if !ok || userEmail == "" {
 			errResp(
 				http.StatusUnauthorized,
 				"No authorization information for request",
