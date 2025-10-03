@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
-	"github.com/hashicorp-forge/hermes/internal/server"
+	gw "github.com/hashicorp-forge/hermes/pkg/storage/adapters/google"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	"github.com/hashicorp/go-hclog"

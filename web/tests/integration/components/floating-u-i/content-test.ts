@@ -1,7 +1,6 @@
 import { module, test, todo } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
-import { render } from "@ember/test-helpers";
-import type { TestContext } from "@ember/test-helpers";
+import { TestContext, render, clearRender } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import htmlElement from "hermes/utils/html-element";
 import type { OffsetOptions } from "@floating-ui/dom";
@@ -132,7 +131,7 @@ module("Integration | Component | floating-u-i/content", function (hooks) {
 
     // Clear and set the placement to 'right'
 
-    this.clearRender();
+    await clearRender();
 
     await render<FloatingUIComponentTestContext>(hbs`
       <div class="grid place-items-center w-full h-full">
@@ -193,7 +192,7 @@ module("Integration | Component | floating-u-i/content", function (hooks) {
     );
 
     // Clear and set the offset to 10
-    this.clearRender();
+    await clearRender();
     this.set("offset", 10);
 
     await render<FloatingUIComponentTestContext>(hbs`

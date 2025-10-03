@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/helpers"
 	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/pkg/document"
+	gw "github.com/hashicorp-forge/hermes/pkg/storage/adapters/google"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"golang.org/x/oauth2/jwt"

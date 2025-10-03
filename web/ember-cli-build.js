@@ -10,28 +10,32 @@ module.exports = function (defaults) {
   const autoprefixer = require('autoprefixer');
   
   let app = new EmberApp(defaults, {
-    'ember-cli-terser': {
-      enabled: process.env.EMBER_ENV === 'production',
+    minifyCSS: {
+      enabled: false,
     },
-    babel: {
-      plugins: [
-        require.resolve('ember-concurrency/async-arrow-task-transform'),
-      ],
-    },
-    sassOptions: {
-      includePaths: [
-        "node_modules",
-        "./node_modules/@hashicorp/design-system-tokens/dist/products/css",
-      ],
-      sourceMap: false,
-      onlyIncluded: false,
-      extension: 'scss',
-      quietDeps: true,
-      verbose: false,
-      silenceDeprecations: ['import', 'global-builtin'],
-    },
-    autoImport: {
-      watchDependencies: ['@ember/test-waiters'],
+    postcssOptions: {
+      compile: {
+        extension: "scss",
+        enabled: true,
+        parser: require("postcss-scss"),
+        cacheInclude: [/.*\.hbs$/, /.*\.scss$/],
+        plugins: [
+          {
+            module: require("@csstools/postcss-sass"),
+            options: {
+              includePaths: [
+                // Brings in the styles for TailwindCSS from node_modules
+                // - Required so we can use @import to include the styles in SASS
+                "node_modules",
+                // And the styles from @hashicorp/design-system-tokens
+                // - Required for @hashicorp/design-system-components to work
+                "./node_modules/@hashicorp/design-system-tokens/dist/products/css",
+              ],
+            },
+          },
+          require("tailwindcss")("./tailwind.config.js"),
+        ],
+      },
     },
   });
 

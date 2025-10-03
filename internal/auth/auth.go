@@ -8,8 +8,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/auth/oidcalb"
 	"github.com/hashicorp-forge/hermes/internal/auth/oktaalb"
 	"github.com/hashicorp-forge/hermes/internal/config"
-	gw "github.com/hashicorp-forge/hermes/pkg/googleworkspace"
-	sp "github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
+	gw "github.com/hashicorp-forge/hermes/pkg/storage/adapters/google"
 	"github.com/hashicorp/go-hclog"
 )
 

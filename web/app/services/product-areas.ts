@@ -4,7 +4,7 @@ import { task } from "ember-concurrency";
 import type ConfigService from "hermes/services/config";
 import type FetchService from "./fetch";
 import { assert } from "@ember/debug";
-import hashValue from "hermes/helpers/hash-value";
+import hash from "object-hash";
 
 const HDS_COLORS = [
   "#3b3d45",
@@ -85,7 +85,11 @@ export default class ProductAreasService extends Service {
       return;
     }
 
-    return hashValue(product, [...HDS_COLORS, ...EXTENDED_COLORS]);
+    // Create a simple hash from the product string and use it to select a color
+    const colorArray = [...HDS_COLORS, ...EXTENDED_COLORS];
+    const hashCode = hash(product);
+    const index = parseInt(hashCode.substring(0, 8), 16) % colorArray.length;
+    return colorArray[index];
   }
 
   /**
