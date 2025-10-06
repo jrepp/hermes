@@ -247,49 +247,21 @@ func DocumentHandler(
 			)
 
 			// Compare search index and database documents to find data inconsistencies.
-			// Get document object from search index.
-			searchDoc, err := searchProvider.DocumentIndex().GetObject(ctx, docID)
-			if err != nil {
-				l.Error("error getting search document for data comparison",
-					"error", err,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"doc_id", docID,
-				)
-				return
-			}
-			// Convert search document to map for comparison
-			searchDocBytes, _ := json.Marshal(searchDoc)
-			var algoDoc map[string]any
-			_ = json.Unmarshal(searchDocBytes, &algoDoc)
-			// Get document from database.
-			dbDoc := models.NewDocumentByFileID(docID, false)
-			if err := dbDoc.Get(db); err != nil {
-				l.Error("error getting document from database for data comparison",
-					"error", err,
-					"path", r.URL.Path,
-					"method", r.Method,
-					"doc_id", docID,
-				)
-				return
-			}
-			// Get all reviews for the document.
-			var reviews models.DocumentReviews
-			if err := reviews.Find(db, models.DocumentReview{
-				Document: models.NewDocumentByFileID(docID, false),
-			}); err != nil {
-				l.Error("error getting all reviews for document for data comparison",
-					"error", err,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"doc_id", docID,
-				)
-				return
-			}
-			if err := compareAlgoliaAndDatabaseDocument(
-				algoDoc, dbDoc, reviews, cfg.DocumentTypes.DocumentType,
+			checker := NewDocumentConsistencyChecker(
+				searchProvider,
+				db,
+				l,
+				cfg.DocumentTypes.DocumentType,
+			)
+			if err := checker.CheckDocumentConsistency(
+				r.Context(),
+				docID,
+				CheckOptions{
+					ValidateReviews: true,
+					StrictMode:      false,
+				},
 			); err != nil {
-				l.Warn("inconsistencies detected between Algolia and database docs",
+				l.Warn("inconsistencies detected between search and database",
 					"error", err,
 					"method", r.Method,
 					"path", r.URL.Path,
@@ -775,49 +747,22 @@ Hermes
 			)
 
 			// Compare search index and database documents to find data inconsistencies.
-			// Get document object from search index.
-			searchDoc, err := searchProvider.DocumentIndex().GetObject(ctx, docID)
-			if err != nil {
-				l.Error("error getting search document for data comparison",
-					"error", err,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"doc_id", docID,
-				)
-				return
-			}
-			// Convert search document to map for comparison
-			searchDocBytes, _ := json.Marshal(searchDoc)
-			var algoDoc map[string]any
-			_ = json.Unmarshal(searchDocBytes, &algoDoc)
-			// Get document from database.
-			dbDoc := models.NewDocumentByFileID(docID, false)
-			if err := dbDoc.Get(db); err != nil {
-				l.Error("error getting document from database for data comparison",
-					"error", err,
-					"path", r.URL.Path,
-					"method", r.Method,
-					"doc_id", docID,
-				)
-				return
-			}
-			// Get all reviews for the document.
-			var reviews models.DocumentReviews
-			if err := reviews.Find(db, models.DocumentReview{
-				Document: models.NewDocumentByFileID(docID, false),
-			}); err != nil {
-				l.Error("error getting all reviews for document for data comparison",
-					"error", err,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"doc_id", docID,
-				)
-				return
-			}
-			if err := compareAlgoliaAndDatabaseDocument(
-				algoDoc, dbDoc, reviews, cfg.DocumentTypes.DocumentType,
+			// Compare search index and database documents to find data inconsistencies.
+			checker := NewDocumentConsistencyChecker(
+				searchProvider,
+				db,
+				l,
+				cfg.DocumentTypes.DocumentType,
+			)
+			if err := checker.CheckDocumentConsistency(
+				r.Context(),
+				docID,
+				CheckOptions{
+					ValidateReviews: true,
+					StrictMode:      false,
+				},
 			); err != nil {
-				l.Warn("inconsistencies detected between Algolia and database docs",
+				l.Warn("inconsistencies detected between search and database",
 					"error", err,
 					"method", r.Method,
 					"path", r.URL.Path,
