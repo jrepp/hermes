@@ -43,12 +43,10 @@ type Command struct {
 	flagAddr              string
 	flagBaseURL           string
 	flagConfig            string
-	flagOidcAuthServerURL string
-	flagOidcClientID      string
-	flagOidcDisabled      bool
-	flagTLSEnabled        bool
-	flagTLSCert           string
-	flagTLSKey            string
+	flagProfile           string
+	flagOktaAuthServerURL string
+	flagOktaClientID      string
+	flagOktaDisabled      bool
 }
 
 type endpoint struct {
@@ -81,8 +79,13 @@ func (c *Command) Flags() *base.FlagSet {
 		&c.flagConfig, "config", "", "Path to Hermes config file",
 	)
 	f.StringVar(
-		&c.flagOidcAuthServerURL, "oidc-auth-server-url", "",
-		"[HERMES_SERVER_OIDC_AUTH_SERVER_URL] URL to the OIDC authorization server.",
+		&c.flagProfile, "profile", "",
+		"[HERMES_SERVER_PROFILE] Configuration profile to use (e.g., 'default', 'testing'). "+
+			"If empty, uses 'default' profile when profiles exist, or root config for backward compatibility.",
+	)
+	f.StringVar(
+		&c.flagOktaAuthServerURL, "okta-auth-server-url", "",
+		"[HERMES_SERVER_OKTA_AUTH_SERVER_URL] URL to the Okta authorization server.",
 	)
 	f.StringVar(
 		&c.flagOidcClientID, "oidc-client-id", "",
@@ -120,10 +123,16 @@ func (c *Command) Run(args []string) int {
 		err error
 	)
 	if c.flagConfig != "" {
-		cfg, err = config.NewConfig(c.flagConfig)
+		// Get profile from flag or environment variable
+		profile := c.flagProfile
+		if val, ok := os.LookupEnv("HERMES_SERVER_PROFILE"); ok && profile == "" {
+			profile = val
+		}
+
+		cfg, err = config.NewConfig(c.flagConfig, profile)
 		if err != nil {
-			c.UI.Error(fmt.Sprintf("error parsing config file: %v: config=%q",
-				err, c.flagConfig))
+			c.UI.Error(fmt.Sprintf("error parsing config file: %v: config=%q profile=%q",
+				err, c.flagConfig, profile))
 			return 1
 		}
 		// Log configuration loaded successfully without exposing sensitive data
