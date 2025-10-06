@@ -139,6 +139,28 @@ Jira can be optionally configured to enable linking Hermes projects with Jira is
 - Go 1.18
 - Node.js 20
 - Yarn ~3.3.0 ([install with corepack](https://yarnpkg.com/getting-started/install))
+- Docker & Docker Compose (for local development with Dex authentication)
+
+### Authentication Options
+
+Hermes supports multiple authentication providers:
+
+- **Google OAuth** (production): Requires Google Workspace setup (see above)
+- **Okta** (production): Enterprise SSO integration
+- **Dex OIDC** (development/testing): Local authentication without external dependencies
+
+For local development and testing, **Dex is the recommended option** as it doesn't require internet connectivity or external OAuth providers.
+
+**Quick Start with Dex**:
+```sh
+# Start infrastructure including Dex
+docker compose up -d
+
+# Dex will be available at http://localhost:5556
+# Test credentials: test@hermes.local / password
+```
+
+See [`docs-internal/DEX_QUICK_START.md`](docs-internal/DEX_QUICK_START.md) for details.
 
 ### Configuration File
 
@@ -149,35 +171,15 @@ cp configs/config.hcl ./
 # Edit config.hcl...
 ```
 
-For Google Workspace deployments, configure the `google_workspace` block.
-
-For SharePoint deployments, enable and configure the `sharepoint` block in `config.hcl`:
-
+For local development with Dex authentication, add this block to your `config.hcl`:
 ```hcl
-sharepoint {
-  redirect_uri     = "https://localhost:8443/authenticate"
-  client_id        = "YOUR_SHAREPOINT_CLIENT_ID"
-  client_secret    = "YOUR_SHAREPOINT_CLIENT_SECRET"
-  tenant_id        = "YOUR_AZURE_AD_TENANT_ID"
-  site_id          = "YOUR_SHAREPOINT_SITE_ID"
-  drive_id         = "YOUR_SHAREPOINT_DRIVE_ID"
-  domain           = "your-domain.com"
-  drafts_folder    = "DraftDocuments"
-  docs_folder      = "PublishedDocuments"
-  shortcuts_folder = "ShortcutsFolder"
-
-  group_approvals {
-    enabled = true
-    #search_prefix = "team-"
-  }
+dex {
+  issuer_url    = "http://localhost:5556/dex"
+  client_id     = "hermes-integration"
+  client_secret = "ZXhhbXBsZS1hcHAtc2VjcmV0"
+  redirect_url  = "http://localhost:8000/auth/callback"
 }
 ```
-
-Notes:
-
-- `group_approvals` is optional. When enabled, Hermes exposes the group search API and can validate Microsoft group membership for approver checks.
-- `search_prefix` is optional. When set, Hermes searches both `{search_prefix}{query}` and `{query}` and merges the results.
-- If `oidc_alb` is enabled, Hermes uses it ahead of direct Microsoft auth.
 
 ### Build the Project
 
