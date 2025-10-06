@@ -32,6 +32,9 @@ type Service struct {
 	Gmail          *gmail.Service
 	OAuth2         *oauth2api.Service
 	People         *people.PeopleService
+
+	// Config holds the authentication configuration for user impersonation
+	Config *Config
 }
 
 // Config is the configuration for interacting with Google Workspace using a
@@ -97,6 +100,7 @@ func NewFromConfig(cfg *Config) *Service {
 		Gmail:          gmailSrv,
 		OAuth2:         oAuth2Srv,
 		People:         peoplePeopleSrv,
+		Config:         cfg,
 	}
 }
 
@@ -157,6 +161,7 @@ func New() *Service {
 		Gmail:          gmailSrv,
 		OAuth2:         oAuth2Srv,
 		People:         peoplePeopleSrv,
+		Config:         nil, // No config for OAuth2-based creation
 	}
 }
 
