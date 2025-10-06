@@ -38,16 +38,19 @@ COPY --from=builder /build/configs /app/configs
 
 # Create non-root user
 RUN adduser -D -u 1000 hermes && \
-    chown -R hermes:hermes /app
+    chown -R hermes:hermes /app && \
+    mkdir -p /app/workspace_data && \
+    chown -R hermes:hermes /app/workspace_data
 
 USER hermes
 
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check - use a simple endpoint that doesn't require auth
+# Note: /api/v1/me requires authentication, so we just check if the port is listening
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/api/v1/me || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/ || exit 1
 
 # Run the binary with config path and profile selection
 ENTRYPOINT ["/app/hermes"]
