@@ -2,9 +2,10 @@ package api
 
 import (
 	"fmt"
-	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"net/http"
 	"time"
+
+	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/errs"
 	"github.com/hashicorp-forge/hermes/internal/config"
@@ -41,11 +42,9 @@ func ApprovalHandler(
 				return
 			}
 
-			// v1 handlers are always Google Workspace.
-			isSharePoint := false
-
-			// Perform lock check for Google Workspace documents.
-			locked, err := hcd.IsLocked(docID, db, s, l)
+			// Check if document is locked.
+			provider := gw.NewAdapter(s)
+			locked, err := hcd.IsLocked(docID, db, provider, l)
 			if err != nil {
 				l.Error("error checking document locked status",
 					"error", err,
@@ -212,21 +211,17 @@ func ApprovalHandler(
 			}
 
 			// Replace the doc header.
-			if !isSharePoint {
-				if err := doc.ReplaceHeader(cfg.BaseURL, false, s); err != nil {
-					l.Error("error replacing doc header",
-						"error", err,
-						"doc_id", docID,
-						"method", r.Method,
-						"path", r.URL.Path,
-					)
-					http.Error(w, "Error requesting changes of document",
-						http.StatusInternalServerError)
-					return
-				}
-			} else {
-				l.Info("SharePoint document, skipping header replacement",
-					"sharepoint_file_id", docID)
+			provider = gw.NewAdapter(s)
+			if err := doc.ReplaceHeader(cfg.BaseURL, false, provider); err != nil {
+				l.Error("error replacing doc header",
+					"error", err,
+					"doc_id", docID,
+					"method", r.Method,
+					"path", r.URL.Path,
+				)
+				http.Error(w, "Error requesting changes of document",
+					http.StatusInternalServerError)
+				return
 			}
 
 			// Update document reviews in the database.
@@ -318,11 +313,9 @@ func ApprovalHandler(
 				return
 			}
 
-			// v1 handlers are always Google Workspace.
-			isSharePoint := false
-
-			// Perform lock check for Google Workspace documents.
-			locked, err := hcd.IsLocked(docID, db, s, l)
+			// Check if document is locked.
+			provider := gw.NewAdapter(s)
+			locked, err := hcd.IsLocked(docID, db, provider, l)
 			if err != nil {
 				l.Error("error checking document locked status",
 					"error", err,
@@ -491,22 +484,18 @@ func ApprovalHandler(
 			}
 
 			// Replace the doc header.
-			if !isSharePoint {
-				err = doc.ReplaceHeader(cfg.BaseURL, false, s)
-				if err != nil {
-					l.Error("error replacing doc header",
-						"error", err,
-						"doc_id", docID,
-						"method", r.Method,
-						"path", r.URL.Path,
-					)
-					http.Error(w, "Error approving document",
-						http.StatusInternalServerError)
-					return
-				}
-			} else {
-				l.Info("SharePoint document, skipping header replacement",
-					"sharepoint_file_id", docID)
+			provider = gw.NewAdapter(s)
+			err = doc.ReplaceHeader(cfg.BaseURL, false, provider)
+			if err != nil {
+				l.Error("error replacing doc header",
+					"error", err,
+					"doc_id", docID,
+					"method", r.Method,
+					"path", r.URL.Path,
+				)
+				http.Error(w, "Error approving document",
+					http.StatusInternalServerError)
+				return
 			}
 
 			// Update document reviews in the database.

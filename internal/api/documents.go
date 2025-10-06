@@ -351,7 +351,8 @@ func DocumentHandler(
 			}
 
 			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, db, s, l)
+			provider := gw.NewAdapter(s)
+			locked, err := hcd.IsLocked(docID, db, provider, l)
 			if err != nil {
 				l.Error("error checking document locked status",
 					"error", err,
@@ -561,7 +562,7 @@ Hermes
 					// TODO: use an asynchronous method for sending emails because we
 					// can't currently recover gracefully on a failure here.
 					for _, approverEmail := range approversToEmail {
-						_, err = s.SendEmail(
+						err = s.SendEmail(
 							[]string{approverEmail},
 							cfg.Email.FromAddress,
 							fmt.Sprintf("Document review requested for %s", doc.DocNumber),
@@ -584,7 +585,7 @@ Hermes
 			}
 
 			// Replace the doc header.
-			if err := doc.ReplaceHeader(cfg.BaseURL, false, s); err != nil {
+			if err := doc.ReplaceHeader(cfg.BaseURL, false, provider); err != nil {
 				l.Error("error replacing document header",
 					"error", err, "doc_id", docID)
 				http.Error(w, "Error patching document",
