@@ -150,7 +150,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 		switch reqType {
 		case relatedResourcesDocumentSubcollectionRequestType:
 			documentsResourceRelatedResourcesHandler(
-				w, r, docID, *doc, srv.Config, srv.Logger, srv.AlgoSearch, srv.DB, srv.IsSharePoint())
+				w, r, docID, *doc, srv.Config, srv.Logger, srv.SearchProvider, srv.DB)
 			return
 		case shareableDocumentSubcollectionRequestType:
 			srv.Logger.Warn("invalid shareable request for documents collection",
@@ -210,21 +210,19 @@ func DocumentHandler(srv server.Server) http.Handler {
 		case "GET":
 			now := time.Now()
 
-			var directEditURL string
-			if srv.SharePoint != nil {
-				// Get file details from SharePoint
-				fileDetails, err := srv.SharePoint.GetFileDetails(docID)
-				if err != nil {
-					srv.Logger.Error("error getting document file",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", docID,
-					)
-					http.Error(w,
-						"Error requesting document", http.StatusInternalServerError)
-					return
-				}
+			// Get file from workspace provider so we can return the latest modified time.
+			file, err := srv.WorkspaceProvider.GetFile(docID)
+			if err != nil {
+				srv.Logger.Error("error getting document file from workspace",
+					"error", err,
+					"path", r.URL.Path,
+					"method", r.Method,
+					"doc_id", docID,
+				)
+				http.Error(w,
+					"Error requesting document", http.StatusInternalServerError)
+				return
+			}
 
 				// Parse modified time
 				modifiedTime, err := time.Parse(time.RFC3339, fileDetails.LastModified)
@@ -352,59 +350,6 @@ func DocumentHandler(srv server.Server) http.Handler {
 							"path", r.URL.Path,
 						)
 					}
-				}
-
-				// Compare Algolia and database documents to find data inconsistencies.
-				// Get document object from Algolia.
-				var algoDoc map[string]any
-				err = srv.AlgoSearch.Docs.GetObject(docID, &algoDoc)
-				if err != nil {
-					// Only warn because we might be in the process of saving the Algolia
-					// object for a new document.
-					srv.Logger.Warn("error getting Algolia object for data comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-				// Get document from database.
-				dbDoc := srv.NewDocumentByFileID(docID)
-				if err := dbDoc.Get(srv.DB); err != nil {
-					srv.Logger.Error(
-						"error getting document from database for data comparison",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", docID,
-					)
-					return
-				}
-				// Get all reviews for the document.
-				var reviews models.DocumentReviews
-				if err := reviews.Find(srv.DB, models.DocumentReview{
-					Document: srv.NewDocumentByFileID(docID),
-				}); err != nil {
-					srv.Logger.Error(
-						"error getting all reviews for document for data comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-				if err := CompareAlgoliaAndDatabaseDocument(
-					algoDoc, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
-				); err != nil {
-					srv.Logger.Warn(
-						"inconsistencies detected between Algolia and database docs",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
 				}
 			}()
 
@@ -596,15 +541,17 @@ func DocumentHandler(srv server.Server) http.Handler {
 				}
 			}
 
-			// Determine newly added individual approvers and group approvers (pre-patch state vs request).
-			var newUserApprovers []string
-			var newGroupApprovers []string
-			if req.Approvers != nil && len(*req.Approvers) > 0 {
-				if len(doc.Approvers) == 0 { // no existing approvers => all are new
-					newUserApprovers = append(newUserApprovers, *req.Approvers...)
-				} else {
-					newUserApprovers = compareSlices(doc.Approvers, *req.Approvers)
-				}
+			// Check if document is locked.
+			locked, err := hcd.IsLocked(docID, srv.DB, srv.WorkspaceProvider, srv.Logger)
+			if err != nil {
+				srv.Logger.Error("error checking document locked status",
+					"error", err,
+					"path", r.URL.Path,
+					"method", r.Method,
+					"doc_id", docID,
+				)
+				http.Error(w, "Error getting document status", http.StatusNotFound)
+				return
 			}
 			if req.ApproverGroups != nil && len(*req.ApproverGroups) > 0 {
 				if len(doc.ApproverGroups) == 0 { // no existing groups => all are new
@@ -774,8 +721,11 @@ func DocumentHandler(srv server.Server) http.Handler {
 				// Check if this is a contributor acquiring ownership
 				isAcquireOwnership := isContributorAcquiringOwnership(userEmail, *doc, req)
 
-				if isAcquireOwnership {
-					srv.Logger.Info("contributor acquiring document ownership",
+				// Give new owner edit access to the document.
+				if err := srv.WorkspaceProvider.ShareFile(
+					docID, doc.Owners[0], "writer"); err != nil {
+					srv.Logger.Error("error sharing file with new owner",
+						"error", err,
 						"method", r.Method,
 						"path", r.URL.Path,
 						"doc_id", docID,
@@ -868,174 +818,12 @@ func DocumentHandler(srv server.Server) http.Handler {
 				}
 			}
 
-			// Share file with contributors.
-			if len(contributorsToAddSharing) > 0 {
-				if srv.SharePoint != nil {
-					if err := srv.SharePoint.ShareFileWithMultipleUsers(docID, "writer", contributorsToAddSharing); err != nil {
-						srv.Logger.Error("error sharing file with new contributors",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-							"contributors", contributorsToAddSharing)
-						http.Error(w, "Error patching document", http.StatusInternalServerError)
-						return
-					}
-				} else {
-					for _, user := range contributorsToAddSharing {
-						if err := srv.GWService.ShareFile(docID, user, "writer"); err != nil {
-							srv.Logger.Error("error sharing file with new contributor",
-								"error", err,
-								"method", r.Method,
-								"path", r.URL.Path,
-								"doc_id", docID,
-								"contributor", user)
-							http.Error(w, "Error patching document", http.StatusInternalServerError)
-							return
-						}
-					}
-				}
-				srv.Logger.Info("shared document with contributors",
-					"method", r.Method,
-					"path", r.URL.Path,
-					"contributors_count", len(contributorsToAddSharing),
-				)
-			}
-
-			// Share with newly added individual approvers (batch for efficiency).
-			if len(newUserApprovers) > 0 {
-				if srv.SharePoint != nil {
-					if err := srv.SharePoint.ShareFileWithMultipleUsers(docID, "writer", newUserApprovers); err != nil {
-						srv.Logger.Error("error sharing file with new user approvers",
-							"error", err,
-							"doc_id", docID,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"approvers", newUserApprovers)
-						http.Error(w, "Error patching document", http.StatusInternalServerError)
-						return
-					}
-				} else {
-					for _, user := range newUserApprovers {
-						if err := srv.GWService.ShareFile(docID, user, "writer"); err != nil {
-							srv.Logger.Error("error sharing file with new user approver",
-								"error", err,
-								"doc_id", docID,
-								"method", r.Method,
-								"path", r.URL.Path,
-								"approver", user)
-							http.Error(w, "Error patching document", http.StatusInternalServerError)
-							return
-						}
-					}
-				}
-			}
-
-			// Share with newly added group approvers using group-aware logic (DL expansion vs direct share).
-			for _, gEmail := range newGroupApprovers {
-				if srv.SharePoint != nil {
-					if err := srv.SharePoint.ShareFileWithGroupOrMembers(docID, gEmail, "writer"); err != nil {
-						srv.Logger.Error("error sharing file with new group approver",
-							"error", err,
-							"doc_id", docID,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"group", gEmail)
-						http.Error(w, "Error patching document", http.StatusInternalServerError)
-						return
-					}
-				} else {
-					if err := srv.GWService.ShareFile(docID, gEmail, "writer"); err != nil {
-						srv.Logger.Error("error sharing file with new group approver",
-							"error", err,
-							"doc_id", docID,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"group", gEmail)
-						http.Error(w, "Error patching document", http.StatusInternalServerError)
-						return
-					}
-				}
-			}
-
-			// Remove access for removed approvers, approver groups, and contributors.
-			// Build a map of email addresses to permission IDs to facilitate removal.
-			if len(removedUserApprovers) > 0 || len(removedGroupApprovers) > 0 || len(contributorsToRemoveSharing) > 0 {
-				emailToPermissionIDsMap := make(map[string][]string)
-
-				if srv.SharePoint != nil {
-					permissions, err := srv.SharePoint.ListPermissions(docID)
-					if err != nil {
-						srv.Logger.Error("error listing permissions for document",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID)
-						http.Error(w, "Error patching document",
-							http.StatusInternalServerError)
-						return
-					}
-					for _, p := range permissions {
-						if p.GrantedTo.User.Email == "" {
-							continue
-						}
-						if slices.Contains(p.Role, "owner") {
-							continue
-						}
-						email := p.GrantedTo.User.Email
-						if _, exists := emailToPermissionIDsMap[email]; !exists {
-							emailToPermissionIDsMap[email] = make([]string, 0)
-						}
-						emailToPermissionIDsMap[email] = append(
-							emailToPermissionIDsMap[email], p.ID)
-					}
-				} else {
-					permissions, err := srv.GWService.ListPermissions(docID)
-					if err != nil {
-						srv.Logger.Error("error listing permissions for document",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID)
-						http.Error(w, "Error patching document",
-							http.StatusInternalServerError)
-						return
-					}
-					for _, p := range permissions {
-						if p.EmailAddress == "" {
-							continue
-						}
-						if p.Role == "owner" {
-							continue
-						}
-						if _, exists := emailToPermissionIDsMap[p.EmailAddress]; !exists {
-							emailToPermissionIDsMap[p.EmailAddress] = make([]string, 0)
-						}
-						emailToPermissionIDsMap[p.EmailAddress] = append(
-							emailToPermissionIDsMap[p.EmailAddress], p.Id)
-					}
-				}
-
-				// Remove individual approvers.
-				for _, a := range removedUserApprovers {
-					// Only remove approver if the email associated with the permission
-					// doesn't match owner email(s).
-					if !contains(doc.Owners, a) {
-						if err := removeSharing(srv, docID, a, emailToPermissionIDsMap); err != nil {
-							srv.Logger.Error("error removing approver from file",
-								"error", err,
-								"method", r.Method,
-								"path", r.URL.Path,
-								"doc_id", docID,
-								"approver", a)
-							http.Error(w, "Error patching document",
-								http.StatusInternalServerError)
-							return
-						}
-					}
-				}
-				if len(removedUserApprovers) > 0 {
-					srv.Logger.Info("removed approvers from document",
+			// Give new document approvers edit access to the document.
+			for _, a := range approversToEmail {
+				if err := srv.WorkspaceProvider.ShareFile(docID, a, "writer"); err != nil {
+					srv.Logger.Error("error sharing file with approver",
+						"error", err,
+						"doc_id", docID,
 						"method", r.Method,
 						"path", r.URL.Path,
 						"approvers_count", len(removedUserApprovers),
@@ -1108,6 +896,21 @@ func DocumentHandler(srv server.Server) http.Handler {
 					return
 				}
 			}
+
+			// Replace the doc header.
+			if err := doc.ReplaceHeader(
+				srv.Config.BaseURL, false, srv.WorkspaceProvider,
+			); err != nil {
+				srv.Logger.Error("error replacing document header",
+					"error", err, "doc_id", docID)
+				http.Error(w, "Error patching document",
+					http.StatusInternalServerError)
+				return
+			}
+
+			// Rename file with new title.
+			srv.WorkspaceProvider.RenameFile(docID,
+				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
 
 			// Get document record from database so we can modify it for updating.
 			model := srv.NewDocumentByFileID(docID)
@@ -1329,68 +1132,69 @@ func DocumentHandler(srv server.Server) http.Handler {
 							}
 						}
 
-						// Get name of old document owner.
-						oldOwner := email.User{
-							EmailAddress: userEmail,
-						}
-						if srv.SharePoint != nil {
-							person, err := srv.SharePoint.GetPersonByEmail(userEmail)
-							if err != nil {
-								srv.Logger.Warn("error getting person details for old owner",
-									"error", err,
-									"method", r.Method,
-									"path", r.URL.Path,
-									"doc_id", docID,
-									"person", userEmail,
-								)
-							} else if person != nil && person.DisplayName != "" {
-								oldOwner.Name = person.DisplayName
-							}
-						} else {
-							ppl, err := srv.GWService.SearchPeople(userEmail, "emailAddresses,names")
-							if err != nil {
-								srv.Logger.Warn("error getting person details for old owner",
-									"error", err,
-									"method", r.Method,
-									"path", r.URL.Path,
-									"doc_id", docID,
-									"person", userEmail,
-								)
-							} else if len(ppl) > 0 && len(ppl[0].Names) > 0 {
-								oldOwner.Name = ppl[0].Names[0].DisplayName
-							}
-						}
+					// Get name of new document owner.
+					newOwner := email.User{
+						EmailAddress: doc.Owners[0],
+					}
+					ppl, err := srv.WorkspaceProvider.SearchPeople(
+						doc.Owners[0], "emailAddresses,names")
+					if err != nil {
+						srv.Logger.Warn("error searching directory for new owner",
+							"error", err,
+							"method", r.Method,
+							"path", r.URL.Path,
+							"doc_id", docID,
+							"person", doc.Owners[0],
+						)
+					}
+					if len(ppl) == 1 && ppl[0].Names != nil {
+						newOwner.Name = ppl[0].Names[0].DisplayName
+					}
 
-						// Send email asynchronously to avoid blocking the response.
-						go func() {
-							if err := email.SendNewOwnerEmail(
-								email.NewOwnerEmailData{
-									BaseURL:           srv.Config.BaseURL,
-									DocumentShortName: doc.DocNumber,
-									DocumentStatus:    doc.Status,
-									DocumentTitle:     doc.Title,
-									DocumentType:      doc.DocType,
-									DocumentURL:       docURL,
-									NewDocumentOwner:  newOwner,
-									OldDocumentOwner:  oldOwner,
-									Product:           doc.Product,
-								},
-								[]string{doc.Owners[0]},
-								srv.Config.Email.FromAddress,
-								srv.GetEmailSender(),
-							); err != nil {
-								srv.Logger.Error("error sending new owner email",
-									"error", err,
-									"doc_id", docID,
-									"new_owner", doc.Owners[0],
-								)
-							} else {
-								srv.Logger.Info("new owner email sent",
-									"doc_id", docID,
-									"new_owner", doc.Owners[0],
-								)
-							}
-						}()
+					// Get name of old document owner.
+					oldOwner := email.User{
+						EmailAddress: userEmail,
+					}
+					ppl, err = srv.WorkspaceProvider.SearchPeople(
+						userEmail, "emailAddresses,names")
+					if err != nil {
+						srv.Logger.Warn("error searching directory for old owner",
+							"error", err,
+							"method", r.Method,
+							"path", r.URL.Path,
+							"doc_id", docID,
+							"person", doc.Owners[0],
+						)
+					}
+					if len(ppl) == 1 && ppl[0].Names != nil {
+						oldOwner.Name = ppl[0].Names[0].DisplayName
+					}
+
+					if err := email.SendNewOwnerEmail(
+						email.NewOwnerEmailData{
+							BaseURL:           srv.Config.BaseURL,
+							DocumentShortName: doc.DocNumber,
+							DocumentStatus:    doc.Status,
+							DocumentTitle:     doc.Title,
+							DocumentType:      doc.DocType,
+							DocumentURL:       docURL,
+							NewDocumentOwner:  newOwner,
+							OldDocumentOwner:  oldOwner,
+							Product:           doc.Product,
+						},
+						[]string{doc.Owners[0]},
+						srv.Config.Email.FromAddress,
+						srv.WorkspaceProvider,
+					); err != nil {
+						srv.Logger.Error("error sending new owner email",
+							"error", err,
+							"method", r.Method,
+							"path", r.URL.Path,
+							"doc_id", docID,
+						)
+						http.Error(w, "Error patching document",
+							http.StatusInternalServerError)
+						return
 					}
 				}
 
@@ -1480,7 +1284,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 								},
 								newContributors,
 								srv.Config.Email.FromAddress,
-								srv.GetEmailSender(),
+								srv.WorkspaceProvider,
 							)
 						},
 						docID,
@@ -1564,10 +1368,10 @@ func DocumentHandler(srv server.Server) http.Handler {
 
 			// Request post-processing.
 			go func() {
-				// Convert document to Algolia object.
-				docObj, err := doc.ToAlgoliaObject(true)
+				// Convert document to search object.
+				docObjMap, err := doc.ToAlgoliaObject(true)
 				if err != nil {
-					srv.Logger.Error("error converting document to Algolia object",
+					srv.Logger.Error("error converting document to search object",
 						"error", err,
 						"method", r.Method,
 						"path", r.URL.Path,
@@ -1576,76 +1380,27 @@ func DocumentHandler(srv server.Server) http.Handler {
 					return
 				}
 
-				// Save new modified doc object in Algolia.
-				res, err := srv.AlgoWrite.Docs.SaveObject(docObj)
+				// Convert map to search.Document via JSON round-trip
+				docObj, err := mapToSearchDocument(docObjMap)
 				if err != nil {
-					srv.Logger.Error("error saving patched document in Algolia",
+					srv.Logger.Error("error converting document to search document",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID,
+					)
+					return
+				}
+
+				// Save new modified doc object in search index.
+				ctx := r.Context()
+				if err := srv.SearchProvider.DocumentIndex().Index(ctx, docObj); err != nil {
+					srv.Logger.Error("error saving patched document in search index",
 						"error", err,
 						"method", r.Method,
 						"path", r.URL.Path,
 						"doc_id", docID)
 					return
-				}
-				err = res.Wait()
-				if err != nil {
-					srv.Logger.Error("error saving patched document in Algolia",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID)
-					return
-				}
-
-				// Compare Algolia and database documents to find data inconsistencies.
-				// Get document object from Algolia.
-				var algoDoc map[string]any
-				err = srv.AlgoSearch.Docs.GetObject(docID, &algoDoc)
-				if err != nil {
-					srv.Logger.Error("error getting Algolia object for data comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-				// Get document from database.
-				dbDoc := srv.NewDocumentByFileID(docID)
-
-				if err := dbDoc.Get(srv.DB); err != nil {
-					srv.Logger.Error(
-						"error getting document from database for data comparison",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", docID,
-					)
-					return
-				}
-				// Get all reviews for the document.
-				var reviews models.DocumentReviews
-				if err := reviews.Find(srv.DB, models.DocumentReview{
-					Document: srv.NewDocumentByFileID(docID),
-				}); err != nil {
-					srv.Logger.Error(
-						"error getting all reviews for document for data comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-				if err := CompareAlgoliaAndDatabaseDocument(
-					algoDoc, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
-				); err != nil {
-					srv.Logger.Warn(
-						"inconsistencies detected between Algolia and database docs",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
 				}
 			}()
 

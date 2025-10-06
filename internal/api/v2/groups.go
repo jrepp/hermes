@@ -67,8 +67,102 @@ func GroupsHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case http.MethodPost:
-			handleGroupsPost(srv, w, r, logArgs)
+		case "POST":
+			// Decode request.
+			req := &GroupsPostRequest{}
+			if err := decodeRequest(r, &req); err != nil {
+				srv.Logger.Warn("error decoding request",
+					append([]interface{}{
+						"error", err,
+					}, logArgs...)...)
+				http.Error(w, fmt.Sprintf("Bad request: %q", err),
+					http.StatusBadRequest)
+				return
+			}
+
+			// Sanitize query.
+			query := req.Query
+			query = strings.ReplaceAll(query, " ", "-")
+
+			var (
+				allGroups            []*admin.Group
+				err                  error
+				groups, prefixGroups *admin.Groups
+				maxNonPrefixGroups   = maxGroupResults
+			)
+
+			// Retrieve groups with prefix, if configured.
+			searchPrefix := ""
+			if srv.Config.GoogleWorkspace.GroupApprovals != nil &&
+				srv.Config.GoogleWorkspace.GroupApprovals.SearchPrefix != "" {
+				searchPrefix = srv.Config.GoogleWorkspace.GroupApprovals.SearchPrefix
+			}
+			if searchPrefix != "" {
+				maxNonPrefixGroups = maxGroupResults - maxPrefixGroupResults
+
+				prefixQuery := fmt.Sprintf(
+					"%s%s", searchPrefix, query)
+				groupsResult, err := srv.WorkspaceProvider.ListGroups(
+					srv.Config.GoogleWorkspace.Domain,
+					fmt.Sprintf("email:%s*", prefixQuery),
+					maxPrefixGroupResults,
+				)
+				if err != nil {
+					srv.Logger.Error("error searching groups with prefix",
+						append([]interface{}{
+							"error", err,
+						}, logArgs...)...)
+					http.Error(w, fmt.Sprintf("Error searching groups: %q", err),
+						http.StatusInternalServerError)
+					return
+				}
+				prefixGroups = &admin.Groups{Groups: groupsResult}
+			}
+
+			// Retrieve groups without prefix.
+			groupsResult, err := srv.WorkspaceProvider.ListGroups(
+				srv.Config.GoogleWorkspace.Domain,
+				fmt.Sprintf("email:%s*", query),
+				int64(maxNonPrefixGroups),
+			)
+			if err != nil {
+				srv.Logger.Error("error searching groups without prefix",
+					append([]interface{}{
+						"error", err,
+					}, logArgs...)...)
+				http.Error(w, fmt.Sprintf("Error searching groups: %q", err),
+					http.StatusInternalServerError)
+				return
+			}
+			groups = &admin.Groups{Groups: groupsResult}
+
+			allGroups = concatGroupSlicesAndRemoveDuplicates(
+				prefixGroups.Groups, groups.Groups)
+
+			// Build response, stripping all attributes except email and name.
+			resp := make(GroupsPostResponse, len(allGroups))
+			for i, group := range allGroups {
+				resp[i] = GroupsPostResponseGroup{
+					Email: group.Email,
+					Name:  group.Name,
+				}
+			}
+
+			// Write response.
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			enc := json.NewEncoder(w)
+			err = enc.Encode(resp)
+			if err != nil {
+				srv.Logger.Error("error encoding groups response",
+					append([]interface{}{
+						"error", err,
+					}, logArgs...)...)
+				http.Error(w, "Error searching groups",
+					http.StatusInternalServerError)
+				return
+			}
+
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return

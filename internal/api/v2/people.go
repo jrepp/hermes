@@ -21,9 +21,36 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
-			// Using POST method to avoid logging the query in browser history
-			// and server logs
-			handleSearchPeople(srv, w, r)
+			if err := decodeRequest(r, &req); err != nil {
+				srv.Logger.Error("error decoding people request", "error", err)
+				http.Error(w, fmt.Sprintf("Bad request: %q", err),
+					http.StatusBadRequest)
+				return
+			}
+
+			users, err := srv.WorkspaceProvider.SearchPeople(
+				req.Query,
+				"emailAddresses,names,photos",
+			)
+			if err != nil {
+				srv.Logger.Error("error searching people directory", "error", err)
+				http.Error(w, fmt.Sprintf("Error searching people directory: %q", err),
+					http.StatusInternalServerError)
+				return
+			}
+
+			// Write response.
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+
+			enc := json.NewEncoder(w)
+			err = enc.Encode(users)
+			if err != nil {
+				srv.Logger.Error("error encoding people response", "error", err)
+				http.Error(w, "Error searching people directory",
+					http.StatusInternalServerError)
+				return
+			}
 		case "GET":
 			query := r.URL.Query()
 			// Handle photo request (SharePoint only - Google uses direct photo URLs)
@@ -38,7 +65,31 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 					http.StatusBadRequest)
 			} else {
 				emails := strings.Split(query["emails"][0], ",")
-				handleGetPeopleByEmails(srv, w, emails)
+				var people []*people.Person
+
+				for _, email := range emails {
+					result, err := srv.WorkspaceProvider.SearchPeople(
+						email,
+						"emailAddresses,names,photos",
+					)
+
+					if err == nil && len(result) > 0 {
+						people = append(people, result[0])
+					} else {
+						srv.Logger.Warn("Email lookup miss", "error", err)
+					}
+				} // Write response.
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+
+				enc := json.NewEncoder(w)
+				err := enc.Encode(people)
+				if err != nil {
+					srv.Logger.Error("error encoding people response", "error", err)
+					http.Error(w, "Error getting people responses",
+						http.StatusInternalServerError)
+					return
+				}
 			}
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)

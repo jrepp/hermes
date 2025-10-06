@@ -12,14 +12,47 @@ import (
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
+	"github.com/hashicorp-forge/hermes/pkg/search"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-multierror"
 	"github.com/iancoleman/strcase"
 	"github.com/stretchr/testify/assert"
 )
 
-// contains returns true if a string is present in a slice of strings (case-insensitive for emails).
+// mapToSearchDocument converts a map[string]any to a search.Document via JSON round-trip.
+// This is used to convert Algolia-style document objects to the search provider interface.
+func mapToSearchDocument(m map[string]any) (*search.Document, error) {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal map: %w", err)
+	}
+
+	var doc search.Document
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal to search.Document: %w", err)
+	}
+
+	return &doc, nil
+}
+
+// searchDocumentToMap converts a search.Document to a map[string]any via JSON round-trip.
+// This is used to convert search provider documents back to map format for compatibility.
+func searchDocumentToMap(doc *search.Document) (map[string]any, error) {
+	data, err := json.Marshal(doc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal search.Document: %w", err)
+	}
+
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal to map: %w", err)
+	}
+
+	return m, nil
+}
+
+// contains returns true if a string is present in a slice of strings.
 func contains(values []string, s string) bool {
 	for _, v := range values {
 		if strings.EqualFold(s, v) {
@@ -624,76 +657,14 @@ func CompareAlgoliaAndDatabaseDocument(
 // isUserInGroups returns true if a user is in any supplied groups, false
 // otherwise. Works with both SharePoint (Microsoft Graph) and Google backends.
 func isUserInGroups(
-	userEmail string, groupEmails []string, srv server.Server) (bool, error) {
-	if len(groupEmails) == 0 {
-		return false, nil
-	}
-
-	if srv.SharePoint != nil {
-		// SharePoint path: use Microsoft Graph API
-		graphURL := fmt.Sprintf("https://graph.microsoft.com/v1.0/users/%s/memberOf?$select=id,displayName,mail",
-			url.QueryEscape(userEmail))
-
-		options := &sharepointhelper.APIOptions{
-			Headers: map[string]string{
-				"Content-Type": "application/json",
-			},
-		}
-
-		for graphURL != "" {
-			resp, err := srv.SharePoint.InvokeAPIWithOptions("GET", graphURL, nil, options)
-			if err != nil {
-				return false, fmt.Errorf("error making Graph API request for user groups: %w", err)
-			}
-
-			if resp.StatusCode != http.StatusOK {
-				resp.Body.Close()
-				return false, fmt.Errorf("microsoft Graph API returned status %d when fetching user groups", resp.StatusCode)
-			}
-
-			// Parse the response page.
-			var response struct {
-				Value []struct {
-					ID          string `json:"id"`
-					DisplayName string `json:"displayName"`
-					Mail        string `json:"mail"`
-				} `json:"value"`
-				NextLink string `json:"@odata.nextLink"`
-			}
-
-			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-				resp.Body.Close()
-				return false, fmt.Errorf("error decoding user groups response: %w", err)
-			}
-			resp.Body.Close()
-
-			// Check if any of the user's groups match the provided group emails.
-			for _, group := range response.Value {
-				if group.Mail != "" && contains(groupEmails, group.Mail) {
-					return true, nil
-				}
-			}
-
-			graphURL = response.NextLink
-		}
-
-		return false, nil
-	}
-
-	if srv.Config.GoogleWorkspace.GroupApprovals == nil ||
-		!srv.Config.GoogleWorkspace.GroupApprovals.Enabled {
-		return false, nil
-	}
-
-	// Google path: use Admin Directory API
-	userGroups, err := srv.GWService.AdminDirectory.Groups.List().
-		UserKey(userEmail).
-		Do()
+	userEmail string, groupEmails []string, provider workspace.Provider) (bool, error) {
+	// Get groups for user.
+	userGroups, err := provider.ListUserGroups(userEmail)
 	if err != nil {
 		return false, fmt.Errorf("error getting groups for user: %w", err)
 	}
 
-	for _, g := range userGroups.Groups {
+	for _, g := range userGroups {
 		if contains(groupEmails, g.Email) {
 			return true, nil
 		}
@@ -776,6 +747,10 @@ func getStringSliceValue(in map[string]any, key string) ([]string, error) {
 	result := []string{}
 
 	if v, ok := in[key]; ok {
+		// Handle nil value
+		if v == nil {
+			return result, nil
+		}
 		if reflect.TypeOf(v).Kind() == reflect.Slice {
 			for _, vv := range v.([]any) {
 				if vv, ok := vv.(string); ok {
