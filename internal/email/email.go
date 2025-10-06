@@ -9,18 +9,16 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 //go:embed templates/*
 var tmplFS embed.FS
 
-// EmailSender is an interface for sending emails.
-// Both *sharepointhelper.Service and *googleworkspace.Service satisfy this
-// (Google's SendEmail returns (*gmail.Message, error) so we use a wrapper).
-type EmailSender interface {
+// emailSender defines the interface for sending emails.
+// This is satisfied by workspace.Provider.
+type emailSender interface {
 	SendEmail(to []string, from, subject, body string) error
-	SendEmailWithBCC(to []string, bcc []string, from, subject, body string) error
 }
 
 type User struct {
@@ -111,7 +109,7 @@ func SendDocumentApprovedEmail(
 	data DocumentApprovedEmailData,
 	to []string,
 	from string,
-	svc EmailSender,
+	provider workspace.Provider,
 ) error {
 	// Validate data.
 	if err := validation.ValidateStruct(&data,
@@ -160,7 +158,7 @@ func SendDocumentApprovedEmail(
 	)
 
 	// Send email.
-	err = svc.SendEmail(
+	err = provider.SendEmail(
 		to,
 		from,
 		subject,
@@ -173,7 +171,7 @@ func SendNewOwnerEmail(
 	data NewOwnerEmailData,
 	to []string,
 	from string,
-	svc EmailSender,
+	provider workspace.Provider,
 ) error {
 	// Validate data.
 	if err := validation.ValidateStruct(&data,
@@ -218,7 +216,7 @@ func SendNewOwnerEmail(
 	}
 
 	// Send email.
-	err = svc.SendEmail(
+	err = provider.SendEmail(
 		to,
 		from,
 		fmt.Sprintf("%s transferred to you", data.DocumentShortName),
@@ -231,7 +229,7 @@ func SendReviewRequestedEmail(
 	d ReviewRequestedEmailData,
 	to []string,
 	from string,
-	s EmailSender,
+	provider workspace.Provider,
 ) error {
 	// Validate data.
 	if err := validation.ValidateStruct(&d,
@@ -262,7 +260,7 @@ func SendReviewRequestedEmail(
 		return fmt.Errorf("error executing template: %w", err)
 	}
 
-	err = s.SendEmail(
+	err = provider.SendEmail(
 		to,
 		from,
 		fmt.Sprintf("Document review requested for %s", d.DocumentShortName),
@@ -275,17 +273,7 @@ func SendSubscriberDocumentPublishedEmail(
 	d SubscriberDocumentPublishedEmailData,
 	to []string,
 	from string,
-	s EmailSender,
-) error {
-	return SendSubscriberDocumentPublishedEmailWithBCC(d, nil, to, from, s)
-}
-
-func SendSubscriberDocumentPublishedEmailWithBCC(
-	d SubscriberDocumentPublishedEmailData,
-	toRecipients []string,
-	bccRecipients []string,
-	from string,
-	s EmailSender,
+	provider emailSender,
 ) error {
 	// Validate data.
 	if err := validation.ValidateStruct(&d,
@@ -312,9 +300,8 @@ func SendSubscriberDocumentPublishedEmailWithBCC(
 		return fmt.Errorf("error executing template: %w", err)
 	}
 
-	err = s.SendEmailWithBCC(
-		toRecipients,
-		bccRecipients,
+	err = provider.SendEmail(
+		to,
 		from,
 		fmt.Sprintf("New %s: [%s] %s",
 			d.DocumentType,
