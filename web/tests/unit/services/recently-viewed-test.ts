@@ -1,8 +1,8 @@
 import { module, test } from "qunit";
 import { setupTest } from "ember-qunit";
-import type RecentlyViewedService from "hermes/services/recently-viewed";
-import { setupMirage } from "ember-cli-mirage/test-support";
-import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import RecentlyViewedService from "hermes/services/recently-viewed";
+import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import { authenticateSession } from "ember-simple-auth/test-support";
 import { TEST_USER_2_EMAIL } from "hermes/mirage/utils";
 
 interface Context extends MirageTestContext {
@@ -14,12 +14,13 @@ module("Unit | Service | recently-viewed", function (hooks) {
   setupMirage(hooks);
 
   hooks.beforeEach(function (this: Context) {
+    authenticateSession({ access_token: "test-token" });
     this.set("recentlyViewed", this.owner.lookup("service:recently-viewed"));
   });
 
   test("it fetches recently viewed items", async function (this: Context, assert) {
+    // Don't create documents separately - the factory will create them
     this.server.createList("recently-viewed-doc", 10);
-    this.server.createList("document", 10);
 
     assert.equal(this.recentlyViewed.index, undefined, "the index is empty");
 
