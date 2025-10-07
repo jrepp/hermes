@@ -1,14 +1,44 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { inject as service } from "@ember/service";
+import { service } from "@ember/service";
+import { restartableTask, timeout } from "ember-concurrency";
 import { action } from "@ember/object";
-import { debounce } from "@ember/runloop";
-import Ember from "ember";
-import type ConfigService from "hermes/services/config";
-import type StoreService from "hermes/services/store";
-import type PersonModel from "hermes/models/person";
-import type GroupModel from "hermes/models/group";
-import type AuthenticatedUserService from "hermes/services/authenticated-user";
+import ConfigService from "hermes/services/config";
+import FetchService from "hermes/services/fetch";
+import { isTesting } from "@embroider/macros";
+import StoreService from "hermes/services/store";
+import PersonModel from "hermes/models/person";
+import { Select } from "ember-power-select/components/power-select";
+import { next, schedule } from "@ember/runloop";
+import calculatePosition from "ember-basic-dropdown/utils/calculate-position";
+import GroupModel from "hermes/models/group";
+import AuthenticatedUserService from "hermes/services/authenticated-user";
+
+export interface GoogleUser {
+  emailAddresses: { value: string }[];
+  names: { displayName: string; givenName: string }[];
+  photos: { url: string }[];
+}
+
+enum ComputedVerticalPosition {
+  Above = "above",
+  Below = "below",
+}
+
+enum ComputedHorizontalPosition {
+  Left = "left",
+  Right = "right",
+}
+
+interface CalculatePositionOptions {
+  horizontalPosition: ComputedHorizontalPosition;
+  verticalPosition: ComputedVerticalPosition;
+  matchTriggerWidth: boolean;
+  previousHorizontalPosition?: ComputedHorizontalPosition;
+  previousVerticalPosition?: ComputedVerticalPosition;
+  renderInPlace: boolean;
+  dropdown: any;
+}
 
 interface InputsPeopleSelectComponentSignature {
   Element: HTMLDivElement;
@@ -26,7 +56,7 @@ interface InputsPeopleSelectComponentSignature {
 
 const DEBOUNCE_MS = Ember.testing ? 0 : 300;
 const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = Ember.testing ? 0 : 500;
+const INITIAL_RETRY_DELAY = isTesting() ? 0 : 500;
 
 export default class InputsPeopleSelectComponent extends Component<InputsPeopleSelectComponentSignature> {
   @service("config") declare configSvc: ConfigService;
@@ -206,7 +236,7 @@ export default class InputsPeopleSelectComponent extends Component<InputsPeopleS
               // Filter out authenticated user if excludeSelf is true
               return (
                 !this.args.excludeSelf ||
-                email !== this.authenticatedUser.info.email
+                email !== this.authenticatedUser.info?.email
               );
             });
         }

@@ -1,8 +1,8 @@
 import JSONAdapter from "@ember-data/adapter/json-api";
-import { inject as service } from "@ember/service";
-import type ConfigService from "hermes/services/config";
-import type FetchService from "hermes/services/fetch";
-import type SessionService from "hermes/services/session";
+import { service } from "@ember/service";
+import ConfigService from "hermes/services/config";
+import FetchService from "hermes/services/fetch";
+import SessionService from "hermes/services/session";
 
 export default class ApplicationAdapter extends JSONAdapter {
   @service("config") declare configSvc: ConfigService;

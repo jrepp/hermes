@@ -1,5 +1,5 @@
 import Route from "@ember/routing/route";
-import { inject as service } from "@ember/service";
+import { service } from "@ember/service";
 import { HITS_PER_PAGE } from "hermes/services/algolia";
 import type ConfigService from "hermes/services/config";
 import type FetchService from "hermes/services/fetch";

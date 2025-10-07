@@ -1,9 +1,9 @@
 import Route from "@ember/routing/route";
-import { inject as service } from "@ember/service";
-import type ConfigService from "hermes/services/config";
-import type AlgoliaService from "hermes/services/algolia";
-import type { DocumentsRouteParams } from "hermes/types/document-routes";
-import type ActiveFiltersService from "hermes/services/active-filters";
+import { service } from "@ember/service";
+import ConfigService from "hermes/services/config";
+import AlgoliaService from "hermes/services/algolia";
+import { DocumentsRouteParams } from "hermes/types/document-routes";
+import ActiveFiltersService from "hermes/services/active-filters";
 import { SortByValue } from "hermes/components/header/toolbar";
 import type StoreService from "hermes/services/store";
 import type { HermesDocument } from "hermes/types/document";

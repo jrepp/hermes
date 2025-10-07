@@ -1,7 +1,7 @@
 import Component from "@glimmer/component";
-import type LatestDocsService from "hermes/services/latest-docs";
-import type { HermesDocument } from "hermes/types/document";
-import { inject as service } from "@ember/service";
+import LatestDocsService from "hermes/services/latest-docs";
+import { HermesDocument } from "hermes/types/document";
+import { service } from "@ember/service";
 import { DEFAULT_FILTERS } from "hermes/services/active-filters";
 
 interface DashboardLatestDocsComponentSignature {}

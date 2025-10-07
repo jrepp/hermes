@@ -1,12 +1,11 @@
 import Route from "@ember/routing/route";
 import { UnauthorizedError } from "@ember-data/adapter/error";
 import { action } from "@ember/object";
-import { inject as service } from "@ember/service";
-import type ConfigService from "hermes/services/config";
-import type FetchService from "hermes/services/fetch";
-import type SessionService from "hermes/services/session";
-import { REDIRECT_STORAGE_KEY } from "hermes/services/session";
-import type RouterService from "@ember/routing/router-service";
+import { service } from "@ember/service";
+import ConfigService from "hermes/services/config";
+import FetchService from "hermes/services/fetch";
+import SessionService, { REDIRECT_STORAGE_KEY } from "hermes/services/session";
+import RouterService from "@ember/routing/router-service";
 
 import window from "ember-window-mock";
 import type Transition from "@ember/routing/transition";

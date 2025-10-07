@@ -8,8 +8,8 @@ import type {
 import {
   RelatedResourcesScope,
 } from "../related-resources";
-import { inject as service } from "@ember/service";
-import type FetchService from "hermes/services/fetch";
+import { service } from "@ember/service";
+import FetchService from "hermes/services/fetch";
 import { enqueueTask, task, timeout } from "ember-concurrency";
 import type { HermesProject, JiraPickerResult } from "hermes/types/project";
 import {
@@ -21,7 +21,7 @@ import type ConfigService from "hermes/services/config";
 import type HermesFlashMessagesService from "hermes/services/flash-messages";
 import { FLASH_MESSAGES_LONG_TIMEOUT } from "hermes/utils/ember-cli-flash/timeouts";
 import updateRelatedResourcesSortOrder from "hermes/utils/update-related-resources-sort-order";
-import Ember from "ember";
+import { isTesting } from "@embroider/macros";
 // TEMPORARILY USING STUBS FOR EMBER 6.x UPGRADE
 import { TransitionContext, wait, fadeIn, fadeOut, move, Resize, easeOutExpo, easeOutQuad } from "hermes/utils/ember-animated-stubs";
 import { emptyTransition } from "hermes/utils/ember-animated/empty-transition";
@@ -29,7 +29,7 @@ import animateTransform from "hermes/utils/ember-animated/animate-transform";
 import type RouterService from "@ember/routing/router-service";
 import type StoreService from "hermes/services/store";
 
-const animationDuration = Ember.testing ? 0 : 450;
+const animationDuration = isTesting() ? 0 : 450;
 
 class ResizeExpo extends Resize {
   *animate() {
@@ -507,7 +507,7 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
     insertedSprites,
     removedSprites,
   }: TransitionContext) {
-    if (Ember.testing) return;
+    if (isTesting()) return;
 
     for (let sprite of insertedSprites) {
       yield wait(animationDuration * 0.1);
@@ -523,7 +523,7 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
     insertedSprites,
     removedSprites,
   }: TransitionContext) {
-    if (Ember.testing) return;
+    if (isTesting()) return;
 
     for (let sprite of insertedSprites) {
       yield wait(animationDuration * 0.01);
@@ -537,7 +537,7 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
   }
 
   *jiraTransition({ insertedSprites, removedSprites }: TransitionContext) {
-    if (Ember.testing) return;
+    if (isTesting()) return;
 
     for (let sprite of insertedSprites) {
       yield wait(animationDuration * 0.1);
@@ -560,7 +560,7 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
     insertedSprites,
     removedSprites,
   }: TransitionContext) {
-    if (Ember.testing) return;
+    if (isTesting()) return;
 
     for (let sprite of insertedSprites) {
       yield wait(animationDuration * 0.3);
@@ -636,7 +636,7 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
             body: JSON.stringify(valueToSave),
           },
         );
-        await Promise.all([savePromise, timeout(Ember.testing ? 0 : 750)]);
+        await Promise.all([savePromise, timeout(isTesting() ? 0 : 750)]);
       } catch (e) {
         this.flashMessages.critical((e as any).message, {
           title: "Unable to save",

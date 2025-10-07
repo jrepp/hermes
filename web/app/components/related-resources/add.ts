@@ -4,9 +4,9 @@ import { tracked } from "@glimmer/tracking";
 import type { HermesDocument } from "hermes/types/document";
 import { assert } from "@ember/debug";
 import { restartableTask } from "ember-concurrency";
-import type ConfigService from "hermes/services/config";
-import { inject as service } from "@ember/service";
-import type {
+import ConfigService from "hermes/services/config";
+import { service } from "@ember/service";
+import {
   RelatedExternalLink,
   RelatedHermesDocument,
   RelatedResource,

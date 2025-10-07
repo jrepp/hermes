@@ -3,7 +3,7 @@ import type { SearchClient, SearchIndex } from "algoliasearch";
 import algoliaSearch from "algoliasearch";
 import type { SearchForFacetValuesResponse } from "@algolia/client-search";
 import config from "hermes/config/environment";
-import { inject as service } from "@ember/service";
+import { service } from "@ember/service";
 import { restartableTask, task } from "ember-concurrency";
 import type AuthenticatedUserService from "hermes/services/authenticated-user";
 import type { RequestOptions } from "@algolia/transporter";
@@ -46,46 +46,60 @@ export default class AlgoliaService extends Service {
 
   /**
    * A shorthand getter for the authenticatedUser's email.
+   * Returns null if user info is not loaded (e.g., Dex authentication without OIDC flow).
    */
-  private get userEmail(): string {
-    return this.authenticatedUser.info.email;
+  private get userEmail(): string | null {
+    return this.authenticatedUser.info?.email ?? null;
   }
 
   /**
-   * Returns an Algolia SearchClient based on the environment.
+   * Cached Algolia SearchClient instance.
+   * Created lazily to ensure auth provider config is loaded.
    */
-  private createClient(): SearchClient {
-    /**
-     * If not running as production, use environment variables and directly
-     * interact with Algolia's API.
-     */
-    if (config.environment != "production") {
-      console.log(
-        "Running as non-production environment: Algolia client configured to directly interact with Algolia's API.",
-      );
-      return algoliaSearch(config.algolia.appID, config.algolia.apiKey);
-    }
-    /**
-     * If running as production, use environment variables and route Algolia
-     * requests through the Hermes API.
-     */
-    if (
-      window.location.hostname === "127.0.0.1" ||
-      window.location.hostname === "localhost"
-    ) {
-      const headers: Record<string, string> | undefined =
-        this.configSvc.config.skip_google_auth
-          ? undefined
-          : {
-              "Hermes-Google-Access-Token":
-                this.session.data.authenticated.access_token,
-            };
+  private _client?: SearchClient;
 
-      return algoliaSearch("", "", {
-        headers,
+  /**
+   * Returns the appropriate authorization header based on the auth provider.
+   */
+  private getAuthHeaders(): Record<string, string> {
+    const authProvider = this.configSvc.config.auth_provider;
+    const accessToken = this.session.data.authenticated.access_token;
+
+    if (authProvider === "google") {
+      return { "Hermes-Google-Access-Token": accessToken };
+    } else if (authProvider === "dex" || authProvider === "okta") {
+      return { Authorization: `Bearer ${accessToken}` };
+    }
+    return {};
+  }
+
+  /**
+   * Returns an Algolia SearchClient configured to proxy all requests through the backend.
+   * This ensures all search operations go through the Hermes API at /1/indexes/*
+   * rather than directly to Algolia's infrastructure.
+   * 
+   * The client is created lazily to ensure the auth provider configuration
+   * is loaded from the backend before setting up auth headers.
+   */
+  private get client(): SearchClient {
+    if (!this._client) {
+      const protocol =
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "localhost"
+          ? "http"
+          : "https";
+
+      const authProvider = this.configSvc.config.auth_provider;
+      console.log(
+        `Algolia client configured to proxy all requests through Hermes backend (${authProvider} auth) at ${protocol}://${window.location.hostname}:${window.location.port}/1/indexes/*`,
+      );
+
+      // Create client with auth headers that update dynamically
+      this._client = algoliaSearch("", "", {
+        headers: this.getAuthHeaders(),
         hosts: [
           {
-            protocol: window.location.protocol.replace(":", ""),
+            protocol: protocol,
             url: window.location.hostname + ":" + window.location.port,
           },
         ],
@@ -96,40 +110,7 @@ export default class AlgoliaService extends Service {
         },
       });
     }
-    /**
-     * If running remotely as production, use HTTPS and route Algolia requests
-     * through the Hermes API.
-     */
-    const headers: Record<string, string> | undefined =
-      this.configSvc.config.skip_google_auth
-        ? undefined
-        : {
-            "Hermes-Google-Access-Token":
-              this.session.data.authenticated.access_token,
-          };
-
-    return algoliaSearch("", "", {
-      headers,
-      hosts: [
-        {
-          protocol: "https",
-          url: window.location.hostname + ":" + window.location.port,
-        },
-      ],
-      timeouts: {
-          connect: 5000,
-          read: 10000,
-          write: 10000,
-        },
-    });
-  }
-
-  /**
-   * An Algolia SearchClient.
-   * Used to initialize an environment-scoped SearchIndex.
-   */
-  private get client(): SearchClient {
-    return this.createClient();
+    return this._client;
   }
 
   /**
@@ -278,7 +259,7 @@ export default class AlgoliaService extends Service {
       }
     }
 
-    if (userIsOwner) {
+    if (userIsOwner && this.userEmail) {
       facetFilters.push(`owners:${this.userEmail}`);
     }
     return facetFilters;

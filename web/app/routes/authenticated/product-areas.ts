@@ -1,8 +1,8 @@
 import Route from "@ember/routing/route";
-import type RouterService from "@ember/routing/router-service";
-import type Transition from "@ember/routing/transition";
-import { inject as service } from "@ember/service";
-import type HermesFlashMessagesService from "hermes/services/flash-messages";
+import RouterService from "@ember/routing/router-service";
+import Transition from "@ember/routing/transition";
+import { service } from "@ember/service";
+import HermesFlashMessagesService from "hermes/services/flash-messages";
 
 export default class AuthenticatedProductAreasRoute extends Route {
   @service declare flashMessages: HermesFlashMessagesService;

@@ -1,5 +1,5 @@
-import type RouterService from "@ember/routing/router-service";
-import { inject as service } from "@ember/service";
+import RouterService from "@ember/routing/router-service";
+import { service } from "@ember/service";
 import { capitalize } from "@ember/string";
 import Component from "@glimmer/component";
 import type ActiveFiltersService from "hermes/services/active-filters";

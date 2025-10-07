@@ -1,11 +1,11 @@
 import Component from "@glimmer/component";
 import type { HermesDocument } from "hermes/types/document";
 import { SortDirection } from "../table/sortable-header";
-import { inject as service } from "@ember/service";
-import type AuthenticatedUserService from "hermes/services/authenticated-user";
-import type FetchService from "hermes/services/fetch";
-import type ConfigService from "hermes/services/config";
-import type AlgoliaService from "hermes/services/algolia";
+import { service } from "@ember/service";
+import AuthenticatedUserService from "hermes/services/authenticated-user";
+import FetchService from "hermes/services/fetch";
+import ConfigService from "hermes/services/config";
+import AlgoliaService from "hermes/services/algolia";
 import { SortByValue } from "../header/toolbar";
 import type RouterService from "@ember/routing/router-service";
 

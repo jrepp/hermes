@@ -2,8 +2,8 @@ import Component from "@glimmer/component";
 import { dasherize } from "@ember/string";
 import getProductId from "hermes/utils/get-product-id";
 import { HermesSize } from "hermes/types/sizes";
-import { inject as service } from "@ember/service";
-import type ProductAreasService from "hermes/services/product-areas";
+import { service } from "@ember/service";
+import ProductAreasService from "hermes/services/product-areas";
 
 export type DocThumbnailSize = Exclude<HermesSize, HermesSize.XL>;
 

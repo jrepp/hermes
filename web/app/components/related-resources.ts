@@ -1,6 +1,6 @@
-import { inject as service } from "@ember/service";
-import type ConfigService from "hermes/services/config";
-import type AlgoliaService from "hermes/services/algolia";
+import { service } from "@ember/service";
+import ConfigService from "hermes/services/config";
+import AlgoliaService from "hermes/services/algolia";
 import Component from "@glimmer/component";
 import type { HermesDocument } from "hermes/types/document";
 import { restartableTask, timeout } from "ember-concurrency";
@@ -9,8 +9,8 @@ import { action } from "@ember/object";
 import type { XDropdownListAnchorAPI } from "./x/dropdown-list";
 import type { SearchOptions } from "instantsearch.js";
 import { next } from "@ember/runloop";
-import Ember from "ember";
-import type StoreService from "hermes/services/store";
+import { isTesting } from "@embroider/macros";
+import StoreService from "hermes/services/store";
 
 export type RelatedResource = RelatedExternalLink | RelatedHermesDocument;
 
@@ -267,7 +267,7 @@ export default class RelatedResourcesComponent extends Component<RelatedResource
           // This will show the "loading" spinner for some additional time
           // unless the task is restarted. This is to prevent the spinner
           // from flashing when the user types and results return quickly.
-          await timeout(Ember.testing ? 0 : 200);
+          await timeout(isTesting() ? 0 : 200);
         }
       } catch (e: unknown) {
         this.handleSearchError(e);

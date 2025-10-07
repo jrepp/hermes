@@ -1,10 +1,9 @@
 import Route from "@ember/routing/route";
-import { inject as service } from "@ember/service";
-import type { AlgoliaFacetsObject } from "hermes/services/algolia";
-import type AlgoliaService from "hermes/services/algolia";
-import type ConfigService from "hermes/services/config";
-import type FetchService from "hermes/services/fetch";
-import type AuthenticatedUserService from "hermes/services/authenticated-user";
+import { service } from "@ember/service";
+import AlgoliaService, { AlgoliaFacetsObject } from "hermes/services/algolia";
+import ConfigService from "hermes/services/config";
+import FetchService from "hermes/services/fetch";
+import AuthenticatedUserService from "hermes/services/authenticated-user";
 import { task } from "ember-concurrency";
 import type { SearchOptions, SearchResponse } from "@algolia/client-search";
 import type { HermesDocument } from "hermes/types/document";
@@ -63,7 +62,7 @@ export default class AuthenticatedMyDocumentsRoute extends Route {
             `/api/${this.configSvc.config.api_version}/drafts?` +
               createDraftURLSearchParams({
                 ...options,
-                ownerEmail: this.authenticatedUser.info.email,
+                ownerEmail: this.authenticatedUser.info?.email ?? "",
               }),
           )
           .then((response) => response?.json());
@@ -100,7 +99,10 @@ export default class AuthenticatedMyDocumentsRoute extends Route {
       this.getDraftResults.perform({
         hitsPerPage: 100,
         page,
-        facetFilters: ownerFilter,
+        facetFilters:
+          params.includeSharedDrafts === false
+            ? [`owners:${this.authenticatedUser.info?.email ?? ""}`]
+            : undefined,
       }),
       // Only fetch published docs when not showing archived drafts
       params.showArchivedDrafts === true

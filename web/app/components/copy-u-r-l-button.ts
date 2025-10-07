@@ -1,9 +1,9 @@
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import Ember from "ember";
+import { isTesting } from "@embroider/macros";
 import { restartableTask, timeout } from "ember-concurrency";
-import { inject as service } from "@ember/service";
-import type { Placement } from "@floating-ui/dom";
+import { service } from "@ember/service";
+import { Placement } from "@floating-ui/dom";
 import { action } from "@ember/object";
 import { assert } from "@ember/debug";
 import type HermesFlashMessagesService from "hermes/services/flash-messages";
@@ -107,7 +107,7 @@ export default class CopyURLButtonComponent extends Component<CopyURLButtonCompo
               ?.setAttribute("data-url-copied", "true");
           }
 
-          await timeout(Ember.testing ? 0 : 2000);
+          await timeout(isTesting() ? 0 : 2000);
 
           this.urlWasRecentlyCopied = false;
 

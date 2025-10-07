@@ -1,15 +1,14 @@
 import Component from "@glimmer/component";
 import { task, timeout } from "ember-concurrency";
-import { inject as service } from "@ember/service";
+import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
-import type ConfigService from "hermes/services/config";
-import Ember from "ember";
-import type FetchService from "hermes/services/fetch";
-import type AuthenticatedUserService from "hermes/services/authenticated-user";
-import type RouterService from "@ember/routing/router-service";
-import type ModalAlertsService from "hermes/services/modal-alerts";
-import { ModalType } from "hermes/services/modal-alerts";
+import ConfigService from "hermes/services/config";
+import { isTesting } from "@embroider/macros";
+import FetchService from "hermes/services/fetch";
+import AuthenticatedUserService from "hermes/services/authenticated-user";
+import RouterService from "@ember/routing/router-service";
+import ModalAlertsService, { ModalType } from "hermes/services/modal-alerts";
 import { assert } from "@ember/debug";
 import cleanString from "hermes/utils/clean-string";
 import type { ProductArea } from "hermes/services/product-areas";
@@ -22,7 +21,7 @@ interface DocFormErrors {
   productAbbreviation: string | null;
 }
 
-const AWAIT_DOC_DELAY = Ember.testing ? 0 : 2000;
+const AWAIT_DOC_DELAY = isTesting() ? 0 : 2000;
 
 interface NewDocFormComponentSignature {
   Args: {

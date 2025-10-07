@@ -1,7 +1,7 @@
 import Controller from "@ember/controller";
-import { inject as service } from "@ember/service";
-import type SessionService from "hermes/services/session";
-import type ConfigService from "hermes/services/config";
+import { service } from "@ember/service";
+import SessionService from "hermes/services/session";
+import ConfigService from "hermes/services/config";
 import { dropTask } from "ember-concurrency";
 
 export default class AuthenticateController extends Controller {
@@ -12,14 +12,8 @@ export default class AuthenticateController extends Controller {
     return new Date().getFullYear();
   }
 
-  get authButtonText(): string {
-    return this.configSvc.config.skip_google_auth
-      ? "Authenticate with Microsoft"
-      : "Authenticate with Google";
-  }
-
-  get authButtonIcon(): string {
-    return this.configSvc.config.skip_google_auth ? "microsoft" : "google";
+  protected get authProvider(): string {
+    return this.configSvc.config.auth_provider || "google";
   }
 
   protected authenticate = dropTask(async () => {
@@ -42,6 +36,13 @@ export default class AuthenticateController extends Controller {
     console.error(
       "Microsoft authentication is not properly configured. Missing one of clientId, tenantId, redirectUri.",
     );
+  });
+
+  protected authenticateOIDC = dropTask(async () => {
+    // For OIDC providers (Okta/Dex), redirect to the backend auth endpoint
+    // which will handle the OIDC flow
+    const authProvider = this.authProvider;
+    window.location.href = `/api/v2/auth/${authProvider}/login`;
   });
 }
 declare module "@ember/controller" {

@@ -1,6 +1,6 @@
 import Route from "@ember/routing/route";
-import { inject as service } from "@ember/service";
-import type DocumentTypesService from "hermes/services/document-types";
+import { service } from "@ember/service";
+import DocumentTypesService from "hermes/services/document-types";
 
 export default class AuthenticatedNewRoute extends Route {
   @service declare documentTypes: DocumentTypesService;

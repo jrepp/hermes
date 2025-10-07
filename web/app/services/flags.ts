@@ -1,5 +1,5 @@
-import Service, { inject as service } from "@ember/service";
-import type ConfigService from "./config";
+import Service, { service } from "@ember/service";
+import ConfigService from "./config";
 
 export default class FlagsService extends Service {
   @service("config") declare configSvc: ConfigService;

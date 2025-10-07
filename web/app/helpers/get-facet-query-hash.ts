@@ -1,6 +1,6 @@
 import Helper from "@ember/component/helper";
-import { inject as service } from "@ember/service";
-import type { FacetName } from "hermes/components/header/toolbar";
+import { service } from "@ember/service";
+import { FacetName } from "hermes/components/header/toolbar";
 import { SearchScope } from "hermes/routes/authenticated/results";
 import type ActiveFiltersService from "hermes/services/active-filters";
 

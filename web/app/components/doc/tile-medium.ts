@@ -1,9 +1,9 @@
 import Component from "@glimmer/component";
-import type { RelatedHermesDocument } from "../related-resources";
-import type { HermesDocument } from "hermes/types/document";
-import { inject as service } from "@ember/service";
-import type FetchService from "hermes/services/fetch";
-import type ConfigService from "hermes/services/config";
+import { RelatedHermesDocument } from "../related-resources";
+import { HermesDocument } from "hermes/types/document";
+import { service } from "@ember/service";
+import FetchService from "hermes/services/fetch";
+import ConfigService from "hermes/services/config";
 
 interface DocTileMediumComponentSignature {
   Element: HTMLAnchorElement;

@@ -1,6 +1,6 @@
 import Component from "@glimmer/component";
-import { inject as service } from "@ember/service";
-import type { HermesDocument } from "hermes/types/document";
+import { service } from "@ember/service";
+import { HermesDocument } from "hermes/types/document";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import type { HermesDocumentType } from "hermes/types/document-type";
@@ -18,6 +18,14 @@ interface DocumentIndexComponentSignature {
 export default class DocumentIndexComponent extends Component<DocumentIndexComponentSignature> {
   @service declare authenticatedUser: AuthenticatedUserService;
   @tracked sidebarIsCollapsed = false;
+
+  /**
+   * Get user profile, returning a guest profile if user info is not loaded
+   * (e.g., when using Dex authentication without OIDC flow)
+   */
+  protected get profile() {
+    return this.authenticatedUser.info;
+  }
 
   @action protected toggleSidebarCollapsedState() {
     this.sidebarIsCollapsed = !this.sidebarIsCollapsed;

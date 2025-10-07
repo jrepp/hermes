@@ -1,10 +1,10 @@
 import Component from "@glimmer/component";
 import { action } from "@ember/object";
 import { tracked } from "@glimmer/tracking";
-import { inject as service } from "@ember/service";
-import type FetchService from "hermes/services/fetch";
-import type ConfigService from "hermes/services/config";
-import type AlgoliaService from "hermes/services/algolia";
+import { service } from "@ember/service";
+import FetchService from "hermes/services/fetch";
+import ConfigService from "hermes/services/config";
+import AlgoliaService from "hermes/services/algolia";
 import { restartableTask, task } from "ember-concurrency";
 import { next, schedule } from "@ember/runloop";
 import htmlElement from "hermes/utils/html-element";

@@ -2,7 +2,7 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { getOwner } from "@ember/application";
-import { inject as service } from "@ember/service";
+import { service } from "@ember/service";
 import {
   dropTask,
   enqueueTask,
@@ -20,8 +20,8 @@ import type SessionService from "hermes/services/session";
 import type { CustomEditableField } from "hermes/types/document";
 import type { HermesDocument } from "hermes/types/document";
 import { assert } from "@ember/debug";
-import type Route from "@ember/routing/route";
-import Ember from "ember";
+import Route from "@ember/routing/route";
+import { isTesting } from "@embroider/macros";
 import htmlElement from "hermes/utils/html-element";
 import type ConfigService from "hermes/services/config";
 import isValidURL from "hermes/utils/is-valid-u-r-l";
@@ -789,7 +789,7 @@ export default class DocumentSidebarComponent extends Component<DocumentSidebarC
    * Used to trigger the "link created" state of the share button.
    */
   protected showCreateLinkSuccessMessage = restartableTask(async () => {
-    await timeout(Ember.testing ? 0 : 1000);
+    await timeout(isTesting() ? 0 : 1000);
   });
 
   /**
@@ -847,7 +847,7 @@ export default class DocumentSidebarComponent extends Component<DocumentSidebarC
             },
           );
 
-          await Promise.all([fetchPromise, timeout(Ember.testing ? 0 : 300)]);
+          await Promise.all([fetchPromise, timeout(isTesting() ? 0 : 300)]);
 
           // With the animation done, we can now remove the button.
           this._docIsShareable = false;
@@ -1059,7 +1059,7 @@ export default class DocumentSidebarComponent extends Component<DocumentSidebarC
       if (!this.args.document.docNumber.endsWith("?")) {
         return;
       } else {
-        await timeout(Ember.testing ? 0 : 1000);
+        await timeout(isTesting() ? 0 : 1000);
       }
     }
 

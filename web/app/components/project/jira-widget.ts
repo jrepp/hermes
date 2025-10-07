@@ -1,7 +1,7 @@
 import { action } from "@ember/object";
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { inject as service } from "@ember/service";
+import { service } from "@ember/service";
 import { restartableTask } from "ember-concurrency";
 import type FetchService from "hermes/services/fetch";
 import type { JiraPickerResult } from "hermes/types/project";
