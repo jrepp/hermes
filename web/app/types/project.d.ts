@@ -4,8 +4,8 @@ import type {
 } from "hermes/components/related-resources";
 import type { ProjectStatus } from "./project-status";
 import { HermesDocument } from "./document";
-import type { AlgoliaHit } from "hermes/services/algolia";
-import type JiraIssueModel from "hermes/models/jira-issue";
+import { SearchHit } from "hermes/services/search";
+import JiraIssueModel from "hermes/models/jira-issue";
 
 export interface JiraPickerResult {
   key: string;
@@ -26,7 +26,7 @@ export interface HermesProjectInfo {
   products?: string[];
 }
 
-export type HermesProjectHit = HermesProjectInfo & AlgoliaHit;
+export type HermesProjectHit = HermesProjectInfo & SearchHit;
 
 export interface HermesProjectResources {
   hermesDocuments?: RelatedHermesDocument[];
