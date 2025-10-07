@@ -53,22 +53,20 @@ export default class StoreService extends Store {
 
       let promises: Promise<void | any>[] = [];
       let uniqueEmails: string[] = [];
-
-      // Remove duplicates - filter to only unique items
-      const seen = new Set();
-      const uniqueItems = emailsOrDocs.filter((item) => {
-        const key = typeof item === "string" ? item : (item as { id?: string })?.id;
-        if (seen.has(key)) {
-          return false;
-        }
-        seen.add(key);
-        return true;
-      });
+      
+      // Track seen input items to skip duplicates early (replaces deprecated .uniq())
+      const seenInputs = new Set<string | object>();
 
       uniqueItems.forEach((emailOrDoc) => {
         if (!emailOrDoc) {
           return;
         }
+
+        // Skip if we've already processed this exact input item
+        if (seenInputs.has(emailOrDoc)) {
+          return;
+        }
+        seenInputs.add(emailOrDoc);
 
         /**
          * Create a placeholder variable for the email address.
