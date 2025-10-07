@@ -17,24 +17,9 @@ export default class AuthenticateController extends Controller {
   }
 
   protected authenticate = dropTask(async () => {
-    if (!this.configSvc.config.skip_google_auth) {
-      // Google OAuth flow via Torii.
-      await this.session.authenticate(
-        "authenticator:torii",
-        "google-oauth2-bearer",
-      );
-      return;
-    }
-
-    if (!this.configSvc.config.skip_microsoft_auth) {
-      // SharePoint/Microsoft auth is backend-managed. The Go middleware will
-      // initiate the Microsoft login flow and handle the callback.
-      window.location.href = "/authenticate?init=true";
-      return;
-    }
-
-    console.error(
-      "Microsoft authentication is not properly configured. Missing one of clientId, tenantId, redirectUri.",
+    await this.session.authenticate(
+      "authenticator:custom-auth",
+      "google-oauth2-bearer"
     );
   });
 
