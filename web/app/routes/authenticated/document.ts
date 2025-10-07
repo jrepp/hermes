@@ -261,9 +261,7 @@ export default class AuthenticatedDocumentRoute extends Route {
     }
 
     // Load people into the store.
-    await this.store.maybeFetchPeople.perform(
-      peopleToMaybeFetch.filter(Boolean),
-    );
+    await this.store.maybeFetchPeople.perform(peopleToMaybeFetch.filter((item): item is string => item != null));
 
     return {
       doc: typedDoc,

@@ -1,6 +1,6 @@
 import Route from "@ember/routing/route";
 import { service } from "@ember/service";
-import AlgoliaService, { AlgoliaFacetsObject } from "hermes/services/algolia";
+import SearchService, { FacetsObject } from "hermes/services/search";
 import ConfigService from "hermes/services/config";
 import FetchService from "hermes/services/fetch";
 import AuthenticatedUserService from "hermes/services/authenticated-user";
@@ -14,7 +14,7 @@ import type FlashMessageService from "ember-cli-flash/services/flash-messages";
 import type StoreService from "hermes/services/store";
 
 export interface DraftResponseJSON {
-  facets: AlgoliaFacetsObject;
+  facets: FacetsObject;
   Hits: HermesDocument[];
   params: string;
   page: number;
@@ -31,7 +31,7 @@ interface AuthenticatedMyDocumentsRouteParams {
 export default class AuthenticatedMyDocumentsRoute extends Route {
   @service("fetch") declare fetchSvc: FetchService;
   @service("config") declare configSvc: ConfigService;
-  @service declare algolia: AlgoliaService;
+  @service declare search: SearchService;
   @service declare authenticatedUser: AuthenticatedUserService;
   @service declare flashMessages: FlashMessageService;
   @service declare store: StoreService;
@@ -104,10 +104,7 @@ export default class AuthenticatedMyDocumentsRoute extends Route {
             ? [`owners:${this.authenticatedUser.info?.email ?? ""}`]
             : undefined,
       }),
-      // Only fetch published docs when not showing archived drafts
-      params.showArchivedDrafts === true
-        ? Promise.resolve({ hits: [], nbPages: 0 })
-        : this.algolia.getDocResults.perform(
+      this.search.getDocResults.perform(
         searchIndex,
         {
           hitsPerPage: 100,
