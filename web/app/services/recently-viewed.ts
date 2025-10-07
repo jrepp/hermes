@@ -60,15 +60,8 @@ export default class RecentlyViewedService extends Service {
    * A potentially combined array of the ten most recently viewed docs and projects.
    */
   get index(): Array<RecentlyViewedDoc | RecentlyViewedProject> | undefined {
-    // Sort by viewedTime, reverse (newest first), and take top 10
-    // Native JS sort replacement for Ember 5.x (sortBy removed)
     return this._index
-      ?.slice()
-      .sort((a, b) => {
-        const aTime = a.viewedTime || 0;
-        const bTime = b.viewedTime || 0;
-        return bTime - aTime;
-      })
+      ?.sort((a, b) => (b.viewedTime || 0) - (a.viewedTime || 0))
       .slice(0, 10);
   }
 
@@ -157,15 +150,7 @@ export default class RecentlyViewedService extends Service {
       );
 
       // Update the local array to recompute the getter
-      // Filter out undefined/null values and archived drafts (compact replacement for Ember 5.x)
-      this._index = formattedItems.filter(
-        (item): item is RecentlyViewedDoc | RecentlyViewedProject => {
-          if (item === null || item === undefined) return false;
-          // Filter out archived drafts
-          if ('doc' in item && item.doc?.archived === true) return false;
-          return true;
-        }
-      );
+      this._index = formattedItems.filter((item): item is RecentlyViewedDoc | RecentlyViewedProject => item != null);
     } catch (e) {
       // Cause the dashboard to show an error message.
       this._index = null;

@@ -3,9 +3,9 @@ import { setupRenderingTest } from "ember-qunit";
 import { click, render, triggerEvent } from "@ember/test-helpers";
 import type { TestContext } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
+import { SIDEBAR_SECTION_HEADER_BUTTON, TOOLTIP } from "hermes/tests/helpers/selectors";
 
 const CONTAINER_SELECTOR = ".sidebar-section-header-container";
-const BUTTON_SELECTOR = "[data-test-sidebar-section-header-button]";
 
 interface Context extends TestContext {
   title: string;
@@ -51,12 +51,12 @@ module("Integration | Component | document/sidebar/header", function (hooks) {
       />
     `);
 
-    assert.dom(BUTTON_SELECTOR).exists().hasAttribute("aria-label", "Click me");
+    assert.dom(SIDEBAR_SECTION_HEADER_BUTTON).exists().hasAttribute("aria-label", "Click me");
     assert.dom(".flight-icon-plus").exists();
     assert.dom(".flight-icon-check").doesNotExist();
 
     // test that the action works
-    await click(BUTTON_SELECTOR);
+    await click(SIDEBAR_SECTION_HEADER_BUTTON);
     assert.dom(".flight-icon-plus").doesNotExist();
     assert.dom(".flight-icon-check").exists();
   });
@@ -78,23 +78,23 @@ module("Integration | Component | document/sidebar/header", function (hooks) {
       />
     `);
 
-    assert.dom(BUTTON_SELECTOR).doesNotHaveAttribute("aria-disabled");
+    assert.dom(SIDEBAR_SECTION_HEADER_BUTTON).doesNotHaveAttribute("aria-disabled");
 
     this.set("buttonIsDisabled", true);
 
-    assert.dom(BUTTON_SELECTOR).hasAttribute("aria-disabled");
+    assert.dom(SIDEBAR_SECTION_HEADER_BUTTON).hasAttribute("aria-disabled");
 
-    await triggerEvent(BUTTON_SELECTOR, "mouseenter");
+    await triggerEvent(SIDEBAR_SECTION_HEADER_BUTTON, "mouseenter");
 
     assert.dom(".hermes-tooltip").doesNotExist();
 
     this.set("disabledButtonTooltipText", "This is a tooltip");
 
-    await triggerEvent(BUTTON_SELECTOR, "mouseenter");
+    await triggerEvent(SIDEBAR_SECTION_HEADER_BUTTON, "mouseenter");
 
     assert.dom(".hermes-tooltip").exists().hasText("This is a tooltip");
 
-    await click(BUTTON_SELECTOR);
+    await click(SIDEBAR_SECTION_HEADER_BUTTON);
 
     assert.equal(
       count,

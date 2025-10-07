@@ -6,19 +6,17 @@ import { setupRenderingTest } from "ember-qunit";
 import { TEST_USER_EMAIL, authenticateTestUser } from "hermes/mirage/utils";
 import type { HermesDocument } from "hermes/types/document";
 import { module, test } from "qunit";
+import { PEOPLE_SELECT_REMOVE_BUTTON } from "hermes/tests/helpers/selectors";
 
+// Component-specific test selectors
 const EDITABLE_FIELD = ".editable-field";
 const FIELD_TOGGLE = ".field-toggle";
 const SAVING_SPINNER = `${EDITABLE_FIELD} [data-test-saving-spinner]`;
 const ERROR = "[data-test-empty-value-error]";
-
 const STRING_VALUE = "[data-test-string-value]";
 const PEOPLE_SELECT = "[data-test-people-select]";
-
 const SAVE_BUTTON = "[data-test-save-button";
 const CANCEL_BUTTON = "[data-test-cancel-button]";
-
-const REMOVE_USER_BUTTON = ".ember-power-select-multiple-remove-btn";
 const EDITABLE_PERSON = ".ember-power-select-multiple-option";
 
 interface EditableFieldComponentTestContext extends MirageTestContext {
@@ -255,7 +253,7 @@ module("Integration | Component | editable-field", function (hooks) {
 
     // Make a change
     await click(FIELD_TOGGLE);
-    await click(REMOVE_USER_BUTTON);
+    await click(PEOPLE_SELECT_REMOVE_BUTTON);
     await click(SAVE_BUTTON);
 
     assert.equal(count, 1, "onCommit has been called");
@@ -307,7 +305,7 @@ module("Integration | Component | editable-field", function (hooks) {
     // Cancel using Escape key
 
     await click(FIELD_TOGGLE);
-    await click(REMOVE_USER_BUTTON);
+    await click(PEOPLE_SELECT_REMOVE_BUTTON);
     await triggerKeyEvent("input", "keydown", "Escape");
 
     assert.dom(EDITABLE_FIELD).containsText("Me");
@@ -318,7 +316,7 @@ module("Integration | Component | editable-field", function (hooks) {
 
     // Cancel using the button
 
-    await click(REMOVE_USER_BUTTON);
+    await click(PEOPLE_SELECT_REMOVE_BUTTON);
     await click(CANCEL_BUTTON);
 
     assert.dom(EDITABLE_FIELD).containsText("Me");

@@ -117,13 +117,12 @@ export default class AuthenticatedUserService extends Service {
     ) => {
       let cached = [...this.subscriptions];
 
-      this.subscriptions = [
-        ...this.subscriptions,
-        {
-          productArea,
-          subscriptionType,
-        },
-      ];
+      let cached = this.subscriptions;
+
+      this.subscriptions.push({
+        productArea,
+        subscriptionType,
+      });
 
       try {
         await this.fetchSvc.fetch(
@@ -160,10 +159,10 @@ export default class AuthenticatedUserService extends Service {
         subscriptionToRemove,
       );
 
-      // Create a new array without the removed subscription so @tracked notices the change
-      this.subscriptions = this.subscriptions.filter(
-        (s) => s !== subscriptionToRemove,
-      );
+      const indexToRemove = this.subscriptions.indexOf(subscriptionToRemove);
+      if (indexToRemove > -1) {
+        this.subscriptions.splice(indexToRemove, 1);
+      }
 
       try {
         await this.fetchSvc.fetch(
