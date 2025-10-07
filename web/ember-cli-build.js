@@ -10,6 +10,24 @@ module.exports = function (defaults) {
   const autoprefixer = require('autoprefixer');
   
   let app = new EmberApp(defaults, {
+    // Code coverage configuration
+    'ember-cli-code-coverage': {
+      modifyAssetLocation: function(path) {
+        // Adjust path for coverage reports
+        return path.replace('hermes', '');
+      }
+    },
+    // Ember Auto Import configuration
+    autoImport: {
+      webpack: {
+        resolve: {
+          alias: {
+            // Explicitly resolve @ember/test-waiters for ember-app-scheduler
+            '@ember/test-waiters': require.resolve('@ember/test-waiters')
+          }
+        }
+      }
+    },
     minifyCSS: {
       enabled: false,
     },
