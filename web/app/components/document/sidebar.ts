@@ -1017,7 +1017,7 @@ export default class DocumentSidebarComponent extends Component<DocumentSidebarC
       this.toggleApproverVisibility();
       // Filter out undefined/null values (compact replacement for Ember 5.x)
       await this.patchDocument.perform({
-        approvers: this.approvers.filter(Boolean),
+        approvers: this.approvers.filter((item): item is string => item != null),
       });
 
       await this.fetchSvc.fetch(

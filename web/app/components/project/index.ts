@@ -257,10 +257,16 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
     const cachedDocuments = this.hermesDocuments.slice();
     const cachedLinks = this.externalLinks.slice();
 
-    if ("FileID" in doc) {
-      this.hermesDocuments = this.hermesDocuments.filter((d) => d !== doc);
+    if ("googleFileID" in doc) {
+      const index = this.hermesDocuments.indexOf(doc);
+      if (index > -1) {
+        this.hermesDocuments.splice(index, 1);
+      }
     } else {
-      this.externalLinks = this.externalLinks.filter((d) => d !== doc);
+      const index = this.externalLinks.indexOf(doc);
+      if (index > -1) {
+        this.externalLinks.splice(index, 1);
+      }
     }
 
     void this.saveProjectResources.perform(cachedDocuments, cachedLinks);
@@ -346,21 +352,22 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
     const cachedLinks = this.externalLinks.slice();
 
     if (resourceType === RelatedResourcesScope.Documents) {
-      const updatedDocs = this.hermesDocuments.slice();
-      const [removed] = updatedDocs.splice(currentIndex, 1);
-      assert("removed must exist", removed);
-      assert("removed must be a document", "FileID" in removed);
-      updatedDocs.splice(newIndex, 0, removed);
-      this.hermesDocuments = updatedDocs;
-      void this.saveProjectResources.perform(cachedDocuments, cachedLinks);
+      assert("removed must be a document", "googleFileID" in removed);
+      this.hermesDocuments.splice(newIndex, 0, removed);
+      void this.saveProjectResources.perform(
+        cached,
+        this.externalLinks.slice(),
+      );
     } else {
       const updatedLinks = this.externalLinks.slice();
       const [removed] = updatedLinks.splice(currentIndex, 1);
       assert("removed must exist", removed);
       assert("removed must be a link", "url" in removed);
-      updatedLinks.splice(newIndex, 0, removed);
-      this.externalLinks = updatedLinks;
-      void this.saveProjectResources.perform(cachedDocuments, cachedLinks);
+      this.externalLinks.splice(newIndex, 0, removed);
+      void this.saveProjectResources.perform(
+        this.hermesDocuments.slice(),
+        cached,
+      );
     }
   }
 
@@ -395,7 +402,7 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
   @action protected addDocument(resource: RelatedHermesDocument) {
     const cachedDocuments = this.hermesDocuments.slice();
 
-    this.hermesDocuments = [resource, ...this.hermesDocuments];
+    this.hermesDocuments.unshift(resource);
 
     void this.saveProjectResources.perform(
       cachedDocuments,
@@ -410,7 +417,7 @@ export default class ProjectIndexComponent extends Component<ProjectIndexCompone
   @action protected addLink(resource: RelatedExternalLink) {
     const cachedLinks = this.externalLinks.slice();
 
-    this.externalLinks = [resource, ...this.externalLinks];
+    this.externalLinks.unshift(resource);
 
     void this.saveProjectResources.perform(
       this.hermesDocuments.slice(),

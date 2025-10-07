@@ -71,8 +71,7 @@ export default class ProjectResourceComponent extends Component<ProjectResourceC
       canMoveDown ? moveToBottom : null,
     ];
 
-    // Filter out null values (compact replacement for Ember 5.x)
-    return items.filter(Boolean);
+    return items.filter(Boolean) as { label: MoveOptionLabel; icon: MoveOptionIcon; action: () => void; }[];
   }
 }
 

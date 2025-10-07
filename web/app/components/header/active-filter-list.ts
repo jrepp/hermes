@@ -26,8 +26,7 @@ export default class HeaderActiveFilterListComponent extends Component<HeaderAct
    * A flat array of active filters. Looped through in the template.
    */
   protected get shownFilters(): string[] {
-    // Filter out undefined/null values (compact replacement for Ember 5.x)
-    return Object.values(this.activeFilters.index).flat().filter(Boolean);
+    return Object.values(this.activeFilters.index).flat().filter((item): item is string => item != null);
   }
 }
 
