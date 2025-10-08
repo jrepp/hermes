@@ -14,15 +14,16 @@ export default class ApplicationAdapter extends JSONAdapter {
   }
 
   get headers() {
-    if (!this.configSvc.config.skip_google_auth) {
-      return {
-        "Hermes-Google-Access-Token":
-          this.session.data.authenticated.access_token,
-      };
+    // For Dex authentication, we don't need to send an access token
+    // (authentication is handled via session cookies)
+    const accessToken = this.session.data?.authenticated?.access_token;
+    
+    if (!accessToken) {
+      return {};
     }
-
+    
     return {
-      "Hermes-Access-Token": this.session.data.authenticated.access_token,
+      "Hermes-Google-Access-Token": accessToken,
     };
   }
 }
