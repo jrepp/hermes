@@ -12,9 +12,9 @@ import {
   RelatedResource,
 } from "hermes/components/related-resources";
 import isValidURL from "hermes/utils/is-valid-u-r-l";
-import type FetchService from "hermes/services/fetch";
-import type { XDropdownListAnchorAPI } from "hermes/components/x/dropdown-list";
-import type { SearchOptions } from "instantsearch.js";
+import FetchService from "hermes/services/fetch";
+import { XDropdownListAnchorAPI } from "hermes/components/x/dropdown-list";
+import { SearchOptions } from "hermes/services/search";
 import { RelatedResourcesScope } from "../related-resources";
 import { guidFor } from "@ember/object/internals";
 import type HermesFlashMessagesService from "hermes/services/flash-messages";
