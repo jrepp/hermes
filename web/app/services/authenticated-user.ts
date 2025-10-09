@@ -62,8 +62,10 @@ export default class AuthenticatedUserService extends Service {
    * in any route that needs it. On error, bubbles up to the application route.
    */
   loadInfo = task(async () => {
+    console.log('[AuthenticatedUser] 🔄 Starting loadInfo task...');
     try {
       // Fetch user info directly from the /me endpoint
+      console.log('[AuthenticatedUser] 📡 Fetching user info from /api/v2/me');
       const response = await fetch(
         `/api/${this.configSvc.config.api_version}/me`,
         {
@@ -72,15 +74,21 @@ export default class AuthenticatedUserService extends Service {
         },
       );
 
+      console.log('[AuthenticatedUser] 📬 Response status:', response.status, response.statusText);
+
       if (!response.ok) {
+        console.error('[AuthenticatedUser] ❌ Failed to fetch user info:', response.statusText);
         throw new Error(`Failed to fetch user info: ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('[AuthenticatedUser] 📦 User data received:', data);
 
       // Create or update the person record in the store
+      console.log('[AuthenticatedUser] 🔍 Looking for existing person record:', data.email);
       let person = this.store.peekRecord("person", data.email);
       if (!person) {
+        console.log('[AuthenticatedUser] ➕ Creating new person record');
         person = this.store.createRecord("person", {
           id: data.email,
           email: data.email,
@@ -89,6 +97,7 @@ export default class AuthenticatedUserService extends Service {
           picture: data.picture,
         });
       } else {
+        console.log('[AuthenticatedUser] ♻️ Updating existing person record');
         // Update existing record
         person.setProperties({
           name: data.name,
@@ -98,7 +107,9 @@ export default class AuthenticatedUserService extends Service {
       }
 
       this._info = person;
+      console.log('[AuthenticatedUser] ✅ User info loaded successfully:', person.email);
     } catch (e: unknown) {
+      console.error("[AuthenticatedUser] ❌ Error getting user information: ", e);
       throw e;
     }
   });

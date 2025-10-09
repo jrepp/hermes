@@ -22,13 +22,18 @@ export default class DashboardRoute extends Route {
   @service declare store: StoreService;
 
   async model(): Promise<HermesDocument[]> {
+    console.log('[DashboardRoute] 📊 model - Starting dashboard data load');
     const userInfo = this.authenticatedUser.info;
     
 
     // If user info is not loaded (e.g., Dex auth without OIDC), skip loading docs
     if (!userInfo) {
+      console.warn('[DashboardRoute] ⚠️ User info not loaded, returning empty array');
       return [];
     }
+
+    console.log('[DashboardRoute] 👤 User info available:', userInfo.email);
+    console.log('[DashboardRoute] 🔍 Searching for docs awaiting review...');
 
     const docsAwaitingReviewPromise = this.search.searchIndex
       .perform(this.configSvc.config.algolia_docs_index_name, "", {
@@ -38,7 +43,10 @@ export default class DashboardRoute extends Route {
           " AND appCreated:true" +
           " AND status:In-Review",
       })
-      .then((result) => result.hits as HermesDocument[]);
+      .then((result) => {
+        console.log('[DashboardRoute] ✅ Docs awaiting review loaded:', result.hits.length);
+        return result.hits as HermesDocument[];
+      });
 
     let promises: Promise<HermesDocument[] | void>[] = [
       docsAwaitingReviewPromise,
@@ -61,22 +69,44 @@ export default class DashboardRoute extends Route {
      *
      */
     if (this.latestDocs.index) {
+      console.log('[DashboardRoute] 📚 Latest docs already loaded, refetching in background');
       void this.latestDocs.fetchAll.perform();
     } else {
+      console.log('[DashboardRoute] 📚 Fetching latest docs for first time');
       promises.push(this.latestDocs.fetchAll.perform().then(() => {}));
     }
 
+    console.log('[DashboardRoute] 🕐 Fetching recently viewed items');
     promises.push(this.recentlyViewed.fetchAll.perform());
 
-    const [docsAwaitingReview] = await Promise.all(promises);
+    console.log('[DashboardRoute] ⏳ Waiting for all promises to resolve...');
+    
+    let docsAwaitingReview: HermesDocument[];
+    try {
+      const results = await Promise.all(promises);
+      docsAwaitingReview = results[0] || [];
+      console.log('[DashboardRoute] ✅ All dashboard data loaded');
+    } catch (error) {
+      console.error('[DashboardRoute] ❌ Error loading dashboard data:', error);
+      // Return empty array instead of hanging on error
+      // The individual services will handle displaying error states in the UI
+      return [];
+    }
 
     assert("docsAwaitingReview must exist", docsAwaitingReview);
 
     if (docsAwaitingReview.length > 0) {
-      // load owner information
-      await this.store.maybeFetchPeople.perform(docsAwaitingReview);
+      console.log('[DashboardRoute] 👥 Loading owner information for', docsAwaitingReview.length, 'documents');
+      try {
+        // load owner information
+        await this.store.maybeFetchPeople.perform(docsAwaitingReview);
+      } catch (error) {
+        console.error('[DashboardRoute] ⚠️ Failed to load owner info, continuing anyway:', error);
+        // Non-critical error, continue rendering dashboard
+      }
     }
 
+    console.log('[DashboardRoute] 🎉 Dashboard route model complete, returning', docsAwaitingReview.length, 'docs');
     return docsAwaitingReview;
   }
 

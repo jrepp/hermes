@@ -1,18 +1,8 @@
 import { task } from "ember-concurrency";
-// @ts-ignore - types not available for these packages
-import Store from "ember-data/store";
-// @ts-ignore - types not available
-import { 
-  LegacyNetworkHandler,
-  adapterFor,
-  serializerFor,
-  pushPayload,
-  normalize,
-  serializeRecord,
-  cleanup
-} from "@ember-data/legacy-compat";
-import type { HermesDocument } from "hermes/types/document";
-import type { RelatedHermesDocument } from "hermes/components/related-resources";
+import Store from "@ember-data/store";
+import { HermesDocument } from "hermes/types/document";
+import { RelatedHermesDocument } from "hermes/components/related-resources";
+import { withTimeout } from "hermes/utils/promise-timeout";
 
 export default class StoreService extends Store {
   // Legacy adapter/serializer support methods (required by LegacyNetworkHandler)
@@ -49,6 +39,7 @@ export default class StoreService extends Store {
         | Array<RelatedHermesDocument | undefined>
         | undefined,
     ) => {
+      console.log('[Store] 🔄 maybeFetchPeople starting, items:', emailsOrDocs?.length);
       if (!emailsOrDocs) return;
 
       let promises: Promise<void | any>[] = [];
@@ -107,17 +98,23 @@ export default class StoreService extends Store {
         /**
          * Queue a promise request to `/api/v2/person?emails=${email}`
          * to return a GoogleUser when resolved.
+         * Wrap with timeout to prevent indefinite hangs.
          */
         promises.push(
-          this.queryRecord("person", {
-            emails: email,
-          }).catch(() => {
+          withTimeout(
+            this.queryRecord("person", {
+              emails: email,
+            }),
+            15000, // 15 second timeout per person
+            `Fetching person record for ${email}`
+          ).catch((error) => {
             /**
              * Errors here are not necessarily indicative of a problem;
              * for example, we get a 404 if a once-valid user is no longer in
              * the directory. So we conditionally create a record for the email
              * to prevent future requests for the same email.
              */
+            console.warn(`[Store] ⚠️ Failed to fetch person ${email}:`, error.message);
             if (!email) return;
             const cachedRecord = this.peekRecord("person", email);
 
@@ -130,16 +127,22 @@ export default class StoreService extends Store {
           }),
           /**
            * Groups API doesn't have a `findRecord` equivalent, so we query instead.
+           * Wrap with timeout to prevent indefinite hangs.
            */
-          this.query("group", {
-            query: email,
-          }).catch(() => {
+          withTimeout(
+            this.query("group", {
+              query: email,
+            }),
+            15000, // 15 second timeout per group
+            `Fetching group record for ${email}`
+          ).catch((error) => {
             /**
              * Errors here are not necessarily indicative of a problem;
              * for example, we get a 404 if a once-valid user is no longer in
              * the directory. So we conditionally create a record for the email
              * to prevent future requests for the same email.
              */
+            console.warn(`[Store] ⚠️ Failed to fetch group ${email}:`, error.message);
             if (!email) return;
             const cachedRecord = this.peekRecord("group", email);
 
@@ -153,7 +156,14 @@ export default class StoreService extends Store {
         );
       });
 
-      await Promise.all(promises);
+      console.log('[Store] 📡 Awaiting', promises.length, 'API requests...');
+      try {
+        await Promise.all(promises);
+        console.log('[Store] ✅ maybeFetchPeople complete');
+      } catch (error) {
+        console.error('[Store] ❌ Error in maybeFetchPeople:', error);
+        // Don't throw - this is non-critical, we've already handled individual errors
+      }
     },
   );
 }

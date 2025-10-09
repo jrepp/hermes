@@ -117,12 +117,14 @@ export default class ProductAreasService extends Service {
    * Stores the response in the `_index` property.
    */
   fetch = task(async () => {
+    console.log('[ProductAreas] 🏭 Fetching product areas...');
     try {
       this._index = await this.fetchSvc
         .fetch(`/api/${this.configSvc.config.api_version}/products`)
         .then((resp) => resp?.json());
+      console.log('[ProductAreas] ✅ Product areas loaded:', Object.keys(this._index || {}).length, 'products');
     } catch (err) {
-      // fetch error
+      console.error('[ProductAreas] ❌ Error fetching product areas:', err);
       this._index = null;
       throw err;
     }
