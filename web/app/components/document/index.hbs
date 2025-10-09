@@ -28,111 +28,13 @@
       class="flex h-full items-center justify-center"
     >
       {{#unless @modelIsChanging}}
-        {{!
-          We teardown and rebuild the iframe when the model is changing
-          so that any SRC changes don't add history entries,
-          which would cause the back button to break.
-        }}
-        {{#if this.isSharePointDocument}}
-          {{! SharePoint document - try embedding with Office Online }}
-          <iframe
-          id="doc-frame"
-          width="100%"
-          height="100%"
-          src={{this.webUrl}}
-          sandbox="allow-scripts allow-same-origin allow-top-navigation allow-popups allow-forms"
-          style="border: none;"
-          >
-        </iframe>
-
-        {{!-- Fallback content if iframe fails to load --}}
-        <div id="iframe-fallback" style="display: none; padding: 20px; text-align: center;">
-          <h3>Document Viewer</h3>
-          <p>Unable to embed document. <a href={{this.webUrl}} target="_blank" rel="noopener noreferrer">Open in new tab</a></p>
-
-          {{!-- Additional Office Online fallback options --}}
-          {{#if this.isSharePointDocument}}
-            <div style="margin-top: 15px;">
-              <p>Alternative viewing options:</p>
-              <div style="margin: 10px 0;">
-                <button type="button" onclick="window.tryOfficeOnlineEmbed()"
-                        style="margin: 5px; padding: 10px 15px; background: #0078d4; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                  Try Office Online
-                </button>
-                <button type="button"
-                        onclick="window.open('{{this.sharepointDirectUrl}}', '_blank', 'noopener,noreferrer')"
-                        style="margin: 5px; padding: 10px 15px; background: #107c10; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                  Open in SharePoint
-                </button>
-              </div>
-            </div>
-          {{/if}}
-        </div>
-
-        <script>
-          (function() {
-            const iframe = document.getElementById('doc-frame');
-            const fallback = document.getElementById('iframe-fallback');
-            let fallbackShown = false;
-            
-            // Set up fallback timer
-            const fallbackTimer = setTimeout(() => {
-              if (!fallbackShown) {
-                console.log('Document iframe load timeout - showing fallback');
-                iframe.style.display = 'none';
-                fallback.style.display = 'block';
-                fallbackShown = true;
-              }
-            }, 15000); // 15 second timeout
-            
-            // Handle successful load
-            iframe.onload = function() {
-              console.log('Document iframe loaded successfully');
-              clearTimeout(fallbackTimer);
-              
-              // Check if iframe content is accessible (not blocked by CORS)
-              try {
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                if (!iframeDoc || iframeDoc.body.innerHTML.trim() === '') {
-                  throw new Error('Empty iframe content');
-                }
-                console.log('Document content verified');
-              } catch (e) {
-                console.warn('Document iframe may be blocked by CORS:', e.message);
-                // Don't show fallback immediately for CORS issues, 
-                // as the document might still be loading properly
-              }
-            };
-            
-            // Handle load errors
-            iframe.onerror = function() {
-              console.error('Document iframe failed to load');
-              clearTimeout(fallbackTimer);
-              if (!fallbackShown) {
-                iframe.style.display = 'none';
-                fallback.style.display = 'block';
-                fallbackShown = true;
-              }
-            };
-            
-            // Global helper functions for fallback buttons
-            window.tryOfficeOnlineEmbed = function() {
-              // For embedding, we use the Office Online viewer with the web URL
-              const webUrl = '{{this.webUrl}}';
-
-              // Construct the Office Online embed URL using the webUrl
-              const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(webUrl)}`;
-              iframe.src = officeUrl;
-              iframe.style.display = 'block';
-              fallback.style.display = 'none';
-              fallbackShown = false;
-              console.log('Trying Office Online embed:', officeUrl);
-            };
-
-          })();
-        </script>
-        {{else}}
-          {{! Google Drive document - show iframe }}
+        {{! Google Workspace: Show iframe }}
+        {{#if this.isGoogleWorkspace}}
+          {{!
+            We teardown and rebuild the iframe when the model is changing
+            so that any SRC changes don't add history entries,
+            which would cause the back button to break.
+          }}
           <iframe
             title="Google Doc"
             height="100%"
@@ -141,6 +43,75 @@
             src="https://docs.google.com/document/d/{{@document.objectID}}/edit?embedded=true"
           >
           </iframe>
+        {{/if}}
+
+        {{! Local Workspace: Show text editor }}
+        {{#if this.isLocalWorkspace}}
+          <div class="flex h-full w-full flex-col p-6">
+            {{#if this.isEditMode}}
+              {{! Edit Mode }}
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-xl font-semibold">Edit Document</h2>
+                <div class="flex gap-3">
+                  <Hds::Button
+                    @text="Cancel"
+                    @color="secondary"
+                    {{on "click" this.cancelEdit}}
+                    disabled={{this.isSavingContent}}
+                  />
+                  <Hds::Button
+                    @text={{if this.isSavingContent "Saving..." "Save"}}
+                    @color="primary"
+                    {{on "click" this.saveDocumentContent}}
+                    disabled={{this.isSavingContent}}
+                  />
+                </div>
+              </div>
+              
+              {{#if this.isLoadingContent}}
+                <div class="flex h-full items-center justify-center">
+                  <Hds::ApplicationState
+                    @title="Loading document content..."
+                  >
+                    <:media>
+                      <Hds::ApplicationState::Media as |M|>
+                        <M.Loader />
+                      </Hds::ApplicationState::Media>
+                    </:media>
+                  </Hds::ApplicationState>
+                </div>
+              {{else}}
+                <textarea
+                  class="flex-1 w-full rounded border border-gray-300 p-4 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  placeholder="Enter document content..."
+                  value={{this.documentContent}}
+                  {{on "input" this.updateContent}}
+                  disabled={{this.isSavingContent}}
+                ></textarea>
+              {{/if}}
+            {{else}}
+              {{! Read-Only Mode }}
+              <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-xl font-semibold">{{@document.title}}</h2>
+                <Hds::Button
+                  @text="Edit"
+                  @color="primary"
+                  {{on "click" this.toggleEditMode}}
+                />
+              </div>
+              
+              <div class="flex-1 overflow-auto rounded border border-gray-300 bg-gray-50 p-6">
+                <div class="prose max-w-none">
+                  <p class="text-gray-600">
+                    Click "Edit" to modify this document's content.
+                  </p>
+                  <p class="mt-4 text-sm text-gray-500">
+                    This document is stored in the local workspace. You can edit it directly in the browser.
+                  </p>
+                </div>
+              </div>
+            {{/if}}
+          </div>
         {{/if}}
       {{/unless}}
     </Hds::Card::Container>

@@ -3,8 +3,12 @@ import { service } from "@ember/service";
 import { HermesDocument } from "hermes/types/document";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
-import type { HermesDocumentType } from "hermes/types/document-type";
-import type AuthenticatedUserService from "hermes/services/authenticated-user";
+import { HermesDocumentType } from "hermes/types/document-type";
+import AuthenticatedUserService from "hermes/services/authenticated-user";
+import ConfigService from "hermes/services/config";
+import FetchService from "hermes/services/fetch";
+import RouterService from "@ember/routing/router-service";
+import HermesFlashMessagesService from "hermes/services/flash-messages";
 
 interface DocumentIndexComponentSignature {
   Args: {
@@ -17,7 +21,16 @@ interface DocumentIndexComponentSignature {
 
 export default class DocumentIndexComponent extends Component<DocumentIndexComponentSignature> {
   @service declare authenticatedUser: AuthenticatedUserService;
+  @service("config") declare configSvc: ConfigService;
+  @service("fetch") declare fetchSvc: FetchService;
+  @service declare router: RouterService;
+  @service declare flashMessages: HermesFlashMessagesService;
+  
   @tracked sidebarIsCollapsed = false;
+  @tracked documentContent = "";
+  @tracked isLoadingContent = false;
+  @tracked isSavingContent = false;
+  @tracked isEditMode = false;
 
   /**
    * Get user profile, returning a guest profile if user info is not loaded
@@ -27,51 +40,88 @@ export default class DocumentIndexComponent extends Component<DocumentIndexCompo
     return this.authenticatedUser.info;
   }
 
+  /**
+   * Check if we're using local workspace (which supports text editing)
+   */
+  protected get isLocalWorkspace() {
+    return this.configSvc.config.workspace_provider === "local";
+  }
+
+  /**
+   * Check if we're using Google workspace (which uses iframe)
+   */
+  protected get isGoogleWorkspace() {
+    return this.configSvc.config.workspace_provider === "google";
+  }
+
   @action protected toggleSidebarCollapsedState() {
     this.sidebarIsCollapsed = !this.sidebarIsCollapsed;
   }
 
-  /**
-   * Check if the document is from SharePoint (has FileID or webUrl contains sharepoint.com)
-   */
-  get isSharePointDocument(): boolean {
-    const doc = this.args.document as any;
-    if ("FileID" in doc && doc.FileID) {
-      return true;
+  @action protected async loadDocumentContent() {
+    if (!this.isLocalWorkspace) return;
+    
+    this.isLoadingContent = true;
+    try {
+      const response = await this.fetchSvc.fetch(
+        `/api/${this.configSvc.config.api_version}/documents/${this.args.document.objectID}/content`,
+        { method: "GET" }
+      );
+      const data = await response?.json();
+      this.documentContent = data.content || "";
+    } catch (error) {
+      this.flashMessages.critical("Failed to load document content", {
+        title: "Error",
+      });
+      console.error("Error loading document content:", error);
+    } finally {
+      this.isLoadingContent = false;
     }
-    if ("webUrl" in doc && doc.webUrl) {
-      try {
-        const url = new URL(doc.webUrl);
-        return url.hostname.endsWith('.sharepoint.com') || url.hostname === 'sharepoint.com';
-      } catch {
-        return false;
-      }
-    }
-    return false;
   }
 
-  /**
-   * Get the current webUrl for the document
-   */
-  get webUrl(): string {
-    const doc = this.args.document as any;
-    return ("webUrl" in doc && doc.webUrl) ? doc.webUrl : '';
+  @action protected async saveDocumentContent() {
+    if (!this.isLocalWorkspace) return;
+    
+    this.isSavingContent = true;
+    try {
+      await this.fetchSvc.fetch(
+        `/api/${this.configSvc.config.api_version}/documents/${this.args.document.objectID}/content`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content: this.documentContent }),
+        }
+      );
+      
+      this.flashMessages.success("Document saved successfully");
+      this.isEditMode = false;
+    } catch (error) {
+      this.flashMessages.critical("Failed to save document", {
+        title: "Error",
+      });
+      console.error("Error saving document content:", error);
+    } finally {
+      this.isSavingContent = false;
+    }
   }
 
-  /**
-   * Get the direct SharePoint URL for opening the document directly in SharePoint
-   * This returns the directEditURL if available, or falls back to webUrl
-   */
-  get sharepointDirectUrl(): string {
-    const doc = this.args.document as any;
-
-    // Check for directEditURL first (note the uppercase URL - matches the backend naming)
-    if ("directEditURL" in doc && doc.directEditURL) {
-      return doc.directEditURL;
+  @action protected toggleEditMode() {
+    if (!this.isEditMode) {
+      this.loadDocumentContent();
     }
+    this.isEditMode = !this.isEditMode;
+  }
 
-    // Fall back to webUrl if directEditURL is not available
-    return ("webUrl" in doc && doc.webUrl) ? doc.webUrl : '';
+  @action protected cancelEdit() {
+    this.isEditMode = false;
+    this.documentContent = "";
+  }
+
+  @action protected updateContent(event: Event) {
+    const target = event.target as HTMLTextAreaElement;
+    this.documentContent = target.value;
   }
 }
 
