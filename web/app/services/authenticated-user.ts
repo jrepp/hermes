@@ -3,11 +3,10 @@ import { tracked } from "@glimmer/tracking";
 import { service } from "@ember/service";
 import { assert } from "@ember/debug";
 import { task } from "ember-concurrency";
-import type ConfigService from "hermes/services/config";
-import type FetchService from "hermes/services/fetch";
-import type SessionService from "./session";
-import type StoreService from "./store";
-import type PersonModel from "hermes/models/person";
+import FetchService from "hermes/services/fetch";
+import SessionService from "./session";
+import StoreService from "./store";
+import PersonModel from "hermes/models/person";
 
 export interface Subscription {
   productArea: string;
@@ -20,7 +19,6 @@ enum SubscriptionType {
 }
 
 export default class AuthenticatedUserService extends Service {
-  @service("config") declare configSvc: ConfigService;
   @service("fetch") declare fetchSvc: FetchService;
   @service declare session: SessionService;
   @service declare store: StoreService;
@@ -67,7 +65,7 @@ export default class AuthenticatedUserService extends Service {
       // Fetch user info directly from the /me endpoint
       console.log('[AuthenticatedUser] 📡 Fetching user info from /api/v2/me');
       const response = await fetch(
-        `/api/${this.configSvc.config.api_version}/me`,
+        "/api/v2/me",
         {
           method: "GET",
           credentials: "include", // Include session cookies for Dex auth
@@ -121,7 +119,7 @@ export default class AuthenticatedUserService extends Service {
   fetchSubscriptions = task(async () => {
     try {
       let subscriptions = await this.fetchSvc
-        .fetch(`/api/${this.configSvc.config.api_version}/me/subscriptions`, {
+        .fetch("/api/v2/me/subscriptions", {
           method: "GET",
         })
         .then((response) => response?.json());
@@ -162,7 +160,7 @@ export default class AuthenticatedUserService extends Service {
 
       try {
         await this.fetchSvc.fetch(
-          `/api/${this.configSvc.config.api_version}/me/subscriptions`,
+          "/api/v2/me/subscriptions",
           {
             method: "POST",
             headers: this.subscriptionsPostHeaders,
@@ -202,7 +200,7 @@ export default class AuthenticatedUserService extends Service {
 
       try {
         await this.fetchSvc.fetch(
-          `/api/${this.configSvc.config.api_version}/me/subscriptions`,
+          "/api/v2/me/subscriptions",
           {
             method: "POST",
             headers: this.subscriptionsPostHeaders,
