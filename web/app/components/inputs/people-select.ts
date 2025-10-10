@@ -89,141 +89,55 @@ export default class InputsPeopleSelectComponent extends Component<InputsPeopleS
     }
   }
 
-  @action
-  onFocus() {
-    // Show dropdown on focus if there's a query
-    if (this.searchQuery.trim().length > 0) {
-      this.showDropdown = true;
-    }
-  }
-
-  @action
-  onBlur() {
-    // Delay to allow click events to fire
-    setTimeout(() => {
-      this.showDropdown = false;
-      // Clear search query when dropdown closes
-      this.searchQuery = "";
-      this.searchResults = [];
-    }, 200);
-  }
-
-  @action
-  onKeyDown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
-      this.showDropdown = false;
-      this.searchQuery = "";
-      this.focusedIndex = -1;
-    } else if (event.key === "ArrowDown") {
-      event.preventDefault();
-      if (this.showDropdown && this.searchResults.length > 0) {
-        this.focusedIndex = Math.min(
-          this.focusedIndex + 1,
-          this.searchResults.length - 1
-        );
-        this.scrollToFocusedOption();
-      }
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      if (this.showDropdown && this.searchResults.length > 0) {
-        this.focusedIndex = Math.max(this.focusedIndex - 1, 0);
-        this.scrollToFocusedOption();
-      }
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      const selectedOption = this.searchResults[this.focusedIndex];
-      if (this.focusedIndex >= 0 && selectedOption) {
-        this.selectOption(selectedOption);
-      }
-    }
-  }
-
-  @action
-  async performSearch() {
-    const query = this.searchQuery.trim();
-    if (!query) {
-      this.searchResults = [];
-      this.focusedIndex = -1;
+  /**
+   * A task that queries the server for people matching the given query.
+   * Used as the `search` action for the `ember-power-select` component.
+   * Sets `this.people` to the results of the query.
+   * Includes a 250ms debounce to prevent rapid cancellations from quick typing.
+   */
+  protected searchDirectory = restartableTask(async (query: string) => {
+    console.log('[PeopleSelect] 🔍 searchDirectory task started', { query, includeGroups: this.args.includeGroups, hasStore: !!this.store });
+    
+    // Debounce: wait 250ms before starting the search to prevent rapid cancellations
+    console.log('[PeopleSelect] ⏱️ Debouncing for 250ms...');
+    await timeout(250);
+    console.log('[PeopleSelect] ✅ Debounce complete, proceeding with search');
+    
+    if (!this.store) {
+      console.error('[PeopleSelect] ❌ ERROR: this.store is undefined!');
       return;
     }
-
-    this.isSearching = true;
-
-    try {
-      const results = await this.doDirectorySearch(query);
-      this.searchResults = results;
-      this.focusedIndex = -1;
-    } catch (error) {
-      this.searchResults = [];
-      this.focusedIndex = -1;
-    } finally {
-      this.isSearching = false;
-    }
-  }
-
-  @action
-  selectOption(email: string) {
-    const newSelected = [...this.args.selected, email];
-    this.args.onChange(newSelected);
     
-    // Clear search and close dropdown
-    this.searchQuery = "";
-    this.searchResults = [];
-    this.showDropdown = false;
-    this.focusedIndex = -1;
-  }
-
-  @action
-  removeSelection(email: string) {
-    const newSelected = this.args.selected.filter(e => e !== email);
-    this.args.onChange(newSelected);
-  }
-
-  @action
-  onMouseEnter(index: number) {
-    this.focusedIndex = index;
-  }
-
-  private scrollToFocusedOption() {
-    // Scroll the focused option into view
-    const dropdown = this.dropdownElement;
-    const focusedOption = dropdown?.querySelector(`[data-option-index="${this.focusedIndex}"]`);
-    if (focusedOption && dropdown) {
-      const dropdownRect = dropdown.getBoundingClientRect();
-      const optionRect = focusedOption.getBoundingClientRect();
-      
-      if (optionRect.bottom > dropdownRect.bottom) {
-        focusedOption.scrollIntoView({ block: 'nearest' });
-      } else if (optionRect.top < dropdownRect.top) {
-        focusedOption.scrollIntoView({ block: 'nearest' });
-      }
-    }
-  }
-
-  private async doDirectorySearch(query: string): Promise<string[]> {
     for (let i = 0; i < MAX_RETRIES; i++) {
       let retryDelay = INITIAL_RETRY_DELAY;
+
+      let p: string[] = [];
+      let g: string[] = [];
+
+      /**
+       * WORKAROUND: Directly call adapter methods instead of Store.query()
+       * to avoid Ember Data 4.12 RequestManager initialization issues.
+       * See web/app/services/_store.ts maybeFetchPeople for same workaround.
+       */
+      const personAdapter = this.store.adapterFor("person" as never) as any;
+      
+      const promises = [
+        personAdapter.query(this.store, this.store.modelFor("person"), { query }),
+      ];
 
       try {
         let promises: Promise<any>[] = [this.store.query("person", { query })];
 
         if (this.args.includeGroups) {
-          promises.push(this.store.query("group", { query }));
+          const groupAdapter = this.store.adapterFor("group" as never) as any;
+          promises.push(groupAdapter.query(this.store, this.store.modelFor("group"), { query }));
         }
 
-        const results = await Promise.allSettled(promises);
-        const peopleResult = results[0];
-        const groupsResult = results[1];
-
-        if (!peopleResult || peopleResult.status === "rejected") {
-          throw peopleResult?.reason ?? new Error("Unable to search people");
-        }
-
-        const people = peopleResult.value;
-        const groups = groupsResult?.status === "fulfilled" ? groupsResult.value : undefined;
-
-        let p: string[] = [];
-        let g: string[] = [];
+        const [peopleResponse, groupsResponse] = await Promise.all(promises);
+        
+        // Unwrap adapter responses (adapters return { results: [...] })
+        const people = peopleResponse?.results;
+        const groups = groupsResponse?.results;
 
         if (people) {
           p = people
@@ -233,7 +147,7 @@ export default class InputsPeopleSelectComponent extends Component<InputsPeopleS
               return !this.args.selected.includes(email);
             })
             .filter((email: string) => {
-              // Filter out authenticated user if excludeSelf is true
+              // filter the authenticated user if `excludeSelf` is true
               return (
                 !this.args.excludeSelf ||
                 email !== this.authenticatedUser.info?.email
@@ -247,17 +161,29 @@ export default class InputsPeopleSelectComponent extends Component<InputsPeopleS
               const name = group.name.toLowerCase();
               return !name.includes("departed") && !name.includes("terminated");
             })
-            .map((group: GroupModel) => group.email)
+            .map((g: GroupModel) => g.email)
             .filter((email: string) => {
-              return !this.args.selected.includes(email);
+              // Filter out any people already selected
+              return !this.args.selected.find(
+                (selectedEmail) => selectedEmail === email,
+              );
             });
         }
 
-        // Concatenate and sort
-        return [...p, ...g].sort((a, b) => a.localeCompare(b));
-      } catch (error) {
+        // Concatenate and sort alphabetically
+        this.options = [...p, ...g].sort((a, b) => a.localeCompare(b));
+        console.log('[PeopleSelect] ✅ Search complete', { totalResults: this.options.length, people: p.length, groups: g.length });
+
+        // Stop the loop if the query was successful
+        return;
+      } catch (e) {
+        console.error('[PeopleSelect] ❌ Error on attempt', i + 1, ':', e);
+        // Throw an error if this is the last retry.
         if (i === MAX_RETRIES - 1) {
-          throw error;
+          console.error(`[PeopleSelect] 💥 All retries exhausted. Final error: ${e}`);
+          throw e;
+        } else {
+          console.log('[PeopleSelect] 🔄 Retrying after', retryDelay, 'ms delay...');
         }
 
         // Wait and retry
@@ -265,9 +191,8 @@ export default class InputsPeopleSelectComponent extends Component<InputsPeopleS
         retryDelay *= 2;
       }
     }
-
-    return [];
-  }
+    console.log('[PeopleSelect] 🏁 searchDirectory task completed');
+  });
 }
 
 declare module "@glint/environment-ember-loose/registry" {

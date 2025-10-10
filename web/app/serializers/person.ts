@@ -42,6 +42,7 @@ export default class PersonSerializer extends JSONSerializer {
     _id: string | number,
     requestType: string,
   ) {
+    console.log('[PersonSerializer] 🔄 normalizeResponse called', { requestType, payload });
     const type = "person";
 
     if (requestType === "query") {
@@ -51,12 +52,24 @@ export default class PersonSerializer extends JSONSerializer {
        * If the results are `null`, return an empty array to show
        * the "No results found" message in the PeopleSelect.
        */
-      if (!payload.results) return { data: [] };
+      if (!payload.results) {
+        console.log('[PersonSerializer] ⚠️ No results in payload, returning empty array');
+        return { data: [] };
+      }
 
-      const people = payload.results
-        .map((p) => this.normalizePerson(p, type))
-        .filter(Boolean);
-
+      const people = payload.results.map((p) => {
+        return {
+          id: p.emailAddresses[0]?.value,
+          type,
+          attributes: {
+            name: p.names[0]?.displayName,
+            firstName: p.names[0]?.givenName,
+            email: p.emailAddresses[0]?.value,
+            picture: p.photos[0]?.url,
+          },
+        };
+      });
+      console.log('[PersonSerializer] ✅ Returning normalized people data', { count: people.length, people });
       return { data: people };
     } else if (requestType === "queryRecord") {
       assert(
