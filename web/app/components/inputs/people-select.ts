@@ -120,6 +120,7 @@ export default class InputsPeopleSelectComponent extends Component<InputsPeopleS
        * See web/app/services/_store.ts maybeFetchPeople for same workaround.
        */
       const personAdapter = this.store.adapterFor("person" as never) as any;
+      const personSerializer = this.store.serializerFor("person" as never) as any;
       
       const promises = [
         personAdapter.query(this.store, this.store.modelFor("person"), { query }),
@@ -135,13 +136,64 @@ export default class InputsPeopleSelectComponent extends Component<InputsPeopleS
 
         const [peopleResponse, groupsResponse] = await Promise.all(promises);
         
+        // Push person records through serializer to add them to the store
+        if (peopleResponse?.results && peopleResponse.results.length > 0) {
+          console.log('[PeopleSelect] 📥 Processing person results', { count: peopleResponse.results.length, results: peopleResponse.results });
+          peopleResponse.results.forEach((personData: any) => {
+            const email = personData.emailAddresses?.[0]?.value;
+            console.log('[PeopleSelect] 👤 Processing person data', { email, personData });
+            if (email) {
+              // Create or update the person record in the store
+              const pushData = {
+                data: {
+                  id: email,
+                  type: "person",
+                  attributes: {
+                    name: personData.names?.[0]?.displayName || "",
+                    firstName: personData.names?.[0]?.givenName || "",
+                    email: email,
+                    picture: personData.photos?.[0]?.url || "",
+                  },
+                },
+              };
+              console.log('[PeopleSelect] 💾 Pushing to store', { pushData });
+              this.store.push(pushData);
+              
+              // Verify the record was added
+              const record = this.store.peekRecord("person", email);
+              console.log('[PeopleSelect] 🔍 Peek after push', { email, record, recordExists: !!record, recordData: record ? { name: record.get('name'), email: record.get('email') } : null });
+            }
+          });
+        }
+        
+        // Push group records through serializer if groups are included
+        if (groupsResponse?.results && groupsResponse.results.length > 0) {
+          groupsResponse.results.forEach((groupData: any) => {
+            const email = groupData.email;
+            if (email) {
+              // Create or update the group record in the store
+              this.store.push({
+                data: {
+                  id: email,
+                  type: "group",
+                  attributes: {
+                    name: groupData.name || "",
+                    email: email,
+                  },
+                },
+              });
+            }
+          });
+        }
+        
         // Unwrap adapter responses (adapters return { results: [...] })
         const people = peopleResponse?.results;
         const groups = groupsResponse?.results;
 
         if (people) {
           p = people
-            .map((person: PersonModel) => person.email)
+            .map((p: any) => p.emailAddresses?.[0]?.value)
+            .filter((email: string | undefined) => !!email) // Filter out undefined emails
             .filter((email: string) => {
               // Filter out already selected
               return !this.args.selected.includes(email);
@@ -172,7 +224,14 @@ export default class InputsPeopleSelectComponent extends Component<InputsPeopleS
 
         // Concatenate and sort alphabetically
         this.options = [...p, ...g].sort((a, b) => a.localeCompare(b));
-        console.log('[PeopleSelect] ✅ Search complete', { totalResults: this.options.length, people: p.length, groups: g.length });
+        console.log('[PeopleSelect] ✅ Search complete', { totalResults: this.options.length, people: p.length, groups: g.length, options: this.options });
+        
+        // Verify all options can be found in store
+        this.options.forEach((email) => {
+          const personRecord = this.store.peekRecord("person", email);
+          const groupRecord = this.store.peekRecord("group", email);
+          console.log('[PeopleSelect] 🔎 Option verification', { email, personRecord: !!personRecord, groupRecord: !!groupRecord, personName: personRecord?.get('name'), groupName: groupRecord?.get('name') });
+        });
 
         // Stop the loop if the query was successful
         return;
