@@ -19,15 +19,10 @@ Hermes uses Ember CLI for building and development. This guide covers build conf
 ```bash
 cd web
 
-# Option 1: With Mirage (mocked API)
+# With backend proxy (recommended for integration testing)
 yarn start
 # Runs on http://localhost:4200
-# Uses mirage/config.ts for API mocking
-
-# Option 2: With backend proxy (recommended for integration testing)
-yarn start:with-proxy
-# Runs on http://localhost:4201
-# Proxies API requests to http://127.0.0.1:8001
+# Proxies API requests to ${HERMES_API_URL:-http://localhost:8001}
 ```
 
 ### Dev Server Configuration
@@ -372,9 +367,9 @@ docker compose up -d dex meilisearch
 
 # Terminal 2: Start frontend
 cd web
-yarn start:with-proxy
+yarn start
 
-# Visit http://localhost:4201 in browser
+# Visit http://localhost:4200 in browser
 ```
 
 ### Hot Reloading
@@ -604,7 +599,7 @@ module.exports = function (defaults) {
 
 ### ✅ DO
 
-- Use `yarn start:with-proxy` for integration testing with backend
+- Use `yarn start` for integration testing with backend (set HERMES_API_URL if needed)
 - Run `yarn build` before committing to catch build errors
 - Keep `ember-cli-build.js` configuration minimal
 - Use environment variables for deployment-specific config

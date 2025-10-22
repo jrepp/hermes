@@ -125,13 +125,13 @@ docker compose ps hermes
 docker compose logs hermes
 ```
 
-### Tests can't reach localhost:4201
+### Tests can't reach localhost:4200
 ```bash
 # Check web container
 docker compose ps web
 # Or if using local Ember dev server
 cd ../web
-MIRAGE_ENABLED=false yarn start:with-proxy
+yarn start
 ```
 
 ### Clear test state

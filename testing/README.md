@@ -86,7 +86,7 @@ cd .. && ./hermes server -config=testing/config.hcl
 
 # In another terminal: Run web dev server
 cd web
-yarn start:with-proxy
+yarn start
 
 # Validate setup
 make canary

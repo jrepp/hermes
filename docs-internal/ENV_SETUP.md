@@ -384,7 +384,7 @@ make docker/postgres/start
 export $(cat .env | xargs) && ./hermes server -config=config.hcl
 
 # In terminal 2: Start frontend
-cd web && yarn start:with-proxy
+cd web && yarn start
 ```
 
 ## Security Best Practices

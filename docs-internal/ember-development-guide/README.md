@@ -17,7 +17,7 @@ This guide provides comprehensive best practices and patterns for developing the
 cd web
 yarn install              # Install dependencies
 yarn test:types           # Check TypeScript types
-yarn start:with-proxy     # Start dev server with backend proxy
+yarn start                # Start dev server with backend proxy
 ```
 
 ### Guide Contents
@@ -131,7 +131,7 @@ make docker/postgres/start
 ./hermes server -config=config.hcl
 
 # Terminal 2: Frontend (from web/)
-yarn start:with-proxy  # http://localhost:4201
+yarn start  # http://localhost:4200
 ```
 
 ### Before Committing
@@ -212,8 +212,7 @@ yarn validate       # Runs: test:types + test:lint + test:build
 
 ```bash
 # Development
-yarn start                    # Dev server (Mirage enabled)
-yarn start:with-proxy         # Dev server (proxy to backend)
+yarn start                    # Dev server (proxy to backend via HERMES_API_URL)
 
 # Testing
 yarn test                     # Full test suite

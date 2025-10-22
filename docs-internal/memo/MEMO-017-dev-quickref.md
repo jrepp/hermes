@@ -103,11 +103,10 @@ docker compose up -d
 ```bash
 # In web/ directory:
 
-yarn start                 # Ember with Mirage (mock API)
+yarn start                 # Proxies to $HERMES_API_URL (default: localhost:8001)
 yarn start:proxy           # Native, proxies to $HERMES_API_URL (default: localhost:8000)
 yarn start:proxy:local     # Native, proxies to localhost:8000
 yarn start:proxy:testing   # Native, proxies to localhost:8001
-yarn start:with-proxy      # Alias for start:proxy:testing (legacy)
 ```
 
 ## Health Checks
@@ -196,12 +195,16 @@ HERMES_API_URL=http://hermes:8000  # Docker service name
 
 ### Frontend (Native)
 ```bash
-# Not needed - use npm scripts
+# Default start command proxies to localhost:8001
+yarn start
+
+# Or override HERMES_API_URL:
+HERMES_API_URL=http://localhost:8000 yarn start
+HERMES_API_URL=http://localhost:9000 yarn start
+
+# Alternative proxy scripts:
 yarn start:proxy:local    # Uses localhost:8000
 yarn start:proxy:testing  # Uses localhost:8001
-
-# Or override:
-HERMES_API_URL=http://localhost:9000 yarn start:proxy
 ```
 
 ## Debugging
