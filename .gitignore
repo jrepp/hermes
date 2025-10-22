@@ -68,6 +68,10 @@ test_*.log
 # Volume data
 /workspace_data/
 
+# Project workspaces (testing environment)
+/testing/workspaces/*
+!/testing/workspaces/README.md
+
 # Distributed projects configuration (internal/production)
 # HCL-based modular configs with safe examples in testing/projects/
 # Protect production and internal configs from accidental commits

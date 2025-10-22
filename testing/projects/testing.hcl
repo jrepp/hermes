@@ -15,7 +15,10 @@ project "testing" {
   provider "local" {
     migration_status = "active"
     
-    workspace_path = "./testing/workspace_data"
+    # Relative to workspace_base_path (/app/workspaces in container)
+    # Container: /app/workspaces/testing
+    # Native dev: ./testing/workspaces/testing
+    workspace_path = "testing"
     
     git {
       repository = "https://github.com/hashicorp-forge/hermes"
