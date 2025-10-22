@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/jira"
+	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp/go-hclog"
@@ -31,4 +32,9 @@ type Server struct {
 
 	// Logger is the logger for the server.
 	Logger hclog.Logger
+
+	// ProjectConfig contains workspace project configurations (multi-tenant).
+	// This enables different projects to use different workspace providers
+	// (local, Google Workspace, remote Hermes) and supports migration scenarios.
+	ProjectConfig *projectconfig.Config
 }

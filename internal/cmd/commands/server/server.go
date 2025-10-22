@@ -26,6 +26,7 @@ import (
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/links"
 	"github.com/hashicorp-forge/hermes/pkg/models"
+	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	searchalgolia "github.com/hashicorp-forge/hermes/pkg/search/adapters/algolia"
 	meilisearchadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
@@ -545,6 +546,42 @@ func (c *Command) Run(args []string) int {
 		}
 	}
 
+	// Load workspace project configuration if configured.
+	var projectConfig *projectconfig.Config
+	if cfg.Providers != nil && cfg.Providers.ProjectsConfigPath != "" {
+		c.UI.Info(fmt.Sprintf("Loading workspace projects from: %s", cfg.Providers.ProjectsConfigPath))
+
+		projectConfig, err = projectconfig.LoadConfig(cfg.Providers.ProjectsConfigPath)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("error loading workspace projects config: %v", err))
+			return 1
+		}
+
+		// Validate project configuration
+		validator := projectconfig.NewValidator()
+		if err := validator.Validate(projectConfig); err != nil {
+			c.UI.Error(fmt.Sprintf("invalid workspace projects config: %v", err))
+			return 1
+		}
+
+		c.UI.Info(fmt.Sprintf("Loaded %d workspace projects", len(projectConfig.Projects)))
+
+		// Log active projects
+		activeProjects := projectConfig.GetActiveProjects()
+		for _, proj := range activeProjects {
+			c.UI.Info(fmt.Sprintf("  - %s (%s): %d provider(s)",
+				proj.Name, proj.Title, len(proj.Providers)))
+
+			// Log migration status
+			if proj.IsInMigration() {
+				sourceProvider, _ := proj.GetSourceProvider()
+				targetProvider, _ := proj.GetTargetProvider()
+				c.UI.Info(fmt.Sprintf("    Migration: %s -> %s",
+					sourceProvider.Type, targetProvider.Type))
+			}
+		}
+	}
+
 	type serveMux interface {
 		Handle(pattern string, handler http.Handler)
 		ServeHTTP(http.ResponseWriter, *http.Request)
@@ -563,6 +600,7 @@ func (c *Command) Run(args []string) int {
 		DB:                db,
 		Jira:              jiraSvc,
 		Logger:            c.Log,
+		ProjectConfig:     projectConfig,
 	}
 
 	// Define handlers for authenticated endpoints.
@@ -589,6 +627,8 @@ func (c *Command) Run(args []string) int {
 		{"/api/v2/reviews/", apiv2.ReviewsHandler(srv)},
 		{"/api/v2/search/", apiv2.SearchHandler(srv)},
 		{"/api/v2/web/analytics", apiv2.AnalyticsHandler(srv)},
+		{"/api/v2/workspace-projects", apiv2.WorkspaceProjectsHandler(srv)},
+		{"/api/v2/workspace-projects/", apiv2.WorkspaceProjectHandler(srv)},
 	}
 
 	// Add Algolia-specific endpoints if using Algolia search provider.

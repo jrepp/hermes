@@ -421,8 +421,9 @@ local_workspace {
 // Provider selection (use Local Workspace and Meilisearch search)
 // This allows testing without Google Workspace credentials
 providers {
-  workspace = "local"
-  search    = "meilisearch"
+  workspace           = "local"
+  search              = "meilisearch"
+  projects_config_path = "testing/projects.hcl"  // Workspace projects configuration
 }
 
 // Server configuration (bind to all interfaces in container)

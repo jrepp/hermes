@@ -355,6 +355,11 @@ type Providers struct {
 
 	// Search is the search provider name (e.g., "algolia", "meilisearch").
 	Search string `hcl:"search,optional"`
+
+	// ProjectsConfigPath is the path to the workspace projects HCL configuration file.
+	// This enables multi-tenant workspace isolation with different providers per project.
+	// Example: "testing/projects.hcl"
+	ProjectsConfigPath string `hcl:"projects_config_path,optional"`
 }
 
 // LocalWorkspace configures local filesystem workspace storage.
