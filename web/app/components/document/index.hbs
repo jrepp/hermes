@@ -102,12 +102,12 @@
                 </div>
 
                 {{! Tab Content }}
-                <div class="flex-1 overflow-auto">
+                <div class="flex-1 overflow-hidden">
                   {{#if (eq this.activeTab "edit")}}
                     {{! Edit Tab - Markdown Editor }}
                     <textarea
                       data-test-markdown-editor
-                      class="h-full w-full rounded border border-gray-300 p-4 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      class="h-full w-full resize-none overflow-auto rounded border border-gray-300 p-4 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                       placeholder="Enter markdown content..."
                       value={{this.documentContent}}
                       {{on "input" this.updateContentFromEvent}}
