@@ -31,6 +31,7 @@ export default class DocumentIndexComponent extends Component<DocumentIndexCompo
   @tracked isLoadingContent = false;
   @tracked isSavingContent = false;
   @tracked isEditMode = false;
+  @tracked activeTab: "edit" | "preview" = "edit";
 
   /**
    * Get user profile, returning a guest profile if user info is not loaded
@@ -118,11 +119,20 @@ export default class DocumentIndexComponent extends Component<DocumentIndexCompo
   @action protected cancelEdit() {
     this.isEditMode = false;
     this.documentContent = "";
+    this.activeTab = "edit";
   }
 
-  @action protected updateContent(event: Event) {
+  @action protected updateContent(newContent: string) {
+    this.documentContent = newContent;
+  }
+
+  @action protected updateContentFromEvent(event: Event) {
     const target = event.target as HTMLTextAreaElement;
     this.documentContent = target.value;
+  }
+
+  @action protected setActiveTab(tab: "edit" | "preview") {
+    this.activeTab = tab;
   }
 }
 
