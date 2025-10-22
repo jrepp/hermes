@@ -518,11 +518,62 @@ module.exports = function (defaults) {
 
 **Root Cause**: The issue was a bug or limitation in ember-template-imports v3.4.2 where the babel-plugin-ember-template-compilation was not properly transforming template code during the build process. Version 4.3.0 includes fixes that properly integrate with the Ember 6.x build pipeline.
 
+## Configuration Verification (Steps 3 & 4)
+
+### ember-cli-htmlbars Configuration ✅
+
+**Finding**: No additional configuration required for .gts support.
+
+**Evidence**:
+- `ember-cli-htmlbars@6.3.0` is correctly installed
+- `ember-template-imports@4.3.0` has version requirements enforced in `ember-addon-main.js`:
+  - Requires `ember-cli-htmlbars >= 6.3.0` ✅
+  - Requires `ember-cli-babel >= 8.2.0` ✅  
+  - Requires `ember-source >= 3.27.0` ✅
+- No explicit htmlbars configuration needed in `ember-cli-build.js`
+- The addon auto-configures template compilation through its preprocessor registry
+
+### Babel Plugin Load Order ✅
+
+**Finding**: Plugin order is correctly configured and working as expected.
+
+**Evidence from `ember-template-imports/package.json`**:
+```json
+{
+  "ember-addon": {
+    "main": "ember-addon-main.js",
+    "before": [
+      "ember-cli-htmlbars",
+      "ember-cli-babel"
+    ]
+  }
+}
+```
+
+**How it Works**:
+1. **ember-template-imports** registers in Ember's addon pipeline BEFORE htmlbars and babel
+2. In `included()` hook, it calls `addBabelPlugin()` which registers `src/babel-plugin.js`
+3. Babel plugin is registered with project root path to prevent duplicates
+4. The plugin extracts `<template>` tags from `.gts` files and transforms them
+5. **ember-cli-htmlbars** then processes the transformed templates with `babel-plugin-ember-template-compilation`
+6. Result: Templates compiled to `createTemplateFactory()` at build time ✅
+
+**Verification Commands**:
+```bash
+# Check built output
+cd web/dist/assets
+grep -o "createTemplateFactory" hermes-*.js | wc -l
+# Result: 139 ✅
+
+grep -c "precompileTemplate" hermes-*.js || echo "0"
+# Result: 0 ✅
+```
+
 **Alternative**: If updates don't work within 2 hours, convert the 5 most commonly used .gts components to .ts + .hbs format to unblock E2E testing while continuing investigation. *(Not needed - first solution worked!)*
 
 ---
 
-**Last Updated**: October 21, 2025 (10:30 PM)  
+**Last Updated**: October 21, 2025 (10:45 PM)  
 **Investigator**: GitHub Copilot (AI Agent)  
-**Session Duration**: ~2 hours of debugging + 15 minutes to fix  
+**Session Duration**: ~2 hours of debugging + 15 minutes to fix + 10 minutes verification  
 **Time to Resolution**: 15 minutes after applying recommended fix
