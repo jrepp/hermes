@@ -1,0 +1,67 @@
+# Docker Compose for Local Development
+#
+# Purpose: Provides infrastructure services (PostgreSQL, Meilisearch, Dex) for running
+#          the Hermes server natively on the host during local development.
+#
+# Usage:
+#   docker compose up -d                    # Start services
+#   make dev                                # Run full development environment
+#   docker compose down                     # Stop services
+#
+# Ports:
+#   - PostgreSQL: 5432 (host) -> 5432 (container)
+#   - Meilisearch: 7700 (host) -> 7700 (container)
+#   - Dex: 5556, 5558 (host) -> 5556, 5558 (container)
+
+services:
+  postgres:
+    image: postgres:17.1-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hermes
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: masterKey123
+      MEILI_NO_ANALYTICS: true
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilisearch_dev:/meili_data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7700/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  dex:
+    image: ghcr.io/dexidp/dex:v2.41.1
+    ports:
+      - "5556:5556"
+      - "5558:5558"
+    volumes:
+      - ./dex-config.yaml:/etc/dex/config.yaml:ro
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5556/dex/.well-known/openid-configuration"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_dev:
+  meilisearch_dev:
