@@ -37,16 +37,34 @@ make down              # Stop all services
 - ✅ **Manual QA** - Interactive testing via browser
 - ✅ **Demonstrations** - Show the full application
 
-## 🗂️ Projects Configuration
+## 🗂️ Projects Configuration (HCL)
 
-This testing environment includes a **projects.json** configuration that demonstrates Hermes's distributed project management capabilities. See `projects.json` and `docs-internal/DISTRIBUTED_PROJECTS_ARCHITECTURE.md` for details.
+This testing environment uses **modular HCL configuration** for project management. Each project is defined in its own file for better organization and maintainability.
 
-**Included test projects**:
-- `hermes-testing` - Local workspace at `./workspace_data`
-- `hermes-docs` - Documentation from `./docs-cms`
-- Example templates for Google Workspace and remote federation (archived)
+**Structure**:
+```
+testing/
+├── projects.hcl              # Main config with imports
+└── projects/                 # Individual project configs
+    ├── testing.hcl           # TEST - Local test workspace
+    ├── docs.hcl              # DOCS - Public documentation
+    ├── _template-google.hcl  # Template (not loaded)
+    ├── _template-migration.hcl  # Template (not loaded)
+    └── README.md             # Detailed documentation
+```
 
-**For internal deployments**: Create `projects.local.json` with your real configuration (gitignored).
+**Active test projects**:
+- **testing** (short name: TEST) - Local workspace at `./workspace_data`
+- **docs** (short name: DOCS) - Documentation from `./docs-cms`
+
+**Templates** (prefixed with `_template-`):
+- Google Workspace integration example
+- Migration scenario (Google → Git)
+- Remote Hermes federation example
+
+See `projects/README.md` for detailed configuration guide.
+
+**For internal deployments**: Create `projects.local.hcl` or individual `projects/*.local.hcl` files (gitignored).
 
 ## Service Ports
 

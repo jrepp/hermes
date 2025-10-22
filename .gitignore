@@ -69,7 +69,30 @@ test_*.log
 /workspace_data/
 
 # Distributed projects configuration (internal/production)
-# Only testing/projects.json with safe examples should be committed
+# HCL-based modular configs with safe examples in testing/projects/
+# Protect production and internal configs from accidental commits
+
+# Production/internal project configs
+/projects.hcl
+/projects.local.hcl
+/projects.production.hcl
+/projects.internal.hcl
+/testing/projects.local.hcl
+/testing/projects.production.hcl
+/testing/projects.internal.hcl
+**/projects.production.hcl
+**/projects.internal.hcl
+**/projects.local.hcl
+
+# Individual project files with real credentials
+/projects/**/*.local.hcl
+/projects/**/*.production.hcl
+/projects/**/*.internal.hcl
+/testing/projects/*.local.hcl
+/testing/projects/*.production.hcl
+/testing/projects/*.internal.hcl
+
+# Old JSON format (deprecated, use HCL instead)
 /projects.json
 /projects.local.json
 /projects.*.json
