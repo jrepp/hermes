@@ -10,6 +10,13 @@ module.exports = function (defaults) {
   const autoprefixer = require('autoprefixer');
   
   let app = new EmberApp(defaults, {
+    // Babel configuration
+    babel: {
+      plugins: [
+        // ember-concurrency v4+ requires this Babel transform for async arrow tasks
+        require.resolve("ember-concurrency/async-arrow-task-transform"),
+      ],
+    },
     // Babel configuration for .gts template compilation
     'ember-cli-babel': {
       enableTypeScriptTransform: true,
@@ -28,8 +35,8 @@ module.exports = function (defaults) {
           alias: {
             // Explicitly resolve @ember/test-waiters for ember-app-scheduler
             '@ember/test-waiters': require.resolve('@ember/test-waiters'),
-            // Fix ember-concurrency async-arrow-runtime import for ember-power-select
-            'ember-concurrency/async-arrow-runtime': require.resolve('ember-concurrency/addon/-private/async-arrow-runtime')
+            // Fix markdown-it import for document editor preview
+            'markdown-it': require.resolve('markdown-it')
           }
         }
       }
@@ -54,6 +61,9 @@ module.exports = function (defaults) {
                 // And the styles from @hashicorp/design-system-tokens
                 // - Required for @hashicorp/design-system-components to work
                 "./node_modules/@hashicorp/design-system-tokens/dist/products/css",
+                // And the styles from @hashicorp/design-system-components (v4+)
+                // - Required for HDS component styles to be found
+                "./node_modules/@hashicorp/design-system-components/dist/styles",
               ],
             },
           },
