@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/email"
 	"github.com/hashicorp-forge/hermes/internal/jira"
+	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp/go-hclog"
@@ -33,30 +34,8 @@ type Server struct {
 	// Logger is the logger for the server.
 	Logger hclog.Logger
 
-	// MSGraphService is the Microsoft Graph service for the server.
-	// MSGraphService *microsoftgraph.Service
-
-	//Sharepoint
-	SharePoint *sp.Service
-}
-
-// GetEmailSender returns the appropriate email.EmailSender based on which
-// backend is configured (SharePoint or Google Workspace).
-func (s Server) GetEmailSender() email.EmailSender {
-	if s.SharePoint != nil {
-		return s.SharePoint
-	}
-	return &gw.EmailSenderAdapter{Svc: s.GWService}
-}
-
-// IsSharePoint returns true when the server is configured for a SharePoint
-// backend, false when it is configured for Google Workspace.
-func (s Server) IsSharePoint() bool {
-	return s.SharePoint != nil
-}
-
-// NewDocumentByFileID returns a models.Document with the correct file-ID
-// field populated based on the configured backend.
-func (s Server) NewDocumentByFileID(fileID string) models.Document {
-	return models.NewDocumentByFileID(fileID, s.IsSharePoint())
+	// ProjectConfig contains workspace project configurations (multi-tenant).
+	// This enables different projects to use different workspace providers
+	// (local, Google Workspace, remote Hermes) and supports migration scenarios.
+	ProjectConfig *projectconfig.Config
 }
