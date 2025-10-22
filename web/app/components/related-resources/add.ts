@@ -1,20 +1,20 @@
 import { action } from "@ember/object";
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import { assert } from "@ember/debug";
 import { restartableTask } from "ember-concurrency";
 import ConfigService from "hermes/services/config";
 import { service } from "@ember/service";
-import {
+import type {
   RelatedExternalLink,
   RelatedHermesDocument,
   RelatedResource,
 } from "hermes/components/related-resources";
 import isValidURL from "hermes/utils/is-valid-u-r-l";
 import FetchService from "hermes/services/fetch";
-import { XDropdownListAnchorAPI } from "hermes/components/x/dropdown-list";
-import { SearchOptions } from "hermes/services/search";
+import type { XDropdownListAnchorAPI } from "hermes/components/x/dropdown-list";
+import type { SearchOptions } from "hermes/services/search";
 import { RelatedResourcesScope } from "../related-resources";
 import { guidFor } from "@ember/object/internals";
 import HermesFlashMessagesService from "hermes/services/flash-messages";

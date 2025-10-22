@@ -20,7 +20,7 @@ module("Unit | Service | session", function (hooks) {
   test("it handles authentication", async function (assert) {
     const sessionSvc = this.owner.lookup(
       "service:session"
-    ) as MockSessionService;
+    ) as unknown as MockSessionService;
 
     /**
      * Mock the handleAuthentication method

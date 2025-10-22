@@ -7,7 +7,7 @@ import JiraIssueModel from "hermes/models/jira-issue";
 import ConfigService from "hermes/services/config";
 import FetchService from "hermes/services/fetch";
 import StoreService from "hermes/services/store";
-import { HermesProject, HermesProjectHit } from "hermes/types/project";
+import type { HermesProject, HermesProjectHit } from "hermes/types/project";
 
 export const PROJECT_TILE_MAX_PRODUCTS = 3;
 

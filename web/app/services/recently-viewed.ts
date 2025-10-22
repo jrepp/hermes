@@ -3,10 +3,10 @@ import { service } from "@ember/service";
 import { keepLatestTask } from "ember-concurrency";
 import FetchService from "./fetch";
 import { tracked } from "@glimmer/tracking";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import SessionService from "hermes/services/session";
 import StoreService from "hermes/services/store";
-import { HermesProject } from "hermes/types/project";
+import type { HermesProject } from "hermes/types/project";
 import { withTimeout } from "hermes/utils/promise-timeout";
 
 /**

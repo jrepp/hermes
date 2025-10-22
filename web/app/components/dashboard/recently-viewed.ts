@@ -7,8 +7,8 @@ import { debounce } from "@ember/runloop";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
 import RecentlyViewedService, {
-  RecentlyViewedDoc,
-  RecentlyViewedProject,
+  type RecentlyViewedDoc,
+  type RecentlyViewedProject,
 } from "hermes/services/recently-viewed";
 
 export const RECENTLY_VIEWED_SCROLL_AMOUNT = 300;

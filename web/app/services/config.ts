@@ -1,6 +1,6 @@
 import Service from "@ember/service";
 import { tracked } from "@glimmer/tracking";
-import config, { HermesConfig } from "hermes/config/environment";
+import config, { type HermesConfig } from "hermes/config/environment";
 
 export default class ConfigService extends Service {
   @tracked config = {

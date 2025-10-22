@@ -3,7 +3,7 @@ import { service } from "@ember/service";
 import { keepLatestTask } from "ember-concurrency";
 import { tracked } from "@glimmer/tracking";
 import ConfigService from "hermes/services/config";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import { assert } from "@ember/debug";
 import SearchService from "./search";
 import StoreService from "hermes/services/store";

@@ -4,13 +4,13 @@ import { next } from "@ember/runloop";
 import { service } from "@ember/service";
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import { task } from "ember-concurrency";
 import ConfigService from "hermes/services/config";
 import FetchService from "hermes/services/fetch";
 import HermesFlashMessagesService from "hermes/services/flash-messages";
 import cleanString from "hermes/utils/clean-string";
-import { JiraPickerResult } from "hermes/types/project";
+import type { JiraPickerResult } from "hermes/types/project";
 // TEMPORARILY USING STUBS FOR EMBER 6.x UPGRADE
 import { timeout } from "hermes/utils/ember-animated-stubs";
 import { isTesting } from "@embroider/macros";

@@ -3,7 +3,7 @@ import { setupRenderingTest } from "ember-qunit";
 import type { TestContext } from "@ember/test-helpers";
 import { render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { HdsBadgeType } from "hds/_shared";
+import type { HdsBadgeType } from "hds/_shared";
 
 interface Context extends TestContext {
   hideProgress: boolean;

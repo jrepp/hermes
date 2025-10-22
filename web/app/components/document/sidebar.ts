@@ -17,22 +17,22 @@ import { debounce, schedule } from "@ember/runloop";
 import FetchService from "hermes/services/fetch";
 import RouterService from "@ember/routing/router-service";
 import SessionService from "hermes/services/session";
-import { CustomEditableField, HermesDocument } from "hermes/types/document";
+import type { CustomEditableField, HermesDocument } from "hermes/types/document";
 import { assert } from "@ember/debug";
 import Route from "@ember/routing/route";
 import { isTesting } from "@embroider/macros";
 import htmlElement from "hermes/utils/html-element";
 import ConfigService from "hermes/services/config";
 import isValidURL from "hermes/utils/is-valid-u-r-l";
-import { HermesDocumentType } from "hermes/types/document-type";
+import type { HermesDocumentType } from "hermes/types/document-type";
 import HermesFlashMessagesService from "hermes/services/flash-messages";
-import {
+import type {
   HermesProjectInfo,
   HermesProjectResources,
 } from "hermes/types/project";
 import updateRelatedResourcesSortOrder from "hermes/utils/update-related-resources-sort-order";
 import { ProjectStatus } from "hermes/types/project-status";
-import { RelatedHermesDocument } from "../related-resources";
+import type { RelatedHermesDocument } from "../related-resources";
 import PersonModel from "hermes/models/person";
 import RecentlyViewedService from "hermes/services/recently-viewed";
 import StoreService from "hermes/services/store";

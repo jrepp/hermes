@@ -1,16 +1,16 @@
 import { action } from "@ember/object";
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import {
+import type {
   RelatedExternalLink,
   RelatedHermesDocument,
   RelatedResource,
-  RelatedResourcesScope,
 } from "../related-resources";
+import { RelatedResourcesScope } from "../related-resources";
 import { service } from "@ember/service";
 import FetchService from "hermes/services/fetch";
 import { enqueueTask, task, timeout } from "ember-concurrency";
-import { HermesProject, JiraPickerResult } from "hermes/types/project";
+import type { HermesProject, JiraPickerResult } from "hermes/types/project";
 import {
   ProjectStatus,
   projectStatusObjects,
@@ -22,7 +22,8 @@ import { FLASH_MESSAGES_LONG_TIMEOUT } from "hermes/utils/ember-cli-flash/timeou
 import updateRelatedResourcesSortOrder from "hermes/utils/update-related-resources-sort-order";
 import { isTesting } from "@embroider/macros";
 // TEMPORARILY USING STUBS FOR EMBER 6.x UPGRADE
-import { TransitionContext, wait, fadeIn, fadeOut, move, Resize, easeOutExpo, easeOutQuad } from "hermes/utils/ember-animated-stubs";
+import { wait, fadeIn, fadeOut, move, Resize, easeOutExpo, easeOutQuad } from "hermes/utils/ember-animated-stubs";
+import type { TransitionContext } from "hermes/utils/ember-animated-stubs";
 import { emptyTransition } from "hermes/utils/ember-animated/empty-transition";
 import animateTransform from "hermes/utils/ember-animated/animate-transform";
 import RouterService from "@ember/routing/router-service";

@@ -83,8 +83,8 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('fetchSubscriptions loads subscriptions from API', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
-    const configService = this.owner.lookup('service:config') as MockConfigService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as unknown as MockFetchService;
+    const configService = this.owner.lookup('service:config') as unknown as unknown as MockConfigService;
 
     configService.config.api_version = 'v2';
 
@@ -117,7 +117,7 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('fetchSubscriptions handles empty subscription list', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
 
     fetchService.setMockResponse('/api/v2/me/subscriptions', []);
 
@@ -129,7 +129,7 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('fetchSubscriptions throws error on API failure', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
 
     fetchService.simulateFailure(500, 'Server Error');
 
@@ -143,7 +143,7 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('addSubscription adds a new subscription', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
 
     // Initialize with existing subscriptions
     service.subscriptions = [
@@ -169,7 +169,7 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('addSubscription reverts on API failure', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
 
     // Initialize with existing subscriptions
     const originalSubscriptions = [
@@ -199,7 +199,7 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('addSubscription sends POST request with correct body', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
 
     service.subscriptions = [
       { productArea: 'Product 1', subscriptionType: 'instant' as any },
@@ -224,8 +224,8 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('addSubscription uses correct API endpoint', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
-    const configService = this.owner.lookup('service:config') as MockConfigService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
+    const configService = this.owner.lookup('service:config') as unknown as MockConfigService;
 
     configService.config.api_version = 'v2';
     service.subscriptions = [];
@@ -244,7 +244,7 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('addSubscription sets Content-Type header', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
 
     service.subscriptions = [];
 
@@ -264,7 +264,7 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('multiple addSubscription calls work correctly', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
 
     service.subscriptions = [];
 
@@ -312,7 +312,7 @@ module('Unit | Service | authenticated-user', function (hooks) {
 
   test('fetchSubscriptions uses v2 API', async function (assert) {
     const service = this.owner.lookup('service:authenticated-user') as AuthenticatedUserService;
-    const fetchService = this.owner.lookup('service:fetch') as MockFetchService;
+    const fetchService = this.owner.lookup('service:fetch') as unknown as MockFetchService;
 
     fetchService.setMockResponse('/api/v2/me/subscriptions', []);
 

@@ -1,9 +1,9 @@
 import Component from "@glimmer/component";
-import { SearchResponse } from "hermes/services/search";
-import { HermesDocument } from "hermes/types/document";
-import { HermesProject } from "hermes/types/project";
+import type { SearchResponse } from "hermes/services/search";
+import type { HermesDocument } from "hermes/types/document";
+import type { HermesProject } from "hermes/types/project";
 import { SearchScope } from "hermes/routes/authenticated/results";
-import { SearchForFacetValuesResponse } from "hermes/services/search";
+import type { SearchForFacetValuesResponse } from "hermes/services/search";
 
 interface ResultsIndexComponentSignature {
   Args: {

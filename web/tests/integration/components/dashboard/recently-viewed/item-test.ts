@@ -4,7 +4,7 @@ import type { MirageTestContext } from "ember-cli-mirage/test-support";
 import { setupMirage } from "ember-cli-mirage/test-support";
 import { render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import {
+import type {
   RecentlyViewedDoc,
   RecentlyViewedProject,
 } from "hermes/services/recently-viewed";

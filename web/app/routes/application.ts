@@ -8,7 +8,7 @@ import SessionService, { REDIRECT_STORAGE_KEY } from "hermes/services/session";
 import RouterService from "@ember/routing/router-service";
 
 import window from "ember-window-mock";
-import Transition from "@ember/routing/transition";
+import type Transition from "@ember/routing/transition";
 import MetricsService from "hermes/services/_metrics";
 
 export default class ApplicationRoute extends Route {

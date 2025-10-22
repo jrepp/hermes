@@ -8,8 +8,8 @@ import ConfigService from "hermes/services/config";
 import HermesFlashMessagesService from "hermes/services/flash-messages";
 import ProductAreasService from "hermes/services/product-areas";
 import StoreService from "hermes/services/store";
-import { HermesDocument } from "hermes/types/document";
-import { SearchResponse } from "hermes/services/search";
+import type { HermesDocument } from "hermes/types/document";
+import type { SearchResponse } from "hermes/services/search";
 
 export default class AuthenticatedProductAreasProductAreaRoute extends Route {
   @service("config") declare configSvc: ConfigService;

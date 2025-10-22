@@ -1,5 +1,5 @@
 import Component from "@glimmer/component";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import { SortDirection } from "../table/sortable-header";
 import { service } from "@ember/service";
 import AuthenticatedUserService from "hermes/services/authenticated-user";

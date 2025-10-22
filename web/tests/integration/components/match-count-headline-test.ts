@@ -1,6 +1,6 @@
 import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
-import { render, TestContext } from "@ember/test-helpers";
+import { render, type TestContext } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 
 interface Context extends TestContext {

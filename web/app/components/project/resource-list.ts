@@ -1,8 +1,9 @@
 import Component from "@glimmer/component";
-import { RelatedResource } from "../related-resources";
+import type { RelatedResource } from "../related-resources";
 import { action } from "@ember/object";
 // TEMPORARILY USING STUBS FOR EMBER 6.x UPGRADE  
-import { TransitionRules, TransitionContext, wait, move, fadeIn, fadeOut, easeOutExpo, easeOutQuad } from "hermes/utils/ember-animated-stubs";
+import { TransitionRules, wait, move, fadeIn, fadeOut, easeOutExpo, easeOutQuad } from "hermes/utils/ember-animated-stubs";
+import type { TransitionContext } from "hermes/utils/ember-animated-stubs";
 import { emptyTransition } from "hermes/utils/ember-animated/empty-transition";
 import highlightElement from "hermes/utils/ember-animated/highlight-element";
 import { isTesting } from "@embroider/macros";

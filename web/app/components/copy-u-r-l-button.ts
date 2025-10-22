@@ -3,7 +3,7 @@ import { tracked } from "@glimmer/tracking";
 import { isTesting } from "@embroider/macros";
 import { restartableTask, timeout } from "ember-concurrency";
 import { service } from "@ember/service";
-import { Placement } from "@floating-ui/dom";
+import type { Placement } from "@floating-ui/dom";
 import { action } from "@ember/object";
 import { assert } from "@ember/debug";
 import HermesFlashMessagesService from "hermes/services/flash-messages";

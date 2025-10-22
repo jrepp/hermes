@@ -29,7 +29,7 @@ import {
 import MockDate from "mockdate";
 import { DEFAULT_MOCK_DATE } from "hermes/utils/mockdate/dates";
 import RecentlyViewedService from "hermes/services/recently-viewed";
-import {
+import type {
   RelatedExternalLink,
   RelatedHermesDocument,
 } from "hermes/components/related-resources";

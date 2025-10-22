@@ -1,7 +1,7 @@
 import JSONSerializer from "@ember-data/serializer/json";
 import { assert } from "@ember/debug";
 import DS from "ember-data";
-import { GoogleUser } from "hermes/components/inputs/people-select";
+import type { GoogleUser } from "hermes/components/inputs/people-select";
 
 export default class PersonSerializer extends JSONSerializer {
   /**

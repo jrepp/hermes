@@ -4,7 +4,7 @@ import { click, render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import type { MirageTestContext } from "ember-cli-mirage/test-support";
 import { setupMirage } from "ember-cli-mirage/test-support";
-import {
+import type {
   RelatedExternalLink,
   RelatedHermesDocument,
 } from "hermes/components/related-resources";

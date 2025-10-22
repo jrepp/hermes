@@ -1,7 +1,7 @@
 import Component from "@glimmer/component";
 import { action } from "@ember/object";
 import { service } from "@ember/service";
-import {
+import type {
   FacetDropdownGroups,
   FacetDropdownObjectDetails,
   FacetDropdownObjects,
@@ -14,10 +14,10 @@ import DocumentTypesService from "hermes/services/document-types";
 import ProductAreasService from "hermes/services/product-areas";
 import { tracked } from "@glimmer/tracking";
 import { restartableTask, task } from "ember-concurrency";
-import { XDropdownListAnchorAPI } from "../x/dropdown-list";
+import type { XDropdownListAnchorAPI } from "../x/dropdown-list";
 import SearchService from "hermes/services/search";
 import ConfigService from "hermes/services/config";
-import { SearchForFacetValuesResponse } from "hermes/services/search";
+import type { SearchForFacetValuesResponse } from "hermes/services/search";
 import { isTesting } from "@embroider/macros";
 import { ProjectStatus } from "hermes/types/project-status";
 import StoreService from "hermes/services/_store";

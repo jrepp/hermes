@@ -8,12 +8,12 @@ import SearchService from "hermes/services/search";
 import { restartableTask, task } from "ember-concurrency";
 import { next, schedule } from "@ember/runloop";
 import htmlElement from "hermes/utils/html-element";
-import {
+import type {
   RelatedExternalLink,
   RelatedHermesDocument,
   RelatedResource,
-  RelatedResourceSelector,
 } from "hermes/components/related-resources";
+import { RelatedResourceSelector } from "hermes/components/related-resources";
 import { assert } from "@ember/debug";
 import HermesFlashMessagesService from "hermes/services/flash-messages";
 import { FLASH_MESSAGES_LONG_TIMEOUT } from "hermes/utils/ember-cli-flash/timeouts";

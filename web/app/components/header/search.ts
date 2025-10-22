@@ -5,15 +5,15 @@ import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import SearchService from "hermes/services/search";
 import RouterService from "@ember/routing/router-service";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import { assert } from "@ember/debug";
 import ConfigService from "hermes/services/config";
 import { next, schedule } from "@ember/runloop";
 import { isTesting } from "@embroider/macros";
-import { XDropdownListAnchorAPI } from "../x/dropdown-list";
+import type { XDropdownListAnchorAPI } from "../x/dropdown-list";
 import StoreService from "hermes/services/store";
 import FetchService from "hermes/services/fetch";
-import { HermesProjectHit } from "hermes/types/project";
+import type { HermesProjectHit } from "hermes/types/project";
 import { SearchScope } from "hermes/routes/authenticated/results";
 
 export interface SearchResultObjects {

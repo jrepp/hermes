@@ -3,7 +3,7 @@ import { tracked } from "@glimmer/tracking";
 import AuthenticatedResultsRoute, {
   SearchScope,
 } from "hermes/routes/authenticated/results";
-import { ModelFrom } from "hermes/types/route-models";
+import type { ModelFrom } from "hermes/types/route-models";
 
 export default class AuthenticatedResultsController extends Controller {
   queryParams = ["page", "q", "scope", "docType", "owners", "product"];

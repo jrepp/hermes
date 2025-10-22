@@ -1,5 +1,5 @@
 import Component from "@glimmer/component";
-import { OverflowItem } from "hermes/components/overflow-menu";
+import type { OverflowItem } from "hermes/components/overflow-menu";
 
 export enum MoveOptionLabel {
   Top = "Move to top",

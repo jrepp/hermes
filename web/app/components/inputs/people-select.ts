@@ -8,7 +8,7 @@ import FetchService from "hermes/services/fetch";
 import { isTesting } from "@embroider/macros";
 import StoreService from "hermes/services/store";
 import PersonModel from "hermes/models/person";
-import { Select } from "ember-power-select/components/power-select";
+import type { Select } from "ember-power-select/components/power-select";
 import { next, schedule } from "@ember/runloop";
 import calculatePosition from "ember-basic-dropdown/utils/calculate-position";
 import GroupModel from "hermes/models/group";

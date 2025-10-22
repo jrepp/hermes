@@ -2,7 +2,7 @@ import Service, { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
 import { task } from "ember-concurrency";
 import FetchService from "./fetch";
-import { HermesDocumentType } from "hermes/types/document-type";
+import type { HermesDocumentType } from "hermes/types/document-type";
 
 export default class DocumentTypesService extends Service {
   @service("fetch") declare fetchSvc: FetchService;

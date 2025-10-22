@@ -2,12 +2,12 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
 import { assert } from "@ember/debug";
-import {
+import type {
   RelatedExternalLink,
   RelatedHermesDocument,
   RelatedResource,
 } from "hermes/components/related-resources";
-import { OverflowItem } from "hermes/components/overflow-menu";
+import type { OverflowItem } from "hermes/components/overflow-menu";
 
 interface DocumentSidebarRelatedResourcesListItemComponentSignature {
   Element: HTMLLIElement;

@@ -1,5 +1,5 @@
 import Component from "@glimmer/component";
-import { FacetDropdownObjects } from "hermes/types/facets";
+import type { FacetDropdownObjects } from "hermes/types/facets";
 import { FacetName } from "./toolbar";
 
 interface HeaderFacetDropdownComponentSignature {

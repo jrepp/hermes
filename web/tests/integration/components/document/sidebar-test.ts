@@ -7,7 +7,7 @@ import { setupMirage } from "ember-cli-mirage/test-support";
 import { authenticateSession } from "ember-simple-auth/test-support";
 import AuthenticatedUserService from "hermes/services/authenticated-user";
 import type { HermesDocument } from "hermes/types/document";
-import { HermesDocumentType } from "hermes/types/document-type";
+import type { HermesDocumentType } from "hermes/types/document-type";
 import { TEST_USER_2_EMAIL, TEST_USER_EMAIL } from "hermes/mirage/utils";
 import PersonModel from "hermes/models/person";
 

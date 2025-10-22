@@ -3,18 +3,18 @@ import Component from "@glimmer/component";
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
   dropTargetForElements,
-  ElementDropTargetEventBasePayload,
-  ElementDropTargetGetFeedbackArgs,
+  type ElementDropTargetEventBasePayload,
+  type ElementDropTargetGetFeedbackArgs,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
   attachClosestEdge,
-  Edge,
+  type Edge,
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { assert } from "@ember/debug";
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { tracked } from "@glimmer/tracking";
-import { RelatedResource } from "../related-resources";
+import type { RelatedResource } from "../related-resources";
 import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
 import { announce } from "@atlaskit/pragmatic-drag-and-drop-live-region";
 import { guidFor } from "@ember/object/internals";

@@ -1,4 +1,5 @@
 import DS from "ember-data";
+import type ModelRegistry from "ember-data/types/registries/model";
 import ApplicationAdapter from "./application";
 import RSVP from "rsvp";
 
@@ -8,7 +9,11 @@ export default class GroupAdapter extends ApplicationAdapter {
    * Returns an array of groups that match the query.
    * Also used by the `queryRecord` method.
    */
-  query(_store: DS.Store, _type: DS.Model, query: { query: string }) {
+  query<K extends keyof ModelRegistry = keyof ModelRegistry>(
+    _store: DS.Store,
+    _type: ModelRegistry[K],
+    query: { query: string }
+  ) {
     const results = this.fetchSvc
       .fetch(`/api/${this.configSvc.config.api_version}/groups`, {
         method: "POST",

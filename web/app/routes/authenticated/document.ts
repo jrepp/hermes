@@ -5,9 +5,9 @@ import { schedule } from "@ember/runloop";
 import ConfigService from "hermes/services/config";
 import FetchService from "hermes/services/fetch";
 import RouterService from "@ember/routing/router-service";
-import { HermesDocument } from "hermes/types/document";
-import Transition from "@ember/routing/transition";
-import { HermesDocumentType } from "hermes/types/document-type";
+import type { HermesDocument } from "hermes/types/document";
+import type Transition from "@ember/routing/transition";
+import type { HermesDocumentType } from "hermes/types/document-type";
 import AuthenticatedDocumentController from "hermes/controllers/authenticated/document";
 import RecentlyViewedService from "hermes/services/recently-viewed";
 import { assert } from "@ember/debug";
@@ -143,7 +143,7 @@ export default class AuthenticatedDocumentRoute extends Route {
         const typedError = err as Error;
         this.showErrorMessage(typedError);
 
-        if (transition.from && transition.from.name !== transition.to.name) {
+        if (transition.from && transition.to && transition.from.name !== transition.to.name) {
           this.router.transitionTo(transition.from.name);
         } else {
           this.router.transitionTo("authenticated.dashboard");

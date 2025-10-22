@@ -1,5 +1,5 @@
 import Component from "@glimmer/component";
-import { XDropdownListInteractiveComponentArgs } from "./_shared";
+import type { XDropdownListInteractiveComponentArgs } from "./_shared";
 import { action } from "@ember/object";
 import { isTesting } from "@embroider/macros";
 import { next, schedule } from "@ember/runloop";

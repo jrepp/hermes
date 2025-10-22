@@ -2,12 +2,12 @@ import Route from "@ember/routing/route";
 import { service } from "@ember/service";
 import SearchService from "hermes/services/search";
 import ConfigService from "hermes/services/config";
-import { ResultsRouteParams } from "hermes/types/document-routes";
+import type { ResultsRouteParams } from "hermes/types/document-routes";
 import ActiveFiltersService from "hermes/services/active-filters";
 import StoreService from "hermes/services/store";
-import { HermesDocument } from "hermes/types/document";
-import { HermesProject, HermesProjectHit } from "hermes/types/project";
-import { SearchResponse } from "hermes/services/search";
+import type { HermesDocument } from "hermes/types/document";
+import type { HermesProject, HermesProjectHit } from "hermes/types/project";
+import type { SearchResponse } from "hermes/services/search";
 import FetchService from "hermes/services/fetch";
 
 export enum SearchScope {

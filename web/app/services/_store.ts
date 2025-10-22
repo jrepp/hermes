@@ -1,7 +1,7 @@
 import { task } from "ember-concurrency";
 import Store from "@ember-data/store";
-import { HermesDocument } from "hermes/types/document";
-import { RelatedHermesDocument } from "hermes/components/related-resources";
+import type { HermesDocument } from "hermes/types/document";
+import type { RelatedHermesDocument } from "hermes/components/related-resources";
 
 export default class StoreService extends Store {
   /**

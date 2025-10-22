@@ -1,12 +1,12 @@
 import Route from "@ember/routing/route";
 import { service } from "@ember/service";
-import SearchService, { FacetsObject } from "hermes/services/search";
+import SearchService, { type FacetsObject } from "hermes/services/search";
 import ConfigService from "hermes/services/config";
 import FetchService from "hermes/services/fetch";
 import AuthenticatedUserService from "hermes/services/authenticated-user";
 import { task } from "ember-concurrency";
-import { SearchOptions, SearchResponse } from "hermes/services/search";
-import { HermesDocument } from "hermes/types/document";
+import type { SearchOptions, SearchResponse } from "hermes/services/search";
+import type { HermesDocument } from "hermes/types/document";
 import { createDraftURLSearchParams } from "hermes/utils/create-draft-url-search-params";
 import { SortByValue } from "hermes/components/header/toolbar";
 import { SortDirection } from "hermes/components/table/sortable-header";

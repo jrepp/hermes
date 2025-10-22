@@ -11,7 +11,7 @@ import RouterService from "@ember/routing/router-service";
 import ModalAlertsService, { ModalType } from "hermes/services/modal-alerts";
 import { assert } from "@ember/debug";
 import cleanString from "hermes/utils/clean-string";
-import { ProductArea } from "hermes/services/product-areas";
+import type { ProductArea } from "hermes/services/product-areas";
 import { next } from "@ember/runloop";
 import HermesFlashMessagesService from "hermes/services/flash-messages";
 import DocumentTypesService from "hermes/services/document-types";

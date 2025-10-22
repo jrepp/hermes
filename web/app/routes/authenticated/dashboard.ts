@@ -6,7 +6,7 @@ import FetchService from "hermes/services/fetch";
 import RecentlyViewedService from "hermes/services/recently-viewed";
 import SessionService from "hermes/services/session";
 import AuthenticatedUserService from "hermes/services/authenticated-user";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import { assert } from "@ember/debug";
 import LatestDocsService from "hermes/services/latest-docs";
 import StoreService from "hermes/services/store";

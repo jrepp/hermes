@@ -1,4 +1,5 @@
 import DS from "ember-data";
+import type ModelRegistry from "ember-data/types/registries/model";
 import ApplicationAdapter from "./application";
 import RSVP from "rsvp";
 
@@ -8,7 +9,11 @@ export default class PersonAdapter extends ApplicationAdapter {
    * Default query:     `/people?query=foo`
    * Our custom query:  `/people` with `{ query: "foo" }` in the request body.
    */
-  query(_store: DS.Store, _type: DS.Model, query: { query: string }) {
+  query<K extends keyof ModelRegistry = keyof ModelRegistry>(
+    _store: DS.Store,
+    _type: ModelRegistry[K],
+    query: { query: string }
+  ) {
     console.log('[PersonAdapter] 🌐 query() called', { query: query.query, apiVersion: this.configSvc.config.api_version });
     
     const results = this.fetchSvc
@@ -40,7 +45,11 @@ export default class PersonAdapter extends ApplicationAdapter {
    * Queries for a single person record using emailAddress parameter.
    * Used by store.queryRecord("person", { emails: "user@example.com" })
    */
-  queryRecord(_store: DS.Store, _type: DS.Model, query: { emails: string }) {
+  queryRecord<K extends keyof ModelRegistry = keyof ModelRegistry>(
+    _store: DS.Store,
+    _type: ModelRegistry[K],
+    query: { emails: string }
+  ) {
     return RSVP.Promise.resolve(
       this.fetchSvc
         .fetch(`/api/${this.configSvc.config.api_version}/people?emailAddress=${query.emails}`)

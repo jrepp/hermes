@@ -5,7 +5,7 @@ import { restartableTask, task } from "ember-concurrency";
 import AuthenticatedUserService from "hermes/services/authenticated-user";
 import { assert } from "@ember/debug";
 import ConfigService from "./config";
-import {
+import type {
   FacetDropdownGroups,
   FacetDropdownObjectDetails,
   FacetRecord,

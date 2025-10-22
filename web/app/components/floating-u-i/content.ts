@@ -1,8 +1,10 @@
 import { assert } from "@ember/debug";
 import { action } from "@ember/object";
-import {
+import type {
   OffsetOptions,
   Placement,
+} from "@floating-ui/dom";
+import {
   autoUpdate,
   computePosition,
   flip,

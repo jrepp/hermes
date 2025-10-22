@@ -1,5 +1,5 @@
 import Component from "@glimmer/component";
-import {
+import type {
   RelatedHermesDocument,
   RelatedResource,
 } from "hermes/components/related-resources";
