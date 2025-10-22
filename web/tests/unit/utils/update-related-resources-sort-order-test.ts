@@ -1,6 +1,7 @@
 import { module, test } from "qunit";
 import updateRelatedResourcesSortOrder from "hermes/utils/update-related-resources-sort-order";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { setupTest } from "ember-qunit";
 
 module(

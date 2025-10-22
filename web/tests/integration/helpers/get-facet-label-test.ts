@@ -1,6 +1,7 @@
 import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
-import { TestContext, render } from "@ember/test-helpers";
+import type { TestContext } from "@ember/test-helpers";
+import { render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import { FacetName } from "hermes/components/header/toolbar";
 import { FacetLabel } from "hermes/helpers/get-facet-label";

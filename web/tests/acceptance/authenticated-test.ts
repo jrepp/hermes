@@ -1,5 +1,6 @@
 import { currentURL, visit } from "@ember/test-helpers";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { setupApplicationTest } from "ember-qunit";
 import {
   authenticateSession,

@@ -1,9 +1,10 @@
 import { module, test, todo } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
-import { TestContext, render, clearRender } from "@ember/test-helpers";
+import type { TestContext } from "@ember/test-helpers";
+import { render, clearRender } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import htmlElement from "hermes/utils/html-element";
-import { OffsetOptions } from "@floating-ui/dom";
+import type { OffsetOptions } from "@floating-ui/dom";
 
 const DEFAULT_CONTENT_OFFSET = 5;
 const CONTENT_SELECTOR = ".hermes-floating-ui-content";

@@ -3,7 +3,8 @@ import { setupRenderingTest } from "ember-qunit";
 import { hbs } from "ember-cli-htmlbars";
 import { fillIn, render } from "@ember/test-helpers";
 import AuthenticatedUserService from "hermes/services/authenticated-user";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { setupProductIndex } from "hermes/tests/mirage-helpers/utils";
 
 const LIST_ITEM = "[data-test-subscription-list-item]";

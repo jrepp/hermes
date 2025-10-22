@@ -3,8 +3,8 @@ import { setupRenderingTest } from "ember-qunit";
 import { hbs } from "ember-cli-htmlbars";
 import { click, render } from "@ember/test-helpers";
 import { setupMirage } from "ember-cli-mirage/test-support";
-import { MirageTestContext } from "ember-cli-mirage/test-support";
-import { Placement } from "@floating-ui/dom";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import type { Placement } from "@floating-ui/dom";
 import htmlElement from "hermes/utils/html-element";
 import { setupProductIndex } from "hermes/tests/mirage-helpers/utils";
 import {

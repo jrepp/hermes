@@ -10,8 +10,9 @@ import {
   waitUntil,
 } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
-import { HermesDocument } from "hermes/types/document";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
+import type { HermesDocument } from "hermes/types/document";
 import { Response } from "miragejs";
 import { setupProductIndex } from "hermes/tests/mirage-helpers/utils";
 import {

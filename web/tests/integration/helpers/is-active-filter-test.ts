@@ -1,6 +1,7 @@
 import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
-import { TestContext, render, rerender } from "@ember/test-helpers";
+import type { TestContext } from "@ember/test-helpers";
+import { render, rerender } from "@ember/test-helpers";
 import ActiveFiltersService from "hermes/services/active-filters";
 import { FacetName } from "hermes/components/header/toolbar";
 import { hbs } from "ember-cli-htmlbars";

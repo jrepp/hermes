@@ -10,7 +10,7 @@ import {
   waitFor,
 } from "@ember/test-helpers";
 import { setupMirage } from "ember-cli-mirage/test-support";
-import { MirageTestContext } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
 import { authenticateTestUser } from "hermes/mirage/utils";
 import {
   DOCUMENT_HIT,

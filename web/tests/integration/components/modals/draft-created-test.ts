@@ -3,7 +3,8 @@ import { setupRenderingTest } from "ember-qunit";
 import { hbs } from "ember-cli-htmlbars";
 import { setupWindowMock } from "ember-window-mock/test-support";
 import window from "ember-window-mock";
-import { TestContext, click, render } from "@ember/test-helpers";
+import type { TestContext } from "@ember/test-helpers";
+import { click, render } from "@ember/test-helpers";
 import { DRAFT_CREATED_LOCAL_STORAGE_KEY } from "hermes/components/modals/draft-created";
 
 interface ModalsDraftCreatedTestContext extends TestContext {

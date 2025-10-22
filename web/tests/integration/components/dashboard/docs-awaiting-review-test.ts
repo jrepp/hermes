@@ -1,9 +1,10 @@
 import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { click, render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import { TEST_USER_EMAIL } from "hermes/mirage/utils";
 
 // Component-specific test selectors

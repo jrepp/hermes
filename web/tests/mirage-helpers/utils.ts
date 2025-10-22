@@ -1,4 +1,4 @@
-import { MirageTestContext } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
 import ProductAreasService from "hermes/services/product-areas";
 
 export function startFactories(mirage: MirageTestContext) {

@@ -1,9 +1,10 @@
 import { module, test } from "qunit";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { setupRenderingTest } from "ember-qunit";
 import { click, fillIn, find, render, waitFor } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { JiraPickerResult } from "hermes/types/project";
+import type { JiraPickerResult } from "hermes/types/project";
 import {
   TEST_JIRA_WORKSPACE_URL,
   TEST_JIRA_ISSUE_SUMMARY,

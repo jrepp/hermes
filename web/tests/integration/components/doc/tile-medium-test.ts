@@ -1,10 +1,11 @@
 import { render, waitFor } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { setupRenderingTest } from "ember-qunit";
 import { module, test } from "qunit";
-import { RelatedHermesDocument } from "hermes/components/related-resources";
-import { HermesDocument } from "hermes/types/document";
+import type { RelatedHermesDocument } from "hermes/components/related-resources";
+import type { HermesDocument } from "hermes/types/document";
 import { assert as emberAssert } from "@ember/debug";
 import {
   TEST_USER_EMAIL,

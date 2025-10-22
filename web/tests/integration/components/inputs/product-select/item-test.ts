@@ -3,7 +3,7 @@ import { setupRenderingTest } from "ember-qunit";
 import { hbs } from "ember-cli-htmlbars";
 import { render } from "@ember/test-helpers";
 import { setupMirage } from "ember-cli-mirage/test-support";
-import { MirageTestContext } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
 
 const VALUE = "[data-test-product-value]";
 const ABBREVIATION = "[data-test-product-select-item-abbreviation]";

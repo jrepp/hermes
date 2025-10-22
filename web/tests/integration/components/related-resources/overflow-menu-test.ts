@@ -1,7 +1,8 @@
-import { TestContext, click, findAll, render } from "@ember/test-helpers";
+import type { TestContext } from "@ember/test-helpers";
+import { click, findAll, render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import { setupRenderingTest } from "ember-qunit";
-import { OverflowItem } from "hermes/components/overflow-menu";
+import type { OverflowItem } from "hermes/components/overflow-menu";
 import htmlElement from "hermes/utils/html-element";
 import { module, test } from "qunit";
 

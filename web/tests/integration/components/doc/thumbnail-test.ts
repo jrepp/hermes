@@ -3,7 +3,8 @@ import { setupRenderingTest } from "ember-qunit";
 import { hbs } from "ember-cli-htmlbars";
 import { render } from "@ember/test-helpers";
 import { setupProductIndex } from "hermes/tests/mirage-helpers/utils";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 
 const THUMBNAIL = "[data-test-doc-thumbnail]";
 const PRODUCT_BADGE = "[data-test-doc-thumbnail-product-badge]";

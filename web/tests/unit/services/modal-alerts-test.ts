@@ -1,7 +1,8 @@
 import { module, test } from "qunit";
 import { setupTest } from "ember-qunit";
 import ModalAlertsService, { ModalType } from "hermes/services/modal-alerts";
-import { TestContext, waitUntil } from "@ember/test-helpers";
+import type { TestContext } from "@ember/test-helpers";
+import { waitUntil } from "@ember/test-helpers";
 
 interface Context extends TestContext {
   modalAlerts: ModalAlertsService;

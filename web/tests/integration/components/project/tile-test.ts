@@ -1,12 +1,13 @@
 import { render, settled } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { setupRenderingTest } from "ember-qunit";
-import { HermesProject } from "hermes/types/project";
+import type { HermesProject } from "hermes/types/project";
 import { module, test } from "qunit";
 import { assert as emberAssert } from "@ember/debug";
 import htmlElement from "hermes/utils/html-element";
-import { RelatedHermesDocument } from "hermes/components/related-resources";
+import type { RelatedHermesDocument } from "hermes/components/related-resources";
 import { setupProductIndex } from "hermes/tests/mirage-helpers/utils";
 import { PROJECT_TILE_MAX_PRODUCTS } from "hermes/components/project/tile";
 

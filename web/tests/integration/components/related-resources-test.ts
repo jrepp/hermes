@@ -9,7 +9,8 @@ import {
   waitUntil,
 } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { Response } from "miragejs";
 import config from "hermes/config/environment";
 import searchHosts from "hermes/mirage/search/hosts";

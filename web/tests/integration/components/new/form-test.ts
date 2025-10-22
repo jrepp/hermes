@@ -1,4 +1,5 @@
-import { TestContext, find, render, waitUntil } from "@ember/test-helpers";
+import type { TestContext } from "@ember/test-helpers";
+import { find, render, waitUntil } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import { setupRenderingTest } from "ember-qunit";
 import { module, test } from "qunit";
