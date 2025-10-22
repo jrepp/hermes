@@ -5,8 +5,8 @@ import { hbs } from "ember-cli-htmlbars";
 import type { FacetDropdownGroups, FacetDropdownObjects } from "hermes/types/facets";
 import { FacetLabel } from "hermes/helpers/get-facet-label";
 import { SearchScope } from "hermes/routes/authenticated/results";
-import { setupMirage } from "ember-cli-mirage/test-support";
 import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import {
   authenticateTestUser,
   TEST_USER_EMAIL,

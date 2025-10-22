@@ -1,7 +1,7 @@
 import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
-import { render } from "@ember/test-helpers";
 import type { TestContext } from "@ember/test-helpers";
+import { render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import { setupWindowMock } from "ember-window-mock/test-support";
 import { setupMirage } from "ember-cli-mirage/test-support";

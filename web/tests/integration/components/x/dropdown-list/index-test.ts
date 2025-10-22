@@ -14,7 +14,7 @@ import {
 } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import htmlElement from "hermes/utils/html-element";
-import { Placement } from "@floating-ui/dom";
+import type { Placement } from "@floating-ui/dom";
 import {
   DEFAULT_LOADER,
   DEFAULT_NO_MATCHES,

@@ -2,9 +2,9 @@ import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
 import { hbs } from "ember-cli-htmlbars";
 import { click, render } from "@ember/test-helpers";
-import { setupMirage } from "ember-cli-mirage/test-support";
 import type { MirageTestContext } from "ember-cli-mirage/test-support";
-import type AuthenticatedUserService from "hermes/services/authenticated-user";
+import { setupMirage } from "ember-cli-mirage/test-support";
+import AuthenticatedUserService from "hermes/services/authenticated-user";
 import { setupProductIndex } from "hermes/tests/mirage-helpers/utils";
 
 const ICON = "[data-test-product-avatar]";

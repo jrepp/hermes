@@ -1,7 +1,8 @@
 import { module, test } from "qunit";
 import { setupTest } from "ember-qunit";
 import RecentlyViewedService from "hermes/services/recently-viewed";
-import { MirageTestContext, setupMirage } from "ember-cli-mirage/test-support";
+import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { authenticateSession } from "ember-simple-auth/test-support";
 import { TEST_USER_2_EMAIL } from "hermes/mirage/utils";
 

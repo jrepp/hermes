@@ -2,8 +2,8 @@ import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
 import { click, render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { setupMirage } from "ember-cli-mirage/test-support";
 import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import {
   type RelatedExternalLink,
   type RelatedHermesDocument,

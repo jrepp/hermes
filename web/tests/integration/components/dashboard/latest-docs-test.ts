@@ -1,7 +1,7 @@
 import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
-import { setupMirage } from "ember-cli-mirage/test-support";
 import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { render, waitFor } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
 import type LatestDocsService from "hermes/services/latest-docs";

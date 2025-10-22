@@ -2,12 +2,12 @@ import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
 import { render } from "@ember/test-helpers";
 import { hbs } from "ember-cli-htmlbars";
-import { setupMirage } from "ember-cli-mirage/test-support";
 import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { authenticateSession } from "ember-simple-auth/test-support";
-import type AuthenticatedUserService from "hermes/services/authenticated-user";
+import AuthenticatedUserService from "hermes/services/authenticated-user";
 import type { HermesDocument } from "hermes/types/document";
-import type { HermesDocumentType } from "hermes/types/document-type";
+import { HermesDocumentType } from "hermes/types/document-type";
 import { TEST_USER_2_EMAIL, TEST_USER_EMAIL } from "hermes/mirage/utils";
 import type PersonModel from "hermes/models/person";
 

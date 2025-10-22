@@ -1,8 +1,8 @@
 import { module, test } from "qunit";
 import { setupTest } from "ember-qunit";
-import type ProductAreasService from "hermes/services/product-areas";
-import { setupMirage } from "ember-cli-mirage/test-support";
+import ProductAreasService from "hermes/services/product-areas";
 import type { MirageTestContext } from "ember-cli-mirage/test-support";
+import { setupMirage } from "ember-cli-mirage/test-support";
 import { authenticateSession } from "ember-simple-auth/test-support";
 
 interface ProductAreasServiceTestContext extends MirageTestContext {
