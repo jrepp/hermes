@@ -68,7 +68,7 @@ export { buildTask } from './addon/-private/async-arrow-runtime';
 ### Testing the Fix
 The fix resolves the "power-select" dropdown rendering issue in the document creation form. Test by:
 
-1. Start the dev server: `yarn start:with-proxy`
+1. Start the dev server: `yarn start`
 2. Navigate to `/new/doc?docType=RFC`
 3. Verify the Product/Area dropdown renders and functions correctly
 4. Check browser console for no ember-concurrency errors
