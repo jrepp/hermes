@@ -287,7 +287,7 @@ web/install-deps: ## Install web application dependencies
 web/run: ## Run web application while proxying backend requests
 web/run: web/install-deps
 	cd web \
-		&& yarn start:with-proxy
+		&& yarn start
 
 .PHONY: web/proxy
 web/proxy: ## Start web with proxy to backend (native: port 8000, testing: port 8001)
