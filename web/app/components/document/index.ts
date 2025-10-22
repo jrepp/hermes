@@ -131,11 +131,8 @@ export default class DocumentIndexComponent extends Component<DocumentIndexCompo
     this.documentContent = target.value;
   }
 
-  @action protected handleTabChange(index: number) {
-    console.log('[DocumentIndex] handleTabChange called with index:', index);
-    console.log('[DocumentIndex] Previous selectedTabIndex:', this.selectedTabIndex);
-    this.selectedTabIndex = index;
-    console.log('[DocumentIndex] New selectedTabIndex:', this.selectedTabIndex);
+  @action protected handleTabChange(event: Event, tabIndex: number) {
+    this.selectedTabIndex = tabIndex;
   }
 }
 
