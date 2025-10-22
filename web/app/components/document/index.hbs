@@ -82,7 +82,7 @@
                 </div>
               {{else}}
                 {{! HDS Tabs for Edit/Preview }}
-                <Hds::Tabs @selectedTabIndex={{this.selectedTabIndex}} @onTabChange={{this.handleTabChange}} as |T|>
+                <Hds::Tabs @selectedTabIndex={{this.selectedTabIndex}} @onClickTab={{this.handleTabChange}} as |T|>
                   <T.Tab data-test-edit-tab>
                     Edit
                   </T.Tab>
