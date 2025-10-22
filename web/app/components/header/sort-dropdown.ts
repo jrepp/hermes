@@ -1,6 +1,6 @@
 import Component from "@glimmer/component";
-import { SortByValue } from "./toolbar";
 import type { SortByFacets } from "./toolbar";
+import { SortByValue } from "./toolbar";
 import type { Placement } from "@floating-ui/dom";
 
 interface HeaderSortDropdownComponentSignature {

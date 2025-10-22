@@ -10,7 +10,7 @@ import type ConfigService from "hermes/services/config";
 import type FetchService from "hermes/services/fetch";
 import type HermesFlashMessagesService from "hermes/services/flash-messages";
 import cleanString from "hermes/utils/clean-string";
-import { JiraPickerResult } from "hermes/types/project";
+import type { JiraPickerResult } from "hermes/types/project";
 // TEMPORARILY USING STUBS FOR EMBER 6.x UPGRADE
 import { timeout } from "hermes/utils/ember-animated-stubs";
 import { isTesting } from "@embroider/macros";

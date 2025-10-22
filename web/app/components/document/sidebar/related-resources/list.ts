@@ -1,6 +1,7 @@
 import Component from "@glimmer/component";
 // TEMPORARILY USING STUBS FOR EMBER 6.x UPGRADE
-import { TransitionContext, move, fadeIn, fadeOut, wait, easeOutQuad } from "hermes/utils/ember-animated-stubs";
+import { move, fadeIn, fadeOut, wait, easeOutQuad } from "hermes/utils/ember-animated-stubs";
+import type { TransitionContext } from "hermes/utils/ember-animated-stubs";
 import animateTransform from "hermes/utils/ember-animated/animate-transform";
 import { action } from "@ember/object";
 // import { Transition } from "ember-animated/-private/transition";

@@ -6,9 +6,9 @@ import { action } from "@ember/object";
 import { debounce } from "@ember/runloop";
 import { service } from "@ember/service";
 import { tracked } from "@glimmer/tracking";
-import type {
-  RecentlyViewedDoc,
-  RecentlyViewedProject,
+import RecentlyViewedService, {
+  type RecentlyViewedDoc,
+  type RecentlyViewedProject,
 } from "hermes/services/recently-viewed";
 import type RecentlyViewedService from "hermes/services/recently-viewed";
 

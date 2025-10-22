@@ -11,10 +11,9 @@ import htmlElement from "hermes/utils/html-element";
 import type {
   RelatedExternalLink,
   RelatedHermesDocument,
-  RelatedResource} from "hermes/components/related-resources";
-import {
-  RelatedResourceSelector,
+  RelatedResource,
 } from "hermes/components/related-resources";
+import { RelatedResourceSelector } from "hermes/components/related-resources";
 import { assert } from "@ember/debug";
 import type HermesFlashMessagesService from "hermes/services/flash-messages";
 import { FLASH_MESSAGES_LONG_TIMEOUT } from "hermes/utils/ember-cli-flash/timeouts";

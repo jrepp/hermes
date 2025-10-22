@@ -3,6 +3,7 @@ import { setupRenderingTest } from "ember-qunit";
 import type {
   TestContext} from "@ember/test-helpers";
 import {
+  type TestContext,
   click,
   fillIn,
   find,

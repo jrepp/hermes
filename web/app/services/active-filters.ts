@@ -5,7 +5,7 @@ import type {
   DocumentsRouteParams,
   ResultsRouteParams,
 } from "hermes/types/document-routes";
-import type { ActiveFilters} from "hermes/components/header/toolbar";
+import type { ActiveFilters } from "hermes/components/header/toolbar";
 import { FacetName } from "hermes/components/header/toolbar";
 
 export const DEFAULT_FILTERS = {

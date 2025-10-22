@@ -1,6 +1,7 @@
 import { module, test } from "qunit";
 import { setupRenderingTest } from "ember-qunit";
 import {
+  type TestContext,
   click,
   fillIn,
   find,

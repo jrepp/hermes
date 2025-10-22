@@ -28,10 +28,10 @@ import {
 } from "hermes/mirage/utils";
 import MockDate from "mockdate";
 import { DEFAULT_MOCK_DATE } from "hermes/utils/mockdate/dates";
-import type RecentlyViewedService from "hermes/services/recently-viewed";
-import {
-  type RelatedExternalLink,
-  type RelatedHermesDocument,
+import RecentlyViewedService from "hermes/services/recently-viewed";
+import type {
+  RelatedExternalLink,
+  RelatedHermesDocument,
 } from "hermes/components/related-resources";
 import { assert as emberAssert } from "@ember/debug";
 import { MoveOptionLabel } from "hermes/components/project/resource";

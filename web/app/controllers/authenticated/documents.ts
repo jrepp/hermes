@@ -2,8 +2,8 @@ import Controller from "@ember/controller";
 import { service } from "@ember/service";
 import { SortByValue } from "hermes/components/header/toolbar";
 import { SortDirection } from "hermes/components/table/sortable-header";
-import type AuthenticatedDocumentsRoute from "hermes/routes/authenticated/documents";
-import type ActiveFiltersService from "hermes/services/active-filters";
+import AuthenticatedDocumentsRoute from "hermes/routes/authenticated/documents";
+import ActiveFiltersService from "hermes/services/active-filters";
 import type { ModelFrom } from "hermes/types/route-models";
 
 export default class AuthenticatedDocumentsController extends Controller {

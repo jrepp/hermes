@@ -9,7 +9,7 @@ import RouterService from "@ember/routing/router-service";
 
 import window from "ember-window-mock";
 import type Transition from "@ember/routing/transition";
-import type MetricsService from "hermes/services/_metrics";
+import MetricsService from "hermes/services/_metrics";
 
 export default class ApplicationRoute extends Route {
   @service declare config: ConfigService;

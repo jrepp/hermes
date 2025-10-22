@@ -14,7 +14,7 @@ import { setupMirage } from "ember-cli-mirage/test-support";
 import { Response } from "miragejs";
 import config from "hermes/config/environment";
 import searchHosts from "hermes/mirage/search/hosts";
-import { RelatedResource } from "hermes/components/related-resources";
+import type { RelatedResource } from "hermes/components/related-resources";
 import { RelatedResourcesScope } from "hermes/components/related-resources";
 import { authenticateTestUser } from "hermes/mirage/utils";
 import {

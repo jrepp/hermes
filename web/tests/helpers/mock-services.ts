@@ -5,7 +5,7 @@
  * routes, and components without needing real backend or auth infrastructure.
  */
 
-import { TestContext } from '@ember/test-helpers';
+import type { TestContext } from '@ember/test-helpers';
 import Service from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 

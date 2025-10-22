@@ -4,7 +4,7 @@ import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { next, schedule } from "@ember/runloop";
 import { isTesting } from "@embroider/macros";
-import { WithBoundArgs } from "@glint/template";
+import type { WithBoundArgs } from "@glint/template";
 import XDropdownListActionComponent from "./action";
 import XDropdownListLinkToComponent from "./link-to";
 import { restartableTask, timeout } from "ember-concurrency";

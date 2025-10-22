@@ -14,11 +14,10 @@ import {
 import { capitalize } from "@ember/string";
 import cleanString from "hermes/utils/clean-string";
 import { debounce, schedule } from "@ember/runloop";
-import type FetchService from "hermes/services/fetch";
-import type RouterService from "@ember/routing/router-service";
-import type SessionService from "hermes/services/session";
-import type { CustomEditableField } from "hermes/types/document";
-import type { HermesDocument } from "hermes/types/document";
+import FetchService from "hermes/services/fetch";
+import RouterService from "@ember/routing/router-service";
+import SessionService from "hermes/services/session";
+import type { CustomEditableField, HermesDocument } from "hermes/types/document";
 import { assert } from "@ember/debug";
 import Route from "@ember/routing/route";
 import { isTesting } from "@embroider/macros";
@@ -26,7 +25,7 @@ import htmlElement from "hermes/utils/html-element";
 import type ConfigService from "hermes/services/config";
 import isValidURL from "hermes/utils/is-valid-u-r-l";
 import type { HermesDocumentType } from "hermes/types/document-type";
-import type HermesFlashMessagesService from "hermes/services/flash-messages";
+import HermesFlashMessagesService from "hermes/services/flash-messages";
 import type {
   HermesProjectInfo,
   HermesProjectResources,
@@ -34,11 +33,10 @@ import type {
 import updateRelatedResourcesSortOrder from "hermes/utils/update-related-resources-sort-order";
 import { ProjectStatus } from "hermes/types/project-status";
 import type { RelatedHermesDocument } from "../related-resources";
-import type PersonModel from "hermes/models/person";
-import type RecentlyViewedService from "hermes/services/recently-viewed";
-import type StoreService from "hermes/services/store";
-import type ModalAlertsService from "hermes/services/modal-alerts";
-import { ModalType } from "hermes/services/modal-alerts";
+import PersonModel from "hermes/models/person";
+import RecentlyViewedService from "hermes/services/recently-viewed";
+import StoreService from "hermes/services/store";
+import ModalAlertsService, { ModalType } from "hermes/services/modal-alerts";
 
 interface DocumentSidebarComponentSignature {
   Args: {

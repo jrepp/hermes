@@ -2,22 +2,22 @@ import { assert } from "@ember/debug";
 import { action } from "@ember/object";
 import { schedule } from "@ember/runloop";
 import { service } from "@ember/service";
-import { OffsetOptions, Placement } from "@floating-ui/dom";
+import type { OffsetOptions, Placement } from "@floating-ui/dom";
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
-import type FetchService from "hermes/services/fetch";
+import FetchService from "hermes/services/fetch";
 import type { HdsButtonColor } from "hds/_shared";
 import type {
   XDropdownListSharedArgs,
   XDropdownListToggleComponentArgs,
 } from "./_shared";
 import type { WithBoundArgs } from "@glint/template";
-import type XDropdownListToggleActionComponent from "./toggle-action";
-import type XDropdownListToggleButtonComponent from "./toggle-button";
+import XDropdownListToggleActionComponent from "./toggle-action";
+import XDropdownListToggleButtonComponent from "./toggle-button";
 import type { XDropdownListItemAPI } from "./item";
 import { restartableTask, timeout } from "ember-concurrency";
 import type { MatchAnchorWidthOptions } from "hermes/components/floating-u-i/content";
-import type XDropdownListToggleSelectComponent from "./toggle-select";
+import XDropdownListToggleSelectComponent from "./toggle-select";
 import scrollIntoViewIfNeeded from "hermes/utils/scroll-into-view-if-needed";
 
 export type XDropdownListToggleComponentBoundArgs =

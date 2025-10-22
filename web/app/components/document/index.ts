@@ -1,9 +1,9 @@
 import Component from "@glimmer/component";
 import { service } from "@ember/service";
-import { HermesDocument } from "hermes/types/document";
+import type { HermesDocument } from "hermes/types/document";
 import { tracked } from "@glimmer/tracking";
 import { action } from "@ember/object";
-import { HermesDocumentType } from "hermes/types/document-type";
+import type { HermesDocumentType } from "hermes/types/document-type";
 import AuthenticatedUserService from "hermes/services/authenticated-user";
 import ConfigService from "hermes/services/config";
 import FetchService from "hermes/services/fetch";

@@ -6,9 +6,8 @@ import {
   authenticateSession,
   invalidateSession,
 } from "ember-simple-auth/test-support";
-import type SessionService from "hermes/services/_session";
-import type ProductAreasService from "hermes/services/product-areas";
-import {
+import SessionService from "hermes/services/_session";
+import ProductAreasService, {
   type ProductArea,
 } from "hermes/services/product-areas";
 import { module, test } from "qunit";

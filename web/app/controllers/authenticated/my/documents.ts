@@ -1,7 +1,7 @@
 import Controller from "@ember/controller";
 import { SortByValue } from "hermes/components/header/toolbar";
 import { SortDirection } from "hermes/components/table/sortable-header";
-import type AuthenticatedMyDocumentsRoute from "hermes/routes/authenticated/my/documents";
+import AuthenticatedMyDocumentsRoute from "hermes/routes/authenticated/my/documents";
 import type { ModelFrom } from "hermes/types/route-models";
 
 export default class AuthenticatedMyDocumentsController extends Controller {

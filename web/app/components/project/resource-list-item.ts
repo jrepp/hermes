@@ -1,16 +1,16 @@
 import { action } from "@ember/object";
 import Component from "@glimmer/component";
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import type {
-  ElementDropTargetEventBasePayload,
-  ElementDropTargetGetFeedbackArgs} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
-  dropTargetForElements
+  dropTargetForElements,
+  type ElementDropTargetEventBasePayload,
+  type ElementDropTargetGetFeedbackArgs,
 } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import type {
   Edge} from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import {
   attachClosestEdge,
+  type Edge,
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { assert } from "@ember/debug";

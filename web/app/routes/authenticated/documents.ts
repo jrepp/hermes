@@ -2,12 +2,12 @@ import Route from "@ember/routing/route";
 import { service } from "@ember/service";
 import ConfigService from "hermes/services/config";
 import SearchService from "hermes/services/search";
-import { DocumentsRouteParams } from "hermes/types/document-routes";
+import type { DocumentsRouteParams } from "hermes/types/document-routes";
 import ActiveFiltersService from "hermes/services/active-filters";
 import { SortByValue } from "hermes/components/header/toolbar";
 import StoreService from "hermes/services/store";
-import { HermesDocument } from "hermes/types/document";
-import { SearchResponse } from "hermes/services/search";
+import type { HermesDocument } from "hermes/types/document";
+import type { SearchResponse } from "hermes/services/search";
 
 export default class AuthenticatedDocumentsRoute extends Route {
   @service("config") declare configSvc: ConfigService;

@@ -67,7 +67,7 @@ module('Unit | Service | fetch', function (hooks) {
 
   test('fetch adds Google auth header for Google provider', async function (assert) {
     const service = this.owner.lookup('service:fetch') as FetchService;
-    const configService = this.owner.lookup('service:config') as MockConfigService;
+    const configService = this.owner.lookup('service:config') as unknown as MockConfigService;
     const sessionService = this.owner.lookup('service:session') as MockSessionService;
 
     configService.config.auth_provider = 'google';
@@ -98,7 +98,7 @@ module('Unit | Service | fetch', function (hooks) {
 
   test('fetch adds Bearer token for OIDC providers (okta)', async function (assert) {
     const service = this.owner.lookup('service:fetch') as FetchService;
-    const configService = this.owner.lookup('service:config') as MockConfigService;
+    const configService = this.owner.lookup('service:config') as unknown as MockConfigService;
     const sessionService = this.owner.lookup('service:session') as MockSessionService;
 
     configService.config.auth_provider = 'okta';
@@ -128,7 +128,7 @@ module('Unit | Service | fetch', function (hooks) {
 
   test('fetch adds Bearer token for OIDC providers (dex)', async function (assert) {
     const service = this.owner.lookup('service:fetch') as FetchService;
-    const configService = this.owner.lookup('service:config') as MockConfigService;
+    const configService = this.owner.lookup('service:config') as unknown as MockConfigService;
     const sessionService = this.owner.lookup('service:session') as MockSessionService;
 
     configService.config.auth_provider = 'dex';

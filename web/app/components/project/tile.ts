@@ -3,12 +3,11 @@ import { service } from "@ember/service";
 import Component from "@glimmer/component";
 import { tracked } from "@glimmer/tracking";
 import { task } from "ember-concurrency";
-import type JiraIssueModel from "hermes/models/jira-issue";
-import type ConfigService from "hermes/services/config";
-import type FetchService from "hermes/services/fetch";
-import type StoreService from "hermes/services/store";
-import type { HermesProjectHit } from "hermes/types/project";
-import type { HermesProject } from "hermes/types/project";
+import JiraIssueModel from "hermes/models/jira-issue";
+import ConfigService from "hermes/services/config";
+import FetchService from "hermes/services/fetch";
+import StoreService from "hermes/services/store";
+import type { HermesProject, HermesProjectHit } from "hermes/types/project";
 
 export const PROJECT_TILE_MAX_PRODUCTS = 3;
 

@@ -1,6 +1,6 @@
 import JSONSerializer from "@ember-data/serializer/json";
 import { assert } from "@ember/debug";
-import type DS from "ember-data";
+import DS from "ember-data";
 import type GroupModel from "hermes/models/group";
 
 interface GroupPayload {
@@ -14,11 +14,11 @@ export default class GroupSerializer extends JSONSerializer {
    * Formats the response to match the JSON spec.
    */
   normalizeResponse(
-    _store: any,
+    _store: DS.Store,
     _primaryModelClass: any,
     payload: GroupPayload,
-    _id: any,
-    _requestType: any,
+    _id: string | number | null,
+    _requestType: string,
   ) {
     assert("results are expected for query requests", "results" in payload);
 
