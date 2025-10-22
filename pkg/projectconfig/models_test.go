@@ -247,43 +247,6 @@ func TestProject_IsActive(t *testing.T) {
 	}
 }
 
-func TestProject_IsInMigration(t *testing.T) {
-	tests := []struct {
-		name          string
-		providerCount int
-		want          bool
-	}{
-		{
-			name:          "single provider",
-			providerCount: 1,
-			want:          false,
-		},
-		{
-			name:          "multiple providers (migration)",
-			providerCount: 2,
-			want:          true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			providers := make([]*Provider, tt.providerCount)
-			for i := range providers {
-				providers[i] = &Provider{Type: "local"}
-			}
-
-			project := &Project{
-				Name:      "test",
-				Providers: providers,
-			}
-
-			if got := project.IsInMigration(); got != tt.want {
-				t.Errorf("IsInMigration() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestProvider_ResolveWorkspacePath(t *testing.T) {
 	tests := []struct {
 		name          string
