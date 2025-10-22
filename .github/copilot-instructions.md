@@ -5,6 +5,107 @@ Hermes is an open-source document management system built by HashiCorp Labs. It'
 
 **Repository**: `hashicorp/hermes` | **Type**: Monorepo (Go + Ember.js)
 
+## 🔒 Privacy & Security Controls - CRITICAL
+
+**This is an OPEN-SOURCE project**: All code, configuration examples, and documentation are publicly visible on GitHub.
+
+### ❌ NEVER Commit These Items
+
+**Credentials & Secrets**:
+- ❌ Google OAuth credentials (`credentials.json`, `token.json`)
+- ❌ API keys (Algolia, Google Workspace, Datadog)
+- ❌ Service account emails or workspace IDs
+- ❌ OIDC client secrets or federation tokens
+- ❌ Database passwords or connection strings with credentials
+- ❌ Any `.env` files with real values
+
+**Internal Information**:
+- ❌ Real company domain names (use `example.com`)
+- ❌ Internal URLs or hostnames (`hermes.hashicorp.internal`)
+- ❌ Employee email addresses
+- ❌ Project IDs from internal systems
+- ❌ Google Drive IDs from private drives
+- ❌ Shared drive IDs from corporate accounts
+
+**Configuration Files**:
+- ❌ `projects.local.hcl`, `projects.production.hcl`, `projects.internal.hcl`
+- ❌ Any `*.local.hcl`, `*.production.hcl`, `*.internal.hcl` files
+- ❌ Files in `projects/**/*.local.hcl` or `projects/**/*.production.hcl`
+
+### ✅ Safe to Commit
+
+**Example Configurations**:
+- ✅ `config.hcl` - Fully documented runtime config with safe defaults
+- ✅ `testing/projects.hcl` - Test projects with example.com domains
+- ✅ `testing/projects/*.hcl` - Individual project configs using `env()` for credentials
+- ✅ `testing/projects/_template-*.hcl` - Templates (prefixed with `_template-`)
+
+**Best Practices**:
+- ✅ Use `env("VAR_NAME")` for ALL credentials in HCL files
+- ✅ Use placeholder values like `"example-workspace-id"`, `"REPLACE_ME"`
+- ✅ Mark templates as `status = "archived"` and prefix filenames with `_template-`
+- ✅ Document in `metadata.notes` that configs are examples only
+
+### Code Review Checklist - Run Before Every Commit
+
+```bash
+# 1. Check for accidentally staged credentials
+git diff --cached | grep -i "credentials\|token\|secret\|password\|api.key"
+
+# 2. Check for internal domains
+git diff --cached | grep -i "hashicorp\\.internal\|hashicorp\\.services"
+
+# 3. Check for real email addresses
+git diff --cached | grep -E "[a-zA-Z0-9._%+-]+@(hashicorp|ibm)\\.com"
+
+# 4. Verify .gitignore patterns
+git status --ignored
+
+# 5. Review all staged files
+git diff --cached --name-only
+```
+
+### If You Accidentally Commit Secrets
+
+**Immediate Actions**:
+1. **DO NOT** just remove the file in a new commit (secret still in git history)
+2. **Rotate the exposed credentials immediately** (new API keys, regenerate tokens)
+3. Contact security team (for HashiCorp/IBM employees)
+4. Use `git filter-repo` or BFG Repo-Cleaner to remove from history
+5. Force push (if branch not yet merged to main)
+6. If merged to main: coordinate with maintainers for history rewrite
+
+### Environment Variables Pattern
+
+**Always use `env()` in HCL configs**:
+```hcl
+# ✅ CORRECT - Safe to commit
+provider "google" {
+  workspace_id          = env("GOOGLE_WORKSPACE_ID")
+  service_account_email = env("GOOGLE_SERVICE_ACCOUNT_EMAIL")
+  credentials_path      = env("GOOGLE_CREDENTIALS_PATH")
+}
+
+# ❌ WRONG - Never hardcode
+provider "google" {
+  workspace_id          = "workspace-abc123"
+  service_account_email = "hermes@company-project.iam.gserviceaccount.com"
+  credentials_path      = "/secrets/credentials.json"
+}
+```
+
+### Protected by .gitignore
+
+The following patterns are automatically excluded:
+- `credentials.json`, `token.json`
+- `.env`, `.env.local`, `.env.*.local`
+- `projects.local.hcl`, `projects.production.hcl`, `projects.internal.hcl`
+- `**/projects.production.hcl`, `**/projects.internal.hcl`
+- `projects/**/*.local.hcl`, `projects/**/*.production.hcl`
+- `testing/projects/*.local.hcl`, `testing/projects/*.production.hcl`
+
+**Before committing**: Always run `git status --ignored` to verify sensitive files are protected.
+
 ## Critical Build & Validation Workflow
 
 ### 🔴 ALWAYS Follow This Sequence
