@@ -127,7 +127,7 @@
     "ember-set-body-class": "^1.0.2",
     "ember-set-helper": "^2.0.1",
     "ember-source": "6.8.0",
-    "ember-template-imports": "^3.4.2",
+    "ember-template-imports": "^4.3.0",
     "ember-template-lint": "^7.9.3",
     "ember-test-selectors": "^7.1.0",
     "ember-window-mock": "^0.8.1",
