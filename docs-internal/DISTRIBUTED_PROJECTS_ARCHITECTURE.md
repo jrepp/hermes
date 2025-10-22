@@ -160,58 +160,106 @@ Revisions can be:
 - Post-migration: Old revisions marked as "archived", new becomes "canonical"
 - Conflicts: Both revisions marked "conflict", requires resolution
 
-## Configuration: `projects.json`
+## Configuration: HCL Modular Structure
 
 ### Location Options
 
-1. **Testing**: `./testing/projects.json` (this repo, safe examples only)
-2. **Production**: `/etc/hermes/projects.json` or via `HERMES_PROJECTS_CONFIG` env var
-3. **Development**: `./projects.local.json` (gitignored, can have real credentials)
+1. **Testing**: `./testing/projects.hcl` with `./testing/projects/` (this repo, safe examples only)
+2. **Production**: `/etc/hermes/projects.hcl` or via `HERMES_PROJECTS_CONFIG` env var
+3. **Development**: `./projects.local.hcl` (gitignored, can have real credentials)
+
+### Modular HCL Configuration
+
+Projects are defined in **individual HCL files** for better organization:
+
+```
+testing/
+├── projects.hcl              # Main config with imports
+└── projects/                 # Individual project configs
+    ├── testing.hcl           # Local testing workspace
+    ├── docs.hcl              # Public documentation
+    ├── _template-google.hcl  # Template for Google Workspace
+    └── _template-migration.hcl  # Template for migrations
+```
 
 ### Configuration Structure
 
-See `./testing/projects.json` for full examples.
+Main config (`projects.hcl`):
+```hcl
+# Import individual project definitions
+import "projects/testing.hcl"
+import "projects/docs.hcl"
 
-```json
-{
-  "version": "1.0.0-alpha",
-  "projects": [
-    {
-      "projectId": "hermes-testing",
-      "title": "Hermes Testing Environment",
-      "description": "Local testing workspace",
-      "status": "active",
-      "provider": {
-        "type": "local",
-        "config": {
-          "workspacePath": "./testing/workspace_data",
-          "gitRepository": "https://github.com/hashicorp-forge/hermes",
-          "indexingEnabled": true
-        }
-      }
-    }
-  ]
+# Global settings
+projects {
+  version    = "1.0.0-alpha"
+  config_dir = "./projects"
 }
 ```
 
-### Schema Validation
+Individual project (`projects/testing.hcl`):
+```hcl
+project "testing" {
+  title         = "Hermes Testing Environment"
+  friendly_name = "Hermes Testing"
+  short_name    = "TEST"  # Used in TEST-001, TEST-002, etc.
+  description   = "Local testing workspace"
+  status        = "active"
+  
+  provider "local" {
+    migration_status = "active"
+    workspace_path   = "./testing/workspace_data"
+    
+    git {
+      repository = "https://github.com/hashicorp-forge/hermes"
+      branch     = "main"
+    }
+    
+    indexing {
+      enabled            = true
+      allowed_extensions = ["md", "txt", "json", "yaml", "yml"]
+    }
+  }
+  
+  metadata {
+    created_at = "2025-10-22T00:00:00Z"
+    owner      = "hermes-dev-team"
+    tags       = ["testing", "development", "local"]
+  }
+}
+```
 
-JSON Schema: `./testing/projects.schema.json`
+### Short Names
 
-Validate configuration:
+Each project has a **short name** (2-10 characters) used in:
+- Document IDs: `RFC-001`, `PRD-042`, `TEST-123`
+- URLs: `/projects/testing`, `/docs/RFC-001`
+- Search facets and filtering
+
+**Note**: Short names are NOT globally unique (display/organizational only).
+
+### Configuration Validation
+
 ```bash
-# Using a JSON schema validator
-jsonschema -i projects.json projects.schema.json
+# Check HCL syntax
+hclconf check testing/projects.hcl
+
+# Validate projects configuration (when implemented)
+./hermes projects validate -config=testing/projects.hcl
+
+# List all projects
+./hermes projects list -config=testing/projects.hcl
 ```
 
 ## Implementation Phases
 
 ### Phase 1: Foundation (Current)
-- ✅ Define `projects.json` schema
-- ✅ Create example configurations
+- ✅ Design HCL modular structure
+- ✅ Create example configurations with short names
 - ✅ Document architecture
-- ⏳ Implement config loader in Go
+- ⏳ Implement HCL config loader in Go
 - ⏳ Add validation and error handling
+- ⏳ Support for `import` statements
 
 ### Phase 2: Local Provider Support
 - ⏳ Implement local workspace adapter
@@ -253,23 +301,31 @@ This is an **open-source project** used by HashiCorp and potentially IBM. We **m
 
 1. **Configuration Separation**
    ```
-   projects.json              # Public examples only (committed)
-   projects.local.json        # Private config (gitignored)
-   projects.production.json   # Production config (secret management)
+   testing/projects.hcl           # Public examples (committed)
+   testing/projects/*.hcl         # Safe project configs (committed)
+   testing/projects/_template-*.hcl  # Templates only (committed)
+   
+   projects.local.hcl            # Private config (gitignored)
+   projects.production.hcl       # Production config (secret management)
+   testing/projects/*.local.hcl  # Private project configs (gitignored)
    ```
 
-2. **Use Environment Variables**
-   ```json
-   {
-     "credentialsPath": "${GOOGLE_CREDENTIALS_PATH}",
-     "serviceAccountEmail": "${GOOGLE_SERVICE_ACCOUNT}"
+2. **Use Environment Variables with `env()`**
+   ```hcl
+   project "my-docs" {
+     provider "google" {
+       workspace_id          = env("GOOGLE_WORKSPACE_ID")
+       service_account_email = env("GOOGLE_SERVICE_ACCOUNT")
+       credentials_path      = env("GOOGLE_CREDENTIALS_PATH")
+     }
    }
    ```
 
 3. **Example Data Only**
    - Use `example.com`, `example-project-id`
-   - Mark examples as `"status": "archived"`
-   - Add warnings in `_comment` fields
+   - Mark templates as `status = "archived"`
+   - Prefix templates with `_template-` to prevent loading
+   - Add notes in `metadata.notes` field
 
 4. **Code Review Checklist**
    - [ ] No real credentials in code/config
@@ -431,25 +487,39 @@ GET /api/v2/documents/:google-doc-id  # Still works, issues deprecation warning
 
 1. **Use the testing configuration**
    ```bash
-   export HERMES_PROJECTS_CONFIG=./testing/projects.json
+   export HERMES_PROJECTS_CONFIG=./testing/projects.hcl
    make up
    ```
 
 2. **Test projects included**:
-   - `hermes-testing` - Local test workspace
-   - `hermes-docs` - Documentation CMS
-   - Example templates (archived, not active)
+   - `testing` - Local test workspace (short name: TEST)
+   - `docs` - Documentation CMS (short name: DOCS)
+   - `_template-*` - Templates only (not loaded)
 
 3. **Adding your own test project**:
    ```bash
-   cp testing/projects.json projects.local.json
-   # Edit projects.local.json with your test data
-   export HERMES_PROJECTS_CONFIG=./projects.local.json
+   # Create a new project file
+   cat > testing/projects/my-project.hcl <<EOF
+   project "my-project" {
+     title         = "My Test Project"
+     friendly_name = "My Project"
+     short_name    = "MYPROJ"
+     status        = "active"
+     
+     provider "local" {
+       workspace_path = "./my-test-docs"
+       # ... rest of config
+     }
+   }
+   EOF
+   
+   # Import in main config
+   echo 'import "projects/my-project.hcl"' >> testing/projects.hcl
    ```
 
 ### Internal Deployment (HashiCorp/IBM)
 
-For internal deployments, create a separate `projects.production.json`:
+For internal deployments, create a separate `projects.production.hcl`:
 
 ```json
 {
@@ -567,8 +637,10 @@ Project Configuration:
 
 ## References
 
-- **Configuration Schema**: `./testing/projects.schema.json`
-- **Example Configuration**: `./testing/projects.json`
+- **Main Configuration**: `./testing/projects.hcl`
+- **Project Configurations**: `./testing/projects/*.hcl`
+- **Project README**: `./testing/projects/README.md`
+- **Legacy JSON Schema** (deprecated): `./testing/projects.schema.json`
 - **Detailed Migration Design**: `docs-internal/DOCUMENT_REVISIONS_AND_MIGRATION.md` ⭐
 - **Implementation Roadmap**: `docs-internal/DISTRIBUTED_PROJECTS_ROADMAP.md`
 - **Workspace Adapters**: `pkg/workspace/`
