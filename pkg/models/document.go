@@ -6,6 +6,7 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -15,7 +16,21 @@ type Document struct {
 	gorm.Model
 
 	// GoogleFileID is the Google Drive file ID of the document.
+	// DEPRECATED: Use DocumentUUID for lookups. Kept for backward compatibility.
 	GoogleFileID string `gorm:"index;not null;unique"`
+
+	// DocumentUUID is the stable, globally unique document identifier.
+	// This persists across provider migrations and represents the logical document.
+	// Nullable initially to allow gradual migration from GoogleFileID.
+	DocumentUUID *docid.UUID `gorm:"type:uuid;uniqueIndex:idx_documents_uuid"`
+
+	// ProviderType identifies the storage backend (google, local, remote-hermes).
+	// Nullable initially for backward compatibility.
+	ProviderType *string `gorm:"type:varchar(50)"`
+
+	// ProjectID identifies which project configuration this document belongs to.
+	// Nullable initially for backward compatibility.
+	ProjectID *string `gorm:"type:varchar(64)"`
 
 	// Approvers is the list of users whose approval is requested for the
 	// document.
@@ -750,4 +765,48 @@ func (d *Document) replaceAssocations(db *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// GetDocumentUUID returns the document UUID if set, or generates a new one.
+// This is useful during migration when documents don't have UUIDs yet.
+func (d *Document) GetDocumentUUID() docid.UUID {
+	if d.DocumentUUID != nil && !d.DocumentUUID.IsZero() {
+		return *d.DocumentUUID
+	}
+	return docid.NewUUID()
+}
+
+// SetDocumentUUID sets the document UUID.
+func (d *Document) SetDocumentUUID(uuid docid.UUID) {
+	d.DocumentUUID = &uuid
+}
+
+// GetByUUID retrieves a document by its UUID.
+func (d *Document) GetByUUID(db *gorm.DB, uuid docid.UUID) error {
+	return db.
+		Preload(clause.Associations).
+		Where("document_uuid = ?", uuid).
+		First(&d).
+		Error
+}
+
+// GetByGoogleFileIDOrUUID retrieves a document by GoogleFileID or UUID.
+// Tries UUID first (preferred), falls back to GoogleFileID for backward compatibility.
+func (d *Document) GetByGoogleFileIDOrUUID(db *gorm.DB, id string) error {
+	// Try parsing as UUID first
+	if uuid, err := docid.ParseUUID(id); err == nil {
+		if err := d.GetByUUID(db, uuid); err == nil {
+			return nil
+		}
+		// UUID parse succeeded but no document found, fall through to GoogleFileID
+	}
+
+	// Fall back to GoogleFileID lookup
+	d.GoogleFileID = id
+	return d.Get(db)
+}
+
+// HasUUID returns true if the document has a UUID assigned.
+func (d *Document) HasUUID() bool {
+	return d.DocumentUUID != nil && !d.DocumentUUID.IsZero()
 }
