@@ -126,6 +126,52 @@ testing/test: ## Run tests in containerized environment
 testing/clean: ## Clean containerized testing environment
 	@cd testing && $(MAKE) clean
 
+.PHONY: test/health
+test/health: ## Check health of testing backend services
+	@echo "Checking health of testing environment services..."
+	@echo ""
+	@echo "==> PostgreSQL (port 5433)"
+	@if nc -z localhost 5433 2>/dev/null || (command -v pg_isready >/dev/null 2>&1 && pg_isready -h localhost -p 5433 -U postgres > /dev/null 2>&1); then \
+		echo "✓ PostgreSQL is healthy"; \
+	else \
+		echo "✗ PostgreSQL is not responding"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "==> Meilisearch (port 7701)"
+	@if curl -sf http://localhost:7701/health > /dev/null 2>&1; then \
+		echo "✓ Meilisearch is healthy"; \
+	else \
+		echo "✗ Meilisearch is not responding"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "==> Dex OIDC (port 5559)"
+	@if curl -s -o /dev/null -w "%{http_code}" http://localhost:5559/ 2>/dev/null | grep -q "404"; then \
+		echo "✓ Dex is healthy"; \
+	else \
+		echo "✗ Dex is not responding"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "==> Hermes Backend (port 8001)"
+	@if curl -sf http://localhost:8001/health > /dev/null 2>&1; then \
+		echo "✓ Hermes backend is healthy"; \
+	else \
+		echo "✗ Hermes backend is not responding"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "==> Hermes Frontend (port 4201)"
+	@if curl -sf http://localhost:4201/ > /dev/null 2>&1; then \
+		echo "✓ Hermes frontend is healthy"; \
+	else \
+		echo "✗ Hermes frontend is not responding"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "✓ All testing services are healthy!"
+
 .PHONY: clean
 clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."
