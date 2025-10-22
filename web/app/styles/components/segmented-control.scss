@@ -3,7 +3,7 @@
 
   a {
     @apply relative flex h-9 w-1/3 items-center justify-center gap-1.5 rounded-none border border-color-palette-neutral-300;
-    @apply bg-color-page-faint;
+    @apply bg-color-page-faint px-4 py-2;
 
     &:first-child {
       @apply rounded-l-button-md;

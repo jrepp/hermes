@@ -68,3 +68,17 @@ test_*.log
 # Volume data
 /workspace_data/
 
+# Distributed projects configuration (internal/production)
+# Only testing/projects.json with safe examples should be committed
+/projects.json
+/projects.local.json
+/projects.*.json
+/projects.production.json
+/projects.internal.json
+/testing/projects.local.json
+/testing/projects.production.json
+/testing/projects.internal.json
+**/projects.production.json
+**/projects.internal.json
+**/projects.local.json
+
