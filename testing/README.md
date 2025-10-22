@@ -37,6 +37,17 @@ make down              # Stop all services
 - ✅ **Manual QA** - Interactive testing via browser
 - ✅ **Demonstrations** - Show the full application
 
+## 🗂️ Projects Configuration
+
+This testing environment includes a **projects.json** configuration that demonstrates Hermes's distributed project management capabilities. See `projects.json` and `docs-internal/DISTRIBUTED_PROJECTS_ARCHITECTURE.md` for details.
+
+**Included test projects**:
+- `hermes-testing` - Local workspace at `./workspace_data`
+- `hermes-docs` - Documentation from `./docs-cms`
+- Example templates for Google Workspace and remote federation (archived)
+
+**For internal deployments**: Create `projects.local.json` with your real configuration (gitignored).
+
 ## Service Ports
 
 All services use non-standard ports to avoid conflicts with local development:
