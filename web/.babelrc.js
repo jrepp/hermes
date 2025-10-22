@@ -12,10 +12,10 @@ module.exports = {
     // Support for private fields as well
     ['@babel/plugin-proposal-private-property-in-object', { loose: true }],
     ['@babel/plugin-proposal-class-properties', { loose: true }],
-    // Transform ember-concurrency async tasks to support arrow functions
-    ['ember-concurrency/lib/babel-plugin-transform-ember-concurrency-async-tasks', {
+    // Transform ember-concurrency async tasks to support arrow functions (v4+)
+    ['ember-concurrency/async-arrow-task-transform', {
       // Enables async arrow function support for ember-concurrency tasks
-      // This resolves the "ember-concurrency/async-arrow-runtime" module error
+      // This resolves the async arrow function Babel compilation error in v4
     }]
   ],
 };

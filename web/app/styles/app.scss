@@ -1,13 +1,10 @@
+@charset "UTF-8";
+
 @use "components/action";
-
-@use "@hashicorp/design-system-components";
-
 @use "./variables";
-
 @use "./body";
 @use "./animations";
 @use "./typography";
-
 @use "components/dashboard";
 @use "components/person";
 @use "components/new";
@@ -51,17 +48,15 @@
 @use "hermes/avatar";
 @use "routes/results";
 @use "routes/my";
-
 @use "./buttons";
-
 @use "./ember-power-select-theme";
-
 @use "./error-404";
 @use "./hds-overrides";
-
 @use "tailwindcss/base";
 @use "tailwindcss/components";
 @use "tailwindcss/utilities";
+
+@import "@hashicorp/design-system-components.scss";
 
 @layer utilities {
   .hermes-h4 {
