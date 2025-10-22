@@ -13,6 +13,10 @@ projects {
   # Directory where project configs are stored
   config_dir = "./projects"
   
+  # Base path for all workspace data (container: /app/workspaces, native: ./testing/workspaces)
+  # Individual projects use relative paths under this base
+  workspace_base_path = "/app/workspaces"
+  
   # Default provider settings
   defaults {
     local {

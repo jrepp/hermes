@@ -66,6 +66,30 @@ Short names are used in:
 - Memorable and descriptive
 - Unique within your Hermes instance (not globally unique)
 
+### Global Settings
+
+The main `projects.hcl` file defines global settings:
+
+```hcl
+projects {
+  version = "1.0.0-alpha"
+  config_dir = "./projects"
+  
+  # Base path for all workspace data
+  # Container: /app/workspaces
+  # Native dev: ./testing/workspaces (override with env var or local config)
+  workspace_base_path = "/app/workspaces"
+}
+```
+
+Individual projects use **relative paths** under this base:
+
+```hcl
+provider "local" {
+  workspace_path = "testing"  # Resolves to /app/workspaces/testing
+}
+```
+
 ### Provider Types
 
 #### Local Provider
@@ -74,7 +98,8 @@ Short names are used in:
 provider "local" {
   migration_status = "active"
   
-  workspace_path = "./path/to/workspace"
+  # Relative to workspace_base_path
+  workspace_path = "my-project"  # → /app/workspaces/my-project
   
   git {
     repository = "https://github.com/org/repo"
@@ -87,6 +112,18 @@ provider "local" {
     public_read_access = false
   }
 }
+```
+
+**Container Mapping** (docker-compose.yml):
+```yaml
+volumes:
+  - ./workspaces/my-project:/app/workspaces/my-project
+```
+
+**Native Development**:
+```bash
+export HERMES_WORKSPACE_BASE_PATH="./testing/workspaces"
+# Or create projects.local.hcl with workspace_base_path = "./testing/workspaces"
 ```
 
 #### Google Provider (Template)

@@ -90,12 +90,18 @@ services:
     volumes:
       # Mount testing configuration
       - ./config.hcl:/app/config.hcl:ro
+      # Mount projects configuration
+      - ./projects.hcl:/app/projects.hcl:ro
+      - ./projects:/app/projects:ro
       # Mount test users data (mirrors Dex identities)
       - ./users.json:/app/workspace_data/users.json:ro
       # Mount template documents (for document creation - seeded templates)
       - ./workspace_data/templates:/app/workspace_data/templates:ro
       # Mount workspace data (persists across restarts - runtime data)
       - hermes_workspace:/app/workspace_data
+      # Mount project workspaces to consistent base path
+      - ./workspaces/testing:/app/workspaces/testing
+      - ./workspaces/docs:/app/workspaces/docs
     environment:
       HERMES_BASE_URL: http://localhost:4201  # Frontend in testing environment
       HERMES_SEARCH_PROVIDER: meilisearch
