@@ -5,6 +5,8 @@ module.exports = {
   plugins: [
     // Decorators must come first (required by Ember)
     ['@babel/plugin-proposal-decorators', { legacy: true }],
+    // NOTE: babel-plugin-ember-template-compilation is automatically added by ember-template-imports addon
+    // Do NOT manually add it here as it will conflict with the addon's configuration
     // Add support for JavaScript private methods used by Ember Data 5.7.0
     ['@babel/plugin-proposal-private-methods', { loose: true }],
     // Support for private fields as well

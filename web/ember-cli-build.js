@@ -10,6 +10,10 @@ module.exports = function (defaults) {
   const autoprefixer = require('autoprefixer');
   
   let app = new EmberApp(defaults, {
+    // Babel configuration for .gts template compilation
+    'ember-cli-babel': {
+      enableTypeScriptTransform: true,
+    },
     // Code coverage configuration
     'ember-cli-code-coverage': {
       modifyAssetLocation: function(path) {
