@@ -81,48 +81,56 @@
                   </Hds::ApplicationState>
                 </div>
               {{else}}
-                {{! Tab Navigation }}
-                <div class="mb-4 border-b border-gray-200">
-                  <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button
-                      type="button"
-                      class="{{if (eq this.activeTab 'edit') 'border-blue-500 text-blue-600' 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}} whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium"
-                      {{on "click" (fn this.setActiveTab "edit")}}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      class="{{if (eq this.activeTab 'preview') 'border-blue-500 text-blue-600' 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}} whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium"
-                      {{on "click" (fn this.setActiveTab "preview")}}
-                    >
-                      Preview
-                    </button>
-                  </nav>
-                </div>
-
-                {{! Tab Content }}
-                <div class="flex-1 overflow-hidden">
-                  {{#if (eq this.activeTab "edit")}}
+                {{! HDS Tabs for Edit/Preview }}
+                <Hds::Tabs @selectedTabIndex={{this.selectedTabIndex}} @onTabChange={{this.handleTabChange}} as |T|>
+                  <T.Tab data-test-edit-tab>
+                    Edit
+                  </T.Tab>
+                  <T.Tab data-test-preview-tab>
+                    Preview
+                  </T.Tab>
+                  
+                  <T.Panel>
                     {{! Edit Tab - Markdown Editor }}
-                    <textarea
-                      data-test-markdown-editor
-                      class="h-full w-full resize-none overflow-auto rounded border border-gray-300 p-4 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                      placeholder="Enter markdown content..."
-                      value={{this.documentContent}}
-                      {{on "input" this.updateContentFromEvent}}
-                      disabled={{this.isSavingContent}}
-                    ></textarea>
-                  {{else}}
-                    {{! Preview Tab - Rendered Markdown }}
-                    <div 
-                      data-test-markdown-preview
-                      class="h-full overflow-auto rounded border border-gray-300 bg-white p-6 prose max-w-none"
-                    >
-                      {{html-safe (markdown-to-html this.documentContent)}}
+                    <div class="flex-1 overflow-hidden pt-4">
+                      <Hds::Form::Textarea::Field
+                        data-test-markdown-editor
+                        @value={{this.documentContent}}
+                        @isOptional={{false}}
+                        @height="400px"
+                        @isInvalid={{false}}
+                        @extraAriaDescribedBy="edit-helper-text"
+                        placeholder="Enter markdown content..."
+                        class="font-mono"
+                        {{on "input" this.updateContentFromEvent}}
+                        disabled={{this.isSavingContent}}
+                        as |F|
+                      >
+                        <F.HelperText id="edit-helper-text">
+                          Use Markdown syntax to format your document. Changes are saved when you click Save.
+                        </F.HelperText>
+                      </Hds::Form::Textarea::Field>
                     </div>
-                  {{/if}}
-                </div>
+                  </T.Panel>
+                  
+                  <T.Panel>
+                    {{! Preview Tab - Rendered Markdown }}
+                    <div class="pt-4">
+                      <Hds::Card::Container @level="mid" @hasBorder={{true}} class="min-h-[400px]">
+                        <div 
+                          data-test-markdown-preview
+                          class="prose prose-slate max-w-none p-6"
+                        >
+                          {{#if this.documentContent}}
+                            {{html-safe (markdown-to-html this.documentContent)}}
+                          {{else}}
+                            <p class="text-gray-500 italic">No content to preview. Switch to Edit tab to add content.</p>
+                          {{/if}}
+                        </div>
+                      </Hds::Card::Container>
+                    </div>
+                  </T.Panel>
+                </Hds::Tabs>
               {{/if}}
             {{else}}
               {{! Read-Only/Preview Mode }}

@@ -31,7 +31,7 @@ export default class DocumentIndexComponent extends Component<DocumentIndexCompo
   @tracked isLoadingContent = false;
   @tracked isSavingContent = false;
   @tracked isEditMode = false;
-  @tracked activeTab: "edit" | "preview" = "edit";
+  @tracked selectedTabIndex = 0; // 0 = Edit, 1 = Preview
 
   /**
    * Get user profile, returning a guest profile if user info is not loaded
@@ -119,7 +119,7 @@ export default class DocumentIndexComponent extends Component<DocumentIndexCompo
   @action protected cancelEdit() {
     this.isEditMode = false;
     this.documentContent = "";
-    this.activeTab = "edit";
+    this.selectedTabIndex = 0; // Reset to Edit tab
   }
 
   @action protected updateContent(newContent: string) {
@@ -131,8 +131,11 @@ export default class DocumentIndexComponent extends Component<DocumentIndexCompo
     this.documentContent = target.value;
   }
 
-  @action protected setActiveTab(tab: "edit" | "preview") {
-    this.activeTab = tab;
+  @action protected handleTabChange(index: number) {
+    console.log('[DocumentIndex] handleTabChange called with index:', index);
+    console.log('[DocumentIndex] Previous selectedTabIndex:', this.selectedTabIndex);
+    this.selectedTabIndex = index;
+    console.log('[DocumentIndex] New selectedTabIndex:', this.selectedTabIndex);
   }
 }
 
