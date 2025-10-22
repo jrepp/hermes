@@ -168,6 +168,7 @@
     "@types/sinon": "^10.0.13",
     "autoprefixer": "^10.4.21",
     "babel-loader": "^10.0.0",
+    "ember-cli-markdown-editor": "https://github.com/jrepp/ember-cli-markdown-editor.git#jrepp/upgrade-ember-6.7-fix-compatibility",
     "ember-cli-postcss": "^8.0.0",
     "ember-concurrency": "2.3.7",
     "ember-power-select": "7.2.0",
