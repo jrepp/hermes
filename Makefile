@@ -5,7 +5,24 @@ COVERAGE_DIR := $(BUILD_DIR)/coverage
 TEST_DIR := $(BUILD_DIR)/test
 
 .PHONY: default
-default: help
+default: all
+
+.PHONY: all
+all: ## Build everything (web + server + docker containers)
+	@echo "==> Building all components..."
+	@echo ""
+	@echo "Step 1/3: Building web application..."
+	@$(MAKE) web/build
+	@echo ""
+	@echo "Step 2/3: Building hermes server..."
+	@$(MAKE) go/build
+	@echo ""
+	@echo "Step 3/3: Building docker containers..."
+	@cd testing && docker compose build
+	@echo ""
+	@echo "✓ All components built successfully!"
+	@echo "  Run 'make up' to start the testing environment"
+	@echo "  Run 'make dev' to start local development environment"
 
 .PHONY: up
 up: ## Start full testing environment (all services in Docker)
@@ -191,10 +208,36 @@ test/api/quick: ## Run quick API unit tests
 
 .PHONY: help
 help: ## Print this help
-	@echo "Usage: make <target>"
-	@echo
-	@echo "Targets:"
-	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | column -t -c 2 -s ':#'
+	@echo "Hermes Build System"
+	@echo "==================="
+	@echo ""
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Default target (just 'make'):"
+	@echo "  all                          Build everything (web + server + docker)"
+	@echo ""
+	@echo "Common Targets:"
+	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^(all|build|dev|up|down|clean|test|help)' | column -t -c 2 -s ':#' | sed 's/^/  /'
+	@echo ""
+	@echo "Build Targets:"
+	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^(go/build|web/build|bin)' | column -t -c 2 -s ':#' | sed 's/^/  /'
+	@echo ""
+	@echo "Test Targets:"
+	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^test' | column -t -c 2 -s ':#' | sed 's/^/  /'
+	@echo ""
+	@echo "Docker Targets:"
+	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^docker' | column -t -c 2 -s ':#' | sed 's/^/  /'
+	@echo ""
+	@echo "Web Targets:"
+	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^web/' | column -t -c 2 -s ':#' | sed 's/^/  /'
+	@echo ""
+	@echo "Testing Environment:"
+	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^testing/' | column -t -c 2 -s ':#' | sed 's/^/  /'
+	@echo ""
+	@echo "Coverage Targets:"
+	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^coverage' | column -t -c 2 -s ':#' | sed 's/^/  /'
+	@echo ""
+	@echo "For more details on any target, check the Makefile or run: make <target>"
 
 .PHONY: run
 run:
