@@ -105,6 +105,43 @@ docker/dev/start: ## Start full development environment (PostgreSQL + Meilisearc
 docker/dev/stop: ## Stop development environment
 	docker-compose down
 
+.PHONY: ollama/configure
+ollama/configure: ## Configure Ollama (check installation, pull models, validate)
+	@./scripts/configure-ollama.sh
+
+.PHONY: ollama/check
+ollama/check: ## Check if Ollama is configured and ready
+	@./scripts/configure-ollama.sh --check-only
+
+.PHONY: ollama/pull
+ollama/pull: ## Pull Ollama models (force update)
+	@./scripts/configure-ollama.sh --pull-models
+
+.PHONY: ollama/serve
+ollama/serve: ## Start Ollama service in foreground
+	@echo "Starting Ollama service..."
+	@echo "Press Ctrl+C to stop"
+	ollama serve
+
+.PHONY: ollama/serve/background
+ollama/serve/background: ## Start Ollama service in background
+	@echo "Starting Ollama service in background..."
+	@ollama serve > /tmp/ollama.log 2>&1 &
+	@echo "✓ Ollama started (PID: $$!)"
+	@echo "  Logs: /tmp/ollama.log"
+	@echo "  Stop: pkill -f 'ollama serve'"
+
+.PHONY: ollama/stop
+ollama/stop: ## Stop Ollama service
+	@echo "Stopping Ollama service..."
+	@pkill -f 'ollama serve' || echo "Ollama not running"
+
+.PHONY: ollama/test
+ollama/test: ## Run Ollama integration tests
+	@echo "Running Ollama integration tests..."
+	@cd tests/integration/indexer && \
+		go test -tags=integration -v -timeout=10m -run TestOllamaProvider_Simple
+
 .PHONY: canary
 canary: ## Run canary test against local docker-compose
 	@./scripts/canary-local.sh
@@ -273,6 +310,9 @@ help: ## Print this help
 	@echo ""
 	@echo "Docker Targets:"
 	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^docker' | column -t -c 2 -s ':#' | sed 's/^/  /'
+	@echo ""
+	@echo "Ollama Targets:"
+	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^ollama' | column -t -c 2 -s ':#' | sed 's/^/  /'
 	@echo ""
 	@echo "Web Targets:"
 	@egrep '^(.+)\:\ ##\ (.+)' $(MAKEFILE_LIST) | grep -E '^web/' | column -t -c 2 -s ':#' | sed 's/^/  /'
