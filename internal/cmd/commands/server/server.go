@@ -564,7 +564,15 @@ func (c *Command) Run(args []string) int {
 			return 1
 		}
 
-		c.UI.Info(fmt.Sprintf("Loaded %d workspace projects", len(projectConfig.Projects)))
+		c.UI.Info(fmt.Sprintf("Loaded %d workspace projects from HCL config", len(projectConfig.Projects)))
+
+		// Sync workspace projects to database
+		c.UI.Info("Syncing workspace projects to database...")
+		if err := projectConfig.SyncToDatabase(db, cfg.Providers.ProjectsConfigPath); err != nil {
+			c.UI.Error(fmt.Sprintf("error syncing workspace projects to database: %v", err))
+			return 1
+		}
+		c.UI.Info("Workspace projects synced to database successfully")
 
 		// Log active projects
 		activeProjects := projectConfig.GetActiveProjects()
@@ -579,6 +587,16 @@ func (c *Command) Run(args []string) int {
 				c.UI.Info(fmt.Sprintf("    Migration: %s -> %s",
 					sourceProvider.Type, targetProvider.Type))
 			}
+		}
+	} else {
+		// No HCL config provided, try loading from database
+		c.UI.Info("No workspace projects config path provided, loading from database...")
+		projectConfig, err = projectconfig.LoadFromDatabase(db)
+		if err != nil {
+			c.UI.Warn(fmt.Sprintf("No workspace projects found in database: %v", err))
+			// projectConfig remains nil, which is handled by the API endpoints
+		} else {
+			c.UI.Info(fmt.Sprintf("Loaded %d workspace projects from database", len(projectConfig.Projects)))
 		}
 	}
 
