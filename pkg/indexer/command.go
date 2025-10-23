@@ -1,5 +1,4 @@
 package indexer
-package indexer
 
 import "context"
 

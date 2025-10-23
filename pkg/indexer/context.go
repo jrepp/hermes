@@ -3,6 +3,7 @@ package indexer
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
@@ -14,6 +15,11 @@ import (
 type DocumentContext struct {
 	// Source document from workspace provider
 	Document *workspace.Document
+
+	// UUID and Revision Tracking
+	DocumentUUID uuid.UUID                // Stable identifier across providers
+	ContentHash  string                   // SHA-256 hash for change detection
+	Revision     *models.DocumentRevision // Current revision info
 
 	// Database metadata
 	Metadata     *models.Document
@@ -30,12 +36,27 @@ type DocumentContext struct {
 	TargetFolderID string
 	TargetDocument *workspace.Document
 
+	// Migration tracking
+	MigrationStatus string        // "none", "source", "target", "conflict", "canonical"
+	ConflictInfo    *ConflictInfo // Details about migration conflicts
+
 	// Tracking
 	StartTime time.Time
 	Errors    []error
 
 	// Custom data that commands can use to pass information
 	Custom map[string]any
+}
+
+// ConflictInfo tracks migration conflicts between providers.
+type ConflictInfo struct {
+	DetectedAt    time.Time
+	ConflictType  string // "concurrent-edit", "content-divergence", etc.
+	SourceHash    string
+	TargetHash    string
+	SourceModTime time.Time
+	TargetModTime time.Time
+	Resolution    string // "pending", "source-wins", "target-wins", "manual"
 }
 
 // LoadMetadata loads database metadata for the document.

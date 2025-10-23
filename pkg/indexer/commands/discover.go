@@ -1,5 +1,4 @@
 package commands
-package commands
 
 import (
 	"context"
@@ -14,11 +13,11 @@ import (
 // It queries the workspace provider for documents in a specific folder
 // that have been modified within a time range.
 type DiscoverCommand struct {
-	Provider  workspace.DocumentStorage
-	FolderID  string
-	Since     *time.Time
-	Until     *time.Time
-	Filter    indexer.DocumentFilter
+	Provider workspace.DocumentStorage
+	FolderID string
+	Since    *time.Time
+	Until    *time.Time
+	Filter   indexer.DocumentFilter
 }
 
 // Name returns the command name.
@@ -35,7 +34,7 @@ func (c *DiscoverCommand) Execute(ctx context.Context, doc *indexer.DocumentCont
 // Discover returns documents that match the criteria.
 func (c *DiscoverCommand) Discover(ctx context.Context) ([]*indexer.DocumentContext, error) {
 	opts := &workspace.ListOptions{}
-	
+
 	if c.Since != nil {
 		opts.ModifiedAfter = c.Since
 	}
