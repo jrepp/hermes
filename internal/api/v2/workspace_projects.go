@@ -32,17 +32,28 @@ func WorkspaceProjectsHandler(srv server.Server) http.Handler {
 			return
 		}
 
-		// Check if project config is loaded
-		if srv.ProjectConfig == nil {
-			srv.Logger.Warn("project config not loaded", logArgs...)
-			http.Error(w, "Workspace projects not configured", http.StatusNotImplemented)
-			return
-		}
-
 		switch r.Method {
 		case "GET":
-			// Get all active projects
-			summaries := srv.ProjectConfig.GetActiveProjectSummaries()
+			// Get all active projects from database
+			workspaceProjects, err := projectconfig.GetAllActiveWorkspaceProjectsFromDB(srv.DB)
+			if err != nil {
+				srv.Logger.Error("error loading workspace projects from database",
+					append(logArgs, "error", err)...)
+				http.Error(w, "Error loading workspace projects", http.StatusInternalServerError)
+				return
+			}
+
+			// Convert to summaries
+			summaries := make([]*projectconfig.ProjectSummary, 0, len(workspaceProjects))
+			for _, wp := range workspaceProjects {
+				summary, err := projectconfig.GetWorkspaceProjectSummary(&wp)
+				if err != nil {
+					srv.Logger.Error("error converting workspace project to summary",
+						append(logArgs, "project", wp.Name, "error", err)...)
+					continue
+				}
+				summaries = append(summaries, summary)
+			}
 
 			resp := WorkspaceProjectsGetResponse{
 				Projects: summaries,
@@ -79,13 +90,6 @@ func WorkspaceProjectHandler(srv server.Server) http.Handler {
 			return
 		}
 
-		// Check if project config is loaded
-		if srv.ProjectConfig == nil {
-			srv.Logger.Warn("project config not loaded", logArgs...)
-			http.Error(w, "Workspace projects not configured", http.StatusNotImplemented)
-			return
-		}
-
 		// Extract project name from URL path
 		// URL pattern: /api/v2/workspace-projects/{name}
 		pathParts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/v2/workspace-projects/"), "/")
@@ -97,8 +101,8 @@ func WorkspaceProjectHandler(srv server.Server) http.Handler {
 
 		switch r.Method {
 		case "GET":
-			// Get single project
-			project, err := srv.ProjectConfig.GetProject(projectName)
+			// Get single project from database
+			wp, err := projectconfig.GetWorkspaceProjectByNameFromDB(srv.DB, projectName)
 			if err != nil {
 				srv.Logger.Error("project not found",
 					append(logArgs, "project_name", projectName, "error", err)...)
@@ -107,7 +111,13 @@ func WorkspaceProjectHandler(srv server.Server) http.Handler {
 			}
 
 			// Convert to sanitized summary
-			summary := project.ToSummary()
+			summary, err := projectconfig.GetWorkspaceProjectSummary(wp)
+			if err != nil {
+				srv.Logger.Error("error converting workspace project to summary",
+					append(logArgs, "project_name", projectName, "error", err)...)
+				http.Error(w, "Error processing project", http.StatusInternalServerError)
+				return
+			}
 
 			w.Header().Set("Content-Type", "application/json")
 			if err := json.NewEncoder(w).Encode(summary); err != nil {
