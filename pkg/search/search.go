@@ -195,8 +195,8 @@ type SearchResult struct {
 
 // Facets contains facet values for filtering.
 type Facets struct {
-	Products map[string]int `json:"products"`
-	DocTypes map[string]int `json:"docTypes"`
-	Statuses map[string]int `json:"statuses"`
+	Products map[string]int `json:"product"`
+	DocTypes map[string]int `json:"docType"`
+	Statuses map[string]int `json:"status"`
 	Owners   map[string]int `json:"owners"`
 }
