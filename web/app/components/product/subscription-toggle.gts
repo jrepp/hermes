@@ -49,21 +49,23 @@ export default class ProductSubscriptionToggleComponent extends Component<Produc
       <Action
         data-test-product-subscription-toggle
         data-test-subscribed={{this.isSubscribed}}
-        class="hds-button pill-button justify-center
-          {{if @size 'h-7 w-[118px] text-body-100' 'h-9 w-[128px]'}}
+        class="hds-button pill-button justify-center transition-all duration-200
+          {{if @size 'h-7 w-[130px] text-body-100 px-4' 'h-9 w-[140px] px-5'}}
           {{if
             this.isSubscribed
-            'hds-button--color-primary'
-            'hds-button--color-secondary'
+            'hds-button--color-primary bg-action-primary text-white border-action-primary hover:bg-action-primary-hover hover:border-action-primary-hover'
+            'hds-button--color-secondary hover:bg-color-page-primary hover:border-color-border-strong'
           }}"
         {{on "click" this.toggleSubscription}}
       >
-        <div class="flex items-center gap-[5px]">
+        <div class="flex items-center gap-2 justify-center">
           <FlightIcon
             @name={{if this.isSubscribed "check" "plus"}}
-            class={{if this.isSubscribed "-ml-1" "-ml-1"}}
+            class="transition-transform duration-200 {{if this.isSubscribed 'scale-110' ''}}"
           />
-          {{if this.isSubscribed "Subscribed" "Subscribe"}}
+          <span class="font-medium">
+            {{if this.isSubscribed "Subscribed" "Subscribe"}}
+          </span>
         </div>
       </Action>
       {{#if @hasTooltip}}
