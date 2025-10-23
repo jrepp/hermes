@@ -397,10 +397,28 @@ func TestCalculateHashCommand(t *testing.T) {
 - Support hybrid search (keyword + vector)
 - Expose vector similarity queries
 
-### 5. AWS Bedrock Integration (Optional)
-- Add AWS SDK v2 dependencies
-- Implement full Bedrock API calls
-- Test with Claude Sonnet 3.7 and Titan Embed V2
+### 5. AI Provider Integration
+
+**Ollama (Recommended for Local Development)**: ✅ Implemented
+- **File**: `pkg/ai/ollama/provider.go`
+- **Documentation**: [README-ollama.md](./README-ollama.md)
+- **Features**: Local Llama 3.2 summarization, nomic-embed-text embeddings
+- **Cost**: $0 (free, runs on macOS/Linux/Windows)
+- **Privacy**: 100% local, no external API calls
+- **Setup**: `brew install ollama && ollama pull llama3.2 && ollama pull nomic-embed-text`
+- **Configuration**: See `configs/config-ollama-example.hcl`
+
+**AWS Bedrock (Optional for Cloud Deployment)**: Stub implemented
+- **File**: `pkg/ai/bedrock/provider.go`
+- **Status**: Stub with documentation, needs AWS SDK v2 dependencies
+- **Models**: Claude Sonnet 3.7 (summarization), Titan Embed V2 (embeddings)
+- **Cost**: ~$150-300 per 1K documents
+- **Implementation**: Add `github.com/aws/aws-sdk-go-v2/service/bedrockruntime` dependency
+
+**Mock Provider (Testing)**: ✅ Implemented
+- **File**: `pkg/ai/mock/provider.go`
+- **Purpose**: Deterministic testing without API costs
+- **Features**: Configurable delays, error simulation
 
 ## Benefits Achieved
 
