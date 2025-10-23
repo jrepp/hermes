@@ -66,10 +66,10 @@ func DocumentHandler(srv server.Server) http.Handler {
 		}
 
 		// Get document from database.
-		model := models.Document{
-			GoogleFileID: docID,
-		}
-		if err := model.Get(srv.DB); err != nil {
+		// Support both GoogleFileID and UUID formats.
+		// Try UUID first, fall back to GoogleFileID if not found or invalid UUID.
+		model := models.Document{}
+		if err := model.GetByGoogleFileIDOrUUID(srv.DB, docID); err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				srv.Logger.Warn("document record not found",
 					"path", r.URL.Path,
@@ -92,10 +92,14 @@ func DocumentHandler(srv server.Server) http.Handler {
 		}
 
 		// Get reviews for the document.
+		// Use model.ID from the retrieved document to ensure we get the right reviews
+		// regardless of how the document was looked up (UUID or GoogleFileID).
 		var reviews models.DocumentReviews
 		if err := reviews.Find(srv.DB, models.DocumentReview{
 			Document: models.Document{
-				GoogleFileID: docID,
+				Model: gorm.Model{
+					ID: model.ID,
+				},
 			},
 		}); err != nil {
 			srv.Logger.Error("error getting reviews for document",
@@ -112,7 +116,9 @@ func DocumentHandler(srv server.Server) http.Handler {
 		var groupReviews models.DocumentGroupReviews
 		if err := groupReviews.Find(srv.DB, models.DocumentGroupReview{
 			Document: models.Document{
-				GoogleFileID: docID,
+				Model: gorm.Model{
+					ID: model.ID,
+				},
 			},
 		}); err != nil {
 			srv.Logger.Error("error getting group reviews for document",
@@ -1043,18 +1049,24 @@ func parseDocumentsURLPath(path, collection string) (
 	reqType documentSubcollectionRequestType,
 	err error,
 ) {
+	// Pattern accepts both GoogleFileID format ([0-9A-Za-z_\-]+)
+	// and UUID format with optional uuid/ prefix (uuid/)?[0-9a-f-]+ or bare UUIDs
+	// Examples:
+	// - GoogleFileID: "1abc2def3ghi4jkl5mno6pqr"
+	// - UUID with prefix: "uuid/550e8400-e29b-41d4-a716-446655440000"
+	// - Bare UUID: "550e8400-e29b-41d4-a716-446655440000"
 	noSubcollectionRE := regexp.MustCompile(
 		fmt.Sprintf(
-			`^\/api\/v2\/%s\/([0-9A-Za-z_\-]+)$`,
+			`^\/api\/v2\/%s\/((?:uuid\/)?[0-9A-Za-z_\-]+)$`,
 			collection))
 	relatedResourcesSubcollectionRE := regexp.MustCompile(
 		fmt.Sprintf(
-			`^\/api\/v2\/%s\/([0-9A-Za-z_\-]+)\/related-resources$`,
+			`^\/api\/v2\/%s\/((?:uuid\/)?[0-9A-Za-z_\-]+)\/related-resources$`,
 			collection))
 	// shareable isn't really a subcollection, but we'll go with it.
 	shareableRE := regexp.MustCompile(
 		fmt.Sprintf(
-			`^\/api\/v2\/%s\/([0-9A-Za-z_\-]+)\/shareable$`,
+			`^\/api\/v2\/%s\/((?:uuid\/)?[0-9A-Za-z_\-]+)\/shareable$`,
 			collection))
 
 	switch {
