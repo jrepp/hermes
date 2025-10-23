@@ -22,5 +22,6 @@ func ModelsToAutoMigrate() []interface{} {
 		&ProjectRelatedResourceExternalLink{},
 		&ProjectRelatedResourceHermesDocument{},
 		&User{},
+		&WorkspaceProject{},
 	}
 }
