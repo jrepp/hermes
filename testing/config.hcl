@@ -423,7 +423,7 @@ local_workspace {
 providers {
   workspace           = "local"
   search              = "meilisearch"
-  projects_config_path = "testing/projects.hcl"  // Workspace projects configuration
+  projects_config_path = "projects.hcl"  // Workspace projects configuration (mounted at /app/projects.hcl)
 }
 
 // Server configuration (bind to all interfaces in container)
