@@ -1,0 +1,129 @@
+// Subscription Toggle Button Enhancements
+// Provides improved visual states for subscribe/unsubscribe actions
+
+[data-test-product-subscription-toggle] {
+  // Base styles for all states
+  position: relative;
+  overflow: hidden;
+  
+  // Smooth transitions for all property changes
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  // Subscribed state (primary color)
+  &[data-test-subscribed="true"] {
+    // Stronger visual presence for subscribed state
+    box-shadow: 0 1px 2px 0 rgba(5, 66, 32, 0.1);
+    
+    // Icon animation on hover
+    &:hover {
+      box-shadow: 0 2px 4px 0 rgba(5, 66, 32, 0.15);
+      transform: translateY(-1px);
+      
+      .flight-icon {
+        transform: scale(1.1) rotate(5deg);
+      }
+    }
+    
+    // Active (click) state
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 2px 0 rgba(5, 66, 32, 0.1);
+    }
+    
+    // Subtle pulse animation on focus
+    &:focus {
+      animation: subscribed-pulse 1.5s ease-in-out infinite;
+    }
+  }
+  
+  // Unsubscribed state (secondary color)
+  &[data-test-subscribed="false"] {
+    // Subtle border to distinguish from background
+    box-shadow: inset 0 0 0 1px rgba(101, 106, 118, 0.2);
+    
+    // Enhanced hover state
+    &:hover {
+      box-shadow: inset 0 0 0 1px rgba(101, 106, 118, 0.3);
+      transform: translateY(-1px);
+      
+      // Emphasize the plus icon
+      .flight-icon {
+        transform: scale(1.15) rotate(90deg);
+      }
+    }
+    
+    // Active (click) state
+    &:active {
+      transform: translateY(0);
+      box-shadow: inset 0 0 0 1px rgba(101, 106, 118, 0.2);
+    }
+  }
+  
+  // Icon transitions
+  .flight-icon {
+    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  // Text transitions
+  span {
+    transition: all 0.2s ease-in-out;
+  }
+}
+
+// Pulse animation for subscribed state on focus
+@keyframes subscribed-pulse {
+  0%, 100% {
+    box-shadow: 0 1px 2px 0 rgba(5, 66, 32, 0.1),
+                0 0 0 0 rgba(5, 66, 32, 0.4);
+  }
+  50% {
+    box-shadow: 0 2px 4px 0 rgba(5, 66, 32, 0.15),
+                0 0 0 4px rgba(5, 66, 32, 0.1);
+  }
+}
+
+// Small size variant adjustments
+[data-test-product-subscription-toggle].h-7 {
+  &[data-test-subscribed="true"]:hover {
+    transform: translateY(-0.5px);
+  }
+  
+  &[data-test-subscribed="false"]:hover {
+    transform: translateY(-0.5px);
+  }
+}
+
+// Disabled state (if needed in the future)
+[data-test-product-subscription-toggle]:disabled,
+[data-test-product-subscription-toggle][aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  
+  &:hover {
+    transform: none !important;
+    
+    .flight-icon {
+      transform: none !important;
+    }
+  }
+}
+
+// Loading state (if async operations are visible)
+[data-test-product-subscription-toggle][data-loading="true"] {
+  pointer-events: none;
+  
+  .flight-icon {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
