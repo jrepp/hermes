@@ -34,6 +34,11 @@ func initCommands(log hclog.Logger, ui cli.Ui) {
 				Command: b,
 			}, nil
 		},
+		"operator assign-uuids": func() (cli.Command, error) {
+			return &operator.AssignUUIDsCommand{
+				Command: b,
+			}, nil
+		},
 		"operator migrate-algolia-to-postgresql": func() (cli.Command, error) {
 			return &operator.MigrateAlgoliaToPostgreSQLCommand{
 				Command: b,
