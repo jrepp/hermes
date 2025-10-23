@@ -2,12 +2,21 @@ package workspace
 
 import (
 	"time"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 )
 
 // Document represents a storage-agnostic document.
 type Document struct {
 	// ID is the unique identifier for the document.
+	// For Google Workspace, this is the GoogleFileID.
+	// For Local Workspace, this is the local file path.
 	ID string
+
+	// CompositeID is the fully-qualified document identifier that includes
+	// UUID, provider type, and project ID. This enables documents to be
+	// uniquely identified across providers and projects.
+	CompositeID *docid.CompositeID
 
 	// Name is the document name/title.
 	Name string
