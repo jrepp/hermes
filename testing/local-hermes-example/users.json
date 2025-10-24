@@ -1,0 +1,14 @@
+[
+  {
+    "email": "dev@localhost",
+    "name": "Local Developer",
+    "picture": "",
+    "groups": ["Engineering", "Developers"]
+  },
+  {
+    "email": "admin@localhost",
+    "name": "Local Admin",
+    "picture": "",
+    "groups": ["Engineering", "Developers", "Admins"]
+  }
+]
