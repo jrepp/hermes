@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -897,6 +898,12 @@ func registerProducts(
 
 // generateIndexerToken generates a registration token for indexers and writes it to a file.
 func generateIndexerToken(db *gorm.DB, tokenPath string, logger hclog.Logger) error {
+	// Create parent directory if it doesn't exist
+	tokenDir := filepath.Dir(tokenPath)
+	if err := os.MkdirAll(tokenDir, 0755); err != nil {
+		return fmt.Errorf("error creating token directory: %w", err)
+	}
+
 	// Generate a registration token
 	token, err := models.GenerateToken("registration")
 	if err != nil {
@@ -915,7 +922,7 @@ func generateIndexerToken(db *gorm.DB, tokenPath string, logger hclog.Logger) er
 	}
 
 	// Write token to file
-	if err := os.WriteFile(tokenPath, []byte(token), 0600); err != nil {
+	if err := os.WriteFile(tokenPath, []byte(token), 0644); err != nil {
 		return fmt.Errorf("error writing token file: %w", err)
 	}
 
