@@ -9,6 +9,29 @@ ALTER TABLE workspace_projects
 -- Drop obsolete indexes
 DROP INDEX IF EXISTS idx_workspace_projects_project_id;
 
+-- Make project_uuid nullable for backward compatibility (auto-generated if not provided)
+ALTER TABLE workspace_projects 
+  ALTER COLUMN project_uuid DROP NOT NULL;
+
+-- Convert project_uuid from TEXT to UUID type (if not already)
+-- This uses a CASE to handle existing UUIDs or generate new ones for non-UUID values
+DO $$
+BEGIN
+  -- First check if column is already UUID type
+  IF (SELECT data_type FROM information_schema.columns 
+      WHERE table_name = 'workspace_projects' AND column_name = 'project_uuid') = 'text' THEN
+    ALTER TABLE workspace_projects 
+      ALTER COLUMN project_uuid TYPE UUID USING COALESCE(
+        CASE 
+          WHEN project_uuid ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
+          THEN project_uuid::UUID 
+          ELSE gen_random_uuid() 
+        END,
+        NULL
+      );
+  END IF;
+END $$;
+
 -- Add instance relationship
 ALTER TABLE workspace_projects 
   ADD COLUMN IF NOT EXISTS instance_uuid UUID;
