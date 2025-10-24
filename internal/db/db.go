@@ -2,68 +2,103 @@ package db
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-// NewDB returns a new migrated database.
-func NewDB(cfg config.Postgres) (*gorm.DB, error) {
-	// TODO: validate config.
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d",
-		cfg.Host,
-		cfg.User,
-		cfg.Password,
-		cfg.DBName,
-		cfg.Port,
-	)
+// DatabaseConfig holds configuration for database connection.
+// Supports both PostgreSQL and SQLite.
+type DatabaseConfig struct {
+	Driver string // "postgres" or "sqlite"
 
-	db, err := gorm.Open(postgres.Open(dsn))
+	// PostgreSQL config
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+
+	// SQLite config
+	Path string // e.g., ".hermes/hermes.db"
+}
+
+// NewDB returns a new migrated database.
+// This maintains backward compatibility with existing code using config.Postgres.
+func NewDB(cfg config.Postgres) (*gorm.DB, error) {
+	// Convert config.Postgres to DatabaseConfig
+	dbConfig := DatabaseConfig{
+		Driver:   "postgres", // Default to postgres for existing configs
+		Host:     cfg.Host,
+		Port:     cfg.Port,
+		User:     cfg.User,
+		Password: cfg.Password,
+		DBName:   cfg.DBName,
+	}
+	return NewDBWithConfig(dbConfig)
+}
+
+// NewDBWithConfig returns a new migrated database connection using DatabaseConfig.
+// Supports both PostgreSQL and SQLite.
+func NewDBWithConfig(cfg DatabaseConfig) (*gorm.DB, error) {
+	var dialector gorm.Dialector
+	var driver string
+
+	switch cfg.Driver {
+	case "postgres":
+		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
+			cfg.Host, cfg.User, cfg.Password, cfg.DBName, cfg.Port)
+		dialector = postgres.Open(dsn)
+		driver = "postgres"
+
+	case "sqlite":
+		// Ensure directory exists for SQLite database
+		if cfg.Path != "" {
+			dir := filepath.Dir(cfg.Path)
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				return nil, fmt.Errorf("error creating database directory: %w", err)
+			}
+		}
+		dialector = sqlite.Open(cfg.Path)
+		driver = "sqlite"
+
+	default:
+		return nil, fmt.Errorf("unsupported database driver: %s (supported: postgres, sqlite)", cfg.Driver)
+	}
+
+	// Open database connection
+	db, err := gorm.Open(dialector, &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
-	// Enable citext extension.
+	// Get underlying sql.DB for migrations and extensions
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("error getting sql.DB: %w", err)
 	}
-	_, err = sqlDB.Exec("CREATE EXTENSION IF NOT EXISTS citext;")
-	if err != nil {
-		return nil, fmt.Errorf("error enabling citext extension: %w", err)
+
+	// Run migrations (includes database-specific setup)
+	if err := RunMigrations(sqlDB, driver); err != nil {
+		return nil, fmt.Errorf("error running migrations: %w", err)
 	}
 
-	if err := db.SetupJoinTable(
-		models.Document{},
-		"Approvers",
-		&models.DocumentReview{},
-	); err != nil {
-		return nil, fmt.Errorf(
-			"error setting up DocumentReviews join table: %w", err)
+	// Setup join tables (GORM-specific configuration)
+	if err := setupJoinTables(db); err != nil {
+		return nil, err
 	}
 
-	if err := db.SetupJoinTable(
-		models.User{},
-		"RecentlyViewedDocs",
-		&models.RecentlyViewedDoc{},
-	); err != nil {
-		return nil, fmt.Errorf(
-			"error setting up RecentlyViewedDocs join table: %w", err)
-	}
-
-	if err := db.SetupJoinTable(
-		models.User{},
-		"RecentlyViewedProjects",
-		&models.RecentlyViewedProject{},
-	); err != nil {
-		return nil, fmt.Errorf(
-			"error setting up RecentlyViewedProjects join table: %w", err)
-	}
-
-	// Automatically migrate models.
-	// TODO: move to manually migrating models with a separate command.
+	// LEGACY: Still run AutoMigrate for backward compatibility
+	// This ensures any models not yet in migrations are still created
+	// TODO: Remove this once all models are in migration files
 	if err := db.AutoMigrate(
 		models.ModelsToAutoMigrate()...,
 	); err != nil {
@@ -71,4 +106,33 @@ func NewDB(cfg config.Postgres) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+// setupJoinTables configures GORM join tables for many-to-many relationships.
+func setupJoinTables(db *gorm.DB) error {
+	if err := db.SetupJoinTable(
+		models.Document{},
+		"Approvers",
+		&models.DocumentReview{},
+	); err != nil {
+		return fmt.Errorf("error setting up DocumentReviews join table: %w", err)
+	}
+
+	if err := db.SetupJoinTable(
+		models.User{},
+		"RecentlyViewedDocs",
+		&models.RecentlyViewedDoc{},
+	); err != nil {
+		return fmt.Errorf("error setting up RecentlyViewedDocs join table: %w", err)
+	}
+
+	if err := db.SetupJoinTable(
+		models.User{},
+		"RecentlyViewedProjects",
+		&models.RecentlyViewedProject{},
+	); err != nil {
+		return fmt.Errorf("error setting up RecentlyViewedProjects join table: %w", err)
+	}
+
+	return nil
 }
