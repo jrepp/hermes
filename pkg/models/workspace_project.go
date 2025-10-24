@@ -1,11 +1,14 @@
 package models
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -17,8 +20,23 @@ import (
 type WorkspaceProject struct {
 	gorm.Model
 
-	// Name is the unique identifier for the project (e.g., "example-project")
-	Name string `gorm:"uniqueIndex;not null"`
+	// Instance relationship - links this project to a specific Hermes instance
+	InstanceUUID *uuid.UUID `gorm:"type:uuid;index:idx_workspace_projects_instance" json:"instanceUuid,omitempty"`
+
+	// ProjectUUID is an auto-generated globally unique identifier for this project
+	// Nullable initially for backward compatibility with existing workspace_projects
+	ProjectUUID *uuid.UUID `gorm:"type:uuid;uniqueIndex:idx_workspace_projects_uuid" json:"projectUuid,omitempty"`
+
+	// GlobalProjectID is a computed composite identifier (instance_uuid/name)
+	// This is generated automatically by the BeforeCreate hook
+	GlobalProjectID *string `gorm:"type:varchar(512);index:idx_workspace_projects_global_id" json:"globalProjectId,omitempty"`
+
+	// ConfigHash is a SHA-256 hash of the project configuration (detects drift)
+	ConfigHash *string `gorm:"type:varchar(64);index:idx_workspace_projects_config_hash" json:"configHash,omitempty"`
+
+	// Name is the unique identifier for the project within this instance (e.g., "example-project")
+	// Combined with InstanceUUID, this forms a globally unique composite key
+	Name string `gorm:"index:idx_workspace_projects_instance_name;not null" json:"name"`
 
 	// Title is the display title for the project
 	Title string `gorm:"not null"`
@@ -71,6 +89,37 @@ const (
 	WorkspaceProjectSourceAPI          = "api"
 )
 
+// BeforeCreate hook to generate project UUID and calculate config hash
+func (wp *WorkspaceProject) BeforeCreate(tx *gorm.DB) error {
+	// Generate ProjectUUID if not set
+	if wp.ProjectUUID == nil {
+		newUUID := uuid.New()
+		wp.ProjectUUID = &newUUID
+	}
+
+	// Calculate config hash
+	if wp.ConfigHash == nil {
+		hash := wp.CalculateConfigHash()
+		wp.ConfigHash = &hash
+	}
+
+	// Generate global project ID if instance is set
+	if wp.InstanceUUID != nil && wp.ProjectUUID != nil {
+		globalID := fmt.Sprintf("%s/%s", wp.InstanceUUID.String(), wp.Name)
+		wp.GlobalProjectID = &globalID
+	}
+
+	return nil
+}
+
+// CalculateConfigHash computes SHA-256 hash of the project configuration
+func (wp *WorkspaceProject) CalculateConfigHash() string {
+	// Concatenate relevant config fields for hashing
+	configData := fmt.Sprintf("%s|%s|%s|%s", wp.ProvidersJSON, wp.MetadataJSON, wp.Status, wp.SourceType)
+	hash := sha256.Sum256([]byte(configData))
+	return hex.EncodeToString(hash[:])
+}
+
 // Create creates a new workspace project in the database.
 func (wp *WorkspaceProject) Create(db *gorm.DB) error {
 	// Validate required fields
@@ -113,6 +162,39 @@ func (wp *WorkspaceProject) GetByName(db *gorm.DB, name string) error {
 		Where("name = ?", name).
 		First(&wp).
 		Error
+}
+
+// GetByInstanceAndName retrieves a workspace project by instance UUID and name (composite key).
+func GetWorkspaceProjectByInstanceAndName(db *gorm.DB, instanceUUID uuid.UUID, name string) (*WorkspaceProject, error) {
+	var project WorkspaceProject
+	err := db.Where("instance_uuid = ? AND name = ?", instanceUUID, name).
+		First(&project).Error
+	if err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
+// GetByProjectUUID retrieves a workspace project by its project UUID.
+func GetWorkspaceProjectByUUID(db *gorm.DB, projectUUID uuid.UUID) (*WorkspaceProject, error) {
+	var project WorkspaceProject
+	err := db.Where("project_uuid = ?", projectUUID).
+		First(&project).Error
+	if err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
+// GetByGlobalProjectID retrieves a workspace project by global project ID.
+func GetWorkspaceProjectByGlobalID(db *gorm.DB, globalProjectID string) (*WorkspaceProject, error) {
+	var project WorkspaceProject
+	err := db.Where("global_project_id = ?", globalProjectID).
+		First(&project).Error
+	if err != nil {
+		return nil, err
+	}
+	return &project, nil
 }
 
 // Update updates a workspace project.

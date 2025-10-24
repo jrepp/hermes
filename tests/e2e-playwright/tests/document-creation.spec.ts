@@ -217,7 +217,9 @@ test.describe('Document Creation Flow', () => {
 
     await page.screenshot({ path: 'test-results/04-after-creation.png', fullPage: true });
 
-    // Check for success indicators
+    // Check for success indicators with better timing
+    await page.waitForLoadState('load');
+    
     const successIndicators = [
       page.locator('text=/created.*successfully/i'),
       page.locator('text=/document.*created/i'),
@@ -245,6 +247,11 @@ test.describe('Document Creation Flow', () => {
       successFound = true;
       console.log(`✓ Navigated away from /new page to: ${currentUrl}`);
     }
+
+    // Wait for network to settle before checking errors
+    await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
+      console.log('⚠ Network did not become idle within 5s, continuing...');
+    });
 
     // Check for any error messages
     const errorSelectors = [
@@ -367,7 +374,7 @@ test.describe('Document Creation Flow', () => {
     try {
       await page.locator('text=/new.*document/i').first().click({ timeout: 3000 });
     } catch (e) {
-      await page.goto('http://localhost:4200/new');
+      await page.goto('/new');
     }
 
     await page.waitForLoadState('networkidle');

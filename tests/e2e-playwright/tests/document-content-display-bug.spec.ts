@@ -26,7 +26,7 @@ import { test, expect, Page } from '@playwright/test';
  * 
  * Test Environment:
  * - Backend API: http://localhost:8001 (testing environment)
- * - Frontend: http://localhost:4200 (Ember dev server proxy)
+ * - Frontend: http://localhost:4201 (testing), http://localhost:4200 (local)
  * - Dex OIDC: http://localhost:5558
  * - Test User: test@hermes.local / password
  * - Workspace: Local filesystem provider
@@ -43,7 +43,7 @@ test.describe('CRITICAL BUG: Document Content Display After Save', () => {
    */
   async function authenticateUser(page: Page, email: string = 'test@hermes.local', password: string = 'password') {
     // Start at the Hermes homepage
-    await page.goto('http://localhost:4200/');
+    await page.goto('/');
 
     // Should be redirected to Dex login page (port 5558 for testing)
     await page.waitForURL(/5558.*\/auth/, { timeout: 10000 });
