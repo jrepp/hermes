@@ -13,8 +13,10 @@ import { test, expect, Page } from '@playwright/test';
 
 test.describe('Dashboard Awaiting Review', () => {
   
-  async function loginAs(page: Page, email: string, password: string) {
-    await page.goto('http://localhost:4200/');
+  async function authenticateUser(page: Page, email: string = 'test@hermes.local', password: string = 'password') {
+    console.log(`[Auth] Authenticating ${email}...`);
+    
+    await page.goto('/');
     
     // Wait for redirect to Dex
     await page.waitForURL(/5558.*\/auth/, { timeout: 10000 });
@@ -50,7 +52,7 @@ test.describe('Dashboard Awaiting Review', () => {
   
   async function createDocument(page: Page, docType: string, title: string) {
     // Navigate to new document page
-    await page.goto(`http://localhost:4200/new/doc?docType=${docType}`);
+    await page.goto(`/new/doc?docType=${docType}`);
     
     // Fill in title
     await page.fill('input[name="title"]', title);
@@ -126,7 +128,7 @@ test.describe('Dashboard Awaiting Review', () => {
     
     // STEP 7: Navigate to dashboard
     console.log('[Test] Step 7: Navigate to dashboard');
-    await page.goto('http://localhost:4200/dashboard');
+    await page.goto('/dashboard');
     await page.waitForSelector('[data-test-dashboard]', { timeout: 10000 });
     
     // STEP 8: Verify "Awaiting Review" section exists

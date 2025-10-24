@@ -1236,6 +1236,357 @@ indexer/plans/validate: bin ## Validate all indexer plans
 	done
 ```
 
+## Indexer API Design
+
+### Overview
+
+The indexer needs an API-based architecture instead of direct database access. This enables:
+
+1. **Separation of concerns**: Indexer is a client, API handles persistence
+2. **External document sources**: Index documents from GitHub, local files, remote Hermes instances
+3. **Project-based workspaces**: Use project config to resolve workspace providers
+4. **Revision tracking**: Full metadata (content hash, commit hash/version) for each revision
+
+### API Endpoints
+
+#### 1. Create/Update Document Reference
+
+**Endpoint**: `POST /api/v2/indexer/documents`
+
+Creates or updates a document reference for indexing. Supports upsert semantics (create if not exists, update if exists by UUID).
+
+**Request Body**:
+```json
+{
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "title": "RFC-001: Local Workspace Provider",
+  "doc_type": "RFC",
+  "doc_number": "RFC-001",
+  "product": "Engineering",
+  "status": "In Review",
+  "summary": "Design document for local filesystem workspace support",
+  "owners": ["user@example.com"],
+  "contributors": ["contributor@example.com"],
+  "approvers": ["approver@example.com"],
+  "tags": ["indexer", "workspace"],
+  "custom_fields": [
+    {"name": "priority", "type": "string", "value": "high"}
+  ],
+  "workspace_provider": {
+    "type": "github",
+    "repository": "hashicorp/hermes",
+    "branch": "main",
+    "path": "docs-internal/RFC-001.md",
+    "commit_sha": "abc123def456",
+    "remote_url": "https://github.com/hashicorp/hermes"
+  },
+  "metadata": {
+    "source": "indexer",
+    "indexed_at": "2025-10-23T10:00:00Z",
+    "project_id": "docs-internal"
+  }
+}
+```
+
+**Workspace Provider Types**:
+- `github`: GitHub repository
+  - Required: `repository`, `path`
+  - Optional: `branch` (default: main), `commit_sha`, `remote_url`
+- `local`: Local filesystem
+  - Required: `path`
+  - Optional: `absolute_path`, `project_root`
+- `hermes`: Remote Hermes instance
+  - Required: `endpoint`, `document_id`
+  - Optional: `api_key`, `workspace_id`
+- `google`: Google Workspace (backward compatibility)
+  - Required: `file_id`
+  - Optional: `drive_id`, `folder_id`
+
+**Response**:
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "google_file_id": null,
+  "created": true,
+  "updated_fields": [],
+  "created_at": "2025-10-23T10:00:00Z",
+  "updated_at": "2025-10-23T10:00:00Z"
+}
+```
+
+**Status Codes**:
+- `201 Created`: Document created successfully
+- `200 OK`: Document updated successfully (upsert)
+- `400 Bad Request`: Invalid request body or missing required fields
+- `401 Unauthorized`: Missing or invalid authentication
+- `409 Conflict`: UUID already exists with different workspace provider
+
+#### 2. Create Document Revision
+
+**Endpoint**: `POST /api/v2/indexer/documents/:uuid/revisions`
+
+Creates a new revision for a document with full metadata.
+
+**Request Body**:
+```json
+{
+  "content_hash": "sha256:abc123def456789...",
+  "revision_reference": "v1.2.3",
+  "commit_sha": "abc123def456",
+  "content_length": 15847,
+  "content_type": "text/markdown",
+  "summary": "Added implementation details for local workspace provider",
+  "modified_by": "user@example.com",
+  "modified_at": "2025-10-23T10:00:00Z",
+  "metadata": {
+    "indexer_version": "2.0.0",
+    "processing_time_ms": 1234,
+    "source_modified_at": "2025-10-23T09:55:00Z"
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "id": 42,
+  "document_uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "content_hash": "sha256:abc123def456789...",
+  "revision_reference": "v1.2.3",
+  "commit_sha": "abc123def456",
+  "is_duplicate": false,
+  "created_at": "2025-10-23T10:00:00Z"
+}
+```
+
+**Status Codes**:
+- `201 Created`: Revision created successfully
+- `200 OK`: Duplicate revision detected (same content hash), returns existing revision
+- `400 Bad Request`: Invalid request body
+- `401 Unauthorized`: Missing or invalid authentication
+- `404 Not Found`: Document UUID not found
+
+#### 3. Update Document Summary (AI-Generated)
+
+**Endpoint**: `PUT /api/v2/indexer/documents/:uuid/summary`
+
+Updates the AI-generated summary for a document revision.
+
+**Request Body**:
+```json
+{
+  "summary": "This RFC proposes a local filesystem workspace provider...",
+  "revision_id": 42,
+  "content_hash": "sha256:abc123def456789...",
+  "model": "llama3.2",
+  "model_version": "latest",
+  "generated_at": "2025-10-23T10:05:00Z",
+  "metadata": {
+    "tokens_used": 1500,
+    "processing_time_ms": 3200
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "document_uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "summary_updated": true,
+  "revision_id": 42,
+  "updated_at": "2025-10-23T10:05:00Z"
+}
+```
+
+**Status Codes**:
+- `200 OK`: Summary updated successfully
+- `400 Bad Request`: Invalid request body
+- `401 Unauthorized`: Missing or invalid authentication
+- `404 Not Found`: Document UUID or revision not found
+- `409 Conflict`: Content hash mismatch (revision changed)
+
+#### 4. Store Document Embeddings
+
+**Endpoint**: `PUT /api/v2/indexer/documents/:uuid/embeddings`
+
+Stores vector embeddings for a document revision.
+
+**Request Body**:
+```json
+{
+  "revision_id": 42,
+  "content_hash": "sha256:abc123def456789...",
+  "model": "nomic-embed-text",
+  "model_version": "v1.5",
+  "dimensions": 768,
+  "embeddings": [0.123, -0.456, 0.789, ...],
+  "generated_at": "2025-10-23T10:06:00Z",
+  "metadata": {
+    "chunk_id": "page-1",
+    "chunk_size": 512,
+    "overlap": 128
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "document_uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "revision_id": 42,
+  "embeddings_stored": true,
+  "vector_count": 1,
+  "created_at": "2025-10-23T10:06:00Z"
+}
+```
+
+**Status Codes**:
+- `200 OK`: Embeddings stored successfully
+- `400 Bad Request`: Invalid dimensions or embeddings format
+- `401 Unauthorized`: Missing or invalid authentication
+- `404 Not Found`: Document UUID or revision not found
+- `409 Conflict`: Content hash mismatch
+
+#### 5. Get Document by UUID
+
+**Endpoint**: `GET /api/v2/indexer/documents/:uuid`
+
+Retrieves document metadata and latest revision info (for indexer verification).
+
+**Response**:
+```json
+{
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "google_file_id": null,
+  "title": "RFC-001: Local Workspace Provider",
+  "doc_type": "RFC",
+  "status": "In Review",
+  "workspace_provider": {
+    "type": "github",
+    "repository": "hashicorp/hermes",
+    "path": "docs-internal/RFC-001.md"
+  },
+  "latest_revision": {
+    "id": 42,
+    "content_hash": "sha256:abc123def456789...",
+    "revision_reference": "v1.2.3",
+    "modified_at": "2025-10-23T10:00:00Z"
+  },
+  "created_at": "2025-10-22T08:00:00Z",
+  "updated_at": "2025-10-23T10:00:00Z"
+}
+```
+
+### Authentication
+
+All indexer API endpoints require authentication:
+
+**Header**: `Authorization: Bearer <token>`
+
+For local testing, use the same auth mechanism as the main API (Dex OIDC in testing environment).
+
+For production indexer service, use a service account token or API key.
+
+### Database Schema Updates
+
+The indexer API requires new database fields:
+
+**`documents` table**:
+```sql
+ALTER TABLE documents ADD COLUMN workspace_provider_type VARCHAR(50);
+ALTER TABLE documents ADD COLUMN workspace_provider_metadata JSONB;
+ALTER TABLE documents ADD COLUMN indexed_at TIMESTAMP;
+ALTER TABLE documents ADD COLUMN indexer_version VARCHAR(50);
+```
+
+**`document_revisions` table** (if not exists, see `DOCUMENT_REVISIONS_AND_MIGRATION.md`):
+```sql
+CREATE TABLE IF NOT EXISTS document_revisions (
+  id SERIAL PRIMARY KEY,
+  document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  content_hash VARCHAR(255) NOT NULL,
+  revision_reference VARCHAR(255),
+  commit_sha VARCHAR(255),
+  content_length BIGINT,
+  content_type VARCHAR(100),
+  summary TEXT,
+  modified_by VARCHAR(255),
+  modified_at TIMESTAMP,
+  metadata JSONB,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE(document_id, content_hash)
+);
+
+CREATE INDEX idx_document_revisions_document_id ON document_revisions(document_id);
+CREATE INDEX idx_document_revisions_content_hash ON document_revisions(content_hash);
+CREATE INDEX idx_document_revisions_modified_at ON document_revisions(modified_at);
+```
+
+**`document_embeddings` table**:
+```sql
+CREATE TABLE IF NOT EXISTS document_embeddings (
+  id SERIAL PRIMARY KEY,
+  document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  revision_id INTEGER REFERENCES document_revisions(id) ON DELETE CASCADE,
+  model VARCHAR(100) NOT NULL,
+  model_version VARCHAR(50),
+  dimensions INTEGER NOT NULL,
+  embeddings vector(768), -- Using pgvector extension
+  chunk_metadata JSONB,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_document_embeddings_document_id ON document_embeddings(document_id);
+CREATE INDEX idx_document_embeddings_revision_id ON document_embeddings(revision_id);
+```
+
+### Integration Test Usage
+
+```go
+// tests/integration/indexer/api_client.go
+type IndexerAPIClient struct {
+    BaseURL    string
+    HTTPClient *http.Client
+    AuthToken  string
+}
+
+func (c *IndexerAPIClient) CreateDocument(ctx context.Context, req *CreateDocumentRequest) (*CreateDocumentResponse, error) {
+    // POST /api/v2/indexer/documents
+}
+
+func (c *IndexerAPIClient) CreateRevision(ctx context.Context, uuid string, req *CreateRevisionRequest) (*CreateRevisionResponse, error) {
+    // POST /api/v2/indexer/documents/:uuid/revisions
+}
+
+func (c *IndexerAPIClient) UpdateSummary(ctx context.Context, uuid string, req *UpdateSummaryRequest) (*UpdateSummaryResponse, error) {
+    // PUT /api/v2/indexer/documents/:uuid/summary
+}
+
+// Usage in full_pipeline_test.go
+apiClient := &IndexerAPIClient{
+    BaseURL:    "http://localhost:8001",
+    HTTPClient: &http.Client{Timeout: 30 * time.Second},
+    AuthToken:  testAuthToken,
+}
+
+pipeline := &indexer.Pipeline{
+    Commands: []indexer.Command{
+        &commands.AssignUUIDCommand{},
+        &commands.CalculateHashCommand{},
+        &commands.TrackCommand{
+            APIClient: apiClient, // Instead of DB
+        },
+        &commands.SummarizeCommand{
+            AIProvider: aiProvider,
+            APIClient:  apiClient, // Instead of DB
+        },
+        &commands.TrackRevisionCommand{
+            APIClient: apiClient, // Instead of DB
+        },
+    },
+}
+```
+
 ## Next Steps
 
 1. **Start with Phase 1**: Implement command interfaces
@@ -1244,5 +1595,7 @@ indexer/plans/validate: bin ## Validate all indexer plans
 4. **Build pipeline executor**: Implement pipeline execution logic
 5. **Test with mocks**: Unit test each command in isolation
 6. **Add local integration test**: Create full test in `testing/indexer/`
+7. **Implement indexer API**: Create `internal/api/v2/indexer.go` with the endpoints above
+8. **Update integration tests**: Replace direct DB access with API client calls
 
 See `INDEXER_REFACTOR_PLAN.md` for the complete 6-phase implementation plan.

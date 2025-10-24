@@ -6,6 +6,7 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/google/uuid"
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -24,12 +25,21 @@ type Document struct {
 	// Nullable initially to allow gradual migration from GoogleFileID.
 	DocumentUUID *docid.UUID `gorm:"type:uuid;uniqueIndex:idx_documents_uuid"`
 
+	// ProjectUUID links this document to a workspace project (FK to workspace_projects.project_uuid)
+	// This replaces the old ProjectID string field with a proper foreign key relationship.
+	// Nullable initially for backward compatibility with existing documents.
+	ProjectUUID *uuid.UUID `gorm:"type:uuid;index:idx_documents_project_uuid"`
+
 	// ProviderType identifies the storage backend (google, local, remote-hermes).
 	// Nullable initially for backward compatibility.
 	ProviderType *string `gorm:"type:varchar(50)"`
 
-	// ProjectID identifies which project configuration this document belongs to.
-	// Nullable initially for backward compatibility.
+	// ProviderDocumentID is the provider-specific identifier (file path, Google file ID, etc)
+	// This enables lookup within the provider's system.
+	ProviderDocumentID *string `gorm:"type:varchar(500);index:idx_documents_provider_doc_id"`
+
+	// ProjectID identifies which project configuration this document belongs to (DEPRECATED).
+	// Use ProjectUUID instead. Kept for backward compatibility during migration.
 	ProjectID *string `gorm:"type:varchar(64)"`
 
 	// Approvers is the list of users whose approval is requested for the

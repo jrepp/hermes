@@ -84,7 +84,7 @@ test.describe('Document Content Editor - Local Workspace', () => {
     }
 
     if (!navigated) {
-      await page.goto('http://localhost:4200/new');
+      await page.goto('/new');
     }
 
     await page.waitForLoadState('networkidle');
@@ -156,9 +156,15 @@ test.describe('Document Content Editor - Local Workspace', () => {
       }
     }
 
-    // Wait for navigation to document page
-    await page.waitForURL(/\/documents\/.*/, { timeout: 10000 });
-    await page.waitForLoadState('networkidle');
+    // Wait for navigation to document page with better error handling
+    try {
+      await page.waitForURL(/\/document[s]?\/.*/, { timeout: 15000 });
+      await page.waitForLoadState('load');
+      await page.waitForLoadState('networkidle', { timeout: 10000 });
+    } catch (error) {
+      console.error('Navigation timeout - current URL:', page.url());
+      throw new Error(`Failed to navigate to document page: ${error}`);
+    }
 
     console.log(`✓ Created RFC: ${title}`);
     

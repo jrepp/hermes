@@ -16,9 +16,11 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/datadog"
-	"github.com/hashicorp-forge/hermes/internal/db"
+	dbpkg "github.com/hashicorp-forge/hermes/internal/db"
+	"github.com/hashicorp-forge/hermes/internal/instance"
 	"github.com/hashicorp-forge/hermes/internal/jira"
 	"github.com/hashicorp-forge/hermes/internal/pkg/doctypes"
+	"github.com/hashicorp-forge/hermes/internal/projects"
 	"github.com/hashicorp-forge/hermes/internal/pub"
 	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/internal/structs"
@@ -508,11 +510,25 @@ func (c *Command) Run(args []string) int {
 	if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
 		cfg.Postgres.Password = val
 	}
-	db, err := db.NewDB(*cfg.Postgres)
+	db, err := dbpkg.NewDB(*cfg.Postgres)
 	if err != nil {
 		c.UI.Error(fmt.Sprintf("error initializing database: %v", err))
 		return 1
 	}
+
+	// Initialize instance identity.
+	ctx := context.Background()
+	instanceLogger := hclog.New(&hclog.LoggerOptions{
+		Name:  "instance",
+		Level: hclog.Info,
+	})
+	if err := instance.Initialize(ctx, db, cfg, instanceLogger); err != nil {
+		c.UI.Error(fmt.Sprintf("error initializing instance identity: %v", err))
+		return 1
+	}
+
+	// Start instance heartbeat in background
+	go instance.StartHeartbeat(ctx, db, 1*time.Minute, instanceLogger)
 
 	// Register document types.
 	// for _, d := range cfg.DocumentTypes.DocumentType {
@@ -566,13 +582,22 @@ func (c *Command) Run(args []string) int {
 
 		c.UI.Info(fmt.Sprintf("Loaded %d workspace projects from HCL config", len(projectConfig.Projects)))
 
-		// Sync workspace projects to database
+		// Sync workspace projects to database (backward compatible - doesn't link to instance)
 		c.UI.Info("Syncing workspace projects to database...")
 		if err := projectConfig.SyncToDatabase(db, cfg.Providers.ProjectsConfigPath); err != nil {
 			c.UI.Error(fmt.Sprintf("error syncing workspace projects to database: %v", err))
 			return 1
 		}
 		c.UI.Info("Workspace projects synced to database successfully")
+
+		// Register projects with instance identity (links projects to this instance)
+		c.UI.Info("Registering workspace projects with instance identity...")
+		if err := projects.RegisterAllProjects(ctx, db, projectConfig, instanceLogger); err != nil {
+			c.UI.Warn(fmt.Sprintf("error registering projects with instance: %v", err))
+			// Non-fatal - projects are still in DB via SyncToDatabase
+		} else {
+			c.UI.Info("Workspace projects registered with instance successfully")
+		}
 
 		// Log active projects
 		activeProjects := projectConfig.GetActiveProjects()

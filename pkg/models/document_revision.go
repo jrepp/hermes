@@ -35,7 +35,10 @@ type DocumentRevision struct {
 	// - "archived": Old version, no longer active
 	// - "conflict": Conflicting version detected
 
-	// Optional project association
+	// Project association - tracks which project owns this revision (supports migration tracking)
+	ProjectUUID *uuid.UUID `gorm:"type:uuid;index:idx_doc_revisions_project_uuid" json:"projectUuid,omitempty"`
+
+	// ProjectID is DEPRECATED - use ProjectUUID instead
 	ProjectID *uint `gorm:"index:idx_doc_revisions_project" json:"projectId,omitempty"`
 
 	// Migration tracking

@@ -77,17 +77,18 @@ func (idx *Indexer) Run() error {
 │  → [DetectConflicts] → [Notify]                                        │
 └───────────────────────┬─────────────────────────────────────────────────┘
                         │
-        ┌───────────────┼───────────────┬──────────────────┐
-        ▼               ▼               ▼                  ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│   Workspace  │ │  Search      │ │  Database    │ │  Embeddings  │
-│   Provider   │ │  Provider    │ │  (GORM)      │ │  Provider    │
-│              │ │              │ │              │ │              │
-│ • Google     │ │ • Algolia    │ │ • Documents  │ │ • Bedrock    │
-│ • Local      │ │ • Meilisearch│ │ • Revisions  │ │   (Sonnet)   │
-│ • Remote     │ │ • Vector DB  │ │ • Conflicts  │ │ • Mock       │
-│ • Mock       │ │ • Mock       │ │ • Tracking   │ │              │
-└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
+        ┌───────────────┼───────────────┬──────────────────┬──────────────────┐
+        ▼               ▼               ▼                  ▼                  ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│   Workspace  │ │  Search      │ │  Indexer API │ │  Embeddings  │ │  Project     │
+│   Provider   │ │  Provider    │ │  (HTTP/REST) │ │  Provider    │ │  Config      │
+│              │ │              │ │              │ │              │ │              │
+│ • Google     │ │ • Algolia    │ │ • Documents  │ │ • Bedrock    │ │ • HCL        │
+│ • Local      │ │ • Meilisearch│ │ • Revisions  │ │   (Sonnet)   │ │ • Projects   │
+│ • GitHub     │ │ • Vector DB  │ │ • Summaries  │ │ • Ollama     │ │ • Workspaces │
+│ • Remote     │ │ • Mock       │ │ • Embeddings │ │ • Mock       │ │              │
+│ • Mock       │ │              │ │ • Auth       │ │              │ │              │
+└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
 ```
 
 ### Document Lifecycle with Revisions
@@ -2876,10 +2877,230 @@ pipeline.AddCommand(&ValidateLinksCommand{})
 - [ ] Hybrid search improves relevance over keyword-only by 20%+
 - [ ] Search latency <500ms for 95th percentile
 
+## API-Based Architecture
+
+### Overview
+
+The indexer operates as an **external client** that communicates with Hermes via REST API instead of direct database access. This architectural shift enables:
+
+1. **Separation of concerns**: Indexer discovers/processes, API handles persistence
+2. **External document sources**: Index from GitHub, local files, remote Hermes instances
+3. **Project-based workspaces**: Use project config to resolve providers
+4. **Service isolation**: Indexer can run independently, scale separately
+5. **Authentication & authorization**: Leverage existing API security
+
+### Architecture Flow
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Indexer Service                               │
+│  (Discovers documents, generates content, coordinates processing)    │
+│                                                                       │
+│  ┌────────────┐  ┌──────────────┐  ┌─────────────┐  ┌────────────┐ │
+│  │  Discover  │→ │ Extract      │→ │ Calculate   │→ │ Summarize  │ │
+│  │ (Project)  │  │ Content/Meta │  │ Hash        │  │ (AI)       │ │
+│  └────────────┘  └──────────────┘  └─────────────┘  └────────────┘ │
+│         │                                                      │      │
+└─────────┼──────────────────────────────────────────────────────┼─────┘
+          │                                                      │
+          │ HTTP POST/PUT                                        │
+          ▼                                                      ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                       Hermes API Server                               │
+│                  POST /api/v2/indexer/documents                       │
+│              POST /api/v2/indexer/documents/:uuid/revisions          │
+│              PUT /api/v2/indexer/documents/:uuid/summary             │
+│              PUT /api/v2/indexer/documents/:uuid/embeddings          │
+│                                                                       │
+│  ┌──────────────────┐  ┌───────────────┐  ┌────────────────┐       │
+│  │ Authentication   │  │ Validation    │  │ Business Logic │       │
+│  │ (Service Token)  │  │ (Schema)      │  │ (Dedup, etc.)  │       │
+│  └──────────────────┘  └───────────────┘  └────────────────┘       │
+└───────────────────────────────────┬───────────────────────────────────┘
+                                    │
+                                    ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Database (PostgreSQL)                          │
+│  • documents (uuid, title, metadata, workspace_provider)             │
+│  • document_revisions (content_hash, commit_sha, summary)            │
+│  • document_embeddings (vectors for semantic search)                 │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Key API Endpoints
+
+See `INDEXER_IMPLEMENTATION_GUIDE.md` for complete API specification.
+
+**Document Management**:
+- `POST /api/v2/indexer/documents` - Create/upsert document reference
+- `GET /api/v2/indexer/documents/:uuid` - Get document by UUID
+
+**Revision Tracking**:
+- `POST /api/v2/indexer/documents/:uuid/revisions` - Create new revision
+- `PUT /api/v2/indexer/documents/:uuid/summary` - Update AI summary
+
+**Vector Search**:
+- `PUT /api/v2/indexer/documents/:uuid/embeddings` - Store embeddings
+
+### Workspace Provider Resolution
+
+The indexer uses **project configuration** to resolve workspace providers:
+
+```hcl
+# testing/projects/docs-internal.hcl
+project "docs-internal" {
+  short_name  = "DOCS"
+  description = "Internal documentation and RFCs"
+  status      = "active"
+  
+  workspace "local" {
+    type = "local"
+    root = "./docs-internal"
+    
+    folders {
+      docs   = "."
+      drafts = ".drafts"
+    }
+  }
+  
+  # Alternative: GitHub workspace
+  # workspace "github" {
+  #   type       = "github"
+  #   repository = "hashicorp/hermes"
+  #   branch     = "main"
+  #   path       = "docs-internal"
+  # }
+}
+```
+
+**Discovery Flow**:
+```go
+// Load project config
+cfg, err := projectconfig.LoadConfig("testing/projects.hcl")
+
+// Get project by ID
+project := cfg.GetProject("docs-internal")
+
+// Resolve workspace provider
+provider, err := workspace.NewProvider(project.Workspace)
+
+// Discover documents
+docs, err := provider.ListDocuments(ctx, project.Workspace.Folders.Docs, nil)
+
+// For each document, POST to API
+for _, doc := range docs {
+    req := &CreateDocumentRequest{
+        UUID:  doc.UUID,
+        Title: doc.Title,
+        WorkspaceProvider: WorkspaceProviderMetadata{
+            Type:       "local",
+            Path:       doc.Path,
+            ProjectID:  "docs-internal",
+        },
+    }
+    
+    resp, err := apiClient.CreateDocument(ctx, req)
+    // Handle response...
+}
+```
+
+### Advantages Over Direct DB Access
+
+| Aspect | Direct DB | API-Based |
+|--------|-----------|-----------|
+| **Coupling** | Tight coupling to schema | Loose coupling via contracts |
+| **Testing** | Requires DB setup | Can mock API responses |
+| **Security** | Full DB access | Scoped permissions via API |
+| **Validation** | Manual | API enforces rules |
+| **Audit** | Manual logging | Built-in API logs |
+| **Deployment** | Must share DB | Can deploy independently |
+| **Scaling** | Single process | Indexer can scale horizontally |
+| **External Sources** | Difficult (schema assumptions) | Natural (API accepts metadata) |
+
+### Migration Strategy
+
+**Phase 1**: Keep existing direct DB commands, add API client parameter
+```go
+type TrackRevisionCommand struct {
+    DB        *gorm.DB        // Legacy (deprecated)
+    APIClient *IndexerAPIClient // New (preferred)
+}
+
+func (c *TrackRevisionCommand) Execute(ctx context.Context, doc *DocumentContext) error {
+    if c.APIClient != nil {
+        // New: Use API
+        return c.createRevisionViaAPI(ctx, doc)
+    }
+    // Legacy: Direct DB (for backward compatibility)
+    return c.createRevisionDirectDB(ctx, doc)
+}
+```
+
+**Phase 2**: Deprecate DB parameter, log warnings
+```go
+if c.DB != nil {
+    log.Warn("Direct DB access is deprecated, use APIClient instead")
+}
+```
+
+**Phase 3**: Remove DB parameter entirely
+```go
+type TrackRevisionCommand struct {
+    APIClient *IndexerAPIClient // Required
+}
+```
+
+### Authentication
+
+**Service Token Approach** (recommended for production):
+```bash
+# Generate service token
+./hermes admin create-service-token --name="indexer-service" --scopes="indexer:write"
+
+# Use in indexer
+export HERMES_INDEXER_TOKEN="svc_abc123..."
+./hermes indexer -config=config.hcl
+```
+
+**OIDC Approach** (for testing with Dex):
+```go
+// Get auth token from Dex
+token, err := auth.GetOIDCToken(ctx, dexURL, clientID, clientSecret)
+
+// Create API client
+apiClient := &IndexerAPIClient{
+    BaseURL:   "http://localhost:8001",
+    AuthToken: token,
+}
+```
+
+### Project Config Integration
+
+The indexer becomes **project-aware**:
+
+```bash
+# Index specific project
+./hermes indexer -config=config.hcl -project=docs-internal
+
+# Index all active projects
+./hermes indexer -config=config.hcl -all-projects
+
+# List projects
+./hermes indexer -config=config.hcl -list-projects
+```
+
+**CLI Flow**:
+1. Load config: `projectconfig.LoadConfig("projects.hcl")`
+2. Select project: `cfg.GetProject(projectID)`
+3. Resolve workspace: `workspace.NewProvider(project.Workspace)`
+4. Create API client: `NewIndexerAPIClient(apiURL, token)`
+5. Execute pipeline with API client
+
 ## Related Documentation
 
 - [Document Revisions and Migration](./DOCUMENT_REVISIONS_AND_MIGRATION.md) - UUID-based revision tracking
 - [Indexer README](./README-indexer.md) - Current indexer implementation
+- [Indexer Implementation Guide](./INDEXER_IMPLEMENTATION_GUIDE.md) - **Complete API specification and examples**
 - [Workspace Provider Architecture](../pkg/workspace/README.md) - Multi-provider abstraction
 - [Search Provider Architecture](../pkg/search/README.md) - Search abstraction layer
 - [Testing Infrastructure](../testing/README.md) - Local testing environment
