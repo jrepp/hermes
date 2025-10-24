@@ -96,14 +96,22 @@ func NewDBWithConfig(cfg DatabaseConfig) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	// LEGACY: Still run AutoMigrate for backward compatibility
-	// This ensures any models not yet in migrations are still created
-	// TODO: Remove this once all models are in migration files
-	if err := db.AutoMigrate(
-		models.ModelsToAutoMigrate()...,
-	); err != nil {
-		return nil, fmt.Errorf("error migrating database: %w", err)
-	}
+	// TEMPORARY WORKAROUND: Disable AutoMigrate to avoid GORM constraint renaming bug
+	// See: docs-internal/todos/LOCAL_WORKFLOW_FIX_STATUS.md
+	//
+	// Problem: GORM tries to rename uniqueIndex constraints even on fresh databases:
+	//   - ERROR: constraint "uni_indexer_folders_google_drive_id" does not exist
+	//   - ERROR: constraint "uni_workspace_projects_project_uuid" does not exist
+	//
+	// TODO: Complete SQL migrations for ALL models, then remove AutoMigrate entirely
+	// For now: Comment out to get server running, re-enable after fixing migrations
+	/*
+		if err := db.AutoMigrate(
+			models.ModelsToAutoMigrate()...,
+		); err != nil {
+			return nil, fmt.Errorf("error migrating database: %w", err)
+		}
+	*/
 
 	return db, nil
 }

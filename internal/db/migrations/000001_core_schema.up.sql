@@ -4,13 +4,17 @@
 
 -- HermesInstance table (must be first - other tables reference it)
 CREATE TABLE IF NOT EXISTS hermes_instances (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
     instance_uuid TEXT NOT NULL UNIQUE,
     instance_name TEXT NOT NULL,
-    instance_url TEXT,
+    instance_id TEXT NOT NULL UNIQUE,
+    base_url TEXT,
+    deployment_env TEXT NOT NULL DEFAULT 'development',
+    initialized_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_heartbeat TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     metadata TEXT
 );
 
@@ -19,7 +23,7 @@ CREATE INDEX IF NOT EXISTS idx_hermes_instances_uuid ON hermes_instances(instanc
 
 -- DocumentType table
 CREATE TABLE IF NOT EXISTS document_types (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -32,7 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_document_types_deleted_at ON document_types(delet
 
 -- DocumentTypeCustomField table
 CREATE TABLE IF NOT EXISTS document_type_custom_fields (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -47,7 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_document_type_custom_fields_deleted_at ON documen
 
 -- Product table
 CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -59,7 +63,7 @@ CREATE INDEX IF NOT EXISTS idx_products_deleted_at ON products(deleted_at);
 
 -- User table
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -73,7 +77,7 @@ CREATE INDEX IF NOT EXISTS idx_users_deleted_at ON users(deleted_at);
 
 -- Group table
 CREATE TABLE IF NOT EXISTS groups (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -85,7 +89,7 @@ CREATE INDEX IF NOT EXISTS idx_groups_deleted_at ON groups(deleted_at);
 
 -- WorkspaceProject table (for distributed projects)
 CREATE TABLE IF NOT EXISTS workspace_projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -103,7 +107,7 @@ CREATE INDEX IF NOT EXISTS idx_workspace_projects_project_id ON workspace_projec
 
 -- Document table (main document entity)
 CREATE TABLE IF NOT EXISTS documents (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -136,7 +140,7 @@ CREATE INDEX IF NOT EXISTS latest_product_number ON documents(product_id, docume
 
 -- DocumentCustomField table
 CREATE TABLE IF NOT EXISTS document_custom_fields (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -149,7 +153,7 @@ CREATE INDEX IF NOT EXISTS idx_document_custom_fields_deleted_at ON document_cus
 
 -- DocumentFileRevision table
 CREATE TABLE IF NOT EXISTS document_file_revisions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -163,7 +167,7 @@ CREATE INDEX IF NOT EXISTS idx_document_file_revisions_deleted_at ON document_fi
 
 -- DocumentRevision table (for versioning and migration tracking)
 CREATE TABLE IF NOT EXISTS document_revisions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -183,7 +187,7 @@ CREATE INDEX IF NOT EXISTS idx_document_revisions_project_uuid ON document_revis
 
 -- DocumentRelatedResource table
 CREATE TABLE IF NOT EXISTS document_related_resources (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -196,7 +200,7 @@ CREATE INDEX IF NOT EXISTS idx_document_related_resources_deleted_at ON document
 
 -- DocumentRelatedResourceExternalLink table
 CREATE TABLE IF NOT EXISTS document_related_resource_external_links (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -210,7 +214,7 @@ CREATE INDEX IF NOT EXISTS idx_doc_related_res_ext_links_deleted_at ON document_
 
 -- DocumentRelatedResourceHermesDocument table
 CREATE TABLE IF NOT EXISTS document_related_resource_hermes_documents (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -223,7 +227,7 @@ CREATE INDEX IF NOT EXISTS idx_doc_related_res_hermes_docs_deleted_at ON documen
 
 -- Project table
 CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -238,7 +242,7 @@ CREATE INDEX IF NOT EXISTS idx_projects_deleted_at ON projects(deleted_at);
 
 -- ProjectRelatedResource table
 CREATE TABLE IF NOT EXISTS project_related_resources (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -251,7 +255,7 @@ CREATE INDEX IF NOT EXISTS idx_project_related_resources_deleted_at ON project_r
 
 -- ProjectRelatedResourceExternalLink table
 CREATE TABLE IF NOT EXISTS project_related_resource_external_links (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -265,7 +269,7 @@ CREATE INDEX IF NOT EXISTS idx_proj_related_res_ext_links_deleted_at ON project_
 
 -- ProjectRelatedResourceHermesDocument table
 CREATE TABLE IF NOT EXISTS project_related_resource_hermes_documents (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -278,7 +282,7 @@ CREATE INDEX IF NOT EXISTS idx_proj_related_res_hermes_docs_deleted_at ON projec
 
 -- IndexerFolder table
 CREATE TABLE IF NOT EXISTS indexer_folders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -290,7 +294,7 @@ CREATE INDEX IF NOT EXISTS idx_indexer_folders_deleted_at ON indexer_folders(del
 
 -- IndexerMetadata table
 CREATE TABLE IF NOT EXISTS indexer_metadata (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -301,7 +305,7 @@ CREATE INDEX IF NOT EXISTS idx_indexer_metadata_deleted_at ON indexer_metadata(d
 
 -- ProductLatestDocumentNumber table
 CREATE TABLE IF NOT EXISTS product_latest_document_numbers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,

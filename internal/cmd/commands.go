@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/canary"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/indexer"
+	"github.com/hashicorp-forge/hermes/internal/cmd/commands/indexeragent"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/operator"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/server"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/version"
@@ -26,6 +27,11 @@ func initCommands(log hclog.Logger, ui cli.Ui) {
 		},
 		"indexer": func() (cli.Command, error) {
 			return &indexer.Command{
+				Command: b,
+			}, nil
+		},
+		"indexer-agent": func() (cli.Command, error) {
+			return &indexeragent.Command{
 				Command: b,
 			}, nil
 		},

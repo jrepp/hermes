@@ -572,6 +572,16 @@ func (c *Command) Run(args []string) int {
 	// Start instance heartbeat in background
 	go instance.StartHeartbeat(ctx, db, 1*time.Minute, instanceLogger)
 
+	// Generate indexer registration token if configured
+	indexerTokenPath := os.Getenv("HERMES_INDEXER_TOKEN_PATH")
+	if indexerTokenPath != "" {
+		if err := generateIndexerToken(db, indexerTokenPath, c.Log); err != nil {
+			c.UI.Warn(fmt.Sprintf("error generating indexer token: %v", err))
+		} else {
+			c.UI.Info(fmt.Sprintf("Indexer registration token written to: %s", indexerTokenPath))
+		}
+	}
+
 	// Register document types.
 	// for _, d := range cfg.DocumentTypes.DocumentType {
 	// 	if err := models.RegisterDocumentType(*d, db); err != nil {
@@ -728,6 +738,7 @@ func (c *Command) Run(args []string) int {
 	unauthenticatedEndpoints := []endpoint{
 		{"/health", healthHandler()},
 		{"/pub/", http.StripPrefix("/pub/", pub.Handler())},
+		{"/api/v2/indexer/", apiv2.IndexerHandler(srv)}, // Indexer API (handles own token auth)
 	}
 
 	// Add Dex OIDC auth endpoints if Dex is configured
@@ -952,111 +963,33 @@ func registerProducts(
 	return nil
 }
 
-// logInstanceOverview logs a comprehensive overview of the running instance configuration
-// without exposing sensitive data
-func logInstanceOverview(log hclog.Logger, cfg *config.Config) {
-	// Determine authentication method
-	var authMethod string
-	var authDetails []interface{}
-
-	if cfg.OidcAlb != nil && !cfg.OidcAlb.Disabled {
-		authMethod = "OIDC ALB"
-		authDetails = []interface{}{
-			"auth_server_configured", cfg.OidcAlb.AuthServerURL != "",
-			"client_id_configured", cfg.OidcAlb.ClientID != "",
-			"aws_region", cfg.OidcAlb.AWSRegion,
-		}
-	} else if cfg.Okta != nil && !cfg.Okta.Disabled {
-		authMethod = "Okta ALB"
-		authDetails = []interface{}{
-			"auth_server_configured", cfg.Okta.AuthServerURL != "",
-			"client_id_configured", cfg.Okta.ClientID != "",
-			"aws_region", cfg.Okta.AWSRegion,
-		}
-	} else if cfg.SharePoint != nil {
-		authMethod = "Microsoft Auth / SharePoint"
-		authDetails = []interface{}{
-			"sharepoint_configured", true,
-		}
-		authDetails = append(authDetails,
-			"tenant_id_configured", cfg.SharePoint.TenantID != "",
-			"site_id_configured", cfg.SharePoint.SiteID != "",
-			"drive_id_configured", cfg.SharePoint.DriveID != "",
-			"domain", cfg.SharePoint.Domain,
-		)
-	} else {
-		authMethod = "Google OAuth"
-		authDetails = []interface{}{
-			"google_workspace_configured", cfg.GoogleWorkspace != nil,
-		}
-		if cfg.GoogleWorkspace != nil {
-			authDetails = append(authDetails,
-				"gw_domain", cfg.GoogleWorkspace.Domain,
-				"oauth2_configured", cfg.GoogleWorkspace.OAuth2 != nil,
-			)
-		}
+// generateIndexerToken generates a registration token for indexers and writes it to a file.
+func generateIndexerToken(db *gorm.DB, tokenPath string, logger hclog.Logger) error {
+	// Generate a registration token
+	token, err := models.GenerateToken("registration")
+	if err != nil {
+		return fmt.Errorf("error generating token: %w", err)
 	}
 
-	// Determine mode (development vs production)
-	mode := "production"
-	if cfg.Server != nil && cfg.Server.DevMode {
-		mode = "development"
+	// Store the token in the database
+	expiresAt := time.Now().Add(24 * time.Hour) // 24 hour expiration for registration tokens
+	indexerToken := models.IndexerToken{
+		TokenType: "registration",
+		ExpiresAt: &expiresAt,
 	}
 
-	// Log format determination
-	logFormat := "standard"
-	if cfg.LogFormat == "json" {
-		logFormat = "json"
-	} else if cfg.LogFormat != "" {
-		logFormat = cfg.LogFormat
+	if err := indexerToken.Create(db, token); err != nil {
+		return fmt.Errorf("error storing token: %w", err)
 	}
 
-	// Main configuration overview
-	configFields := []interface{}{
-		"instance_mode", mode,
-		"server_addr", cfg.Server.Addr,
-		"base_url", cfg.BaseURL,
-		"shortener_base_url", cfg.ShortenerBaseURL,
-		"log_format", logFormat,
-		"tls_enabled", cfg.Server != nil && cfg.Server.TLSEnabled,
-		"auth_method", authMethod,
+	// Write token to file
+	if err := os.WriteFile(tokenPath, []byte(token), 0600); err != nil {
+		return fmt.Errorf("error writing token file: %w", err)
 	}
 
-	// Add auth-specific details
-	configFields = append(configFields, authDetails...)
+	logger.Info("generated indexer registration token",
+		"token_id", indexerToken.ID,
+		"expires_at", expiresAt)
 
-	// Service configurations
-	configFields = append(configFields,
-		"algolia_configured", cfg.Algolia != nil && cfg.Algolia.ApplicationID != "",
-		"google_workspace_configured", cfg.GoogleWorkspace != nil && cfg.GoogleWorkspace.Domain != "",
-		"email_enabled", cfg.Email != nil && cfg.Email.Enabled,
-		"jira_enabled", cfg.Jira != nil && cfg.Jira.Enabled,
-		"datadog_enabled", cfg.Datadog != nil && cfg.Datadog.Enabled,
-	)
-
-	// Google Workspace details (if configured)
-	if cfg.GoogleWorkspace != nil {
-		configFields = append(configFields,
-			"gw_domain", cfg.GoogleWorkspace.Domain,
-			"gw_docs_folder", cfg.GoogleWorkspace.DocsFolder,
-			"gw_drafts_folder", cfg.GoogleWorkspace.DraftsFolder,
-			"gw_shortcuts_enabled", cfg.GoogleWorkspace.CreateDocShortcuts,
-		)
-	}
-
-	// Document types count
-	if cfg.DocumentTypes != nil {
-		configFields = append(configFields,
-			"document_types_count", len(cfg.DocumentTypes.DocumentType),
-		)
-	}
-
-	// Products count
-	if cfg.Products != nil {
-		configFields = append(configFields,
-			"products_count", len(cfg.Products.Product),
-		)
-	}
-
-	log.Info("=== Hermes Instance Configuration Overview ===", configFields...)
+	return nil
 }
