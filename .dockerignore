@@ -46,9 +46,10 @@ test_final.log
 .DS_Store
 Thumbs.db
 
-# Exclude Python scripts
+# Exclude Python scripts and shell scripts (except docker-entrypoint.sh)
 *.py
 *.sh
+!docker-entrypoint.sh
 refactor_*.py
 fix_*.py
 scripts/

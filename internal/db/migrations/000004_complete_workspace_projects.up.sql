@@ -1,6 +1,14 @@
 -- Add missing fields to workspace_projects table
 -- Bringing migration in sync with WorkspaceProject model (pkg/models/workspace_project.go)
 
+-- Drop obsolete columns that no longer exist in the model
+ALTER TABLE workspace_projects 
+  DROP COLUMN IF EXISTS project_id,
+  DROP COLUMN IF EXISTS project_name;
+
+-- Drop obsolete indexes
+DROP INDEX IF EXISTS idx_workspace_projects_project_id;
+
 -- Add instance relationship
 ALTER TABLE workspace_projects 
   ADD COLUMN IF NOT EXISTS instance_uuid UUID;

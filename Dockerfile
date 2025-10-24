@@ -36,17 +36,21 @@ COPY --from=builder /build/hermes /app/hermes
 # Copy configs (optional, can be mounted as volume)
 COPY --from=builder /build/configs /app/configs
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Create non-root user and directories
+# Note: Directories created here will have correct ownership, but Docker volumes
+# mounted at runtime will override ownership. The entrypoint script fixes this.
 RUN adduser -D -u 1000 hermes && \
     chown -R hermes:hermes /app && \
     mkdir -p /app/workspace_data /app/shared && \
     chown -R hermes:hermes /app/workspace_data /app/shared
 
-USER hermes
-
 # Expose port
 EXPOSE 8000
 
-# Run the binary
-ENTRYPOINT ["/app/hermes"]
-CMD ["server"]
+# Use entrypoint to fix volume permissions, then run as hermes user
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["/app/hermes", "server"]
