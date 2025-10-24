@@ -36,11 +36,11 @@ COPY --from=builder /build/hermes /app/hermes
 # Copy configs (optional, can be mounted as volume)
 COPY --from=builder /build/configs /app/configs
 
-# Create non-root user
+# Create non-root user and directories
 RUN adduser -D -u 1000 hermes && \
     chown -R hermes:hermes /app && \
-    mkdir -p /app/workspace_data && \
-    chown -R hermes:hermes /app/workspace_data
+    mkdir -p /app/workspace_data /app/shared && \
+    chown -R hermes:hermes /app/workspace_data /app/shared
 
 USER hermes
 
