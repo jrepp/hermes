@@ -12,7 +12,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
-//go:embed migrations/*.sql
+//go:embed migrations/*.sql migrations/db-specific/*.sql
 var migrationsFS embed.FS
 
 // RunMigrations applies all pending migrations for the given database driver.
@@ -77,14 +77,14 @@ func applyDatabaseSpecificMigrations(db *sql.DB, driver string) error {
 	case "postgres":
 		// PostgreSQL-specific migrations (extensions, UUID types, CITEXT)
 		migrations = []string{
-			"000001_postgres_extras.up.sql",
-			"000002_indexer_postgres.up.sql",
+			"db-specific/000003_indexer_postgres.up.sql",
+			"db-specific/000005_postgres_extras.up.sql",
 		}
 	case "sqlite":
 		// SQLite-specific migrations (PRAGMAs, optimizations)
 		migrations = []string{
-			"000001_sqlite_extras.up.sql",
-			"000002_indexer_sqlite.up.sql",
+			"db-specific/000004_indexer_sqlite.up.sql",
+			"db-specific/000006_sqlite_extras.up.sql",
 		}
 	}
 

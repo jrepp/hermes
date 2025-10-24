@@ -530,6 +530,16 @@ func (c *Command) Run(args []string) int {
 	// Start instance heartbeat in background
 	go instance.StartHeartbeat(ctx, db, 1*time.Minute, instanceLogger)
 
+	// Generate indexer registration token if configured
+	indexerTokenPath := os.Getenv("HERMES_INDEXER_TOKEN_PATH")
+	if indexerTokenPath != "" {
+		if err := generateIndexerToken(db, indexerTokenPath, c.Log); err != nil {
+			c.UI.Warn(fmt.Sprintf("error generating indexer token: %v", err))
+		} else {
+			c.UI.Info(fmt.Sprintf("Indexer registration token written to: %s", indexerTokenPath))
+		}
+	}
+
 	// Register document types.
 	// for _, d := range cfg.DocumentTypes.DocumentType {
 	// 	if err := models.RegisterDocumentType(*d, db); err != nil {
@@ -686,6 +696,7 @@ func (c *Command) Run(args []string) int {
 	unauthenticatedEndpoints := []endpoint{
 		{"/health", healthHandler()},
 		{"/pub/", http.StripPrefix("/pub/", pub.Handler())},
+		{"/api/v2/indexer/", apiv2.IndexerHandler(srv)}, // Indexer API (handles own token auth)
 	}
 
 	// Add Dex OIDC auth endpoints if Dex is configured
@@ -880,6 +891,37 @@ func registerProducts(
 			return fmt.Errorf("error saving Algolia products object: %w", err)
 		}
 	}
+
+	return nil
+}
+
+// generateIndexerToken generates a registration token for indexers and writes it to a file.
+func generateIndexerToken(db *gorm.DB, tokenPath string, logger hclog.Logger) error {
+	// Generate a registration token
+	token, err := models.GenerateToken("registration")
+	if err != nil {
+		return fmt.Errorf("error generating token: %w", err)
+	}
+
+	// Store the token in the database
+	expiresAt := time.Now().Add(24 * time.Hour) // 24 hour expiration for registration tokens
+	indexerToken := models.IndexerToken{
+		TokenType: "registration",
+		ExpiresAt: &expiresAt,
+	}
+
+	if err := indexerToken.Create(db, token); err != nil {
+		return fmt.Errorf("error storing token: %w", err)
+	}
+
+	// Write token to file
+	if err := os.WriteFile(tokenPath, []byte(token), 0600); err != nil {
+		return fmt.Errorf("error writing token file: %w", err)
+	}
+
+	logger.Info("generated indexer registration token",
+		"token_id", indexerToken.ID,
+		"expires_at", expiresAt)
 
 	return nil
 }

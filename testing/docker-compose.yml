@@ -102,11 +102,14 @@ services:
       # Mount project workspaces to consistent base path
       - ./workspaces/testing:/app/workspaces/testing
       - ./workspaces/docs:/app/workspaces/docs
+      # Mount shared volume for indexer token
+      - indexer_shared:/app/shared
     environment:
       HERMES_BASE_URL: http://localhost:4201  # Frontend in testing environment
       HERMES_SEARCH_PROVIDER: meilisearch
       HERMES_MEILISEARCH_URL: http://meilisearch:7700
       HERMES_MEILISEARCH_KEY: masterKey123
+      HERMES_INDEXER_TOKEN_PATH: /app/shared/indexer-token.txt
     command: ["server", "-config=/app/config.hcl"]
     extra_hosts:
       - "localhost:host-gateway"
@@ -122,6 +125,29 @@ services:
       timeout: 2s
       retries: 3
       start_period: 5s
+    networks:
+      - hermes-testing
+
+  hermes-indexer:
+    container_name: hermes-indexer
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    volumes:
+      # Shared token volume (read-only access)
+      - indexer_shared:/app/shared:ro
+      # Access to workspace directories to index
+      - ./workspaces/testing:/app/workspaces/testing:ro
+      - ./workspaces/docs:/app/workspaces/docs:ro
+    environment:
+      HERMES_INDEXER_TOKEN_PATH: /app/shared/indexer-token.txt
+      HERMES_CENTRAL_URL: http://hermes:8000
+      HERMES_WORKSPACE_PATH: /app/workspaces
+      HERMES_INDEXER_TYPE: local-workspace
+    command: ["indexer-agent"]
+    depends_on:
+      hermes:
+        condition: service_healthy
     networks:
       - hermes-testing
 
@@ -155,3 +181,4 @@ volumes:
   postgres_testing:
   meilisearch_testing:
   hermes_workspace:
+  indexer_shared:

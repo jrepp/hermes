@@ -57,3 +57,20 @@ CREATE INDEX IF NOT EXISTS idx_indexer_tokens_deleted_at ON indexer_tokens(delet
 CREATE INDEX IF NOT EXISTS idx_indexer_tokens_hash ON indexer_tokens(token_hash);
 CREATE INDEX IF NOT EXISTS idx_indexer_tokens_indexer_id ON indexer_tokens(indexer_id);
 CREATE INDEX IF NOT EXISTS idx_indexer_tokens_expires_at ON indexer_tokens(expires_at);
+
+-- IndexerFolders table (tracks indexed folders for workspace scanning)
+CREATE TABLE IF NOT EXISTS indexer_folders (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+    
+    -- Folder identification
+    google_drive_id TEXT NOT NULL UNIQUE,
+    
+    -- Tracking
+    last_indexed_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_indexer_folders_deleted_at ON indexer_folders(deleted_at);
+CREATE INDEX IF NOT EXISTS idx_indexer_folders_google_drive_id ON indexer_folders(google_drive_id);
