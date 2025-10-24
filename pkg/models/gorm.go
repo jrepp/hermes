@@ -15,6 +15,8 @@ func ModelsToAutoMigrate() []interface{} {
 		&DocumentReview{},
 		&DocumentTypeCustomField{},
 		&Group{},
+		&Indexer{},      // NEW: Indexer registration
+		&IndexerToken{}, // NEW: Indexer authentication tokens
 		&IndexerFolder{},
 		&IndexerMetadata{},
 		&Product{},
