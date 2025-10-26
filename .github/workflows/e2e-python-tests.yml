@@ -1,0 +1,133 @@
+# GitHub Actions Workflow for E2E Python Testing
+# 
+# This workflow demonstrates automated testing with the Python testing framework.
+# It starts the testing environment, runs scenarios, and collects results.
+
+name: E2E Python Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'testing/python/**'
+      - 'python-client/**'
+      - '.github/workflows/e2e-python-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'testing/python/**'
+      - 'python-client/**'
+
+jobs:
+  test:
+    name: Run E2E Python Scenarios
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd testing/python
+          pip install -e .
+          pip install httpx pydantic-settings eval-type-backport
+
+      - name: Start testing environment
+        run: |
+          cd testing
+          docker compose up -d
+          
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for Hermes backend..."
+          timeout 120 bash -c 'until curl -sf http://localhost:8001/health; do sleep 2; done'
+          
+          echo "Waiting for Dex..."
+          timeout 60 bash -c 'until curl -sf http://localhost:5558/dex/.well-known/openid-configuration; do sleep 2; done'
+          
+          echo "✅ All services ready"
+
+      - name: Show service status
+        run: |
+          cd testing
+          docker compose ps
+
+      - name: Run automated scenario (skip auth check)
+        run: |
+          cd testing/python
+          PYTHONPATH=../../python-client/src:. python3 scenario_automated.py --skip-auth-check
+        continue-on-error: true
+        # Note: This may fail due to authentication requirements
+        # In production, you would configure proper auth tokens
+
+      - name: Run basic scenario with seeding only
+        run: |
+          cd testing/python
+          cat > test_seeding.py << 'EOF'
+          from seeding import WorkspaceSeeder
+          seeder = WorkspaceSeeder()
+          files = seeder.seed_basic(count=10, clean=True)
+          print(f'✅ Seeded {len(files)} documents successfully')
+          EOF
+          PYTHONPATH=../../python-client/src:. python3 test_seeding.py
+
+      - name: Verify generated documents
+        run: |
+          cd testing
+          echo "Documents in testing workspace:"
+          find workspaces/testing -type f -name "*.md" | head -10
+          
+          FILE_COUNT=$(find workspaces/testing -type f -name "*.md" | wc -l)
+          echo "Total markdown files: $FILE_COUNT"
+          
+          if [ "$FILE_COUNT" -gt 0 ]; then
+            echo "✅ Documents generated successfully"
+          else
+            echo "❌ No documents found"
+            exit 1
+          fi
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          cd testing
+          echo "=== Hermes Backend Logs ==="
+          docker compose logs hermes --tail=50
+          
+          echo "=== Dex Logs ==="
+          docker compose logs dex --tail=50
+          
+          echo "=== Indexer Logs ==="
+          docker compose logs indexer --tail=50
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd testing
+          docker compose down -v
+
+# Authentication Note:
+# This workflow demonstrates testing without authentication (seeding only).
+# For full API testing, you would need to:
+# 
+# 1. Configure GitHub Secrets:
+#    - HERMES_TEST_TOKEN: Pre-generated auth token
+#    - Or: GOOGLE_SERVICE_ACCOUNT_JSON (for Google Workspace)
+# 
+# 2. Set environment variables before running scenarios:
+#    export HERMES_AUTH_TOKEN="${{ secrets.HERMES_TEST_TOKEN }}"
+# 
+# 3. For Dex, you could:
+#    - Use device flow (requires user interaction - not suitable for CI)
+#    - Generate tokens manually and rotate via secrets
+#    - Configure skip_auth for testing environment only
+# 
+# See testing/python/OAUTH_AUTOMATION_GUIDE.md for details.
