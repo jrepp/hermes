@@ -38,6 +38,12 @@ staticClients:
   name: 'Hermes Testing'
   secret: dGVzdGluZy1hcHAtc2VjcmV0
 
+# Service account client for automated testing (no redirect URIs - client credentials only)
+- id: hermes-automation
+  name: 'Hermes Test Automation'
+  secret: YXV0b21hdGlvbi1zZWNyZXQta2V5LWNoYW5nZS1tZQ==  # base64: automation-secret-key-change-me
+  # No redirectURIs - this client uses client_credentials grant type only
+
 # Static password connector for testing
 connectors:
 - type: mockCallback
