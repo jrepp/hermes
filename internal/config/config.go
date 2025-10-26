@@ -608,6 +608,15 @@ func GenerateSimplifiedConfig(workspacePath string) *Config {
 			},
 		},
 
+		// Disable all external auth providers (simplified mode uses embedded Dex)
+		Okta: &oktaadapter.Config{
+			Disabled: true,
+		},
+
+		Dex: &dexadapter.Config{
+			Disabled: true, // Can be enabled later with local Dex config
+		},
+
 		// Minimal indexer config
 		Indexer: &Indexer{
 			MaxParallelDocs:            5,
