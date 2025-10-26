@@ -80,6 +80,108 @@ All services use non-standard ports to avoid conflicts with local development:
 
 ---
 
+## Distributed Testing Enhancements 🆕
+
+The testing environment now includes **automated distributed authoring and indexing scenarios**:
+
+### Quick Start with Test Data
+
+```bash
+# Start environment and seed with test documents
+make up
+make seed              # Generate 10 test documents
+
+# Run basic indexing scenario (end-to-end)
+make scenario-basic
+
+# Open web UI to see indexed documents
+make open              # Opens http://localhost:4201
+```
+
+### Available Scenarios (Bash)
+
+```bash
+# Basic scenario: RFCs, PRDs, Meeting Notes
+make seed              # 10 documents
+make seed-clean        # Clean and regenerate
+
+# Migration scenario: Same UUID in multiple workspaces
+make seed-migration    # Tests conflict detection
+
+# Conflict scenario: Modified documents
+make seed-conflict     # Simulates concurrent edits
+
+# Multi-author scenario: Realistic timeline
+make seed-multi-author # Different authors, dates, statuses
+```
+
+### Python Testing Framework 🆕 (Recommended)
+
+**NEW**: Professional Python-based testing framework with type safety, pytest integration, and rich CLI output.
+
+```bash
+# Set up Python environment (first time)
+make python-setup
+
+# Run scenarios with Python
+make scenario-basic-py              # Basic distributed indexing
+make scenario-migration-py          # Migration with conflict detection
+make scenario-multi-author-py       # Multi-author collaboration
+
+# Seed workspaces with Python
+make python-seed                    # Basic scenario (10 docs)
+make python-seed-migration          # Migration scenario (5 docs)
+make python-seed-multi-author       # Multi-author (10 docs)
+
+# Run pytest tests
+make test-python                    # Unit tests only
+make test-python-integration        # Integration tests (requires Hermes)
+make test-python-all                # All tests
+make test-python-coverage           # With coverage report
+
+# Full distributed test
+make test-distributed-py            # Start + seed + scenario + validate
+```
+
+**Why Python?**
+- ✅ Type-safe API interactions via `hc-hermes` client
+- ✅ Better error handling and validation
+- ✅ Pytest integration for automated testing
+- ✅ Rich CLI output with progress indicators
+- ✅ Automatic retries for indexing waits
+- ✅ Easier to maintain and extend
+
+**Documentation**: See `python/README.md` for comprehensive guide (600+ lines)
+
+### Available Scenarios
+
+```bash
+# Basic scenario: RFCs, PRDs, Meeting Notes
+make seed              # 10 documents
+make seed-clean        # Clean and regenerate
+
+# Migration scenario: Same UUID in multiple workspaces
+make seed-migration    # Tests conflict detection
+
+# Conflict scenario: Modified documents
+make seed-conflict     # Simulates concurrent edits
+
+# Multi-author scenario: Realistic timeline
+make seed-multi-author # Different authors, dates, statuses
+```
+
+### What's New
+
+- **Seed Scripts**: Automatically generate realistic test documents
+- **Scenario Automation**: End-to-end testing workflows
+- **Document Templates**: RFC, PRD, Meeting Notes generators
+- **Multi-Indexer Support**: Test distributed indexing (coming soon)
+- **Makefile Targets**: Easy access to all scenarios
+
+**See**: `DISTRIBUTED_TESTING_ENHANCEMENTS.md` for complete documentation
+
+---
+
 ## Architecture
 
 ```
@@ -97,6 +199,12 @@ All services use non-standard ports to avoid conflicts with local development:
         │  PostgreSQL     │  │  Meilisearch  │
         │  Docker :5433   │  │  Docker :7701 │
         └─────────────────┘  └───────────────┘
+        
+        ┌──────────────────────────────────────┐
+        │  Indexer Agent (scans workspaces)    │
+        │  - workspaces/testing/               │
+        │  - workspaces/docs/                  │
+        └──────────────────────────────────────┘
         
         All in isolated hermes-test network
 ```
