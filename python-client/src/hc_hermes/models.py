@@ -307,7 +307,7 @@ class WebConfig(BaseModel):
     algolia_app_id: str | None = None
     algolia_search_api_key: str | None = None
     analytics_tracking_id: str | None = None
-    base_url: str
+    base_url: str | None = None
     create_docs_link: str | None = None
     dex_issuer_url: str | None = None
     google_oauth2_client_id: str | None = None

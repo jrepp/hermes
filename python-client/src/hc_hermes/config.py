@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,7 +30,7 @@ class HermesConfig(BaseSettings):
     )
 
     # Authentication
-    auth_token: str | None = Field(
+    auth_token: Optional[str] = Field(
         default=None,
         description="OAuth bearer token for authentication",
     )
