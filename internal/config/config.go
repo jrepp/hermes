@@ -62,6 +62,9 @@ type Config struct {
 	// Meilisearch configures Hermes to work with Meilisearch.
 	Meilisearch *Meilisearch `hcl:"meilisearch,block"`
 
+	// Bleve configures Hermes to work with Bleve (embedded full-text search).
+	Bleve *Bleve `hcl:"bleve,block"`
+
 	// Okta configures Hermes to work with Okta.
 	Okta *oktaadapter.Config `hcl:"okta,block"`
 
@@ -439,6 +442,13 @@ type Meilisearch struct {
 	LinksIndexName string `hcl:"links_index_name"`
 }
 
+// Bleve configures Hermes to work with Bleve (embedded full-text search).
+type Bleve struct {
+	// IndexPath is the directory where Bleve indexes are stored.
+	// E.g., "./docs-cms/data/fts.index"
+	IndexPath string `hcl:"index_path"`
+}
+
 // Server contains the configuration for the Hermes server.
 type Server struct {
 	// Addr is the address to bind to for listening.
@@ -578,7 +588,11 @@ func GenerateSimplifiedConfig(workspacePath string) *Config {
 
 		Providers: &Providers{
 			Workspace: "local",
-			Search:    "local", // Will use Bleve when implemented
+			Search:    "bleve", // Use embedded Bleve search
+		},
+
+		Bleve: &Bleve{
+			IndexPath: filepath.Join(workspacePath, "data", "fts.index"),
 		},
 
 		LocalWorkspace: &LocalWorkspace{
@@ -627,7 +641,11 @@ server {
 
 providers {
   workspace = "local"
-  search    = "local"
+  search    = "bleve"
+}
+
+bleve {
+  index_path = %q
 }
 
 local_workspace {
@@ -656,6 +674,7 @@ email {
 }
 `,
 		cfg.Server.Addr,
+		cfg.Bleve.IndexPath,
 		cfg.LocalWorkspace.BasePath,
 		cfg.LocalWorkspace.DocsPath,
 		cfg.LocalWorkspace.DraftsPath,

@@ -32,6 +32,7 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	searchalgolia "github.com/hashicorp-forge/hermes/pkg/search/adapters/algolia"
+	bleveadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/bleve"
 	meilisearchadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
@@ -469,6 +470,23 @@ func (c *Command) Run(args []string) int {
 			return 1
 		}
 		searchProvider = meilisearchAdapter
+
+	case "bleve":
+		if cfg.Bleve == nil {
+			c.UI.Error("error initializing server: bleve configuration required when using bleve search provider")
+			return 1
+		}
+
+		bleveCfg := &bleveadapter.Config{
+			IndexPath: cfg.Bleve.IndexPath,
+		}
+		bleveSearchAdapter, err := bleveadapter.NewAdapter(bleveCfg)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("error initializing bleve adapter: %v", err))
+			return 1
+		}
+		searchProvider = bleveSearchAdapter
+		c.Log.Info("using Bleve embedded search", "index_path", cfg.Bleve.IndexPath)
 
 	default:
 		c.UI.Error(fmt.Sprintf("error initializing server: unknown search provider %q", searchProviderName))
