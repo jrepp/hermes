@@ -4,9 +4,9 @@ Architecture proposals, design documents, and implementation specifications for 
 
 ## Quick Stats
 
-- **Total RFCs**: 16
-- **Status**: 14 Implemented, 1 Design Phase, 1 Partially Complete
-- **Categories**: Authentication (5), Search (4), Documents (2), Frontend (3), Configuration (2)
+- **Total RFCs**: 17
+- **Status**: 14 Implemented, 2 Proposed, 1 Partially Complete
+- **Categories**: Authentication (5), Search (4), Documents (2), Frontend (3), Configuration (2), User Experience (1)
 
 ## Current Patterns
 
@@ -72,13 +72,19 @@ Architecture proposals, design documents, and implementation specifications for 
 | [050](050-oauth-redirect-baseurl.md) | OAuth Redirect BaseURL | Implemented | Environment-agnostic OAuth redirect configuration |
 | [068](068-workspace-provider-selection.md) | Workspace Provider Selection | Implemented | Runtime selection of storage backend (Google/Local/S3/Azure) |
 
+### User Experience (1 RFC)
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [083](RFC-083-simplified-local-mode.md) | Simplified Local Mode | Proposed | Zero-config single-binary CMS with embedded database and search |
+
 ## Index by Status
 
 ### ✅ Implemented (14)
 007, 009, 020, 021, 026, 033, 037, 047, 050, 068, 076, 077, 078, 079
 
-### 🚧 Design Phase (1)
-051 (Outbox Pattern)
+### � Proposed (2)
+051 (Outbox Pattern), 083 (Simplified Local Mode)
 
 ### 🔄 Partially Complete (1)
 034 (Ember Upgrade - ongoing)
