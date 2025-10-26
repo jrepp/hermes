@@ -71,6 +71,7 @@ type ConfigResponse struct {
 	GroupApprovals           bool            `json:"group_approvals"`
 	JiraURL                  string          `json:"jira_url"`
 	ShortLinkBaseURL         string          `json:"short_link_base_url"`
+	SimplifiedMode           bool            `json:"simplified_mode"`  // True when running in zero-config simplified mode
 	SkipGoogleAuth           bool            `json:"skip_google_auth"` // Deprecated: use auth_provider instead
 	SupportLinkURL           string          `json:"support_link_url"`
 	ShortRevision            string          `json:"short_revision"`
@@ -192,6 +193,7 @@ func ConfigHandler(
 			GroupApprovals:           groupApprovals,
 			JiraURL:                  jiraURL,
 			ShortLinkBaseURL:         shortLinkBaseURL,
+			SimplifiedMode:           cfg.SimplifiedMode,
 			SkipGoogleAuth:           skipGoogleAuth, // Legacy compatibility
 			SupportLinkURL:           cfg.SupportLinkURL,
 			ShortRevision:            version.GetShortRevision(),
