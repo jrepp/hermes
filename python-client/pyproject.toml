@@ -3,7 +3,7 @@ name = "hc-hermes"
 version = "0.1.0"
 description = "Python client library for HashiCorp Hermes document management system"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = { text = "MPL-2.0" }
 authors = [
     { name = "HashiCorp Labs", email = "labs@hashicorp.com" }
@@ -12,8 +12,9 @@ keywords = ["hermes", "hashicorp", "document-management", "api-client"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL-2.0)",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
