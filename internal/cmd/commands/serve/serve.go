@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/server"
@@ -16,6 +17,9 @@ type Command struct {
 
 	// Inherit all server command fields
 	serverCmd *server.Command
+
+	// Browser launch settings
+	FlagBrowser bool
 }
 
 func (c *Command) Synopsis() string {
@@ -50,7 +54,15 @@ func (c *Command) Flags() *base.FlagSet {
 	if c.serverCmd == nil {
 		c.serverCmd = &server.Command{Command: c.Command}
 	}
-	return c.serverCmd.Flags()
+	f := c.serverCmd.Flags()
+
+	// Add simplified mode specific flags
+	f.BoolVar(
+		&c.FlagBrowser, "browser", true,
+		"Automatically open browser (simplified mode only)",
+	)
+
+	return f
 }
 
 func (c *Command) Run(args []string) int {
@@ -122,11 +134,27 @@ func (c *Command) Run(args []string) int {
 	}
 	defer os.Remove(tmpConfigPath)
 
-	c.UI.Info(fmt.Sprintf("Starting Hermes in simplified mode..."))
-	c.UI.Info(fmt.Sprintf("  Workspace: %s", workspacePath))
-	c.UI.Info(fmt.Sprintf("  Database: SQLite (embedded)"))
-	c.UI.Info(fmt.Sprintf("  Web UI: http://localhost:8000"))
-	c.UI.Info("")
+	// Display banner with server info
+	dbPath := filepath.Join(workspacePath, "hermes.db")
+	indexPath := filepath.Join(workspacePath, "search-index")
+	serverURL := "http://localhost:8000"
+	printBanner(workspacePath, dbPath, indexPath, serverURL)
+
+	// Launch browser in background if enabled
+	if c.FlagBrowser {
+		go func() {
+			// Wait for server to be ready (max 10 seconds)
+			if err := waitForServer(serverURL, 10*time.Second); err != nil {
+				c.UI.Warn(fmt.Sprintf("Server not ready, skipping browser launch: %v", err))
+				return
+			}
+
+			// Open browser
+			if err := openBrowser(serverURL); err != nil {
+				c.UI.Warn(fmt.Sprintf("Could not open browser: %v", err))
+			}
+		}()
+	}
 
 	// Run server with generated config
 	return c.serverCmd.Run([]string{"-config", tmpConfigPath})
