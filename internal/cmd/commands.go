@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/indexer"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/indexeragent"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/operator"
+	"github.com/hashicorp-forge/hermes/internal/cmd/commands/serve"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/server"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/version"
 )
@@ -47,6 +48,11 @@ func initCommands(log hclog.Logger, ui cli.Ui) {
 		},
 		"operator migrate-algolia-to-postgresql": func() (cli.Command, error) {
 			return &operator.MigrateAlgoliaToPostgreSQLCommand{
+				Command: b,
+			}, nil
+		},
+		"serve": func() (cli.Command, error) {
+			return &serve.Command{
 				Command: b,
 			}, nil
 		},

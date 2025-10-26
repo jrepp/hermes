@@ -508,13 +508,30 @@ func (c *Command) Run(args []string) int {
 	}
 
 	// Initialize database.
-	if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
-		cfg.Postgres.Password = val
-	}
-	db, err := dbpkg.NewDB(*cfg.Postgres)
-	if err != nil {
-		c.UI.Error(fmt.Sprintf("error initializing database: %v", err))
-		return 1
+	var db *gorm.DB
+	if cfg.SimplifiedMode {
+		// Simplified mode: use SQLite
+		dbConfig := dbpkg.DatabaseConfig{
+			Driver: "sqlite",
+			Path:   cfg.DBPath,
+		}
+		db, err = dbpkg.NewDBWithConfig(dbConfig)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("error initializing SQLite database: %v", err))
+			return 1
+		}
+		c.Log.Info("using SQLite database", "path", cfg.DBPath)
+	} else {
+		// Traditional mode: use PostgreSQL
+		if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
+			cfg.Postgres.Password = val
+		}
+		db, err = dbpkg.NewDB(*cfg.Postgres)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("error initializing database: %v", err))
+			return 1
+		}
+		c.Log.Info("using PostgreSQL database", "host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
 	}
 
 	// Initialize instance identity.

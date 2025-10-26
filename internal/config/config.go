@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	dexadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/dex"
 	oktaadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/okta"
@@ -81,6 +82,16 @@ type Config struct {
 
 	// SupportLinkURL is the URL for the support documentation.
 	SupportLinkURL string `hcl:"support_link_url,optional"`
+
+	// SimplifiedMode indicates whether Hermes is running in simplified mode
+	// (zero-config, embedded database, local-first).
+	SimplifiedMode bool
+
+	// DatabaseType specifies which database to use: "postgres" or "sqlite".
+	DatabaseType string
+
+	// DBPath is the path to the SQLite database file (for simplified mode).
+	DBPath string
 }
 
 // Datadog configures Hermes to send metrics to Datadog.
@@ -550,4 +561,108 @@ func (m *Meilisearch) ToMeilisearchAdapterConfig() *meilisearchadapter.Config {
 		ProjectsIndexName: m.ProjectsIndexName,
 		LinksIndexName:    m.LinksIndexName,
 	}
+}
+
+// GenerateSimplifiedConfig creates a config for simplified mode with embedded
+// database, local workspace, and zero external dependencies.
+func GenerateSimplifiedConfig(workspacePath string) *Config {
+	return &Config{
+		SimplifiedMode: true,
+		DatabaseType:   "sqlite",
+		DBPath:         filepath.Join(workspacePath, "data", "hermes.db"),
+		BaseURL:        "http://localhost:8000",
+
+		Server: &Server{
+			Addr: "127.0.0.1:8000",
+		},
+
+		Providers: &Providers{
+			Workspace: "local",
+			Search:    "local", // Will use Bleve when implemented
+		},
+
+		LocalWorkspace: &LocalWorkspace{
+			BasePath:    workspacePath,
+			DocsPath:    filepath.Join(workspacePath, "documents"),
+			DraftsPath:  filepath.Join(workspacePath, "drafts"),
+			FoldersPath: filepath.Join(workspacePath, "folders"),
+			UsersPath:   filepath.Join(workspacePath, "users"),
+			TokensPath:  filepath.Join(workspacePath, "tokens"),
+			Domain:      "localhost",
+			SMTP: &LocalWorkspaceSMTP{
+				Enabled: false,
+			},
+		},
+
+		// Minimal indexer config
+		Indexer: &Indexer{
+			MaxParallelDocs:            5,
+			UpdateDocHeaders:           true,
+			UpdateDraftHeaders:         true,
+			UseDatabaseForDocumentData: true, // Use DB as source of truth
+		},
+
+		// Disable external services
+		Email: &Email{
+			Enabled: false,
+		},
+
+		LogFormat: "standard",
+	}
+}
+
+// WriteConfig writes a Config to an HCL file (for temporary config generation).
+// This is a simplified writer that doesn't preserve all fields - used only
+// for internal config passing to server command.
+func WriteConfig(cfg *Config, path string) error {
+	// For now, we'll just create a minimal HCL file with key settings
+	// The server command will use the in-memory Config object
+	content := fmt.Sprintf(`
+# Auto-generated Hermes simplified mode config
+# This is a temporary file and should not be edited
+
+server {
+  addr = %q
+}
+
+providers {
+  workspace = "local"
+  search    = "local"
+}
+
+local_workspace {
+  base_path    = %q
+  docs_path    = %q
+  drafts_path  = %q
+  folders_path = %q
+  users_path   = %q
+  tokens_path  = %q
+  domain       = "localhost"
+  
+  smtp {
+    enabled = false
+  }
+}
+
+indexer {
+  max_parallel_docs = 5
+  update_doc_headers = true
+  update_draft_headers = true
+  use_database_for_document_data = true
+}
+
+email {
+  enabled = false
+}
+`,
+		cfg.Server.Addr,
+		cfg.LocalWorkspace.BasePath,
+		cfg.LocalWorkspace.DocsPath,
+		cfg.LocalWorkspace.DraftsPath,
+		cfg.LocalWorkspace.FoldersPath,
+		cfg.LocalWorkspace.UsersPath,
+		cfg.LocalWorkspace.TokensPath,
+	)
+
+	return os.WriteFile(path, []byte(content), 0644)
 }
