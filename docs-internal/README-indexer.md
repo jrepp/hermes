@@ -1,5 +1,7 @@
 # Hermes Indexer
 
+> **📖 For comprehensive architecture and design documentation, see [RFC: Indexer Architecture](rfc/RFC_INDEXER_ARCHITECTURE.md)**
+
 ## Overview
 
 The Hermes indexer is a background service that synchronizes documents between Google Drive, the PostgreSQL database, and Algolia search indexes. It continuously monitors configured Google Drive folders for document changes and updates the search indexes to keep them current.
