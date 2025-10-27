@@ -19,8 +19,11 @@ COPY . .
 # Verify web/dist exists (must be built on host before docker build)
 RUN test -d web/dist || (echo "ERROR: web/dist not found! Run 'make web/build' first" && exit 1)
 
-# Build the binary (with embedded web assets from host)
+# Build the server binary (with embedded web assets from host)
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes ./cmd/hermes
+
+# Build the migration binary (supports both PostgreSQL and SQLite)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes-migrate ./cmd/hermes-migrate
 
 # Final stage - minimal runtime image
 FROM alpine:3.19
@@ -30,8 +33,9 @@ RUN apk add --no-cache ca-certificates wget
 
 WORKDIR /app
 
-# Copy binary from builder
+# Copy binaries from builder
 COPY --from=builder /build/hermes /app/hermes
+COPY --from=builder /build/hermes-migrate /app/hermes-migrate
 
 # Copy configs (optional, can be mounted as volume)
 COPY --from=builder /build/configs /app/configs

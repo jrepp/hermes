@@ -201,12 +201,38 @@ make seed-multi-author # Different authors, dates, statuses
         └─────────────────┘  └───────────────┘
         
         ┌──────────────────────────────────────┐
+        │  Migration Service (one-shot)        │
+        │  - Runs before server starts         │
+        │  - Exits after completing migrations │
+        └──────────────────────────────────────┘
+        
+        ┌──────────────────────────────────────┐
         │  Indexer Agent (scans workspaces)    │
         │  - workspaces/testing/               │
         │  - workspaces/docs/                  │
         └──────────────────────────────────────┘
         
         All in isolated hermes-test network
+```
+
+### Database Migrations
+
+The testing environment includes an **automated migration service** that runs before the Hermes server starts:
+
+- **Migration Service** (`hermes-migrate`)
+  - Runs database migrations automatically on startup
+  - Uses dedicated migration binary (supports PostgreSQL + SQLite)
+  - Exits with code 0 after successful migration
+  - Server depends on migration completion (`condition: service_completed_successfully`)
+  - Restarts on failure for resilience
+
+**Manual Migration** (if needed):
+```bash
+# Run migrations manually
+docker compose run --rm migrate
+
+# Or use the migration binary directly
+./build/bin/hermes-migrate -driver=postgres -dsn="..."
 ```
 
 ---
@@ -217,9 +243,12 @@ make seed-multi-author # Different authors, dates, statuses
 ```bash
 # From project root - for fast iteration
 make bin                   # Build Hermes binary
-cd testing && make up      # Start supporting services
+make bin/migrate           # Build migration binary
+cd testing && make up      # Start supporting services (includes auto-migration)
 cd .. && ./hermes server -config=testing/config.hcl
-./hermes server -config=config.hcl
+
+# OR run migrations manually if needed
+make migrate/postgres/testing
 
 # In another terminal: Run web dev server
 cd web
