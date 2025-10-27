@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/server"
+	"github.com/hashicorp-forge/hermes/internal/config"
 )
 
 type Command struct {
@@ -136,19 +137,11 @@ func (c *Command) Run(args []string) int {
 
 // writeSetupConfig creates a minimal config for setup mode
 func writeSetupConfig(configPath, workingDir string) error {
-	// Create a minimal config that just starts the web server
-	// No database, no search, just the web UI for setup
-	content := fmt.Sprintf(`
-# Temporary setup mode configuration
-# This file is auto-generated and will be deleted
+	// Create a minimal config using the config package
+	// Use a temporary workspace path that won't conflict
+	tmpWorkspace := filepath.Join(workingDir, ".hermes-setup-tmp")
 
-server {
-  addr = "127.0.0.1:8000"
-}
+	cfg := config.GenerateSimplifiedConfig(tmpWorkspace)
 
-# Setup mode flag - checked by frontend
-setup_mode = true
-`)
-
-	return os.WriteFile(configPath, []byte(content), 0644)
+	return config.WriteConfig(cfg, configPath)
 }

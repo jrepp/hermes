@@ -65,6 +65,9 @@ type Config struct {
 	// Bleve configures Hermes to work with Bleve (embedded full-text search).
 	Bleve *Bleve `hcl:"bleve,block"`
 
+	// Ollama configures Hermes to work with Ollama for local AI summarization.
+	Ollama *Ollama `hcl:"ollama,block"`
+
 	// Okta configures Hermes to work with Okta.
 	Okta *oktaadapter.Config `hcl:"okta,block"`
 
@@ -449,6 +452,18 @@ type Bleve struct {
 	IndexPath string `hcl:"index_path"`
 }
 
+// Ollama configures Hermes to work with Ollama for local AI summarization.
+type Ollama struct {
+	// URL is the Ollama API URL (e.g., "http://localhost:11434").
+	URL string `hcl:"url"`
+
+	// SummarizeModel is the model for document summarization (e.g., "llama3.2").
+	SummarizeModel string `hcl:"summarize_model,optional"`
+
+	// EmbeddingModel is the model for vector embeddings (e.g., "nomic-embed-text").
+	EmbeddingModel string `hcl:"embedding_model,optional"`
+}
+
 // Server contains the configuration for the Hermes server.
 type Server struct {
 	// Addr is the address to bind to for listening.
@@ -496,6 +511,20 @@ func NewConfig(filename string, profile string) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to load configuration: %w", err)
 		}
+
+		// Detect database type based on config
+		// If LocalWorkspace exists and no valid Postgres config, use SQLite
+		if c.LocalWorkspace != nil && (c.Postgres == nil || c.Postgres.Password == "") {
+			c.DatabaseType = "sqlite"
+			c.SimplifiedMode = true
+			// Set default DB path if not set
+			if c.DBPath == "" {
+				c.DBPath = filepath.Join(c.LocalWorkspace.BasePath, "data", "hermes.db")
+			}
+		} else if c.Postgres != nil && c.Postgres.Host != "" {
+			c.DatabaseType = "postgres"
+		}
+
 		return c, nil
 	}
 
@@ -522,6 +551,20 @@ func NewConfig(filename string, profile string) (*Config, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode profile %q: %w", selectedProfile, err)
 			}
+
+			// Detect database type based on config
+			// If LocalWorkspace exists and no valid Postgres config, use SQLite
+			if c.LocalWorkspace != nil && (c.Postgres == nil || c.Postgres.Password == "") {
+				c.DatabaseType = "sqlite"
+				c.SimplifiedMode = true
+				// Set default DB path if not set
+				if c.DBPath == "" {
+					c.DBPath = filepath.Join(c.LocalWorkspace.BasePath, "data", "hermes.db")
+				}
+			} else if c.Postgres != nil && c.Postgres.Host != "" {
+				c.DatabaseType = "postgres"
+			}
+
 			return c, nil
 		}
 	}
@@ -676,6 +719,23 @@ indexer {
   update_doc_headers = true
   update_draft_headers = true
   use_database_for_document_data = true
+}
+
+okta {
+  disabled = true
+}
+
+dex {
+  disabled = true
+}
+
+postgres {
+  # Not used in simplified mode (using SQLite)
+  dbname   = "hermes"
+  host     = "localhost"
+  port     = 5432
+  user     = "postgres"
+  password = ""
 }
 
 email {

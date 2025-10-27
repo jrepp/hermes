@@ -17,14 +17,25 @@ interface SetupResponse {
   message: string;
 }
 
+interface OllamaValidationResponse {
+  valid: boolean;
+  message: string;
+  version?: string;
+}
+
 export default class SetupWizardComponent extends Component<{ Args: SetupArgs }> {
   @service declare router: RouterService;
 
   @tracked workspacePath = this.args.workspacePath || 'docs-cms';
   @tracked upstreamURL = this.args.upstreamURL || '';
+  @tracked ollamaURL = 'http://localhost:11434';
+  @tracked ollamaModel = 'llama3.2';
   @tracked isSubmitting = false;
   @tracked errorMessage = '';
   @tracked successMessage = '';
+  @tracked isValidatingOllama = false;
+  @tracked ollamaValidationMessage = '';
+  @tracked ollamaValidationSuccess = false;
 
   get workingDirDisplay() {
     return this.args.workingDir || 'Loading...';
@@ -52,6 +63,58 @@ export default class SetupWizardComponent extends Component<{ Args: SetupArgs }>
   }
 
   @action
+  updateOllamaURL(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.ollamaURL = target.value;
+    this.errorMessage = '';
+    this.ollamaValidationMessage = '';
+  }
+
+  @action
+  updateOllamaModel(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.ollamaModel = target.value;
+    this.errorMessage = '';
+    this.ollamaValidationMessage = '';
+  }
+
+  @action
+  async validateOllama(event: Event) {
+    event.preventDefault();
+    
+    this.isValidatingOllama = true;
+    this.ollamaValidationMessage = '';
+    this.ollamaValidationSuccess = false;
+
+    try {
+      const response = await fetch('/api/v2/setup/validate-ollama', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: this.ollamaURL,
+          model: this.ollamaModel,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Validation request failed');
+      }
+
+      const result: OllamaValidationResponse = await response.json();
+      this.ollamaValidationMessage = result.message;
+      this.ollamaValidationSuccess = result.valid;
+    } catch (error) {
+      console.error('Ollama validation error:', error);
+      this.ollamaValidationMessage = 'Could not validate Ollama connection';
+      this.ollamaValidationSuccess = false;
+    } finally {
+      this.isValidatingOllama = false;
+    }
+  }
+
+  @action
   async submitSetup(event: Event) {
     event.preventDefault();
     
@@ -68,6 +131,8 @@ export default class SetupWizardComponent extends Component<{ Args: SetupArgs }>
         body: JSON.stringify({
           workspace_path: this.workspacePath,
           upstream_url: this.upstreamURL,
+          ollama_url: this.ollamaURL,
+          ollama_model: this.ollamaModel,
         }),
       });
 
