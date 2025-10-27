@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -43,7 +42,7 @@ type DocumentType struct {
 
 	// Checks are document type checks, which require acknowledging a check box in
 	// order to publish a document.
-	Checks datatypes.JSON
+	Checks JSON
 }
 
 // DocumentTypes is a slice of document types.
