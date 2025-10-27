@@ -80,6 +80,31 @@ services:
     networks:
       - hermes-testing
 
+  migrate:
+    container_name: hermes-migrate
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    volumes:
+      # Mount testing configuration (not needed for migration, but keeps consistency)
+      - ./config.hcl:/app/config.hcl:ro
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hermes_testing
+    command:
+      - /app/hermes-migrate
+      - -driver=postgres
+      - -dsn=host=postgres user=postgres password=postgres dbname=hermes_testing port=5432 sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hermes-testing
+    restart: on-failure
+
   hermes:
     container_name: hermes-server
     build:
@@ -118,6 +143,8 @@ services:
         condition: service_healthy
       meilisearch:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       # Note: dex dependency removed - using shared Dex from root docker-compose via host.docker.internal
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8000/health"]
