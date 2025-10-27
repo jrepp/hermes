@@ -23,6 +23,11 @@ func Main(args []string) int {
 		args = []string{cliName, "version"}
 	}
 
+	// If no subcommand is provided, default to 'serve'
+	if len(args) == 1 {
+		args = append(args, "serve")
+	}
+
 	ui := &cli.BasicUi{
 		Reader:      bufio.NewReader(os.Stdin),
 		Writer:      os.Stdout,

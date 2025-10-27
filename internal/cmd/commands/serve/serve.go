@@ -8,8 +8,6 @@ import (
 
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/server"
-	"github.com/hashicorp-forge/hermes/internal/config"
-	"github.com/hashicorp-forge/hermes/internal/workspace"
 )
 
 type Command struct {
@@ -76,7 +74,6 @@ func (c *Command) Run(args []string) int {
 	}
 
 	// Check if explicit config file provided
-	// FlagSet embeds *flag.FlagSet, so we can access its methods directly
 	configPath := ""
 	if configFlag := f.FlagSet.Lookup("config"); configFlag != nil {
 		configPath = configFlag.Value.String()
@@ -86,76 +83,72 @@ func (c *Command) Run(args []string) int {
 	if configPath != "" {
 		c.UI.Info("Running in traditional server mode (config file specified)")
 		return c.serverCmd.Run(args)
-	} // Simplified mode: determine workspace path
-	var workspacePath string
-	remainingArgs := f.Args()
-
-	if len(remainingArgs) > 0 {
-		// Explicit path provided
-		workspacePath = remainingArgs[0]
-	} else {
-		// Check for ./docs-cms/ in current directory
-		cwd, err := os.Getwd()
-		if err != nil {
-			c.UI.Error(fmt.Sprintf("error getting current directory: %v", err))
-			return 1
-		}
-		workspacePath = filepath.Join(cwd, "docs-cms")
 	}
 
-	// Convert to absolute path
-	absPath, err := filepath.Abs(workspacePath)
+	// Check for config.hcl in current directory
+	cwd, err := os.Getwd()
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("error resolving workspace path: %v", err))
+		c.UI.Error(fmt.Sprintf("error getting current directory: %v", err))
 		return 1
 	}
-	workspacePath = absPath
 
-	// Check if workspace exists, initialize if not
-	if _, err := os.Stat(workspacePath); os.IsNotExist(err) {
-		c.UI.Info(fmt.Sprintf("Initializing new Hermes workspace at %s", workspacePath))
-		if err := workspace.InitializeWorkspace(workspacePath); err != nil {
-			c.UI.Error(fmt.Sprintf("error initializing workspace: %v", err))
-			return 1
-		}
-		c.UI.Info("✓ Workspace initialized successfully")
-	} else {
-		c.UI.Info(fmt.Sprintf("Using existing workspace at %s", workspacePath))
+	configPath = filepath.Join(cwd, "config.hcl")
+
+	// If config.hcl exists, use it
+	if _, err := os.Stat(configPath); err == nil {
+		c.UI.Info("Found config.hcl, starting server...")
+		return c.serverCmd.Run([]string{"-config", configPath})
 	}
 
-	// Generate simplified config
-	cfg := config.GenerateSimplifiedConfig(workspacePath)
+	// No config found - enter setup mode
+	c.UI.Info("No configuration found. Starting setup wizard...")
+	c.UI.Info("Open your browser to http://localhost:8000/setup to configure Hermes")
+	c.UI.Info("")
 
-	// Write temporary config file (so server command can load it)
-	tmpConfigPath := filepath.Join(workspacePath, ".hermes-config-temp.hcl")
-	if err := config.WriteConfig(cfg, tmpConfigPath); err != nil {
-		c.UI.Error(fmt.Sprintf("error writing config: %v", err))
+	// Create minimal temporary config just to start the web server for setup
+	tmpConfigPath := filepath.Join(cwd, ".hermes-setup-temp.hcl")
+	if err := writeSetupConfig(tmpConfigPath, cwd); err != nil {
+		c.UI.Error(fmt.Sprintf("error writing setup config: %v", err))
 		return 1
 	}
 	defer os.Remove(tmpConfigPath)
 
-	// Display banner with server info
-	dbPath := filepath.Join(workspacePath, "hermes.db")
-	indexPath := filepath.Join(workspacePath, "search-index")
-	serverURL := "http://localhost:8000"
-	printBanner(workspacePath, dbPath, indexPath, serverURL)
-
-	// Launch browser in background if enabled
+	// Launch browser to setup page if enabled
 	if c.FlagBrowser {
+		setupURL := "http://localhost:8000/setup"
 		go func() {
 			// Wait for server to be ready (max 10 seconds)
-			if err := waitForServer(serverURL, 10*time.Second); err != nil {
+			if err := waitForServer("http://localhost:8000", 10*time.Second); err != nil {
 				c.UI.Warn(fmt.Sprintf("Server not ready, skipping browser launch: %v", err))
 				return
 			}
 
-			// Open browser
-			if err := openBrowser(serverURL); err != nil {
+			// Open browser to setup page
+			if err := openBrowser(setupURL); err != nil {
 				c.UI.Warn(fmt.Sprintf("Could not open browser: %v", err))
 			}
 		}()
 	}
 
-	// Run server with generated config
+	// Run server with setup config
 	return c.serverCmd.Run([]string{"-config", tmpConfigPath})
+}
+
+// writeSetupConfig creates a minimal config for setup mode
+func writeSetupConfig(configPath, workingDir string) error {
+	// Create a minimal config that just starts the web server
+	// No database, no search, just the web UI for setup
+	content := fmt.Sprintf(`
+# Temporary setup mode configuration
+# This file is auto-generated and will be deleted
+
+server {
+  addr = "127.0.0.1:8000"
+}
+
+# Setup mode flag - checked by frontend
+setup_mode = true
+`)
+
+	return os.WriteFile(configPath, []byte(content), 0644)
 }

@@ -749,6 +749,8 @@ func (c *Command) Run(args []string) int {
 	if searchProviderName == "algolia" && algoSearch != nil {
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
 			endpoint{"/api/v2/web/config", web.ConfigHandler(cfg, algoSearch, c.Log)},
+			endpoint{"/api/v2/setup/status", apiv2.SetupStatusHandler(c.flagConfig, c.Log)},
+			endpoint{"/api/v2/setup/configure", apiv2.SetupConfigureHandler(c.Log)},
 			endpoint{"/l/", links.RedirectHandler(algoSearch, algoliaClientCfg, c.Log)},
 		)
 	} else {
@@ -756,6 +758,8 @@ func (c *Command) Run(args []string) int {
 		// that return configuration without Algolia-specific data
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
 			endpoint{"/api/v2/web/config", web.ConfigHandler(cfg, nil, c.Log)},
+			endpoint{"/api/v2/setup/status", apiv2.SetupStatusHandler(c.flagConfig, c.Log)},
+			endpoint{"/api/v2/setup/configure", apiv2.SetupConfigureHandler(c.Log)},
 		)
 	}
 

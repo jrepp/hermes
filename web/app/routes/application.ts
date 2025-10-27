@@ -43,6 +43,25 @@ export default class ApplicationRoute extends Route {
     // @ts-ignore - `intent` not defined in `Transition` type
     let transitionTo = transition.intent.url ?? transition.to.name;
 
+    // Check if we're already going to setup - if so, don't redirect
+    if (transitionTo !== "setup" && transitionTo !== "/setup") {
+      // Check setup status first
+      try {
+        const setupResponse = await fetch("/api/v2/setup/status");
+        if (setupResponse.ok) {
+          const setupStatus = await setupResponse.json();
+          // If not configured, redirect to setup
+          if (!setupStatus.is_configured) {
+            this.router.transitionTo("setup");
+            return;
+          }
+        }
+      } catch (err) {
+        // If setup endpoint fails, continue with normal flow
+        console.debug("Setup status check failed, continuing:", err);
+      }
+    }
+
     /**
      * If a transition intent exists and it isn't to the `/` or `authenticate` routes,
      * capture and save it to session/localStorage for a later redirect.
@@ -50,7 +69,8 @@ export default class ApplicationRoute extends Route {
     if (
       transitionTo &&
       transitionTo !== "/" &&
-      transitionTo !== "authenticate"
+      transitionTo !== "authenticate" &&
+      transitionTo !== "setup"
     ) {
       window.sessionStorage.setItem(REDIRECT_STORAGE_KEY, transitionTo);
       window.localStorage.setItem(
