@@ -54,6 +54,12 @@ bin:
 	CGO_ENABLED=0 go build -o $(BIN_DIR)/hermes ./cmd/hermes
 	@ln -sf $(BIN_DIR)/hermes ./hermes || true
 
+.PHONY: bin/migrate
+bin/migrate: ## Build hermes-migrate binary for database migrations
+	@mkdir -p $(BIN_DIR)
+	CGO_ENABLED=0 go build -o $(BIN_DIR)/hermes-migrate ./cmd/hermes-migrate
+	@echo "✓ Migration binary built: $(BIN_DIR)/hermes-migrate"
+
 .PHONY: bin/linux
 bin/linux: # bin creates hermes binary for linux
 	@mkdir -p $(BIN_DIR)
@@ -90,6 +96,23 @@ docker/meilisearch/stop: ## Stop Meilisearch in Docker
 .PHONY: docker/meilisearch/clear
 docker/meilisearch/clear: ## Stop and clear data for Meilisearch in Docker
 	docker-compose down meilisearch -v
+
+.PHONY: migrate/postgres
+migrate/postgres: bin/migrate ## Run migrations for PostgreSQL (requires running postgres)
+	@echo "Running PostgreSQL migrations..."
+	@$(BIN_DIR)/hermes-migrate -driver=postgres \
+		-dsn="host=localhost user=postgres password=postgres dbname=hermes port=5432 sslmode=disable"
+
+.PHONY: migrate/postgres/testing
+migrate/postgres/testing: bin/migrate ## Run migrations for testing PostgreSQL (port 5433)
+	@echo "Running PostgreSQL migrations (testing environment)..."
+	@$(BIN_DIR)/hermes-migrate -driver=postgres \
+		-dsn="host=localhost user=postgres password=postgres dbname=hermes port=5433 sslmode=disable"
+
+.PHONY: migrate/sqlite
+migrate/sqlite: bin/migrate ## Run migrations for SQLite
+	@echo "Running SQLite migrations..."
+	@$(BIN_DIR)/hermes-migrate -driver=sqlite -dsn=".hermes/hermes.db"
 
 .PHONY: docker/dev/start
 docker/dev/start: ## Start full development environment (PostgreSQL + Meilisearch)
