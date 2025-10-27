@@ -2,13 +2,10 @@ package db
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -44,32 +41,23 @@ func NewDB(cfg config.Postgres) (*gorm.DB, error) {
 	return NewDBWithConfig(dbConfig)
 }
 
-// NewDBWithConfig returns a new migrated database connection using DatabaseConfig.
-// Supports both PostgreSQL and SQLite.
+// NewDBWithConfig returns a new database connection using DatabaseConfig.
+// NOTE: Server binary only supports PostgreSQL to avoid SQLite driver conflicts.
+// For SQLite support, use the hermes-migrate binary.
 func NewDBWithConfig(cfg DatabaseConfig) (*gorm.DB, error) {
 	var dialector gorm.Dialector
-	var driver string
 
 	switch cfg.Driver {
 	case "postgres":
 		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
 			cfg.Host, cfg.User, cfg.Password, cfg.DBName, cfg.Port)
 		dialector = postgres.Open(dsn)
-		driver = "postgres"
 
 	case "sqlite":
-		// Ensure directory exists for SQLite database
-		if cfg.Path != "" {
-			dir := filepath.Dir(cfg.Path)
-			if err := os.MkdirAll(dir, 0755); err != nil {
-				return nil, fmt.Errorf("error creating database directory: %w", err)
-			}
-		}
-		dialector = sqlite.Open(cfg.Path)
-		driver = "sqlite"
+		return nil, fmt.Errorf("SQLite not supported in server binary (avoid driver conflicts). Use hermes-migrate for SQLite migrations. See docs-internal/SQLITE_DRIVER_CONFLICT.md")
 
 	default:
-		return nil, fmt.Errorf("unsupported database driver: %s (supported: postgres, sqlite)", cfg.Driver)
+		return nil, fmt.Errorf("unsupported database driver: %s (server only supports postgres)", cfg.Driver)
 	}
 
 	// Open database connection
@@ -80,38 +68,17 @@ func NewDBWithConfig(cfg DatabaseConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
-	// Get underlying sql.DB for migrations and extensions
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil, fmt.Errorf("error getting sql.DB: %w", err)
-	}
-
-	// Run migrations (includes database-specific setup)
-	if err := RunMigrations(sqlDB, driver); err != nil {
-		return nil, fmt.Errorf("error running migrations: %w", err)
-	}
+	// NOTE: Migrations are now handled by the separate hermes-migrate binary.
+	// The server expects the database to be pre-migrated.
+	// See: docs-internal/SQLITE_DRIVER_CONFLICT.md for architecture details.
+	//
+	// Run migrations manually before starting the server:
+	//   ./build/bin/hermes-migrate -driver=postgres -dsn="..."
 
 	// Setup join tables (GORM-specific configuration)
 	if err := setupJoinTables(db); err != nil {
 		return nil, err
 	}
-
-	// TEMPORARY WORKAROUND: Disable AutoMigrate to avoid GORM constraint renaming bug
-	// See: docs-internal/todos/LOCAL_WORKFLOW_FIX_STATUS.md
-	//
-	// Problem: GORM tries to rename uniqueIndex constraints even on fresh databases:
-	//   - ERROR: constraint "uni_indexer_folders_google_drive_id" does not exist
-	//   - ERROR: constraint "uni_workspace_projects_project_uuid" does not exist
-	//
-	// TODO: Complete SQL migrations for ALL models, then remove AutoMigrate entirely
-	// For now: Comment out to get server running, re-enable after fixing migrations
-	/*
-		if err := db.AutoMigrate(
-			models.ModelsToAutoMigrate()...,
-		); err != nil {
-			return nil, fmt.Errorf("error migrating database: %w", err)
-		}
-	*/
 
 	return db, nil
 }
