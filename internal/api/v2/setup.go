@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp/go-hclog"
@@ -23,6 +24,21 @@ type SetupStatusResponse struct {
 type SetupConfigRequest struct {
 	WorkspacePath string `json:"workspace_path"` // Relative to working directory
 	UpstreamURL   string `json:"upstream_url,omitempty"`
+	OllamaURL     string `json:"ollama_url,omitempty"`   // e.g., "http://localhost:11434"
+	OllamaModel   string `json:"ollama_model,omitempty"` // e.g., "llama2"
+}
+
+// OllamaValidationRequest contains Ollama connection details to validate
+type OllamaValidationRequest struct {
+	URL   string `json:"url"`   // e.g., "http://localhost:11434"
+	Model string `json:"model"` // e.g., "llama2"
+}
+
+// OllamaValidationResponse indicates if Ollama is accessible
+type OllamaValidationResponse struct {
+	Valid   bool   `json:"valid"`
+	Message string `json:"message"`
+	Version string `json:"version,omitempty"`
 }
 
 // SetupConfigResponse is returned after successful configuration
@@ -103,7 +119,7 @@ func SetupConfigureHandler(log hclog.Logger) http.Handler {
 
 		// Generate config file in the working directory
 		configPath := filepath.Join(workingDir, "config.hcl")
-		if err := generateConfigFile(configPath, workspacePath, req.UpstreamURL); err != nil {
+		if err := generateConfigFile(configPath, workspacePath, req.UpstreamURL, req.OllamaURL, req.OllamaModel); err != nil {
 			log.Error("error generating config file", "error", err)
 			http.Error(w, fmt.Sprintf("Error generating config: %v", err), http.StatusInternalServerError)
 			return
@@ -201,8 +217,16 @@ Create your first document using the web interface at http://localhost:8000
 }
 
 // generateConfigFile creates a config.hcl file with the specified settings
-func generateConfigFile(configPath, workspacePath, upstreamURL string) error {
+func generateConfigFile(configPath, workspacePath, upstreamURL, ollamaURL, ollamaModel string) error {
 	cfg := config.GenerateSimplifiedConfig(workspacePath)
+
+	// Add Ollama configuration if provided
+	if ollamaURL != "" {
+		cfg.Ollama = &config.Ollama{
+			URL:            ollamaURL,
+			SummarizeModel: ollamaModel,
+		}
+	}
 
 	// If upstream URL is provided, add it to the config
 	// (This would be for syncing with a central Hermes server - future feature)
@@ -212,6 +236,132 @@ func generateConfigFile(configPath, workspacePath, upstreamURL string) error {
 	}
 
 	return config.WriteConfig(cfg, configPath)
+}
+
+// OllamaValidateHandler validates that Ollama is accessible and has the requested model
+func OllamaValidateHandler(log hclog.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req OllamaValidationRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Error("error decoding ollama validation request", "error", err)
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		// Validate URL is provided
+		if req.URL == "" {
+			response := OllamaValidationResponse{
+				Valid:   false,
+				Message: "Ollama URL is required",
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		// Try to connect to Ollama and get version
+		client := &http.Client{
+			Timeout: 10 * time.Second,
+		}
+
+		// Check if Ollama is running by hitting the /api/version endpoint
+		versionResp, err := client.Get(req.URL + "/api/version")
+		if err != nil {
+			log.Warn("ollama connection failed", "url", req.URL, "error", err)
+			response := OllamaValidationResponse{
+				Valid:   false,
+				Message: fmt.Sprintf("Could not connect to Ollama at %s: %v", req.URL, err),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+		defer versionResp.Body.Close()
+
+		if versionResp.StatusCode != http.StatusOK {
+			response := OllamaValidationResponse{
+				Valid:   false,
+				Message: fmt.Sprintf("Ollama returned status %d", versionResp.StatusCode),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		// Parse version response
+		var versionData struct {
+			Version string `json:"version"`
+		}
+		if err := json.NewDecoder(versionResp.Body).Decode(&versionData); err != nil {
+			log.Warn("failed to parse ollama version", "error", err)
+		}
+
+		// If model is specified, check if it's available
+		if req.Model != "" {
+			tagsResp, err := client.Get(req.URL + "/api/tags")
+			if err != nil {
+				log.Warn("failed to get ollama tags", "error", err)
+				response := OllamaValidationResponse{
+					Valid:   true,
+					Message: fmt.Sprintf("Connected to Ollama %s (could not verify model)", versionData.Version),
+					Version: versionData.Version,
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(response)
+				return
+			}
+			defer tagsResp.Body.Close()
+
+			var tagsData struct {
+				Models []struct {
+					Name string `json:"name"`
+				} `json:"models"`
+			}
+			if err := json.NewDecoder(tagsResp.Body).Decode(&tagsData); err != nil {
+				log.Warn("failed to parse ollama tags", "error", err)
+			} else {
+				// Check if the requested model is in the list
+				modelFound := false
+				for _, model := range tagsData.Models {
+					if strings.Contains(model.Name, req.Model) {
+						modelFound = true
+						break
+					}
+				}
+
+				if !modelFound {
+					response := OllamaValidationResponse{
+						Valid:   false,
+						Message: fmt.Sprintf("Model '%s' not found. Run: ollama pull %s", req.Model, req.Model),
+						Version: versionData.Version,
+					}
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					json.NewEncoder(w).Encode(response)
+					return
+				}
+			}
+		}
+
+		// Success!
+		response := OllamaValidationResponse{
+			Valid:   true,
+			Message: fmt.Sprintf("Connected to Ollama %s", versionData.Version),
+			Version: versionData.Version,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	})
 }
 
 // fileExists checks if a file exists

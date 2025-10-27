@@ -61,6 +61,99 @@
             </p>
           </div>
 
+          {{! Ollama AI Section }}
+          <div class="border-t pt-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">
+              Local AI with Ollama (Optional)
+            </h3>
+            
+            <div class="space-y-4">
+              <div>
+                <label for="ollama-url" class="block text-sm font-medium text-gray-700">
+                  Ollama URL
+                </label>
+                <div class="mt-1">
+                  <input
+                    id="ollama-url"
+                    type="url"
+                    value={{this.ollamaURL}}
+                    {{on "input" this.updateOllamaURL}}
+                    disabled={{this.isSubmitting}}
+                    class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="http://localhost:11434"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label for="ollama-model" class="block text-sm font-medium text-gray-700">
+                  Model for Summarization
+                </label>
+                <div class="mt-1">
+                  <input
+                    id="ollama-model"
+                    type="text"
+                    value={{this.ollamaModel}}
+                    {{on "input" this.updateOllamaModel}}
+                    disabled={{this.isSubmitting}}
+                    class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="llama3.2"
+                  />
+                </div>
+                <p class="mt-1 text-sm text-gray-500">
+                  Run: <code class="bg-gray-100 px-1 py-0.5 rounded">ollama pull {{this.ollamaModel}}</code>
+                </p>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  {{on "click" this.validateOllama}}
+                  disabled={{or this.isValidatingOllama this.isSubmitting}}
+                  class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {{#if this.isValidatingOllama}}
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Validating...
+                  {{else}}
+                    Test Connection
+                  {{/if}}
+                </button>
+              </div>
+
+              {{#if this.ollamaValidationMessage}}
+                <div class="{{if this.ollamaValidationSuccess 'bg-green-50 border-green-200' 'bg-yellow-50 border-yellow-200'}} border rounded-md p-3">
+                  <div class="flex">
+                    <div class="flex-shrink-0">
+                      {{#if this.ollamaValidationSuccess}}
+                        <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                      {{else}}
+                        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                      {{/if}}
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm {{if this.ollamaValidationSuccess 'text-green-700' 'text-yellow-700'}}">
+                        {{this.ollamaValidationMessage}}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              {{/if}}
+
+              <p class="text-sm text-gray-500">
+                Ollama enables local AI summarization and embeddings. Install from
+                <a href="https://ollama.ai" target="_blank" class="text-indigo-600 hover:text-indigo-500 underline">ollama.ai</a>
+              </p>
+            </div>
+          </div>
+
           {{! Info Box }}
           <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
             <div class="flex">
