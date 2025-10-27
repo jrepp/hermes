@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +26,7 @@ type HermesInstance struct {
 	LastHeartbeat time.Time `gorm:"not null" json:"lastHeartbeat"`
 
 	// Metadata
-	Metadata datatypes.JSON `gorm:"type:jsonb" json:"metadata,omitempty"`
+	Metadata JSON `gorm:"type:jsonb" json:"metadata,omitempty"`
 
 	// Timestamps
 	CreatedAt time.Time      `json:"createdAt"`
