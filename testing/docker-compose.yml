@@ -24,6 +24,8 @@
 #   - Hermes API: 8001 (host) -> 8000 (container)
 #   - Web UI: 4201 (host) -> 4200 (container)
 
+name: hermes-testing
+
 services:
   postgres:
     image: postgres:17.1-alpine
