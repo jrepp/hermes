@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	dbpkg "github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/internal/instance"
 	"github.com/hashicorp-forge/hermes/internal/jira"
+	"github.com/hashicorp-forge/hermes/internal/migrate"
 	"github.com/hashicorp-forge/hermes/internal/pkg/doctypes"
 	"github.com/hashicorp-forge/hermes/internal/projects"
 	"github.com/hashicorp-forge/hermes/internal/pub"
@@ -39,6 +41,7 @@ import (
 	localadapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
 	"github.com/hashicorp-forge/hermes/web"
 	"github.com/hashicorp/go-hclog"
+	_ "github.com/lib/pq" // PostgreSQL driver for migrations
 	httptrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"gorm.io/gorm"
@@ -533,6 +536,14 @@ func (c *Command) Run(args []string) int {
 			Driver: "sqlite",
 			Path:   cfg.DBPath,
 		}
+
+		// Auto-migrate SQLite database in simplified mode
+		c.Log.Info("running database migrations (SQLite)", "path", cfg.DBPath)
+		if err := runMigrations("sqlite", cfg.DBPath); err != nil {
+			c.UI.Error(fmt.Sprintf("error running SQLite migrations: %v", err))
+			return 1
+		}
+
 		db, err = dbpkg.NewDBWithConfig(dbConfig)
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("error initializing SQLite database: %v", err))
@@ -544,6 +555,16 @@ func (c *Command) Run(args []string) int {
 		if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
 			cfg.Postgres.Password = val
 		}
+
+		// Auto-migrate PostgreSQL database
+		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
+			cfg.Postgres.Host, cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.DBName, cfg.Postgres.Port)
+		c.Log.Info("running database migrations (PostgreSQL)", "host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
+		if err := runMigrations("postgres", dsn); err != nil {
+			c.UI.Error(fmt.Sprintf("error running PostgreSQL migrations: %v", err))
+			return 1
+		}
+
 		db, err = dbpkg.NewDB(*cfg.Postgres)
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("error initializing database: %v", err))
@@ -970,6 +991,29 @@ func generateIndexerToken(db *gorm.DB, tokenPath string, logger hclog.Logger) er
 	logger.Info("generated indexer registration token",
 		"token_id", indexerToken.ID,
 		"expires_at", expiresAt)
+
+	return nil
+}
+
+// runMigrations runs database migrations using the internal migrate package.
+// This is called automatically during server startup to ensure the database schema is up to date.
+func runMigrations(driver, dsn string) error {
+	// Open database connection
+	sqlDB, err := sql.Open(driver, dsn)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer sqlDB.Close()
+
+	// Verify connection
+	if err := sqlDB.Ping(); err != nil {
+		return fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	// Run migrations
+	if err := migrate.RunMigrations(sqlDB, driver); err != nil {
+		return fmt.Errorf("migration failed: %w", err)
+	}
 
 	return nil
 }
