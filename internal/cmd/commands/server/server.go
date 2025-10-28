@@ -532,24 +532,10 @@ func (c *Command) Run(args []string) int {
 	var db *gorm.DB
 	if cfg.SimplifiedMode {
 		// Simplified mode: use SQLite
-		dbConfig := dbpkg.DatabaseConfig{
-			Driver: "sqlite",
-			Path:   cfg.DBPath,
-		}
-
-		// Auto-migrate SQLite database in simplified mode
-		c.Log.Info("running database migrations (SQLite)", "path", cfg.DBPath)
-		if err := runMigrations("sqlite", cfg.DBPath); err != nil {
-			c.UI.Error(fmt.Sprintf("error running SQLite migrations: %v", err))
-			return 1
-		}
-
-		db, err = dbpkg.NewDBWithConfig(dbConfig)
-		if err != nil {
-			c.UI.Error(fmt.Sprintf("error initializing SQLite database: %v", err))
-			return 1
-		}
-		c.Log.Info("using SQLite database", "path", cfg.DBPath)
+		// NOTE: Server binary does not support SQLite to avoid driver conflicts.
+		// Use hermes-migrate binary for SQLite databases.
+		c.UI.Error("SQLite mode not supported in server binary. Use hermes-migrate for migrations. See docs-internal/SQLITE_DRIVER_CONFLICT.md")
+		return 1
 	} else {
 		// Traditional mode: use PostgreSQL
 		if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
