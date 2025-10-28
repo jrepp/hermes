@@ -320,8 +320,8 @@ profile "local" {
   
   // Meilisearch configuration
   meilisearch {
-    host                  = "http://localhost:7700"
-    api_key               = "masterKey"
+    host                  = "http://localhost:7701"
+    api_key               = "masterKey123"
     docs_index_name       = "docs"
     drafts_index_name     = "drafts"
     projects_index_name   = "projects"
@@ -360,11 +360,11 @@ profile "local" {
     write_api_key             = "placeholder"
   }
   
-  // PostgreSQL - local instance
+  // PostgreSQL - testing instance
   postgres {
-    dbname   = "hermes"
+    dbname   = "hermes_testing"
     host     = "localhost"
-    port     = 5432
+    port     = 5433
     user     = "postgres"
     password = "postgres"
   }
@@ -381,6 +381,15 @@ profile "local" {
     aws_region      = "us-east-1"
     client_id       = "local-client-id"
     jwt_signer      = "local-jwt-signer"
+  }
+  
+  // Dex OIDC for local development - connects to testing Dex container
+  dex {
+    disabled      = false
+    issuer_url    = "http://localhost:5558/dex"
+    client_id     = "hermes-testing"
+    client_secret = "dGVzdGluZy1hcHAtc2VjcmV0"
+    redirect_url  = "http://localhost:8000/auth/callback"
   }
   
   // Datadog disabled
