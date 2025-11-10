@@ -78,6 +78,12 @@
 - **70 design documents** (16 ADRs, 19 RFCs, 35 MEMOs)
 - **One-command local testing**: `docker compose up -d`
 
+**Platform Modernization**:
+- **Ember 6.8.0**: Latest stable frontend framework with full TypeScript support
+- **Go 1.25.0**: Latest stable backend language with improved performance
+- **HashiCorp Design System 4.24.0**: Modern UI components and design patterns
+- **Full type safety**: TypeScript + Go generics for compile-time correctness
+
 **Completed Components**:
 
 | Component | Status | Backend Support | Production Ready |
