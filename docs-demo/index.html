@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes - Local-First Document Management</title>
+
+    <!-- Reveal.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/theme/black.css">
+
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/plugin/highlight/monokai.css">
+
+    <style>
+        .reveal {
+            font-size: 32px;
+        }
+        .reveal h1 {
+            font-size: 2.5em;
+            color: #60a5fa;
+        }
+        .reveal h2 {
+            font-size: 1.8em;
+            color: #60a5fa;
+        }
+        .reveal h3 {
+            font-size: 1.4em;
+            color: #93c5fd;
+        }
+        .reveal .subtitle {
+            font-size: 0.7em;
+            color: #9ca3af;
+        }
+        .reveal .highlight-box {
+            background: #1e293b;
+            border-left: 5px solid #60a5fa;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .reveal .metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .reveal .metric-box {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #334155;
+        }
+        .reveal .metric-value {
+            font-size: 2.5em;
+            color: #60a5fa;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .reveal .metric-label {
+            font-size: 0.7em;
+            color: #9ca3af;
+        }
+        .reveal .status-good {
+            color: #22c55e;
+        }
+        .reveal .status-warn {
+            color: #fbbf24;
+        }
+        .reveal .status-issue {
+            color: #ef4444;
+        }
+        .reveal ul {
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+        .reveal li {
+            margin: 10px 0;
+        }
+        .reveal pre {
+            font-size: 0.5em;
+            border-radius: 8px;
+        }
+        .reveal code {
+            background: #1e293b;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .reveal .architecture-diagram {
+            font-family: 'Courier New', monospace;
+            font-size: 0.5em;
+            text-align: left;
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            line-height: 1.4;
+            color: #e2e8f0;
+        }
+        .reveal .comparison-table {
+            font-size: 0.7em;
+            margin: 20px auto;
+        }
+        .reveal .comparison-table th {
+            background: #1e293b;
+            padding: 10px;
+        }
+        .reveal .comparison-table td {
+            padding: 10px;
+            border-bottom: 1px solid #334155;
+        }
+        .reveal .roadmap {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            gap: 20px;
+        }
+        .reveal .roadmap-item {
+            text-align: center;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            flex: 1;
+        }
+        .reveal .roadmap-quarter {
+            font-size: 0.8em;
+            color: #60a5fa;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .reveal .key-point {
+            font-size: 1.1em;
+            color: #60a5fa;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Title Slide -->
+            <section>
+                <h1>Hermes</h1>
+                <h3>Document Management System</h3>
+                <p class="subtitle" style="margin-top: 80px; font-size: 0.6em; color: #9ca3af;">
+                    Space/→ to navigate • S for notes • O for overview
+                </p>
+            </section>
+
+            <!-- Introduction -->
+            <section>
+                <section>
+                    <h2>What is Hermes?</h2>
+                    <p style="font-size: 0.95em; margin: 40px 60px; text-align: left;">
+                        An open-source document management system for creating, reviewing, and publishing technical documents.
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Document Types</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li><strong>RFC</strong> (Request for Comments): Technical proposals</li>
+                        <li><strong>ADR</strong> (Architecture Decision Record): Design decisions</li>
+                        <li><strong>MEMO</strong>: Analysis, guides, and documentation</li>
+                        <li><strong>PRD</strong> (Product Requirements Document): Feature specs</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Core Features</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li>Create and edit documents with structured templates</li>
+                        <li>Review and approval workflows</li>
+                        <li>Full-text and semantic search</li>
+                        <li>Multiple storage backends (local files, Google Workspace)</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Built by HashiCorp</h3>
+                    <p style="font-size: 0.85em; margin: 40px 60px; text-align: left;">
+                        Created to scale the document writing process at HashiCorp, now open-sourced for teams that need flexible, self-hosted document management.
+                    </p>
+                </section>
+            </section>
+
+            <!-- Recent Advances -->
+            <section>
+                <section>
+                    <h2>Recent Advances</h2>
+                    <p style="font-size: 1.1em; margin-top: 40px;">
+                        Full grounded agent development loop
+                    </p>
+                    <p style="font-size: 0.9em; margin-top: 30px;">
+                        Major architectural refactoring in 4 days<br>
+                        <strong>10-15x</strong> faster than traditional development
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Documentation-First Development</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li>74 markdown files, 19,746 lines written</li>
+                        <li>16 ADRs (Architecture Decisions), 19 RFCs (Proposals), 35 MEMOs</li>
+                        <li>38.8% of commits were documentation</li>
+                        <li>20x faster than traditional post-hoc docs</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Local Testing Infrastructure</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li>Complete Docker Compose environment</li>
+                        <li>Zero cloud dependencies for development</li>
+                        <li>Playwright E2E test suite with 51 test files</li>
+                        <li>One command setup: <code>docker compose up -d</code></li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Workspace Provider Abstraction</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li>Local filesystem backend (Markdown files)</li>
+                        <li>Google Workspace backend (Google Docs)</li>
+                        <li>Configuration-driven backend selection</li>
+                        <li>Document migration between providers</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Search Provider Abstraction</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li>Meilisearch adapter (self-hosted, vector search)</li>
+                        <li>Algolia adapter (managed cloud)</li>
+                        <li>Unified search interface across backends</li>
+                        <li>2,254 lines of abstraction layer code</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Auth Provider Abstraction</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li>Dex OIDC provider (local development)</li>
+                        <li>Google OAuth provider (production)</li>
+                        <li>Okta OIDC provider (enterprise SSO)</li>
+                        <li>Multiple identity linking support</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Indexing Pipeline</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li>Cross-provider document migration</li>
+                        <li>UUID-based document identity</li>
+                        <li>Version tracking across providers</li>
+                        <li>Metadata preservation during migration</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>LLM Integration</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li>Auto-generate document summaries</li>
+                        <li>Semantic search with embeddings</li>
+                        <li>Related document suggestions</li>
+                        <li>Status: Testing phase (Q1 2025 production)</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Development Velocity -->
+            <section>
+                <section>
+                    <h2>Development Velocity</h2>
+                    <p style="font-size: 0.9em; margin-top: 40px;">
+                        Major architectural refactoring completed in <strong>4 days</strong>
+                    </p>
+                </section>
+
+                <section>
+                    <h3>What Got Built (Oct 2-5, 2025)</h3>
+                    <div class="metrics">
+                        <div class="metric-box">
+                            <span class="metric-value status-good">98</span>
+                            <span class="metric-label">Commits over 4 days</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value status-good">291</span>
+                            <span class="metric-label">Files modified</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value status-good">65,718</span>
+                            <span class="metric-label">Lines of code added</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value status-good">38.8%</span>
+                            <span class="metric-label">Documentation ratio</span>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.7em; color: #9ca3af; margin-top: 30px;">
+                        Source: MEMO-019 Dev Velocity Analysis
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Traditional vs. AI-Assisted</h3>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Approach</th>
+                                <th>Team</th>
+                                <th>Duration</th>
+                                <th>Speedup</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Traditional</td>
+                                <td>3-5 mid/senior devs</td>
+                                <td class="status-issue">4-6 weeks</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td>AI-Assisted</td>
+                                <td>1 developer + AI agents</td>
+                                <td class="status-good">4 days</td>
+                                <td class="status-good">10-15x</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="font-size: 0.75em; color: #9ca3af; margin-top: 20px;">
+                        60-100 developer-days compressed to 4 calendar days (~26 hours)
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Work Breakdown</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li><strong>Documentation (34.7%)</strong>: 74 files, 19,746 lines</li>
+                        <li><strong>Testing (16.3%)</strong>: 51 test files, +10,191 lines</li>
+                        <li><strong>Features (14.3%)</strong>: Search/auth/workspace abstraction</li>
+                        <li><strong>Refactoring (23.5%)</strong>: API migrations, -22,221 deletions</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Documentation-First Approach</h3>
+                    <div class="metrics">
+                        <div class="metric-box">
+                            <span class="metric-value status-good">74</span>
+                            <span class="metric-label">Markdown files</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value status-good">19,746</span>
+                            <span class="metric-label">Lines of documentation</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value status-good">34.7%</span>
+                            <span class="metric-label">Of commits were docs</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value status-good">20x</span>
+                            <span class="metric-label">Faster than traditional</span>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.75em; color: #9ca3af; margin-top: 30px;">
+                        Documentation generated concurrently with code, not after<br>
+                        Traditional: 5-10% documentation ratio (post-hoc)<br>
+                        AI-Assisted: 38.8% documentation ratio (concurrent)
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Success Factors</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li><strong>Upfront Design</strong>: 1,513 lines of design docs on Day 1</li>
+                        <li><strong>Structured Prompts</strong>: Detailed prompts with file references</li>
+                        <li><strong>Incremental Validation</strong>: Test after every change</li>
+                        <li><strong>Concurrent Documentation</strong>: Docs generated alongside code</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Architecture -->
+            <section>
+                <section>
+                    <h2>Architecture</h2>
+                    <div class="mermaid" style="background: #0f172a; padding: 20px; border-radius: 8px;">
+graph TD
+    Frontend["Frontend<br/>Ember.js + TypeScript<br/>~50K lines"]
+    Backend["Backend<br/>Go Server<br/>~42K lines, 782 files"]
+
+    Auth["Auth Provider<br/>Interface"]
+    Workspace["Workspace Provider<br/>Interface"]
+    Search["Search Provider<br/>Interface"]
+
+    Dex["Dex<br/>local OIDC"]
+    Google["Google<br/>OAuth"]
+    Okta["Okta<br/>OIDC"]
+
+    Local["Local<br/>Markdown"]
+    GWorkspace["Google<br/>Workspace"]
+    Office["Office365<br/>SharePoint"]
+
+    Meili["Meilisearch<br/>self-hosted"]
+    Algolia["Algolia<br/>managed"]
+
+    Frontend -->|REST API| Backend
+    Backend --> Auth
+    Backend --> Workspace
+    Backend --> Search
+
+    Auth --> Dex
+    Auth --> Google
+    Auth --> Okta
+
+    Workspace --> Local
+    Workspace --> GWorkspace
+    Workspace --> Office
+
+    Search --> Meili
+    Search --> Algolia
+
+    style Frontend fill:#1e293b,stroke:#60a5fa,stroke-width:2px
+    style Backend fill:#1e293b,stroke:#60a5fa,stroke-width:2px
+    style Auth fill:#334155,stroke:#93c5fd
+    style Workspace fill:#334155,stroke:#93c5fd
+    style Search fill:#334155,stroke:#93c5fd
+                    </div>
+                </section>
+
+                <section>
+                    <h3>Provider Implementation</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li><strong>Auth</strong>: Dex (local OIDC), Google OAuth, Okta</li>
+                        <li><strong>Workspace</strong>: Local (Markdown), Google Workspace, Office365</li>
+                        <li><strong>Search</strong>: Meilisearch (self-hosted + vector), Algolia</li>
+                    </ul>
+                    <p style="margin-top: 30px; font-size: 0.8em; color: #9ca3af;">
+                        Swap backends via configuration, not code changes
+                    </p>
+                </section>
+            </section>
+
+            <!-- Implementation Status -->
+            <section>
+                <section>
+                    <h2>Implementation Status</h2>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Status</th>
+                                <th>Options</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Authentication</strong></td>
+                                <td><span class="status-good">Done</span></td>
+                                <td>Dex, Google, Okta</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Workspace</strong></td>
+                                <td><span class="status-good">Done</span></td>
+                                <td>Local (Markdown), Google</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Search</strong></td>
+                                <td><span class="status-good">Done</span></td>
+                                <td>Meilisearch, Algolia</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Migration</strong></td>
+                                <td><span class="status-good">Done</span></td>
+                                <td>Cross-provider sync</td>
+                            </tr>
+                            <tr>
+                                <td><strong>LLM Integration</strong></td>
+                                <td><span class="status-warn">Testing</span></td>
+                                <td>Auto-summaries</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Office365</strong></td>
+                                <td><span class="status-warn">TODO</span></td>
+                                <td>SharePoint backend</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </section>
+
+            <!-- Local Testing -->
+            <section>
+                <section>
+                    <h2>Local Testing</h2>
+                    <p style="font-size: 0.9em; margin-top: 40px;">
+                        Fully local verification: workspace, search, auth
+                    </p>
+                </section>
+
+                <section>
+                    <h3>One Command Setup</h3>
+                    <pre><code class="bash" data-trim>
+cd testing && docker compose up -d
+
+# Services:
+# - postgres (database)
+# - meilisearch (search)
+# - dex (OIDC auth)
+# - hermes-backend (Go API)
+# - hermes-frontend (Ember.js)
+                    </code></pre>
+                    <p style="margin-top: 20px; font-size: 0.85em;">
+                        Open http://localhost:4201<br>
+                        Login: test@hermes.local / password
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Local Workspace</h3>
+                    <pre style="font-size: 0.45em;"><code class="bash" data-trim>
+testing/workspace_data/
+├── drafts/
+│   ├── RFC-001-example.md
+│   └── ADR-002-decision.md
+└── approved/
+    └── PRD-003-feature.md
+
+# Documents are Markdown files with frontmatter
+---
+title: "RFC-001: Multi-Provider Architecture"
+status: "draft"
+authors: ["eng@hermes.local"]
+---
+                    </code></pre>
+                </section>
+            </section>
+
+            <!-- Configuration -->
+            <section>
+                <section>
+                    <h2>Configuration</h2>
+                    <p style="font-size: 0.9em; margin-top: 40px;">
+                        Swap backends without code changes
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Local Development</h3>
+                    <pre><code class="hcl" data-trim>
+providers {
+  auth      = "dex"          # Local OIDC
+  workspace = "local"        # Markdown files
+  search    = "meilisearch"  # Self-hosted
+}
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Production</h3>
+                    <pre><code class="hcl" data-trim>
+providers {
+  auth      = "google"    # Google OAuth
+  workspace = "google"    # Google Workspace
+  search    = "algolia"   # Managed cloud
+}
+                    </code></pre>
+                    <p style="font-size: 0.75em; color: #9ca3af; margin-top: 20px;">
+                        Or mix: Okta auth + Google workspace + Meilisearch
+                    </p>
+                </section>
+            </section>
+
+            <!-- Indexer & Migration -->
+            <section>
+                <section>
+                    <h2>Indexer & Migration</h2>
+                    <p style="font-size: 0.9em; margin-top: 40px;">
+                        Document migration pipeline and LLM integration
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Cross-Provider Migration</h3>
+                    <pre><code class="bash" data-trim>
+./hermes migrate \
+  --source google \
+  --target local \
+  --preserve-metadata
+
+# Preserves:
+# - Document UUIDs
+# - Version history
+# - Authors, approvers, status
+# - All relationships
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Document Identity</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li><strong>One UUID</strong> per document across all providers</li>
+                        <li><strong>Version tracking</strong> for multiple revisions</li>
+                        <li><strong>Metadata preserved</strong> during migration</li>
+                        <li><strong>Provider-agnostic</strong> document representation</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>LLM Integration</h3>
+                    <p style="font-size: 0.85em; text-align: left; margin: 20px 40px;">
+                        <strong>Status:</strong> Testing phase
+                    </p>
+                    <ul style="font-size: 0.85em;">
+                        <li>Auto-generate document summaries</li>
+                        <li>Semantic search with embeddings</li>
+                        <li>Related document suggestions</li>
+                        <li>Indexer pipeline integration</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Planned Work -->
+            <section>
+                <section>
+                    <h2>Planned Work</h2>
+                </section>
+
+                <section>
+                    <h3>Q1 2025</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li><strong>Office365 Provider</strong>: SharePoint backend integration</li>
+                        <li><strong>LLM Enhancement</strong>: Production-ready auto-summaries, semantic search</li>
+                        <li><strong>Multi-Organization</strong>: Separate namespaces, org-level permissions</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>Q2 2025</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li><strong>Distributed Projects</strong>: Cross-organization collaboration</li>
+                        <li><strong>Review Workflows</strong>: Enhanced comments, notifications</li>
+                        <li><strong>Advanced Search</strong>: Vector embeddings, semantic queries</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Q&A -->
+            <section>
+                <section>
+                    <h2>Common Questions</h2>
+                </section>
+
+                <section>
+                    <h3>Q: Why multiple workspace providers?</h3>
+                    <p style="text-align: left; font-size: 0.85em;">
+                        <strong>A:</strong> Flexibility and risk mitigation. Organizations may have Google,
+                        Microsoft, or neither. Local workspace enables air-gapped deployments and
+                        cost-sensitive environments.
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Q: Performance overhead from abstraction?</h3>
+                    <p style="text-align: left; font-size: 0.85em;">
+                        <strong>A:</strong> Minimal. Provider interfaces add &lt;5ms overhead
+                        (interface method calls). Negligible compared to network latency (50-200ms
+                        for cloud APIs). The flexibility gains far outweigh the cost.
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Q: Maturity of local workspace?</h3>
+                    <p style="text-align: left; font-size: 0.85em;">
+                        <strong>A:</strong> Production-ready. ADR-071 and ADR-074 document the design.
+                        E2E tests validate all workflows. Used daily in development
+                        (eating our own dog food).
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Q: Can we migrate existing documents?</h3>
+                    <p style="text-align: left; font-size: 0.85em;">
+                        <strong>A:</strong> Yes. The migration pipeline preserves all metadata,
+                        versions, and relationships. Command: <code>hermes migrate --source google --target local</code>
+                        (or vice versa). Design documented in RFC-080.
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Q: Total cost of ownership?</h3>
+                    <p style="text-align: left; font-size: 0.85em;">
+                        <strong>A:</strong> Lower for self-hosted. Meilisearch eliminates Algolia costs.
+                        Local workspace eliminates Google API call costs. Trade-off: self-hosting
+                        infrastructure (PostgreSQL, Meilisearch). But you gain full control and
+                        predictable costs.
+                    </p>
+                </section>
+
+                <section>
+                    <h3>Q: When can we deploy in production?</h3>
+                    <p style="text-align: left; font-size: 0.85em;">
+                        <strong>A:</strong> Today for local/development use cases. Google Workspace +
+                        Algolia is production-proven. Office365 provider arriving Q1 2025.
+                        All provider combinations are tested and documented.
+                    </p>
+                </section>
+            </section>
+
+            <!-- Get Started -->
+            <section>
+                <section>
+                    <h2>Get Started</h2>
+                    <pre style="font-size: 0.5em;"><code class="bash" data-trim>
+cd testing && docker compose up -d
+open http://localhost:4201
+
+# Login: test@hermes.local / password
+                    </code></pre>
+                </section>
+
+                <section>
+                    <h3>Documentation</h3>
+                    <ul style="font-size: 0.85em;">
+                        <li><code>testing/README.md</code> - Setup guide</li>
+                        <li><code>docs-internal/adr/</code> - 16 Architecture Decision Records</li>
+                        <li><code>docs-internal/rfc/</code> - 19 Request for Comments (proposals)</li>
+                        <li><code>docs-internal/memo/</code> - 35 MEMOs (analysis & guides)</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Questions -->
+            <section>
+                <h1>Questions?</h1>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Mermaid JavaScript for diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+    <!-- Reveal.js JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/plugin/notes/notes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.0/plugin/highlight/highlight.js"></script>
+
+    <script>
+        // Configure Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#60a5fa',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#60a5fa',
+                lineColor: '#93c5fd',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#334155',
+                background: '#0f172a',
+                mainBkg: '#1e293b',
+                secondBkg: '#334155',
+                tertiaryBkg: '#475569',
+                textColor: '#e2e8f0',
+                fontSize: '14px'
+            }
+        });
+
+        // Initialize reveal.js
+        Reveal.initialize({
+            hash: true,
+            controls: true,
+            progress: true,
+            center: true,
+            transition: 'slide',
+            plugins: [ RevealNotes, RevealHighlight ]
+        });
+
+        // Initialize Mermaid diagrams when reveal.js is ready
+        Reveal.on('ready', event => {
+            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+        });
+
+        // Reinitialize Mermaid after slide changes
+        Reveal.on('slidechanged', event => {
+            const currentSlide = event.currentSlide;
+            const mermaidDiagrams = currentSlide.querySelectorAll('.mermaid:not([data-processed])');
+            if (mermaidDiagrams.length > 0) {
+                mermaid.init(undefined, mermaidDiagrams);
+            }
+        });
+    </script>
+</body>
+</html>
