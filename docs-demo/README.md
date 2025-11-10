@@ -89,6 +89,7 @@ The demo is organized into four sections:
 - ✅ **70 design documents** (16 ADRs, 19 RFCs, 35 MEMOs)
 - ✅ **3 auth providers**, 2 workspace providers, 2 search providers
 - ✅ **One-command setup**: `docker compose up -d`
+- ✅ **Modern stack**: Ember 6.8, Go 1.25, HashiCorp Design System 4.24
 
 ### Value Proposition
 1. **Local-First Development**: Zero cloud dependencies for testing
@@ -125,8 +126,9 @@ The demo is organized into four sections:
 - Cost per developer: **$0/month** (vs. $50+ for cloud dev accounts)
 
 **Architecture**:
-- Backend: **42,000+ lines** of Go code, 782 files
-- Frontend: **50,000+ lines** TypeScript/JavaScript
+- Backend: **42,000+ lines** of Go 1.25 code, 782 files
+- Frontend: **50,000+ lines** TypeScript/JavaScript (Ember 6.8)
+- UI Framework: HashiCorp Design System 4.24
 - Documentation: **70 design documents**
 - Providers: **7 total** (3 auth, 2 workspace, 2 search)
 

@@ -347,10 +347,16 @@ Total: 8 files, ~54KB of documentation
 ## Metrics Recap
 
 **Codebase Reality**:
-- 42,000+ lines of Go code
-- 50,000+ lines of TypeScript/JavaScript
+- 42,000+ lines of Go 1.25 code
+- 50,000+ lines of TypeScript/JavaScript (Ember 6.8)
 - 782 source files
 - 70 design documents (16 ADRs, 19 RFCs, 35 MEMOs)
+
+**Platform Modernization**:
+- Ember 6.8.0 (latest stable frontend framework)
+- Go 1.25.0 (latest stable backend language)
+- HashiCorp Design System 4.24.0 (modern UI components)
+- Full TypeScript + Go generics for type safety
 
 **Provider Implementation**:
 - 3 auth providers (Dex, Google, Okta)
