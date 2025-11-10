@@ -1,0 +1,22 @@
+# Quick Start Instructions
+
+## View the Slides
+1. Open 'index.html' in any web browser
+   - macOS: open index.html
+   - Linux: xdg-open index.html
+   - Or double-click in file explorer
+
+2. Navigate with arrow keys or click edges
+
+## For Best Presentation Experience
+python3 -m http.server 8000
+# Then open: http://localhost:8000
+
+## Keyboard Shortcuts
+- Arrow keys: Navigate slides
+- F: Fullscreen
+- S: Speaker notes (presenter view)
+- O: Overview (see all slides at once)
+- ESC: Exit overview/fullscreen
+
+## See README.md for complete documentation
