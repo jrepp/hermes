@@ -563,6 +563,10 @@ type DocumentProvider interface {
     // CreateDocumentWithUUID creates document with explicit UUID (for migration)
     CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*DocumentMetadata, error)
 
+    // RegisterDocument registers document metadata with provider (for tracking)
+    // Used by edge instances to register documents with central tracking system
+    RegisterDocument(ctx context.Context, doc *DocumentMetadata) (*DocumentMetadata, error)
+
     // CopyDocument copies a document (preserves UUID if in frontmatter/metadata)
     CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*DocumentMetadata, error)
 
@@ -730,18 +734,112 @@ type NotificationProvider interface {
 }
 
 // ===================================================================
+// OPTIONAL INTERFACE: DocumentSyncProvider
+// ===================================================================
+// DocumentSyncProvider handles document synchronization between edge and central instances
+// This interface is OPTIONAL - only needed for multi-provider edge/central architectures
+type DocumentSyncProvider interface {
+    // RegisterDocument registers document metadata with central for tracking
+    RegisterDocument(ctx context.Context, doc *DocumentMetadata) (*DocumentMetadata, error)
+
+    // SyncMetadata synchronizes document metadata from edge to central
+    SyncMetadata(ctx context.Context, uuid docid.UUID, metadata *DocumentMetadata) error
+
+    // GetSyncStatus gets synchronization status for documents
+    GetSyncStatus(ctx context.Context, uuids []docid.UUID) ([]*SyncStatus, error)
+
+    // SyncRevision synchronizes revision information to central
+    SyncRevision(ctx context.Context, uuid docid.UUID, revision *BackendRevision) error
+}
+
+// SyncStatus represents document synchronization state
+type SyncStatus struct {
+    UUID          docid.UUID `json:"uuid"`
+    LastSyncTime  time.Time  `json:"lastSyncTime"`
+    SyncState     string     `json:"syncState"` // "synced", "pending", "failed"
+    ErrorMessage  string     `json:"errorMessage,omitempty"`
+}
+
+// ===================================================================
+// OPTIONAL INTERFACE: DocumentMergeProvider
+// ===================================================================
+// DocumentMergeProvider handles UUID merging for drift resolution
+// This interface is OPTIONAL - only needed for central instances managing multi-backend documents
+type DocumentMergeProvider interface {
+    // MergeDocuments merges two document UUIDs (combine revision histories)
+    MergeDocuments(ctx context.Context, req *MergeRequest) error
+
+    // FindMergeCandidates finds potential duplicate documents for given UUID
+    FindMergeCandidates(ctx context.Context, uuid docid.UUID) ([]*DocumentMetadata, error)
+
+    // GetMergeHistory retrieves history of UUID merges
+    GetMergeHistory(ctx context.Context, limit int) ([]*MergeRecord, error)
+
+    // RollbackMerge rolls back a previous merge operation
+    RollbackMerge(ctx context.Context, mergeID string) error
+}
+
+// MergeRecord represents a historical UUID merge operation
+type MergeRecord struct {
+    MergeID        string     `json:"mergeId"`
+    SourceUUID     docid.UUID `json:"sourceUuid"`
+    TargetUUID     docid.UUID `json:"targetUuid"`
+    MergedAt       time.Time  `json:"mergedAt"`
+    InitiatedBy    string     `json:"initiatedBy"`
+    RevisionCount  int        `json:"revisionCount"`
+}
+
+// ===================================================================
+// OPTIONAL INTERFACE: IdentityJoinProvider
+// ===================================================================
+// IdentityJoinProvider handles cross-provider identity linking
+// This interface is OPTIONAL - only needed for central instances with multi-provider auth
+type IdentityJoinProvider interface {
+    // InitiateIdentityJoin starts OAuth flow to join identity from another provider
+    InitiateIdentityJoin(ctx context.Context, provider string) (*OAuthFlow, error)
+
+    // CompleteIdentityJoin completes identity join after OAuth callback
+    CompleteIdentityJoin(ctx context.Context, req *JoinIdentityRequest) (*UserIdentity, error)
+
+    // GetCurrentUserIdentity retrieves current user's unified identity
+    GetCurrentUserIdentity(ctx context.Context) (*UserIdentity, error)
+
+    // RemoveAlternateIdentity unlinks an alternate identity
+    RemoveAlternateIdentity(ctx context.Context, identityID string) error
+
+    // GetAllIdentities retrieves all identities for a unified user
+    GetAllIdentities(ctx context.Context, unifiedUserID string) ([]*UserIdentity, error)
+}
+
+// OAuthFlow represents OAuth flow initiation data
+type OAuthFlow struct {
+    AuthURL      string `json:"authUrl"`
+    State        string `json:"state"`
+    Provider     string `json:"provider"`
+}
+
+// JoinIdentityRequest represents identity join completion request
+type JoinIdentityRequest struct {
+    Provider string `json:"provider"`
+    Code     string `json:"code"`
+    State    string `json:"state"`
+}
+
+// ===================================================================
 // COMPOSITE INTERFACE: WorkspaceProvider
 // ===================================================================
-// WorkspaceProvider is the main provider interface that composes ALL focused interfaces
+// WorkspaceProvider is the main provider interface that composes core focused interfaces
 //
-// CRITICAL DESIGN PRINCIPLE: All interfaces are REQUIRED.
-// Providers must implement all 7 interfaces either:
+// CRITICAL DESIGN PRINCIPLE: Core interfaces (7) are REQUIRED.
+// Optional interfaces (3) are for advanced multi-provider scenarios.
+//
+// Providers must implement all 7 CORE interfaces either:
 //   1. Locally (e.g., Google implements PeopleProvider via Google Directory API)
 //   2. Via delegation to remote API (e.g., Local delegates PeopleProvider to remote Hermes)
 //
-// This ensures consistent API surface - handlers never need capability checks.
+// This ensures consistent API surface - handlers never need capability checks for core operations.
 type WorkspaceProvider interface {
-    // ALL INTERFACES REQUIRED
+    // CORE INTERFACES (REQUIRED)
     DocumentProvider         // Document CRUD
     ContentProvider          // Content operations with revision tracking
     RevisionTrackingProvider // Backend-specific revision management
@@ -754,6 +852,143 @@ type WorkspaceProvider interface {
     Name() string         // Provider name for logging
     ProviderType() string // "google", "local", "office365", "github", "api"
 }
+
+// ===================================================================
+// COMPOSITE INTERFACE: ExtendedWorkspaceProvider
+// ===================================================================
+// ExtendedWorkspaceProvider adds optional interfaces for multi-provider architectures
+// Used by central Hermes instances and edge instances with advanced capabilities
+type ExtendedWorkspaceProvider interface {
+    WorkspaceProvider        // All core interfaces
+
+    // OPTIONAL INTERFACES (for multi-provider scenarios)
+    DocumentSyncProvider     // Document synchronization (edge ↔ central)
+    DocumentMergeProvider    // UUID merging (drift resolution)
+    IdentityJoinProvider     // Cross-provider identity linking
+}
+```
+
+### Supporting Infrastructure
+
+#### DocumentRegistry
+
+The DocumentRegistry tracks UUID to provider mappings for multi-backend document tracking:
+
+```go
+// DocumentRegistry manages document UUID to provider mappings
+// Required for multi-provider architectures where documents exist across multiple backends
+type DocumentRegistry interface {
+    // Register registers a document UUID with its provider
+    Register(ctx context.Context, uuid docid.UUID, providerType string) error
+
+    // GetDocument retrieves document metadata by UUID (any provider)
+    GetDocument(ctx context.Context, uuid docid.UUID) (*DocumentMetadata, error)
+
+    // GetProviderForUUID returns which provider(s) have this UUID
+    GetProviderForUUID(ctx context.Context, uuid docid.UUID) ([]string, error)
+
+    // GetAllDocumentRevisions gets all revisions across all backends for a UUID
+    GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*RevisionInfo, error)
+
+    // SaveRevision stores revision information
+    SaveRevision(ctx context.Context, rev *RevisionInfo) error
+
+    // UpdateSyncStatus updates the synchronization status for a document
+    UpdateSyncStatus(ctx context.Context, uuid docid.UUID, syncStatus string) error
+}
+```
+
+#### MultiProviderManager
+
+The MultiProviderManager enables running multiple providers simultaneously with automatic routing:
+
+```go
+// MultiProviderManager composes multiple WorkspaceProviders for edge/central architectures
+// Implements WorkspaceProvider by intelligently routing to appropriate provider
+type MultiProviderManager struct {
+    primary   WorkspaceProvider  // Primary provider (e.g., local Git)
+    secondary WorkspaceProvider  // Secondary provider (e.g., API to central)
+    registry  DocumentRegistry   // UUID tracking across providers
+    config    *MultiProviderConfig
+}
+
+// MultiProviderConfig configures multi-provider behavior
+type MultiProviderConfig struct {
+    RoutingPolicy string // "primary_first", "secondary_first", "both"
+    AutoSync      bool   // Automatically sync metadata to secondary
+    SyncContent   bool   // Sync content or just metadata
+}
+
+// Ensure MultiProviderManager implements WorkspaceProvider
+var _ WorkspaceProvider = (*MultiProviderManager)(nil)
+
+// GetDocument with automatic routing
+func (m *MultiProviderManager) GetDocument(ctx context.Context, providerID string) (*DocumentMetadata, error) {
+    // Try primary provider first
+    doc, err := m.primary.GetDocument(ctx, providerID)
+    if err == nil {
+        return doc, nil
+    }
+
+    // If not found locally, try secondary (central)
+    doc, err = m.secondary.GetDocument(ctx, providerID)
+    if err == nil {
+        // Document exists in central, cache locally
+        m.registry.Register(ctx, doc.UUID, "secondary")
+        return doc, nil
+    }
+
+    return nil, fmt.Errorf("document not found in any provider")
+}
+
+// CreateDocument creates in primary and optionally syncs to secondary
+func (m *MultiProviderManager) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*DocumentMetadata, error) {
+    // New documents created in primary (local) provider
+    doc, err := m.primary.CreateDocument(ctx, templateID, destFolderID, name)
+    if err != nil {
+        return nil, err
+    }
+
+    // Register with local registry
+    if err := m.registry.Register(ctx, doc.UUID, "primary"); err != nil {
+        log.Warn("failed to register document", "uuid", doc.UUID, "error", err)
+    }
+
+    // Automatically register with central for tracking (if configured)
+    if m.config.AutoSync {
+        go m.syncToSecondary(context.Background(), doc)
+    }
+
+    return doc, nil
+}
+
+// syncToSecondary replicates document metadata to central
+func (m *MultiProviderManager) syncToSecondary(ctx context.Context, doc *DocumentMetadata) {
+    // Check if secondary implements DocumentSyncProvider
+    if syncer, ok := m.secondary.(DocumentSyncProvider); ok {
+        if _, err := syncer.RegisterDocument(ctx, doc); err != nil {
+            log.Error("failed to sync document to central", "uuid", doc.UUID, "error", err)
+        }
+    }
+}
+```
+
+**Usage Example**:
+```go
+// Create multi-provider manager
+manager := &MultiProviderManager{
+    primary:   localProvider,
+    secondary: apiProvider,
+    registry:  documentRegistry,
+    config: &MultiProviderConfig{
+        RoutingPolicy: "primary_first",
+        AutoSync:      true,
+        SyncContent:   false, // Only sync metadata
+    },
+}
+
+// Use as normal WorkspaceProvider
+doc, err := manager.GetDocument(ctx, "local:docs/rfc-084.md")
 ```
 
 ### Interface Naming Rationale

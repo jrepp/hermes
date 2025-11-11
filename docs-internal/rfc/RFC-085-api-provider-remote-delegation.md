@@ -1145,12 +1145,56 @@ All endpoints return Hermes-native types (not Google types):
   "mimeType": "text/markdown",
   "createdTime": "2025-01-15T10:30:00Z",
   "modifiedTime": "2025-01-16T14:20:00Z",
+  "tags": ["api", "documentation"],
+  "project": "platform-engineering",
   "owner": {
     "email": "user@example.com",
-    "displayName": "User Name"
+    "displayName": "User Name",
+    "unifiedUserId": "user-12345",
+    "alternateEmails": [
+      {
+        "email": "user@company.com",
+        "provider": "google",
+        "providerUserId": "123456789"
+      }
+    ]
   },
+  "owningTeam": "Platform Team",
+  "syncStatus": "canonical",
+  "workflowStatus": "Published",
   "contentHash": "sha256:abc123...",
-  "status": "canonical"
+  "extendedMetadata": {
+    "document_type": "rfc",
+    "sidebar_position": 1
+  }
+}
+```
+
+**Content Response Format** (includes BackendRevision):
+```json
+{
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "providerID": "api:remote-123",
+  "title": "RFC-001: API Gateway Design",
+  "body": "# RFC-001\n\n## Summary\n...",
+  "format": "markdown",
+  "backendRevision": {
+    "providerType": "google",
+    "revisionID": "123",
+    "modifiedTime": "2025-01-16T14:20:00Z",
+    "modifiedBy": {
+      "email": "user@example.com",
+      "displayName": "User Name"
+    },
+    "comment": "Updated architecture diagram",
+    "keepForever": false,
+    "metadata": {
+      "published": true,
+      "size": 12345
+    }
+  },
+  "contentHash": "sha256:abc123def456...",
+  "lastModified": "2025-01-16T14:20:00Z"
 }
 ```
 
