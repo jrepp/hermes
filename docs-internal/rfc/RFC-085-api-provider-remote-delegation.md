@@ -1,101 +1,503 @@
 ---
 id: RFC-085
-title: API Provider and Remote Delegation
+title: Multi-Provider Architecture with Automatic Pass-Through and Document Synchronization
 date: 2025-11-11
 type: RFC
 subtype: Implementation
 status: Proposed
-tags: [api-provider, remote-delegation, federation, multi-tier]
+tags: [multi-provider, pass-through, federation, synchronization, uuid-merging, identity-joining]
 related:
   - RFC-084
   - RFC-086
   - RFC-082
 ---
 
-# API Provider and Remote Delegation
+# Multi-Provider Architecture with Automatic Pass-Through and Document Synchronization
 
 ## Executive Summary
 
-This RFC proposes implementing an API provider that delegates workspace and search operations to a remote Hermes instance via REST API. This enables multi-tier deployments, federated document management, and hybrid cloud/on-premise architectures.
+This RFC proposes a multi-provider architecture for Hermes that enables simultaneous operation with multiple workspace providers (local + remote), automatic pass-through routing, document UUID merging for drift scenarios, cross-provider identity joining, and replicated notifications between edge and central instances.
 
 **Key Benefits**:
-- Enable multi-tier architectures (edge nodes → central Hermes)
-- Support federated document management across multiple Hermes instances
-- Allow thin clients that delegate storage to remote Hermes servers
-- Maintain consistent API contracts across all deployment models
+- **Multi-Provider Support**: Run multiple providers simultaneously (e.g., local Git + API pass-through to central)
+- **Automatic Pass-Through**: Edge Hermes automatically routes requests to appropriate provider
+- **Document Synchronization**: Documents authored locally can be tracked centrally with revision state management
+- **UUID Merging**: Handle document drift by merging two document UUIDs and their revision histories
+- **Identity Joining**: Join identities from multiple authentication providers through UI
+- **Replicated Notifications**: Both edge and central Hermes can send notifications
+- **Federated Document Management**: Track documents across multiple Hermes instances
 
 **Related RFCs**:
 - **RFC-084**: Provider Interface Refactoring (defines the 7 required interfaces)
 - **RFC-086**: Authentication and Bearer Token Management (auth strategy)
+- **RFC-082**: Document Identification System (UUID + ProviderID)
 
 ## Context
 
-### Use Cases for Remote API Provider
+### Use Cases for Multi-Provider Architecture
 
-**Use Case 1: Multi-Tier Architecture**
+**Use Case 1: Local Authoring with Central Tracking**
 ```
-┌──────────────┐           ┌──────────────┐
-│ Edge Hermes  │  ─REST─>  │ Central      │
-│ (thin client)│  <─API──  │ Hermes       │
-│              │           │ (full stack) │
-└──────────────┘           └──────┬───────┘
-                                  │
-                          ┌───────┴────────┐
-                          │ Google/Local   │
-                          │ Backend        │
-                          └────────────────┘
+┌────────────────────────────────────────────┐
+│ Edge Hermes (Developer Laptop)             │
+├────────────────────────────────────────────┤
+│ Multi-Provider Configuration:              │
+│  1. Local Git Provider (primary)           │
+│  2. API Provider → Central Hermes          │
+│                                             │
+│ Flow:                                       │
+│  • Author document in local Git repo       │
+│  • Hermes tracks UUID locally              │
+│  • Auto-sync metadata to Central           │
+│  • Central tracks document + revisions     │
+│  • Notifications sent by both instances    │
+└────────────────────────────────────────────┘
+         │ (auto pass-through)
+         ▼
+┌────────────────────────────────────────────┐
+│ Central Hermes (Company Server)            │
+├────────────────────────────────────────────┤
+│  • Tracks all documents globally           │
+│  • Maintains UUID registry                 │
+│  • Manages document revision states        │
+│  • Central identity provider               │
+└────────────────────────────────────────────┘
 ```
 
-**Use Case 2: Federated Documents**
+**Use Case 2: Document UUID Merging (Drift Resolution)**
 ```
-┌──────────────┐           ┌──────────────┐
-│ Team A       │  ─┐       │ Central      │
-│ Hermes       │   │       │ Hermes       │
-└──────────────┘   │       │ (aggregator) │
-                   ├─REST─>│              │
-┌──────────────┐   │       └──────────────┘
-│ Team B       │   │
-│ Hermes       │  ─┘
-└──────────────┘
+Scenario: Same document authored independently in two locations
+
+Edge Hermes:
+  UUID: 550e8400-e29b-41d4-a716-446655440000
+  ProviderID: local:docs/rfc-010.md
+  Revisions: Git commits a1b2c3, d4e5f6
+
+Central Hermes (independently created):
+  UUID: 7e8f4a2c-9d5b-4c1e-a8f7-3b2d1e6c9a4f
+  ProviderID: google:1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs
+  Revisions: Google Doc rev 1, 2, 3
+
+Resolution via UUID Merging:
+  1. User identifies documents are the same
+  2. Initiates merge via UI
+  3. System merges UUIDs → keeps 550e8400... (canonical)
+  4. All revisions combined under single UUID
+  5. Both providers tracked as different backends
+  6. Sync status: canonical (central), mirror (edge)
 ```
 
-**Use Case 3: Hybrid Cloud/On-Premise**
+**Use Case 3: Cross-Provider Identity Joining**
 ```
-┌──────────────┐           ┌──────────────┐
-│ On-Premise   │  ─────>   │ Cloud        │
-│ Hermes       │  <─REST─  │ Hermes       │
-│ (air-gapped) │           │ (internet)   │
-└──────────────┘           └──────────────┘
-      │                           │
-  Local Docs              Google Workspace
+Developer has multiple identities:
+  • jacob.repp@hashicorp.com (Google OAuth)
+  • jrepp@ibm.com (IBM Verify)
+  • jacob-repp (GitHub)
+
+Flow:
+  1. Developer logs in to Edge Hermes with local identity
+  2. Via UI, clicks "Join Identity" to connect to Central
+  3. Central Hermes prompts for authentication
+  4. Upon success, identities linked via UnifiedUserID
+  5. Documents authored on edge attributed correctly
+  6. Permissions propagate across identities
+```
+
+**Use Case 4: Replicated Notifications**
+```
+Document workflow requiring notifications:
+  • Document authored on Edge Hermes (local Git)
+  • Review requested via Edge UI
+  • Edge Hermes sends notification: "Review requested"
+  • Central Hermes also notified of state change
+  • Central sends notification: "Document awaiting review"
+  • Both notifications reach reviewers
+  • Ensures delivery even if Edge offline
 ```
 
 ## Proposed Solution
 
-### Architecture Overview
+### Multi-Provider Architecture Overview
 
+**Edge Hermes with Multiple Providers**:
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   Hermes Server                         │
-├─────────────────────────────────────────────────────────┤
-│  Workspace Providers (pkg/workspace/provider.go)        │
-│                                                          │
-│  ┌────────────┐  ┌────────────┐  ┌──────────────────┐  │
-│  │  Google    │  │   Local    │  │   API Provider   │  │
-│  │  Provider  │  │  Provider  │  │   (NEW)          │  │
-│  └────────────┘  └────────────┘  └────────┬─────────┘  │
-│       │               │                    │             │
-└───────┼───────────────┼────────────────────┼─────────────┘
-        │               │                    │
-        │               │                    │ REST API
-        │               │                    │ (/api/v2/...)
-        │               │                    ▼
-        │               │         ┌─────────────────────┐
-        │               │         │ Remote Hermes       │
-        │               │         │ Instance            │
-        │               │         └─────────────────────┘
-        │               │
-   Google APIs    Local Filesystem
+┌─────────────────────────────────────────────────────────────────┐
+│                   Edge Hermes (Developer)                       │
+├─────────────────────────────────────────────────────────────────┤
+│  Multi-Provider Manager (NEW)                                   │
+│  - Routes requests to appropriate provider(s)                   │
+│  - Handles automatic pass-through                               │
+│  - Manages document synchronization                             │
+│                                                                  │
+│  ┌──────────────────┐          ┌──────────────────────────┐    │
+│  │ Local Provider   │          │ API Provider (Central)   │    │
+│  │ (Primary)        │          │ (Pass-through)           │    │
+│  ├──────────────────┤          ├──────────────────────────┤    │
+│  │ • DocumentProv   │          │ • All interfaces         │    │
+│  │ • ContentProv    │          │   delegate to Central    │    │
+│  │ • RevisionProv   │          │                          │    │
+│  └────────┬─────────┘          └───────────┬──────────────┘    │
+│           │                                 │                    │
+└───────────┼─────────────────────────────────┼────────────────────┘
+            │                                 │ REST API
+            │ Local Git                       │ /api/v2/*
+            ▼                                 ▼
+   ┌────────────────┐              ┌─────────────────────────────┐
+   │ Local Git Repo │              │ Central Hermes              │
+   │ docs/          │              ├─────────────────────────────┤
+   └────────────────┘              │ • UUID Registry             │
+                                   │ • Document Metadata DB      │
+                                   │ • Revision Tracking         │
+                                   │ • Identity Management       │
+                                   │ • Notification Hub          │
+                                   │                             │
+                                   │ Workspace Providers:        │
+                                   │  - Google Workspace         │
+                                   │  - Local                    │
+                                   │  - GitHub                   │
+                                   └─────────────────────────────┘
+```
+
+### Automatic Pass-Through Routing
+
+The Multi-Provider Manager intelligently routes operations:
+
+```go
+// Multi-Provider Manager routes requests to appropriate provider(s)
+type MultiProviderManager struct {
+    primary   workspace.WorkspaceProvider  // Local provider
+    secondary workspace.WorkspaceProvider  // API provider (central)
+    registry  *DocumentRegistry            // UUID → Provider mapping
+}
+
+// GetDocument with automatic routing
+func (m *MultiProviderManager) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+    // Try primary provider first
+    doc, err := m.primary.GetDocument(ctx, providerID)
+    if err == nil {
+        return doc, nil
+    }
+
+    // If not found locally, try secondary (central)
+    doc, err = m.secondary.GetDocument(ctx, providerID)
+    if err == nil {
+        // Document exists in central, cache locally
+        m.registry.Register(doc.UUID, "secondary")
+        return doc, nil
+    }
+
+    return nil, fmt.Errorf("document not found in any provider")
+}
+
+// CreateDocument decides where to create based on policy
+func (m *MultiProviderManager) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+    // New documents created in primary (local) provider
+    doc, err := m.primary.CreateDocument(ctx, templateID, destFolderID, name)
+    if err != nil {
+        return nil, err
+    }
+
+    // Automatically register with central for tracking
+    go m.syncToSecondary(context.Background(), doc)
+
+    return doc, nil
+}
+
+// syncToSecondary replicates document metadata to central
+func (m *MultiProviderManager) syncToSecondary(ctx context.Context, doc *workspace.DocumentMetadata) {
+    // Send document metadata to central via API
+    _, err := m.secondary.RegisterDocument(ctx, doc)
+    if err != nil {
+        log.Error("failed to sync document to central", "uuid", doc.UUID, "error", err)
+    }
+}
+```
+
+### Document UUID Merging for Drift Resolution
+
+When the same document is independently created in multiple locations, Hermes provides UUID merging to combine them:
+
+```go
+// DocumentMergeService handles UUID merging for drift scenarios
+type DocumentMergeService struct {
+    db       *sql.DB
+    registry *DocumentRegistry
+}
+
+// MergeRequest represents a request to merge two document UUIDs
+type MergeRequest struct {
+    SourceUUID      docid.UUID `json:"sourceUUID"`      // UUID to be merged (deprecated)
+    TargetUUID      docid.UUID `json:"targetUUID"`      // UUID to keep (canonical)
+    MergeRevisions  bool       `json:"mergeRevisions"`  // Merge revision histories
+    MergeStrategy   string     `json:"mergeStrategy"`   // "keep-target", "keep-source", "merge-all"
+    InitiatedBy     string     `json:"initiatedBy"`     // User email
+}
+
+// MergeDocuments merges two document UUIDs
+func (s *DocumentMergeService) MergeDocuments(ctx context.Context, req *MergeRequest) error {
+    // 1. Validate both documents exist
+    sourceDoc, err := s.registry.GetDocument(ctx, req.SourceUUID)
+    if err != nil {
+        return fmt.Errorf("source document not found: %w", err)
+    }
+
+    targetDoc, err := s.registry.GetDocument(ctx, req.TargetUUID)
+    if err != nil {
+        return fmt.Errorf("target document not found: %w", err)
+    }
+
+    // 2. Merge revision histories
+    if req.MergeRevisions {
+        if err := s.mergeRevisions(ctx, req.SourceUUID, req.TargetUUID); err != nil {
+            return fmt.Errorf("failed to merge revisions: %w", err)
+        }
+    }
+
+    // 3. Update all references to source UUID → target UUID
+    if err := s.updateUUIDReferences(ctx, req.SourceUUID, req.TargetUUID); err != nil {
+        return fmt.Errorf("failed to update references: %w", err)
+    }
+
+    // 4. Mark source UUID as merged (soft delete)
+    if err := s.markAsMerged(ctx, req.SourceUUID, req.TargetUUID); err != nil {
+        return fmt.Errorf("failed to mark as merged: %w", err)
+    }
+
+    // 5. Update sync status for merged document
+    if err := s.updateSyncStatus(ctx, targetDoc, sourceDoc); err != nil {
+        return fmt.Errorf("failed to update sync status: %w", err)
+    }
+
+    log.Info("documents merged successfully",
+        "sourceUUID", req.SourceUUID,
+        "targetUUID", req.TargetUUID,
+        "initiatedBy", req.InitiatedBy)
+
+    return nil
+}
+
+// mergeRevisions combines revision histories from both documents
+func (s *DocumentMergeService) mergeRevisions(ctx context.Context, sourceUUID, targetUUID docid.UUID) error {
+    // Get all revisions for source document
+    sourceRevs, err := s.registry.GetAllDocumentRevisions(ctx, sourceUUID)
+    if err != nil {
+        return err
+    }
+
+    // Re-assign all revisions to target UUID
+    for _, rev := range sourceRevs {
+        rev.UUID = targetUUID
+        if err := s.registry.SaveRevision(ctx, rev); err != nil {
+            return fmt.Errorf("failed to save revision: %w", err)
+        }
+    }
+
+    return nil
+}
+
+// updateUUIDReferences updates all database references
+func (s *DocumentMergeService) updateUUIDReferences(ctx context.Context, oldUUID, newUUID docid.UUID) error {
+    queries := []string{
+        `UPDATE document_metadata SET uuid = $1 WHERE uuid = $2`,
+        `UPDATE document_revisions SET document_uuid = $1 WHERE document_uuid = $2`,
+        `UPDATE document_permissions SET document_uuid = $1 WHERE document_uuid = $2`,
+        `UPDATE document_comments SET document_uuid = $1 WHERE document_uuid = $2`,
+    }
+
+    for _, query := range queries {
+        if _, err := s.db.ExecContext(ctx, query, newUUID, oldUUID); err != nil {
+            return err
+        }
+    }
+
+    return nil
+}
+```
+
+**UUID Merge API Endpoint**:
+```
+POST /api/v2/documents/merge
+Authorization: Bearer <token>
+
+{
+  "sourceUUID": "7e8f4a2c-9d5b-4c1e-a8f7-3b2d1e6c9a4f",
+  "targetUUID": "550e8400-e29b-41d4-a716-446655440000",
+  "mergeRevisions": true,
+  "mergeStrategy": "merge-all"
+}
+
+Response:
+{
+  "success": true,
+  "targetUUID": "550e8400-e29b-41d4-a716-446655440000",
+  "mergedRevisionCount": 8,
+  "syncStatus": "canonical"
+}
+```
+
+### Cross-Provider Identity Joining
+
+Allow users to join multiple authentication provider identities through the UI:
+
+```go
+// IdentityJoinService manages cross-provider identity linking
+type IdentityJoinService struct {
+    db           *sql.DB
+    authProvider auth.Provider
+}
+
+// JoinIdentityRequest represents a request to join identities
+type JoinIdentityRequest struct {
+    PrimaryEmail    string `json:"primaryEmail"`    // Current user email
+    ProviderToJoin  string `json:"providerToJoin"`  // "google", "ibm-verify", "github", etc.
+    AuthToken       string `json:"authToken"`       // OAuth token for provider
+}
+
+// JoinIdentity links a new provider identity to existing user
+func (s *IdentityJoinService) JoinIdentity(ctx context.Context, req *JoinIdentityRequest) (*workspace.UserIdentity, error) {
+    // 1. Get current user identity
+    currentUser, err := s.getUserIdentity(ctx, req.PrimaryEmail)
+    if err != nil {
+        return nil, fmt.Errorf("current user not found: %w", err)
+    }
+
+    // 2. Validate auth token with provider
+    providerIdentity, err := s.authProvider.ValidateToken(ctx, req.ProviderToJoin, req.AuthToken)
+    if err != nil {
+        return nil, fmt.Errorf("failed to validate provider token: %w", err)
+    }
+
+    // 3. Check if identity already linked to another user
+    existingUser, err := s.findUserByProviderEmail(ctx, providerIdentity.Email)
+    if err == nil && existingUser.UnifiedUserID != currentUser.UnifiedUserID {
+        return nil, fmt.Errorf("identity already linked to different user")
+    }
+
+    // 4. Create alternate identity record
+    altIdentity := workspace.AlternateIdentity{
+        Email:          providerIdentity.Email,
+        Provider:       req.ProviderToJoin,
+        ProviderUserID: providerIdentity.ID,
+    }
+
+    // 5. Add to user's alternate identities
+    if err := s.addAlternateIdentity(ctx, currentUser.UnifiedUserID, altIdentity); err != nil {
+        return nil, fmt.Errorf("failed to add alternate identity: %w", err)
+    }
+
+    // 6. Update user identity
+    currentUser.AlternateEmails = append(currentUser.AlternateEmails, altIdentity)
+
+    log.Info("identity joined successfully",
+        "primaryEmail", req.PrimaryEmail,
+        "provider", req.ProviderToJoin,
+        "providerEmail", providerIdentity.Email)
+
+    return currentUser, nil
+}
+```
+
+**Identity Join API Flow**:
+```
+1. UI: User clicks "Join Identity" button
+   GET /api/v2/identity/join/initiate?provider=github
+
+   Response:
+   {
+     "authURL": "https://github.com/login/oauth/authorize?...",
+     "state": "random-state-token"
+   }
+
+2. User authenticates with provider (OAuth flow)
+
+3. Provider redirects back with code
+   POST /api/v2/identity/join/complete
+   {
+     "provider": "github",
+     "code": "oauth-code",
+     "state": "random-state-token"
+   }
+
+   Response:
+   {
+     "success": true,
+     "userIdentity": {
+       "email": "jacob.repp@hashicorp.com",
+       "unifiedUserId": "user-12345",
+       "alternateEmails": [
+         {"email": "jrepp@ibm.com", "provider": "ibm-verify"},
+         {"email": "jacob-repp", "provider": "github", "providerUserId": "87654321"}
+       ]
+     }
+   }
+```
+
+### Replicated Notifications
+
+Both edge and central Hermes can send notifications:
+
+```go
+// NotificationReplicator handles notification replication across instances
+type NotificationReplicator struct {
+    localNotifier  workspace.NotificationProvider  // Local notification provider
+    centralClient  *APIProvider                    // Central Hermes API
+}
+
+// SendNotificationWithReplication sends via both local and central
+func (r *NotificationReplicator) SendNotification(ctx context.Context, notification *Notification) error {
+    var wg sync.WaitGroup
+    var localErr, centralErr error
+
+    // Send via local provider
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        localErr = r.localNotifier.SendEmail(ctx, notification.To, notification.From, notification.Subject, notification.Body)
+        if localErr != nil {
+            log.Warn("local notification failed", "error", localErr)
+        }
+    }()
+
+    // Send via central Hermes (for replication)
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        centralErr = r.centralClient.SendEmail(ctx, notification.To, notification.From, notification.Subject, notification.Body)
+        if centralErr != nil {
+            log.Warn("central notification failed", "error", centralErr)
+        }
+    }()
+
+    wg.Wait()
+
+    // Success if at least one succeeds
+    if localErr != nil && centralErr != nil {
+        return fmt.Errorf("both local and central notifications failed: local=%v, central=%v", localErr, centralErr)
+    }
+
+    return nil
+}
+```
+
+**Notification Replication Flow**:
+```
+Edge Hermes:
+  1. User requests document review
+  2. NotificationReplicator.SendNotification() called
+  3. Sends email via local SMTP (if configured)
+  4. Also sends via API to Central: POST /api/v2/notifications/email
+  5. Both notifications tracked for delivery confirmation
+
+Central Hermes:
+  1. Receives notification request from Edge
+  2. Sends email via its NotificationProvider (Google, SendGrid, etc.)
+  3. Logs delivery for audit trail
+  4. Returns success/failure to Edge
+
+Benefits:
+  • Redundant delivery ensures notifications reach recipients
+  • Central has audit log of all notifications
+  • Edge can operate offline (queues to Central when reconnected)
 ```
 
 ### API Provider Implementation
@@ -417,98 +819,229 @@ func (p *Provider) SearchPeople(ctx context.Context, query string) ([]*workspace
 // ... other PeopleProvider, TeamProvider, NotificationProvider, RevisionTrackingProvider methods
 ```
 
+### Provider Feature Matrix
+
+The multi-provider architecture supports these key capabilities:
+
+| Feature | Edge (Local + API) | Central | Notes |
+|---------|-------------------|---------|-------|
+| **Document Authoring** | ✅ Local Primary | ✅ All Providers | Documents authored against connected Hermes instance |
+| **Automatic Pass-Through** | ✅ Yes | N/A | Routes requests to appropriate provider automatically |
+| **Document Synchronization** | ✅ Yes | ✅ Yes | Edge → Central metadata sync for tracking |
+| **UUID Merging** | ✅ Via API to Central | ✅ Yes | Merge duplicate UUIDs, combine revision histories |
+| **Revision Tracking** | ✅ Local (Git) | ✅ Multi-Backend | Tracks revisions across all backends |
+| **Identity Joining** | ✅ Via UI | ✅ Yes | Join provider identities through OAuth flow |
+| **Notification Replication** | ✅ Yes | ✅ Yes | Both instances can send notifications |
+| **Offline Operation** | ✅ Yes (primary only) | N/A | Edge works offline, syncs when reconnected |
+| **Multi-Backend Documents** | ✅ Via Pass-Through | ✅ Yes | Single doc tracked across multiple providers |
+
+**Key Scenarios Supported**:
+
+| Scenario | Edge Configuration | Central Configuration | Flow |
+|----------|-------------------|----------------------|------|
+| **Local Authoring + Central Tracking** | Local (primary) + API (secondary) | Google + Local | Author in Edge Git → Auto-sync to Central → Central tracks globally |
+| **UUID Drift Resolution** | Any | Any | User initiates merge → Central combines UUIDs → All revisions under single UUID |
+| **Identity Joining** | Local auth + OAuth | Multiple auth providers | User logs in Edge → UI "Join Identity" → OAuth to Central → Identities linked |
+| **Notification Redundancy** | SMTP (optional) + API pass-through | Google/SendGrid | Edge sends → Also POST to Central → Central sends → Both logged |
+| **Offline Authoring** | Local only (queue sync) | N/A | Work offline → Queue metadata → Sync when online |
+
+**Provider Implementation Matrix**:
+
+| Provider | Document | Content | Revision | Permission | People | Team | Notification | UUID Merging | Identity Join |
+|----------|----------|---------|----------|------------|--------|------|--------------|--------------|---------------|
+| **Local (Edge)** | 🟢 Local | 🟢 Local | 🟢 Git | 🟡 Basic | 🔵 API | 🔵 API | 🔵 API | 🔵 API | 🔵 API |
+| **API (Edge)** | 🔵 API | 🔵 API | 🔵 API | 🔵 API | 🔵 API | 🔵 API | 🔵 API | 🔵 API | 🔵 API |
+| **Google (Central)** | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Service | 🟢 Service |
+| **Multi-Provider (Edge)** | 🟣 Multi | 🟣 Multi | 🟣 Multi | 🟣 Multi | 🔵 API | 🔵 API | 🟣 Replicated | 🔵 API | 🔵 API |
+
+**Legend**:
+- 🟢 **Local**: Implemented directly
+- 🔵 **API**: Delegated to Central via REST API
+- 🟡 **Basic**: Simple local implementation
+- 🟣 **Multi**: Routes to multiple providers
+- 🟣 **Replicated**: Executes on both Edge and Central
+
 ### Configuration Patterns
 
-**Pattern 1: Full Local Implementation** (Google Workspace):
+**Pattern 1: Multi-Provider Edge with Automatic Pass-Through**:
 ```hcl
-# Google implements all interfaces locally
+# Edge Hermes with local Git + API pass-through to Central
 providers {
-  workspace = "google"
+  workspace = "multi"  # NEW: Multi-provider manager
+  search    = "meilisearch"
+}
+
+multi_workspace {
+  # Primary provider (local authoring)
+  primary = "local"
+
+  # Secondary provider (central tracking)
+  secondary = "api"
+
+  # Routing policy
+  routing_policy = "primary_first"  # Try primary, fall back to secondary
+
+  # Auto-sync configuration
+  auto_sync {
+    enabled  = true
+    metadata = true  # Sync document metadata to central
+    content  = false # Keep content local-only
+  }
+}
+
+# Local provider configuration
+local_workspace {
+  base_path = "/Users/dev/hermes-docs"
+  docs_path = "docs"
+}
+
+# API provider configuration (delegates to Central)
+api_workspace {
+  base_url   = "https://central.hermes.company.com"
+  auth_token = env("HERMES_API_TOKEN")
+  timeout    = "30s"
+}
+
+# Notification replication
+notification_replication {
+  enabled = true
+  send_via_both = true  # Send notifications via both local and central
+}
+```
+
+**Pattern 2: Central Hermes with Multiple Providers**:
+```hcl
+# Central Hermes tracking documents across Google + Local + GitHub
+providers {
+  workspace = "google"  # Primary provider
   search    = "algolia"
 }
 
 google_workspace {
   credentials_file = "credentials.json"
-  domain          = "example.com"
-  # All interfaces satisfied via Google APIs
+  domain          = "company.com"
+}
+
+# Track documents from additional providers
+document_tracking {
+  track_providers = ["local", "github"]
+
+  local {
+    base_path = "/var/hermes/git-docs"
+  }
+
+  github {
+    token        = env("GITHUB_TOKEN")
+    organization = "company"
+    repositories = ["rfcs", "design-docs"]
+  }
+}
+
+# UUID merging service
+uuid_merge {
+  enabled         = true
+  require_approval = true  # User must approve merges
+}
+
+# Identity management
+identity_management {
+  unified_identity = true
+
+  auth_providers = ["google", "github", "ibm-verify"]
+
+  # Allow users to join identities via UI
+  allow_identity_joining = true
 }
 ```
 
-**Pattern 2: Hybrid (Local + Delegation)**:
+**Pattern 3: Offline-Capable Edge**:
 ```hcl
-# Local provider with delegation to remote for missing capabilities
+# Edge Hermes that works offline, syncs when online
 providers {
-  workspace = "local"
+  workspace = "multi"
   search    = "meilisearch"
+}
+
+multi_workspace {
+  primary   = "local"
+  secondary = "api"
+
+  # Offline support
+  offline_mode {
+    enabled = true
+    queue_sync = true  # Queue operations when offline
+
+    # Retry configuration
+    retry {
+      max_attempts = 5
+      backoff      = "exponential"
+    }
+  }
 }
 
 local_workspace {
-  base_path = "/var/hermes/docs"
+  base_path = "/Users/dev/docs"
   docs_path = "docs"
-
-  # Delegation configuration for interfaces not implemented locally
-  delegate {
-    # Delegate People, Team, Notification to remote Hermes
-    people_provider       = "remote_api"
-    team_provider         = "remote_api"
-    notification_provider = "remote_api"
-
-    # Remote API configuration
-    remote_api {
-      base_url   = "https://central.hermes.example.com"
-      auth_token = env("HERMES_DELEGATION_TOKEN")
-      timeout    = "30s"
-    }
-  }
-}
-```
-
-**Pattern 3: Full Delegation** (Edge/Thin Client):
-```hcl
-# Edge Hermes that delegates everything to central instance
-providers {
-  workspace = "api"
-  search    = "api"
 }
 
-# API workspace provider config
 api_workspace {
-  base_url   = "https://central.hermes.example.com"
+  base_url   = "https://central.hermes.company.com"
   auth_token = env("HERMES_API_TOKEN")
-  tls_verify = true
-  timeout    = "30s"
 
-  # All 7 interfaces delegated to remote
-}
-
-# API search provider config
-api_search {
-  base_url   = "https://central.hermes.example.com"
-  auth_token = env("HERMES_API_TOKEN")
+  # Circuit breaker for network resilience
+  circuit_breaker {
+    enabled           = true
+    failure_threshold = 5
+    timeout           = "30s"
+  }
 }
 ```
 
-**Pattern 4: GitHub with Notification Delegation**:
+**Pattern 4: Development Setup with Identity Joining**:
 ```hcl
+# Developer laptop configuration
 providers {
-  workspace = "github"
-  search    = "meilisearch"
+  workspace = "multi"
+  search    = "local"
 }
 
-github_workspace {
-  token        = env("GITHUB_TOKEN")
-  organization = "hashicorp"
-  repository   = "rfcs"
+multi_workspace {
+  primary   = "local"
+  secondary = "api"
 
-  # GitHub can't send arbitrary emails, delegate to remote
-  delegate {
-    notification_provider = "remote_api"
+  # Developer-specific settings
+  developer_mode = true
+}
 
-    remote_api {
-      base_url   = "https://hermes.example.com"
-      auth_token = env("HERMES_DELEGATION_TOKEN")
-    }
+local_workspace {
+  base_path = "/Users/dev/projects/docs"
+  docs_path = "."
+
+  # Local identity (for offline work)
+  local_identity {
+    email       = "dev@localhost"
+    displayName = "Local Developer"
   }
+}
+
+api_workspace {
+  base_url = "https://hermes-dev.company.com"
+
+  # OAuth configuration for identity joining
+  oauth {
+    provider     = "google"
+    client_id    = env("OAUTH_CLIENT_ID")
+    redirect_url = "http://localhost:8080/auth/callback"
+  }
+}
+
+# Identity joining enabled
+identity_joining {
+  enabled = true
+  primary_email = env("USER_EMAIL")  # jacob.repp@company.com
+
+  # Additional providers to join
+  join_providers = ["github", "ibm-verify"]
 }
 ```
 
@@ -572,6 +1105,34 @@ For the API provider to work, the remote Hermes instance must expose consistent 
 ### Capabilities Endpoint
 
 - `GET /api/v2/capabilities` - Discover remote capabilities
+
+### Document Synchronization Endpoints (NEW)
+
+- `POST /api/v2/documents/register` - Register document with central (for tracking)
+- `PUT /api/v2/documents/:uuid/sync-metadata` - Sync metadata from edge to central
+- `GET /api/v2/documents/sync-status` - Get sync status for all documents
+- `POST /api/v2/documents/:uuid/sync-revision` - Sync revision information
+
+### UUID Merging Endpoints (NEW)
+
+- `POST /api/v2/documents/merge` - Merge two document UUIDs
+- `GET /api/v2/documents/:uuid/merge-candidates` - Find potential duplicate documents
+- `GET /api/v2/documents/merge-history` - Get merge history
+- `POST /api/v2/documents/merge/:mergeId/rollback` - Rollback a merge (if needed)
+
+### Identity Joining Endpoints (NEW)
+
+- `GET /api/v2/identity/join/initiate` - Initiate identity join OAuth flow
+- `POST /api/v2/identity/join/complete` - Complete identity join with OAuth code
+- `GET /api/v2/identity/current` - Get current user's unified identity
+- `DELETE /api/v2/identity/alternate/:id` - Remove alternate identity
+- `GET /api/v2/identity/:unifiedUserId/all` - Get all identities for unified user
+
+### Notification Replication Endpoints (NEW)
+
+- `POST /api/v2/notifications/replicate` - Replicate notification from edge to central
+- `GET /api/v2/notifications/:id/status` - Get delivery status of notification
+- `GET /api/v2/notifications/audit-log` - Get audit log of all notifications
 
 **Response Format**:
 All endpoints return Hermes-native types (not Google types):
