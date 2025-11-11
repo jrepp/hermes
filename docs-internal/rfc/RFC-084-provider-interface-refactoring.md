@@ -38,7 +38,11 @@ Hermes uses a UUID-based document identification system where documents can exis
 
 **Core Concepts**:
 - **UUID**: Stable global identifier (`550e8400-e29b-41d4-a716-446655440000`)
-- **ProviderID**: Backend-specific identifier (`google:1a2b3c4d`, `local:docs/rfc.md`, `github:owner/repo/path@commit`)
+- **ProviderID**: Backend-specific identifier with real-world formats:
+  - Google Drive: `google:1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs` (33-44 char alphanumeric)
+  - Office 365: `office365:01CYZLFJGUJ7JHBSZDFZFL25KSZGQTVAUN` (Base32-encoded ID)
+  - Local Git: `local:docs/rfc-001.md` (filesystem path)
+  - GitHub: `github:owner/repo/path/file.md@a1b2c3d4` (repo path + commit ref)
 - **Multi-Backend Tracking**: Same document UUID can have multiple active revisions across different backends
 
 **Example - Document Across Multiple Backends**:
@@ -49,8 +53,9 @@ Title: "RFC-001: API Gateway Design"
 ┌─────────────────────────────────────────────────────────────┐
 │ Revision 1: Google Workspace (Source of Truth)             │
 ├─────────────────────────────────────────────────────────────┤
-│ ProviderID: google:1a2b3c4d5e6f7890                         │
-│ Backend Revision: Google Doc revision v123                  │
+│ ProviderID: google:1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs        │
+│ Backend Revision: 123                                        │
+│   (Google Drive revision ID - numeric string)               │
 │ Content Hash: sha256:abc123...                              │
 │ Last Modified: 2025-10-15T14:30:00Z                         │
 │ Status: canonical                                            │
@@ -60,7 +65,8 @@ Title: "RFC-001: API Gateway Design"
 │ Revision 2: Local Git (Migrated Copy)                       │
 ├─────────────────────────────────────────────────────────────┤
 │ ProviderID: local:docs/rfc-001.md                           │
-│ Backend Revision: Git commit a1b2c3d4e5f6                   │
+│ Backend Revision: a1b2c3d4e5f67890abcdef1234567890abcdef12  │
+│   (Git commit SHA - 40 character hex string)                │
 │ Content Hash: sha256:abc123...  ✅ matches Google           │
 │ Last Modified: 2025-10-01T09:00:00Z                         │
 │ Status: target                                               │
@@ -69,8 +75,9 @@ Title: "RFC-001: API Gateway Design"
 ┌─────────────────────────────────────────────────────────────┐
 │ Revision 3: Office 365 (Mirror for Collaboration)          │
 ├─────────────────────────────────────────────────────────────┤
-│ ProviderID: office365:ABC-DEF-123-456                       │
-│ Backend Revision: O365 version 2.1                          │
+│ ProviderID: office365:01CYZLFJGUJ7JHBSZDFZFL25KSZGQTVAUN    │
+│ Backend Revision: 2.0                                        │
+│   (O365 version ID - semantic version or timestamp string)  │
 │ Content Hash: sha256:def456...  ⚠️ drift detected          │
 │ Last Modified: 2025-10-20T11:15:00Z                         │
 │ Status: conflict                                             │
@@ -116,6 +123,117 @@ Hermes currently supports three types of providers, each with direct backend int
 - ~30 methods covering file operations, permissions, content, email, groups
 - Returns Google Drive/Docs types (`*drive.File`, `*docs.Document`)
 - Assumes direct backend access (no network proxy/delegation pattern)
+
+### Real-World ID Format Reference
+
+This section documents the actual ID and revision formats used by each backend system to ensure transparent handling.
+
+#### Google Drive/Docs Document IDs
+
+**Format**: 33-44 character alphanumeric string (Base64-like encoding)
+**Character Set**: `[A-Za-z0-9_-]`
+**Examples**:
+- `1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms` (Google Docs)
+- `1a2b3c4d5e6f7g8h9i0jklmnopqrstuv` (Google Drive file)
+- `0B1234567890ABCDEFGHIJKLMNOPQRST` (Folder ID)
+
+**Hermes ProviderID Format**: `google:{fileId}`
+- Example: `google:1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms`
+
+**Revision IDs**: Numeric strings that increment sequentially
+- Format: `[0-9]+`
+- Examples: `"1"`, `"42"`, `"123"`, `"9876"`
+- First revision is always `"1"`
+- Auto-pruned after 30 days (unless marked `keepForever`)
+
+**API References**:
+- Files API: `https://www.googleapis.com/drive/v3/files/{fileId}`
+- Revisions API: `https://www.googleapis.com/drive/v3/files/{fileId}/revisions/{revisionId}`
+
+#### Office 365 (OneDrive/SharePoint) Document IDs
+
+**Format**: Base32-encoded string (uppercase, no padding)
+**Character Set**: `[A-Z0-9]`
+**Length**: Typically 27-50+ characters
+**Examples**:
+- `01CYZLFJGUJ7JHBSZDFZFL25KSZGQTVAUN` (OneDrive item)
+- `01BYE5RZ6QN3ZWBTUFOFD3GSPGOHDJD36K` (SharePoint item)
+- `b!8oWRTQj8eE-C_VEzRgKvI8qPqm...` (Drive item with full path)
+
+**Hermes ProviderID Format**: `office365:{itemId}`
+- Example: `office365:01CYZLFJGUJ7JHBSZDFZFL25KSZGQTVAUN`
+
+**Version IDs**: Multiple formats depending on API
+1. **Semantic versions**: `"1.0"`, `"2.0"`, `"3.1"`
+2. **Version labels**: `"Major"`, `"Minor"`, `"Current"`
+3. **Encoded version IDs**: `"AWQiRU9kdkNVVnVjM1Z5WTJWelBIQStQSFJoWW14bFBqeHdjajQ4ZEdRKw"` (Base64)
+4. **Timestamp-based**: ISO 8601 format `"2025-10-15T14:30:00Z"`
+
+**API References**:
+- Item API: `https://graph.microsoft.com/v1.0/me/drive/items/{itemId}`
+- Versions API: `https://graph.microsoft.com/v1.0/me/drive/items/{itemId}/versions`
+
+#### Git Commit SHAs (Local/GitHub)
+
+**Format**: 40-character hexadecimal string (SHA-1 hash)
+**Character Set**: `[0-9a-f]`
+**Examples**:
+- `a1b2c3d4e5f67890abcdef1234567890abcdef12` (full SHA)
+- `e7f8g9h0` (short form, 7-8 characters for display)
+- `48b8e291b2c4e7c4d1234567890abcdef1234567` (another commit)
+
+**Hermes ProviderID Format**:
+- Local: `local:{relative/path/to/file.md}`
+  - Example: `local:docs/rfc/RFC-084.md`
+- GitHub: `github:{owner}/{repo}/{path}@{ref}`
+  - Example: `github:hashicorp/hermes/docs/RFC-084.md@main`
+
+**Revision IDs**: Full 40-character commit SHA-1 hash
+- Always use full SHA for storage and API operations
+- Can display short form (7-8 chars) in UI for readability
+- Example storage: `"a1b2c3d4e5f67890abcdef1234567890abcdef12"`
+- Example display: `"a1b2c3d"`
+
+**Git Notes for Revision History**:
+- Git commits form an immutable directed acyclic graph (DAG)
+- Each commit has 0-N parent commits (merges can have multiple parents)
+- Revision history requires walking the commit tree from HEAD
+- Use `git log` or `git rev-list` to enumerate revisions in chronological order
+
+**API References**:
+- GitHub Commits API: `https://api.github.com/repos/{owner}/{repo}/commits/{sha}`
+- Git CLI: `git show {sha}`, `git log {sha}`
+
+#### Handling ID Format Variations
+
+The system must handle these ID format variations transparently:
+
+1. **Validation**: Each provider adapter should validate IDs match expected format
+2. **Storage**: Store IDs as opaque strings (no parsing/modification)
+3. **Comparison**: Use exact string equality (case-sensitive for Git, case-insensitive for O365)
+4. **Display**: Can truncate or format for UI, but always use full ID in API calls
+5. **Serialization**: JSON/YAML safe (all formats use safe character sets)
+
+**Implementation Considerations**:
+```go
+// Example validation functions
+func IsValidGoogleDriveID(id string) bool {
+    // 33-44 chars, alphanumeric + underscore + hyphen
+    match, _ := regexp.MatchString(`^[A-Za-z0-9_-]{33,44}$`, id)
+    return match
+}
+
+func IsValidGitCommitSHA(sha string) bool {
+    // 40 hex characters (full SHA-1)
+    match, _ := regexp.MatchString(`^[0-9a-f]{40}$`, sha)
+    return match
+}
+
+func IsValidOffice365ID(id string) bool {
+    // Flexible - various formats, typically 20+ chars
+    return len(id) >= 20 && len(id) <= 200
+}
+```
 
 ### The Problem
 
@@ -191,23 +309,48 @@ type DocumentContent struct {
 }
 
 // BackendRevision captures backend-specific revision metadata
+//
+// Real-world revision ID formats by provider:
+//
+// Google Drive/Docs:
+//   - RevisionID format: Numeric string (e.g., "123", "456")
+//   - Increments with each revision
+//   - Can be marked "keepForever" to prevent auto-pruning
+//   - Example: "123" for the 123rd revision of the document
+//
+// Git (Local/GitHub):
+//   - RevisionID format: 40-character SHA-1 hash (e.g., "a1b2c3d4e5f67890abcdef1234567890abcdef12")
+//   - Full commit hash, can use short form (7-8 chars) for display
+//   - Immutable and globally unique within repository
+//   - Example: "a1b2c3d4e5f67890abcdef1234567890abcdef12"
+//
+// Office 365 (OneDrive/SharePoint):
+//   - RevisionID format: Version string or timestamp (e.g., "2.0", "1.1", "2023-10-15T14:30:00Z")
+//   - Can be semantic version (major.minor) or complex version identifiers
+//   - May include version labels like "1.0", "2.0" or timestamp-based IDs
+//   - Example: "2.0" or "AWQiRU9kdkNVVnVjM1Z5WTJWelBIQStQSFJoWW14bFBqeHdjajQ4ZEdRKw"
+//
+// GitHub API:
+//   - RevisionID format: 40-character SHA-1 hash (same as Git)
+//   - Retrieved via GitHub API with additional metadata
+//   - Example: "e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6"
 type BackendRevision struct {
-    ProviderType string `json:"providerType"`
+    ProviderType string `json:"providerType"` // "google", "git", "office365", "github"
 
-    // Backend-specific revision ID (varies by provider)
-    RevisionID string `json:"revisionID"` // Examples:
-    //   Google: "123" (Drive revision number)
-    //   Git: "a1b2c3d4e5f6" (commit SHA)
-    //   Office365: "2.1" (version number)
-    //   GitHub: "e7f8g9h0i1j2" (commit SHA)
+    // Backend-specific revision ID (varies by provider - see format docs above)
+    RevisionID string `json:"revisionID"`
 
     // Revision metadata
     ModifiedTime time.Time      `json:"modifiedTime"`
     ModifiedBy   *UserIdentity  `json:"modifiedBy,omitempty"`
-    Comment      string         `json:"comment,omitempty"`
-    KeepForever  bool           `json:"keepForever,omitempty"`
+    Comment      string         `json:"comment,omitempty"` // Git commit message, Drive comment, etc.
+    KeepForever  bool           `json:"keepForever,omitempty"` // Google Drive feature
 
     // Backend-specific metadata (flexible for different systems)
+    // Examples:
+    //   - Google: {"published": true, "size": 12345}
+    //   - Git: {"tree": "abc123", "parent": "def456", "author": "..."}
+    //   - O365: {"versionLabel": "Major", "size": 12345, "comment": "..."}
     Metadata     map[string]any `json:"metadata,omitempty"`
 }
 ```
