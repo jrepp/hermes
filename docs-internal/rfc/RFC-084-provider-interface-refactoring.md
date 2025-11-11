@@ -25,6 +25,7 @@ This RFC proposes a refactoring of the Hermes provider architecture to support m
 - All interfaces REQUIRED (satisfied locally or via delegation)
 - UUID-based document identification across multiple backends
 - Backend-specific revision tracking (Google revs, Git commits, O365 versions)
+- Enhanced metadata with core attributes (tags, ownership, workflow status) and extensible fields
 
 **Related RFCs**:
 - **RFC-085**: API Provider and Remote Delegation (implementation patterns)
@@ -49,6 +50,9 @@ Hermes uses a UUID-based document identification system where documents can exis
 ```
 Document UUID: 550e8400-e29b-41d4-a716-446655440000
 Title: "RFC-001: API Gateway Design"
+Tags: [rfc, architecture, api-gateway, infrastructure]
+Project: platform-engineering
+Workflow Status: Published
 
 ┌─────────────────────────────────────────────────────────────┐
 │ Revision 1: Google Workspace (Source of Truth)             │
@@ -58,7 +62,7 @@ Title: "RFC-001: API Gateway Design"
 │   (Google Drive revision ID - numeric string)               │
 │ Content Hash: sha256:abc123...                              │
 │ Last Modified: 2025-10-15T14:30:00Z                         │
-│ Status: canonical                                            │
+│ Sync Status: canonical                                       │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -69,7 +73,8 @@ Title: "RFC-001: API Gateway Design"
 │   (Git commit SHA - 40 character hex string)                │
 │ Content Hash: sha256:abc123...  ✅ matches Google           │
 │ Last Modified: 2025-10-01T09:00:00Z                         │
-│ Status: target                                               │
+│ Sync Status: mirror                                          │
+│ Extended Metadata: {id: "rfc-001", sidebar_position: 1}     │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -80,7 +85,7 @@ Title: "RFC-001: API Gateway Design"
 │   (O365 version ID - semantic version or timestamp string)  │
 │ Content Hash: sha256:def456...  ⚠️ drift detected          │
 │ Last Modified: 2025-10-20T11:15:00Z                         │
-│ Status: conflict                                             │
+│ Sync Status: conflict                                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -258,6 +263,10 @@ Introduce Hermes-native types that support multi-backend document tracking:
 ```go
 // DocumentMetadata represents provider-agnostic document metadata
 // Works with DocID system (UUID + ProviderID)
+//
+// Design Philosophy:
+// - Core attributes: Universal metadata present across all document types
+// - Extensible attributes: Document-type-specific metadata in ExtendedMetadata map
 type DocumentMetadata struct {
     // Global identifier (RFC-082)
     UUID docid.UUID `json:"uuid"`
@@ -266,25 +275,105 @@ type DocumentMetadata struct {
     ProviderType string `json:"providerType"` // "google", "local", "office365", "github"
     ProviderID   string `json:"providerID"`   // Backend-specific ID
 
-    // Metadata
-    Name         string    `json:"name"`
-    MimeType     string    `json:"mimeType"`
-    CreatedTime  time.Time `json:"createdTime"`
-    ModifiedTime time.Time `json:"modifiedTime"`
+    // Core Metadata
+    Name         string    `json:"name"`         // Document title
+    MimeType     string    `json:"mimeType"`     // MIME type (e.g., "text/markdown", "application/vnd.google-apps.document")
+    CreatedTime  time.Time `json:"createdTime"`  // When document was created
+    ModifiedTime time.Time `json:"modifiedTime"` // Last modification timestamp
 
     // Ownership (unified identity aware)
-    Owner        *UserIdentity   `json:"owner"`
-    Contributors []UserIdentity  `json:"contributors,omitempty"`
+    Owner        *UserIdentity   `json:"owner,omitempty"`        // Individual owner (can be nil if team-owned)
+    OwningTeam   string          `json:"owningTeam,omitempty"`   // Team/group ownership (e.g., "Engineering Team")
+    Contributors []UserIdentity  `json:"contributors,omitempty"` // Document contributors/collaborators
 
-    // Hierarchy
-    Parents      []string `json:"parents,omitempty"`
-    Project      string   `json:"project,omitempty"`
+    // Hierarchy and Organization
+    Parents      []string `json:"parents,omitempty"` // Parent folder/directory IDs
+    Project      string   `json:"project,omitempty"` // Project association (e.g., "agf-iac-remediation-poc")
+    Tags         []string `json:"tags,omitempty"`    // Universal tags for categorization and search
+
+    // Document Lifecycle
+    SyncStatus     string `json:"syncStatus"`                // Multi-backend sync: "canonical", "mirror", "conflict", "archived"
+    WorkflowStatus string `json:"workflowStatus,omitempty"` // Document workflow: "Draft", "In Review", "Published", "Deprecated"
 
     // Multi-backend tracking
     ContentHash  string `json:"contentHash"` // SHA-256 for drift detection
-    Status       string `json:"status"`      // "canonical", "mirror", "conflict", "archived"
+
+    // Extensible metadata for document-type-specific fields
+    // Examples: RFC id ("rfc-010"), sidebar_position (10), rfc_type ("Architecture")
+    ExtendedMetadata map[string]any `json:"extendedMetadata,omitempty"`
 }
 ```
+
+**Core vs Extensible Attributes**:
+
+The `DocumentMetadata` design separates universal attributes from document-type-specific metadata:
+
+| Attribute Category | Location | Examples | Rationale |
+|-------------------|----------|----------|-----------|
+| **Core Attributes** | Type-safe struct fields | `UUID`, `Name`, `Tags`, `CreatedTime`, `Project` | Universal across all document types, searchable, type-safe validation |
+| **Extensible Attributes** | `ExtendedMetadata` map | `id: "rfc-010"`, `sidebar_position: 10`, `rfc_type: "Architecture"` | Document-type-specific, flexible schema, no type safety needed |
+
+**Frontmatter Mapping Example**:
+
+```yaml
+# Document frontmatter (YAML)
+---
+id: rfc-010
+title: "RFC-010: Diff Classification and Correlation System"
+status: Draft
+author: Engineering Team
+created: 2025-11-08
+updated: 2025-11-08
+tags: [rfc, classification, diff, correlation, observability]
+project_id: agf-iac-remediation-poc
+doc_uuid: 7e8f4a2c-9d5b-4c1e-a8f7-3b2d1e6c9a4f
+sidebar_position: 10
+---
+```
+
+```go
+// Maps to DocumentMetadata
+metadata := DocumentMetadata{
+    // Core: Identity
+    UUID:         "7e8f4a2c-9d5b-4c1e-a8f7-3b2d1e6c9a4f",
+    ProviderType: "local",
+    ProviderID:   "local:docs/rfc/rfc-010.md",
+
+    // Core: Metadata
+    Name:         "RFC-010: Diff Classification and Correlation System",
+    CreatedTime:  parseTime("2025-11-08"),
+    ModifiedTime: parseTime("2025-11-08"),
+
+    // Core: Ownership
+    OwningTeam:   "Engineering Team",
+
+    // Core: Organization
+    Project:      "agf-iac-remediation-poc",
+    Tags:         []string{"rfc", "classification", "diff", "correlation", "observability"},
+
+    // Core: Lifecycle
+    WorkflowStatus: "Draft",
+    SyncStatus:     "canonical",
+
+    // Extensible: Document-type-specific
+    ExtendedMetadata: map[string]any{
+        "id":               "rfc-010",          // RFC-specific ID format
+        "sidebar_position": 10,                 // UI/presentation metadata
+        "document_type":    "rfc",              // Type classification
+    },
+}
+```
+
+**Benefits of This Design**:
+1. **Type Safety**: Core attributes have compile-time validation and autocomplete
+2. **Searchability**: Core attributes can be efficiently indexed and queried
+3. **Flexibility**: New document types can add custom metadata without schema changes
+4. **Backward Compatibility**: Adding new core attributes doesn't break existing code
+5. **Clear Contracts**: API consumers know which fields are always present
+
+**When to Use Core vs Extensible**:
+- **Use Core** for: Universal metadata, search/filter criteria, identity, timestamps, ownership
+- **Use Extensible** for: Document-type-specific IDs, UI preferences, type-specific classifications
 
 #### 2. DocumentContent with Backend Revision
 
@@ -415,7 +504,7 @@ type RevisionInfo struct {
     ProviderID      string           `json:"providerID"`
     BackendRevision *BackendRevision `json:"backendRevision"`
     ContentHash     string           `json:"contentHash"`
-    Status          string           `json:"status"` // "canonical", "mirror", "conflict"
+    SyncStatus      string           `json:"syncStatus"` // "canonical", "mirror", "conflict"
 }
 
 // ContentComparison represents a content comparison result
@@ -761,11 +850,17 @@ All interfaces are REQUIRED. The matrix shows how each provider satisfies them:
 
 **Week 1: Define Hermes Types**
 - [ ] Create `pkg/workspace/types.go` with native types
-- [ ] Define `DocumentMetadata`, `DocumentContent`, `BackendRevision`
+- [ ] Define `DocumentMetadata` with core and extensible attributes:
+  - [ ] Core fields: UUID, Name, Tags, CreatedTime, ModifiedTime
+  - [ ] Ownership: Owner, OwningTeam, Contributors
+  - [ ] Lifecycle: SyncStatus, WorkflowStatus
+  - [ ] Extensible: ExtendedMetadata map
+- [ ] Define `DocumentContent`, `BackendRevision`
 - [ ] Define `UserIdentity`, `AlternateIdentity`
 - [ ] Define `FilePermission`, `Team`, `RevisionInfo`
 - [ ] Add JSON/GORM serialization tags
 - [ ] Write comprehensive tests for type conversions
+- [ ] Create frontmatter parsing utilities for ExtendedMetadata
 
 **Week 2: Create Focused Provider Interfaces**
 - [ ] Define focused interfaces: `DocumentProvider`, `ContentProvider`, `RevisionTrackingProvider`
@@ -781,12 +876,17 @@ All interfaces are REQUIRED. The matrix shows how each provider satisfies them:
 - [ ] Implement all 7 interfaces using Google APIs
 - [ ] Add BackendRevision support (Google Doc revision numbers)
 - [ ] Add UserIdentity support with alternate emails
+- [ ] Map Google Drive metadata to core DocumentMetadata fields (tags, ownership)
+- [ ] Handle ExtendedMetadata for Google-specific attributes
 - [ ] Write conversion helpers (Google types → Hermes types)
 - [ ] Comprehensive unit tests
 
 **Week 4: Local Workspace Adapter**
 - [ ] Implement Document/Content/RevisionTracking locally (Git)
 - [ ] Add BackendRevision support (Git commit SHAs)
+- [ ] Parse frontmatter (YAML/TOML) to populate DocumentMetadata
+- [ ] Map frontmatter to core fields and ExtendedMetadata
+- [ ] Support tags, workflow status, and project association
 - [ ] Implement basic PermissionProvider (metadata-based)
 - [ ] Create RemoteAPIClient for delegated interfaces (People, Team, Notification)
 - [ ] Integration tests with delegation
