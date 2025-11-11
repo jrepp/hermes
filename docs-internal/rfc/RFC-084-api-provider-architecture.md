@@ -472,9 +472,10 @@ type RevisionTrackingProvider interface {
 }
 
 // ===================================================================
-// OPTIONAL INTERFACE: PermissionProvider
+// REQUIRED INTERFACE: PermissionProvider
 // ===================================================================
 // PermissionProvider handles file sharing and access control
+// NOTE: ALL providers must implement this - either locally or via delegation
 type PermissionProvider interface {
     // ShareDocument grants access to a user/group
     ShareDocument(ctx context.Context, providerID, email, role string) error
@@ -493,11 +494,12 @@ type PermissionProvider interface {
 }
 
 // ===================================================================
-// OPTIONAL INTERFACE: PeopleProvider
+// REQUIRED INTERFACE: PeopleProvider
 // ===================================================================
 // PeopleProvider handles user directory operations
+// NOTE: ALL providers must implement this - either locally or via delegation
 //
-// NOTE: Renamed from "DirectoryProvider" to avoid confusion with file directories
+// Renamed from "DirectoryProvider" to avoid confusion with file directories
 // This is about PEOPLE/USERS, not file system directories
 type PeopleProvider interface {
     // SearchPeople searches for users in the directory
@@ -521,11 +523,12 @@ type PeopleProvider interface {
 }
 
 // ===================================================================
-// OPTIONAL INTERFACE: TeamProvider
+// REQUIRED INTERFACE: TeamProvider
 // ===================================================================
 // TeamProvider handles group/team operations
+// NOTE: ALL providers must implement this - either locally or via delegation
 //
-// NOTE: Renamed from "GroupProvider" to avoid generic term confusion
+// Renamed from "GroupProvider" to avoid generic term confusion
 type TeamProvider interface {
     // ListTeams lists teams matching query
     ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*Team, error)
@@ -541,11 +544,12 @@ type TeamProvider interface {
 }
 
 // ===================================================================
-// OPTIONAL INTERFACE: NotificationProvider
+// REQUIRED INTERFACE: NotificationProvider
 // ===================================================================
 // NotificationProvider handles email/notification sending
+// NOTE: ALL providers must implement this - either locally or via delegation
 //
-// NOTE: Renamed from "EmailProvider" to be more generic
+// Renamed from "EmailProvider" to be more generic
 type NotificationProvider interface {
     // SendEmail sends an email notification
     SendEmail(ctx context.Context, to []string, from, subject, body string) error
@@ -557,45 +561,95 @@ type NotificationProvider interface {
 // ===================================================================
 // COMPOSITE INTERFACE: WorkspaceProvider
 // ===================================================================
-// WorkspaceProvider is the main provider interface that composes focused interfaces
+// WorkspaceProvider is the main provider interface that composes ALL focused interfaces
+//
+// CRITICAL DESIGN PRINCIPLE: All interfaces are REQUIRED.
+// Providers must implement all 7 interfaces either:
+//   1. Locally (e.g., Google implements PeopleProvider via Google Directory API)
+//   2. Via delegation to remote API (e.g., Local delegates PeopleProvider to remote Hermes)
+//
+// This ensures consistent API surface - handlers never need capability checks.
 type WorkspaceProvider interface {
-    // Core interfaces (REQUIRED)
-    DocumentProvider
-    ContentProvider
-    RevisionTrackingProvider
+    // ALL INTERFACES REQUIRED
+    DocumentProvider          // Document CRUD
+    ContentProvider           // Content operations with revision tracking
+    RevisionTrackingProvider  // Backend-specific revision management
+    PermissionProvider        // File sharing and access control
+    PeopleProvider            // User directory and identity resolution
+    TeamProvider              // Team/group operations
+    NotificationProvider      // Email/notification sending
 
-    // Optional interfaces (checked via type assertion):
-    // - PermissionProvider (if provider supports permissions)
-    // - PeopleProvider (if provider has user directory)
-    // - TeamProvider (if provider supports teams/groups)
-    // - NotificationProvider (if provider can send notifications)
-
-    // Name returns the provider name
-    Name() string
-
-    // ProviderType returns the provider type for DocID
+    // Metadata
+    Name() string         // Provider name for logging
     ProviderType() string // "google", "local", "office365", "github", "api"
 }
+```
 
-// Capability checking functions
-func SupportsPermissions(provider WorkspaceProvider) bool {
-    _, ok := provider.(PermissionProvider)
-    return ok
+**Provider Implementation Patterns**:
+
+**Pattern 1: Fully Local Implementation** (Google Workspace):
+```go
+type GoogleWorkspaceProvider struct {
+    driveService     *drive.Service
+    docsService      *docs.Service
+    directoryService *admin.Service
+    gmailService     *gmail.Service
 }
 
-func SupportsPeople(provider WorkspaceProvider) bool {
-    _, ok := provider.(PeopleProvider)
-    return ok
+// Implements ALL 7 interfaces locally using Google APIs
+func (p *GoogleWorkspaceProvider) SearchPeople(ctx context.Context, query string) ([]*UserIdentity, error) {
+    // Use Google Directory API
+    people, err := p.directoryService.Users.List().Query(query).Do()
+    // ...
+}
+```
+
+**Pattern 2: Hybrid Implementation** (Local with Delegation):
+```go
+type LocalWorkspaceProvider struct {
+    storage       *LocalStorage      // Implements Document, Content, RevisionTracking locally
+    remoteAPI     *RemoteAPIClient   // Delegates People, Team, Notification to remote
+    permissionMgr *LocalPermissions  // Simple metadata-based permissions
 }
 
-func SupportsTeams(provider WorkspaceProvider) bool {
-    _, ok := provider.(TeamProvider)
-    return ok
+// Implements DocumentProvider locally (Git)
+func (p *LocalWorkspaceProvider) GetDocument(ctx context.Context, providerID string) (*DocumentMetadata, error) {
+    // Read from local filesystem
+    return p.storage.GetDocument(ctx, providerID)
 }
 
-func SupportsNotifications(provider WorkspaceProvider) bool {
-    _, ok := provider.(NotificationProvider)
-    return ok
+// Delegates PeopleProvider to remote API
+func (p *LocalWorkspaceProvider) SearchPeople(ctx context.Context, query string) ([]*UserIdentity, error) {
+    // Delegate to remote Hermes instance
+    return p.remoteAPI.SearchPeople(ctx, query)
+}
+
+// Delegates NotificationProvider to remote API
+func (p *LocalWorkspaceProvider) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+    // Delegate to remote Hermes instance
+    return p.remoteAPI.SendEmail(ctx, to, from, subject, body)
+}
+```
+
+**Pattern 3: Full Delegation** (API Provider):
+```go
+type APIProvider struct {
+    client       *http.Client
+    baseURL      string
+    authToken    string
+}
+
+// Delegates ALL interfaces to remote Hermes
+func (p *APIProvider) GetDocument(ctx context.Context, providerID string) (*DocumentMetadata, error) {
+    url := fmt.Sprintf("%s/api/v2/documents/%s", p.baseURL, providerID)
+    // HTTP GET request
+    // ...
+}
+
+func (p *APIProvider) SearchPeople(ctx context.Context, query string) ([]*UserIdentity, error) {
+    url := fmt.Sprintf("%s/api/v2/people/search?q=%s", p.baseURL, query)
+    // HTTP GET request
+    // ...
 }
 ```
 
@@ -618,34 +672,77 @@ func SupportsNotifications(provider WorkspaceProvider) bool {
 5. **RevisionTrackingProvider.GetAllDocumentRevisions**: Returns all revisions across ALL backends for a UUID (critical for migration)
 ```
 
-**Provider Capability Matrix** (Updated Interface Names):
+**Provider Implementation Matrix**:
+
+All interfaces are REQUIRED. The matrix shows how each provider satisfies them:
 
 | Provider | Document | Content | Revision | Permission | People | Team | Notification |
 |----------|----------|---------|----------|------------|--------|------|--------------|
-| **Google Workspace** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Local (Git)** | ✅ | ✅ | ✅ | ⚠️ Basic | ❌ | ❌ | ❌ |
-| **Office 365** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **GitHub** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **API (Remote)** | ✅ | 🔍* | 🔍* | 🔍* | 🔍* | 🔍* | 🔍* |
+| **Google Workspace** | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local |
+| **Local (Git)** | 🟢 Local | 🟢 Local | 🟢 Local | 🟡 Basic | 🔵 Delegated | 🔵 Delegated | 🔵 Delegated |
+| **Office 365** | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local |
+| **GitHub** | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🟢 Local | 🔵 Delegated |
+| **API (Remote)** | 🔵 Delegated | 🔵 Delegated | 🔵 Delegated | 🔵 Delegated | 🔵 Delegated | 🔵 Delegated | 🔵 Delegated |
 
-*🔍 = Capability discovered from remote Hermes instance via `/api/v2/capabilities` endpoint
+**Legend**:
+- 🟢 **Local**: Implemented directly using provider's native APIs
+- 🔵 **Delegated**: Delegated to remote Hermes API
+- 🟡 **Basic**: Simple local implementation (e.g., metadata-based permissions)
 
-**Notes**:
-- **Core Interfaces** (Document, Content, RevisionTracking): REQUIRED for all providers
-- **Optional Interfaces**: Providers opt-in via interface implementation
-- **Local Provider**: Limited permissions (metadata-based), no external user directory
-- **GitHub Provider**: Full revision tracking via Git, teams via GitHub teams, no email sending
-- **API Provider**: Delegates to remote Hermes, capabilities depend on remote backend
+**Implementation Details**:
 
-**Benefits of Focused Interfaces**:
+**Google Workspace**: Fully local implementation
+- Document/Content: Google Drive & Docs APIs
+- RevisionTracking: Drive revision history
+- Permission: Drive sharing API
+- People: Google Directory API
+- Team: Google Groups API
+- Notification: Gmail API
 
-1. **Separation of Concerns**: Each interface has single responsibility (documents, content, revisions, etc.)
-2. **Capability Detection**: Check support via type assertion: `_, ok := provider.(PeopleProvider)`
-3. **Easier Testing**: Mock only needed interfaces (e.g., just `DocumentProvider` for CRUD tests)
-4. **Incremental Implementation**: API provider starts with core 3, adds optionals later
-5. **Provider Flexibility**: Local doesn't need `TeamProvider`, GitHub doesn't need `NotificationProvider`
-6. **Clearer Documentation**: Each interface self-contained with focused contract
-7. **Multi-Backend Ready**: All interfaces designed for UUID-based multi-backend tracking
+**Local (Git)**: Hybrid implementation (local + delegated)
+- Document/Content/Revision: Local Git operations
+- Permission: Simple metadata-based (file ownership tracking)
+- People/Team/Notification: **Delegated to remote Hermes**
+
+**Office 365**: Fully local implementation (planned)
+- Document/Content: OneDrive & Word APIs
+- RevisionTracking: O365 version history
+- Permission: O365 sharing API
+- People: Azure AD API
+- Team: Microsoft Teams API
+- Notification: Outlook API
+
+**GitHub**: Mostly local, one delegated
+- Document/Content: GitHub API (files in repos)
+- RevisionTracking: Git commit history via GitHub API
+- Permission: GitHub repository permissions
+- People: GitHub users API
+- Team: GitHub teams API
+- Notification: **Delegated to remote Hermes** (GitHub can't send arbitrary emails)
+
+**API (Remote)**: Full delegation
+- All 7 interfaces delegate to remote Hermes instance
+
+**Benefits of Required Interfaces with Delegation**:
+
+1. **Consistent API Surface**: Handlers never need capability checks - all providers implement all interfaces
+2. **Simplified Handler Logic**:
+   ```go
+   // NO capability checking needed!
+   func (s *Server) handleShareDocument(w http.ResponseWriter, r *http.Request) {
+       // Always works - either local or delegated
+       err := s.workspace.ShareDocument(ctx, docID, email, role)
+   }
+   ```
+3. **Flexible Implementation**: Providers choose local vs delegated based on backend capabilities
+4. **Separation of Concerns**: Each interface has single responsibility (documents, content, revisions, etc.)
+5. **Easier Testing**: Mock only needed interfaces (e.g., just `DocumentProvider` for CRUD tests)
+6. **Incremental Development**: Start with full delegation, gradually move to local implementation
+7. **Deployment Flexibility**:
+   - Development: Local provider delegates everything to staging Hermes
+   - Production: Local provider implements locally where possible
+8. **Multi-Backend Ready**: All interfaces designed for UUID-based multi-backend tracking
+9. **Graceful Degradation**: Delegated operations fail gracefully with clear error messages
 
 3. **Adapter Pattern for Existing Providers**:
 
@@ -1224,10 +1321,53 @@ func (p *Provider) SearchPeople(ctx context.Context, query string) ([]workspace.
 
 ### Configuration
 
-Add API provider configuration to `internal/config/config.go`:
-
+**Configuration Pattern 1: Full Local Implementation** (Google Workspace):
 ```hcl
-# Example: Edge Hermes that delegates to central instance
+# Google implements all interfaces locally
+providers {
+  workspace = "google"
+  search    = "algolia"
+}
+
+google_workspace {
+  credentials_file = "credentials.json"
+  domain          = "example.com"
+  # All interfaces satisfied via Google APIs
+}
+```
+
+**Configuration Pattern 2: Hybrid (Local + Delegation)**:
+```hcl
+# Local provider with delegation to remote for missing capabilities
+providers {
+  workspace = "local"
+  search    = "meilisearch"
+}
+
+local_workspace {
+  base_path = "/var/hermes/docs"
+  docs_path = "docs"
+
+  # Delegation configuration for interfaces not implemented locally
+  delegate {
+    # Delegate People, Team, Notification to remote Hermes
+    people_provider       = "remote_api"
+    team_provider         = "remote_api"
+    notification_provider = "remote_api"
+
+    # Remote API configuration
+    remote_api {
+      base_url   = "https://central.hermes.example.com"
+      auth_token = env("HERMES_DELEGATION_TOKEN")
+      timeout    = "30s"
+    }
+  }
+}
+```
+
+**Configuration Pattern 3: Full Delegation** (Edge/Thin Client):
+```hcl
+# Edge Hermes that delegates everything to central instance
 providers {
   workspace = "api"
   search    = "api"
@@ -1239,12 +1379,38 @@ api_workspace {
   auth_token = env("HERMES_API_TOKEN")
   tls_verify = true
   timeout    = "30s"
+
+  # All 7 interfaces delegated to remote
 }
 
-# API search provider config (optional, if search also proxied)
+# API search provider config
 api_search {
   base_url  = "https://central.hermes.example.com"
   auth_token = env("HERMES_API_TOKEN")
+}
+```
+
+**Configuration Pattern 4: GitHub with Notification Delegation**:
+```hcl
+providers {
+  workspace = "github"
+  search    = "meilisearch"
+}
+
+github_workspace {
+  token        = env("GITHUB_TOKEN")
+  organization = "hashicorp"
+  repository   = "rfcs"
+
+  # GitHub can't send arbitrary emails, delegate to remote
+  delegate {
+    notification_provider = "remote_api"
+
+    remote_api {
+      base_url   = "https://hermes.example.com"
+      auth_token = env("HERMES_DELEGATION_TOKEN")
+    }
+  }
 }
 ```
 
