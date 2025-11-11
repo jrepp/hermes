@@ -26,6 +26,67 @@ This RFC proposes a refactoring of the Hermes provider architecture to support a
 
 ## Context
 
+### Current Document Model (RFC-082 Foundation)
+
+Hermes uses a UUID-based document identification system where documents can exist across multiple backends:
+
+**Core Concepts**:
+- **UUID**: Stable global identifier (`550e8400-e29b-41d4-a716-446655440000`)
+- **ProviderID**: Backend-specific identifier (`google:1a2b3c4d`, `local:docs/rfc.md`, `github:owner/repo/path@commit`)
+- **Multi-Backend Tracking**: Same document UUID can have multiple active revisions across different backends
+
+**Example - Document Across Multiple Backends**:
+```
+Document UUID: 550e8400-e29b-41d4-a716-446655440000
+Title: "RFC-001: API Gateway Design"
+
+┌─────────────────────────────────────────────────────────────┐
+│ Revision 1: Google Workspace (Source of Truth)             │
+├─────────────────────────────────────────────────────────────┤
+│ ProviderID: google:1a2b3c4d5e6f7890                         │
+│ Backend Revision: Google Doc revision v123                  │
+│ Content Hash: sha256:abc123...                              │
+│ Last Modified: 2025-10-15T14:30:00Z                         │
+│ Status: canonical                                            │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ Revision 2: Local Git (Migrated Copy)                       │
+├─────────────────────────────────────────────────────────────┤
+│ ProviderID: local:docs/rfc-001.md                           │
+│ Backend Revision: Git commit a1b2c3d4e5f6                   │
+│ Content Hash: sha256:abc123...  ✅ matches Google           │
+│ Last Modified: 2025-10-01T09:00:00Z                         │
+│ Status: target                                               │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ Revision 3: Office 365 (Mirror for Collaboration)          │
+├─────────────────────────────────────────────────────────────┤
+│ ProviderID: office365:ABC-DEF-123-456                       │
+│ Backend Revision: O365 version 2.1                          │
+│ Content Hash: sha256:def456...  ⚠️ drift detected          │
+│ Last Modified: 2025-10-20T11:15:00Z                         │
+│ Status: conflict                                             │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ Revision 4: GitHub (Public Documentation)                   │
+├─────────────────────────────────────────────────────────────┤
+│ ProviderID: github:hashicorp/rfcs/docs/rfc-001.md@e7f8g9h  │
+│ Backend Revision: commit e7f8g9h0i1j2                       │
+│ Content Hash: sha256:abc123...  ✅ matches Google           │
+│ Last Modified: 2025-10-16T10:00:00Z                         │
+│ Status: mirror                                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Provider Interface Implications**:
+1. Providers must work with DocID (UUID + ProviderID) system
+2. Each backend has its own revision tracking mechanism
+3. Content operations need to return backend-specific revision info
+4. Providers need to support conflict detection across backends
+
 ### Current Provider Architecture
 
 Hermes currently supports three types of providers, each with direct backend integrations:
@@ -161,63 +222,139 @@ type Provider interface {
 **Solution**: Introduce Hermes-native types and create adapters:
 
 1. **Define Hermes Types** (`pkg/workspace/types.go`):
+
+These types support multi-backend document tracking with UUID-based identification:
+
 ```go
-// FileMetadata represents provider-agnostic file metadata
-type FileMetadata struct {
-    ID          string
-    Name        string
-    MimeType    string
-    CreatedTime time.Time
-    ModifiedTime time.Time
-    Owner       string
-    Parents     []string
-    Permissions []Permission
-    // ... other common fields
+// DocumentMetadata represents provider-agnostic document metadata
+// Works with DocID system (UUID + ProviderID)
+type DocumentMetadata struct {
+    // Global identifier (RFC-082)
+    UUID docid.UUID `json:"uuid"`
+
+    // Backend-specific identifier
+    ProviderType string `json:"providerType"` // "google", "local", "office365", "github"
+    ProviderID   string `json:"providerID"`   // Backend-specific ID
+
+    // Metadata
+    Name         string    `json:"name"`
+    MimeType     string    `json:"mimeType"`
+    CreatedTime  time.Time `json:"createdTime"`
+    ModifiedTime time.Time `json:"modifiedTime"`
+
+    // Ownership (unified identity aware)
+    Owner        *UserIdentity `json:"owner"`
+    Contributors []UserIdentity `json:"contributors,omitempty"`
+
+    // Hierarchy
+    Parents      []string `json:"parents,omitempty"`
+    Project      string   `json:"project,omitempty"`
+
+    // Multi-backend tracking
+    ContentHash  string `json:"contentHash"` // SHA-256 for drift detection
+    Status       string `json:"status"`      // "canonical", "mirror", "conflict", "archived"
 }
 
-// DocumentContent represents document content
+// DocumentContent represents document content with backend-specific revision info
 type DocumentContent struct {
-    ID      string
-    Title   string
-    Body    string
-    Format  string // "markdown", "html", "plain"
+    // Document identification
+    UUID       docid.UUID `json:"uuid"`
+    ProviderID string     `json:"providerID"`
+
+    // Content
+    Title  string `json:"title"`
+    Body   string `json:"body"`
+    Format string `json:"format"` // "markdown", "html", "plain", "richtext"
+
+    // Backend-specific revision information
+    BackendRevision *BackendRevision `json:"backendRevision"`
+
+    // Content tracking
+    ContentHash string    `json:"contentHash"` // SHA-256
+    LastModified time.Time `json:"lastModified"`
 }
 
-// Person represents a workspace user
-type Person struct {
-    Email       string
-    DisplayName string
-    PhotoURL    string
+// BackendRevision captures backend-specific revision metadata
+type BackendRevision struct {
+    ProviderType string `json:"providerType"`
+
+    // Backend-specific revision ID (varies by provider)
+    RevisionID string `json:"revisionID"` // Examples:
+    //   Google: "123" (Drive revision number)
+    //   Git: "a1b2c3d4e5f6" (commit SHA)
+    //   Office365: "2.1" (version number)
+    //   GitHub: "e7f8g9h0i1j2" (commit SHA)
+
+    // Revision metadata
+    ModifiedTime time.Time      `json:"modifiedTime"`
+    ModifiedBy   *UserIdentity  `json:"modifiedBy,omitempty"`
+    Comment      string         `json:"comment,omitempty"`
+    KeepForever  bool           `json:"keepForever,omitempty"`
+
+    // Backend-specific metadata (flexible for different systems)
+    Metadata     map[string]any `json:"metadata,omitempty"`
 }
 
-// Permission represents file access permissions
-type Permission struct {
-    ID           string
-    Email        string
-    Role         string // "owner", "writer", "reader"
-    Type         string // "user", "group", "domain"
+// UserIdentity represents a unified user identity across multiple auth providers
+// Addresses the requirement: jacob.repp@hashicorp.com = jrepp@ibm.com (same person)
+type UserIdentity struct {
+    // Primary identifier (canonical email)
+    Email       string `json:"email"`
+    DisplayName string `json:"displayName"`
+    PhotoURL    string `json:"photoURL,omitempty"`
+
+    // Unified identity tracking
+    UnifiedUserID string `json:"unifiedUserId,omitempty"` // Links identities across providers
+
+    // Provider-specific identities (same person, multiple providers)
+    AlternateEmails []AlternateIdentity `json:"alternateEmails,omitempty"`
 }
 
-// Group represents a workspace group (for enterprise providers)
-type Group struct {
-    ID          string
-    Email       string
-    Name        string
-    Description string
-    MemberCount int
+// AlternateIdentity represents the same user in a different identity provider
+type AlternateIdentity struct {
+    Email        string `json:"email"`        // e.g., "jrepp@ibm.com"
+    Provider     string `json:"provider"`     // e.g., "ibm-verify", "google-workspace"
+    ProviderUserID string `json:"providerUserId,omitempty"`
 }
 
-// Revision represents a document revision
-type Revision struct {
-    ID           string
-    ModifiedTime time.Time
-    KeepForever  bool
+// FilePermission represents file access permissions
+type FilePermission struct {
+    ID    string `json:"id"`
+    Email string `json:"email"`
+    Role  string `json:"role"` // "owner", "writer", "reader"
+    Type  string `json:"type"` // "user", "group", "domain", "anyone"
+
+    // Identity tracking
+    User *UserIdentity `json:"user,omitempty"`
+}
+
+// Team represents a group/team (renamed from Group to avoid confusion)
+type Team struct {
+    ID          string `json:"id"`
+    Email       string `json:"email,omitempty"`
+    Name        string `json:"name"`
+    Description string `json:"description,omitempty"`
+    MemberCount int    `json:"memberCount"`
+
+    // Provider-specific
+    ProviderType string `json:"providerType"`
+    ProviderID   string `json:"providerID"`
+}
+
+// RevisionInfo represents a document revision for conflict detection
+type RevisionInfo struct {
+    UUID             docid.UUID       `json:"uuid"`
+    ProviderType     string           `json:"providerType"`
+    ProviderID       string           `json:"providerID"`
+    BackendRevision  *BackendRevision `json:"backendRevision"`
+    ContentHash      string           `json:"contentHash"`
+    Status           string           `json:"status"` // "canonical", "mirror", "conflict"
 }
 ```
 
 2. **Split Provider into Focused Interfaces**:
 
-Instead of a single monolithic interface, create focused provider interfaces that can be composed:
+Instead of a single monolithic interface with ~30 methods, create **7 focused provider interfaces** that can be composed. Each interface is carefully designed to support multi-backend document tracking:
 
 ```go
 // Provider is the legacy interface (Google types) - DEPRECATED
@@ -226,103 +363,289 @@ type Provider interface {
     // ... existing ~30 methods
 }
 
-// FileProvider handles file operations (CRUD on files/folders)
-type FileProvider interface {
-    GetFile(ctx context.Context, fileID string) (*FileMetadata, error)
-    CopyFile(ctx context.Context, srcID, destFolderID, name string) (*FileMetadata, error)
-    MoveFile(ctx context.Context, fileID, destFolderID string) (*FileMetadata, error)
-    DeleteFile(ctx context.Context, fileID string) error
-    RenameFile(ctx context.Context, fileID, newName string) error
+// ===================================================================
+// CORE INTERFACE: DocumentProvider
+// ===================================================================
+// DocumentProvider handles document metadata operations (CRUD)
+// Works with DocID system (UUID + ProviderID)
+//
+// NOTE: Renamed from "FileProvider" to avoid confusion with file system directories
+type DocumentProvider interface {
+    // GetDocument retrieves document metadata by backend-specific ID
+    // Returns: DocumentMetadata with UUID, ProviderID, status, content hash
+    GetDocument(ctx context.Context, providerID string) (*DocumentMetadata, error)
 
-    // Folder operations
+    // GetDocumentByUUID retrieves document metadata by UUID
+    // Useful when UUID is known but provider ID is not
+    GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*DocumentMetadata, error)
+
+    // CreateDocument creates a new document from template
+    // Returns: DocumentMetadata with newly generated UUID
+    CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*DocumentMetadata, error)
+
+    // CreateDocumentWithUUID creates document with explicit UUID (for migration)
+    CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*DocumentMetadata, error)
+
+    // CopyDocument copies a document (preserves UUID if in frontmatter/metadata)
+    CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*DocumentMetadata, error)
+
+    // MoveDocument moves a document to different folder
+    MoveDocument(ctx context.Context, providerID, destFolderID string) (*DocumentMetadata, error)
+
+    // DeleteDocument deletes a document
+    DeleteDocument(ctx context.Context, providerID string) error
+
+    // RenameDocument renames a document
+    RenameDocument(ctx context.Context, providerID, newName string) error
+
+    // CreateFolder creates a folder/directory
+    CreateFolder(ctx context.Context, name, parentID string) (*DocumentMetadata, error)
+
+    // GetSubfolder finds a subfolder by name
     GetSubfolder(ctx context.Context, parentID, name string) (string, error)
-    CreateFolder(ctx context.Context, name, parentID string) (*FileMetadata, error)
-    CreateShortcut(ctx context.Context, targetID, parentID string) (*FileMetadata, error)
 }
 
-// ContentProvider handles document content operations
+// ===================================================================
+// CORE INTERFACE: ContentProvider
+// ===================================================================
+// ContentProvider handles document content operations with revision tracking
+//
+// CRITICAL: Content operations must return BackendRevision info for
+// multi-backend conflict detection (e.g., Google Doc v123 vs Git commit abc)
 type ContentProvider interface {
-    GetDocumentContent(ctx context.Context, fileID string) (*DocumentContent, error)
-    UpdateDocumentContent(ctx context.Context, fileID, content string) error
+    // GetContent retrieves document content with backend-specific revision
+    // Returns: DocumentContent with BackendRevision (Google rev, Git commit, etc.)
+    GetContent(ctx context.Context, providerID string) (*DocumentContent, error)
 
-    // Batch operations for efficiency
-    GetDocumentContentBatch(ctx context.Context, fileIDs []string) ([]*DocumentContent, error)
+    // GetContentByUUID retrieves content using UUID (looks up providerID)
+    GetContentByUUID(ctx context.Context, uuid docid.UUID) (*DocumentContent, error)
+
+    // UpdateContent updates document content
+    // Returns: Updated DocumentContent with new BackendRevision and content hash
+    UpdateContent(ctx context.Context, providerID string, content string) (*DocumentContent, error)
+
+    // GetContentBatch retrieves multiple documents (efficient for migration)
+    GetContentBatch(ctx context.Context, providerIDs []string) ([]*DocumentContent, error)
+
+    // CompareContent compares content between two revisions
+    // Used for conflict detection during migration
+    CompareContent(ctx context.Context, providerID1, providerID2 string) (*ContentComparison, error)
 }
 
-// PermissionProvider handles file sharing and permissions
+// ContentComparison represents a content comparison result
+type ContentComparison struct {
+    UUID           docid.UUID
+    Revision1      *BackendRevision
+    Revision2      *BackendRevision
+    ContentMatch   bool   // True if content hashes match
+    HashDifference string // "same", "minor", "major"
+}
+
+// ===================================================================
+// CORE INTERFACE: RevisionTrackingProvider
+// ===================================================================
+// RevisionTrackingProvider handles backend-specific revision operations
+//
+// NOTE: Renamed from "RevisionProvider" to emphasize backend-specific tracking
+// Each backend (Google, Git, O365, GitHub) has its own revision system
+type RevisionTrackingProvider interface {
+    // GetRevisionHistory lists all revisions for a document in this backend
+    // Returns: List of BackendRevision ordered by time (newest first)
+    GetRevisionHistory(ctx context.Context, providerID string, limit int) ([]*BackendRevision, error)
+
+    // GetRevision retrieves a specific revision
+    GetRevision(ctx context.Context, providerID, revisionID string) (*BackendRevision, error)
+
+    // GetRevisionContent retrieves content at a specific revision
+    GetRevisionContent(ctx context.Context, providerID, revisionID string) (*DocumentContent, error)
+
+    // KeepRevisionForever marks a revision as permanent (if supported)
+    KeepRevisionForever(ctx context.Context, providerID, revisionID string) error
+
+    // GetAllDocumentRevisions returns all revisions across all backends for a UUID
+    // This is CRITICAL for multi-backend tracking:
+    //   - Returns Google Doc revisions (if exists in Google)
+    //   - Returns Git commits (if exists in Git)
+    //   - Returns O365 versions (if exists in O365)
+    // Used for conflict detection and migration status
+    GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*RevisionInfo, error)
+}
+
+// ===================================================================
+// OPTIONAL INTERFACE: PermissionProvider
+// ===================================================================
+// PermissionProvider handles file sharing and access control
 type PermissionProvider interface {
-    ShareFile(ctx context.Context, fileID, email, role string) error
-    ShareFileWithDomain(ctx context.Context, fileID, domain, role string) error
-    ListPermissions(ctx context.Context, fileID string) ([]Permission, error)
-    DeletePermission(ctx context.Context, fileID, permissionID string) error
+    // ShareDocument grants access to a user/group
+    ShareDocument(ctx context.Context, providerID, email, role string) error
+
+    // ShareDocumentWithDomain grants access to entire domain
+    ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error
+
+    // ListPermissions lists all permissions for a document
+    ListPermissions(ctx context.Context, providerID string) ([]*FilePermission, error)
+
+    // RemovePermission revokes access
+    RemovePermission(ctx context.Context, providerID, permissionID string) error
+
+    // UpdatePermission changes permission role
+    UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error
 }
 
-// DirectoryProvider handles people/user directory operations
-type DirectoryProvider interface {
-    SearchPeople(ctx context.Context, query string) ([]Person, error)
-    GetUser(ctx context.Context, email string) (*Person, error)
+// ===================================================================
+// OPTIONAL INTERFACE: PeopleProvider
+// ===================================================================
+// PeopleProvider handles user directory operations
+//
+// NOTE: Renamed from "DirectoryProvider" to avoid confusion with file directories
+// This is about PEOPLE/USERS, not file system directories
+type PeopleProvider interface {
+    // SearchPeople searches for users in the directory
+    SearchPeople(ctx context.Context, query string) ([]*UserIdentity, error)
+
+    // GetPerson retrieves a user by email
+    GetPerson(ctx context.Context, email string) (*UserIdentity, error)
+
+    // GetPersonByUnifiedID retrieves user by unified ID (cross-provider lookup)
+    // Example: Look up person by unified ID, returns all their email addresses
+    //   Input: unifiedID = "user-12345"
+    //   Output: UserIdentity{
+    //     Email: "jacob.repp@hashicorp.com",
+    //     AlternateEmails: [{Email: "jrepp@ibm.com", Provider: "ibm-verify"}]
+    //   }
+    GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*UserIdentity, error)
+
+    // ResolveIdentity resolves alternate identities for a user
+    // Used for identity unification: jacob.repp@hashicorp.com = jrepp@ibm.com
+    ResolveIdentity(ctx context.Context, email string) (*UserIdentity, error)
 }
 
-// GroupProvider handles group operations (optional, for enterprise providers)
-type GroupProvider interface {
-    ListGroups(ctx context.Context, domain, query string, maxResults int64) ([]Group, error)
-    ListUserGroups(ctx context.Context, userEmail string) ([]Group, error)
-    GetGroup(ctx context.Context, groupID string) (*Group, error)
+// ===================================================================
+// OPTIONAL INTERFACE: TeamProvider
+// ===================================================================
+// TeamProvider handles group/team operations
+//
+// NOTE: Renamed from "GroupProvider" to avoid generic term confusion
+type TeamProvider interface {
+    // ListTeams lists teams matching query
+    ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*Team, error)
+
+    // GetTeam retrieves team details
+    GetTeam(ctx context.Context, teamID string) (*Team, error)
+
+    // GetUserTeams lists all teams a user belongs to
+    GetUserTeams(ctx context.Context, userEmail string) ([]*Team, error)
+
+    // GetTeamMembers lists all members of a team
+    GetTeamMembers(ctx context.Context, teamID string) ([]*UserIdentity, error)
 }
 
-// EmailProvider handles email notifications (optional)
-type EmailProvider interface {
+// ===================================================================
+// OPTIONAL INTERFACE: NotificationProvider
+// ===================================================================
+// NotificationProvider handles email/notification sending
+//
+// NOTE: Renamed from "EmailProvider" to be more generic
+type NotificationProvider interface {
+    // SendEmail sends an email notification
     SendEmail(ctx context.Context, to []string, from, subject, body string) error
+
+    // SendEmailWithTemplate sends email using template
+    SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error
 }
 
-// RevisionProvider handles document revision management (optional)
-type RevisionProvider interface {
-    GetLatestRevision(ctx context.Context, fileID string) (*Revision, error)
-    KeepRevisionForever(ctx context.Context, fileID, revisionID string) (*Revision, error)
-    UpdateKeepRevisionForever(ctx context.Context, fileID, revisionID string, keepForever bool) error
-}
-
-// WorkspaceProvider is a composite that may implement multiple focused interfaces
-// This allows providers to opt-in to capabilities they support
+// ===================================================================
+// COMPOSITE INTERFACE: WorkspaceProvider
+// ===================================================================
+// WorkspaceProvider is the main provider interface that composes focused interfaces
 type WorkspaceProvider interface {
-    FileProvider
-    // Optional interfaces checked via type assertion:
-    // - ContentProvider (if provider supports direct content access)
+    // Core interfaces (REQUIRED)
+    DocumentProvider
+    ContentProvider
+    RevisionTrackingProvider
+
+    // Optional interfaces (checked via type assertion):
     // - PermissionProvider (if provider supports permissions)
-    // - DirectoryProvider (if provider has user directory)
-    // - GroupProvider (if provider supports groups)
-    // - EmailProvider (if provider can send emails)
-    // - RevisionProvider (if provider has revision history)
+    // - PeopleProvider (if provider has user directory)
+    // - TeamProvider (if provider supports teams/groups)
+    // - NotificationProvider (if provider can send notifications)
 
-    // Name returns the provider name for logging/debugging
+    // Name returns the provider name
     Name() string
+
+    // ProviderType returns the provider type for DocID
+    ProviderType() string // "google", "local", "office365", "github", "api"
 }
 
-// Capability checking pattern
-func SupportsContent(provider WorkspaceProvider) bool {
-    _, ok := provider.(ContentProvider)
-    return ok
-}
-
+// Capability checking functions
 func SupportsPermissions(provider WorkspaceProvider) bool {
     _, ok := provider.(PermissionProvider)
     return ok
 }
 
-func SupportsDirectory(provider WorkspaceProvider) bool {
-    _, ok := provider.(DirectoryProvider)
+func SupportsPeople(provider WorkspaceProvider) bool {
+    _, ok := provider.(PeopleProvider)
+    return ok
+}
+
+func SupportsTeams(provider WorkspaceProvider) bool {
+    _, ok := provider.(TeamProvider)
+    return ok
+}
+
+func SupportsNotifications(provider WorkspaceProvider) bool {
+    _, ok := provider.(NotificationProvider)
     return ok
 }
 ```
 
-**Benefits of Interface Splitting**:
+**Key Interface Naming Changes and Rationale**:
 
-1. **Separation of Concerns**: Each interface has a single, focused responsibility
-2. **Capability Detection**: Check if provider supports feature via type assertion
-3. **Easier Testing**: Mock only the interfaces you need for a test
-4. **Incremental Implementation**: API provider can implement core FileProvider first, add others later
-5. **Provider Flexibility**: Local provider might not support GroupProvider, and that's OK
-6. **Clearer Documentation**: Each interface documents its own contract
+| Old Name | New Name | Reason |
+|----------|----------|--------|
+| `FileProvider` | **`DocumentProvider`** | Avoids confusion with file system directories; we manage documents, not files |
+| `RevisionProvider` | **`RevisionTrackingProvider`** | Emphasizes backend-specific revision tracking (Google revs, Git commits, O365 versions) |
+| `DirectoryProvider` | **`PeopleProvider`** | "Directory" overloaded (file dirs vs user dir); "People" is unambiguous |
+| `GroupProvider` | **`TeamProvider`** | "Group" too generic; "Team" more specific for user groups/teams |
+| `EmailProvider` | **`NotificationProvider`** | More generic, allows future expansion to Slack/webhooks/etc. |
+
+**Critical Multi-Backend Design Features**:
+
+1. **DocumentMetadata includes UUID + ProviderID**: Every document has both stable UUID and backend-specific ID
+2. **BackendRevision captures backend-specific tracking**: Google Doc revision numbers, Git commit SHAs, O365 version numbers, GitHub commits
+3. **ContentHash for drift detection**: SHA-256 hash enables conflict detection across backends
+4. **UserIdentity supports identity unification**: `jacob.repp@hashicorp.com` = `jrepp@ibm.com` via UnifiedUserID
+5. **RevisionTrackingProvider.GetAllDocumentRevisions**: Returns all revisions across ALL backends for a UUID (critical for migration)
+```
+
+**Provider Capability Matrix** (Updated Interface Names):
+
+| Provider | Document | Content | Revision | Permission | People | Team | Notification |
+|----------|----------|---------|----------|------------|--------|------|--------------|
+| **Google Workspace** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Local (Git)** | ✅ | ✅ | ✅ | ⚠️ Basic | ❌ | ❌ | ❌ |
+| **Office 365** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **GitHub** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **API (Remote)** | ✅ | 🔍* | 🔍* | 🔍* | 🔍* | 🔍* | 🔍* |
+
+*🔍 = Capability discovered from remote Hermes instance via `/api/v2/capabilities` endpoint
+
+**Notes**:
+- **Core Interfaces** (Document, Content, RevisionTracking): REQUIRED for all providers
+- **Optional Interfaces**: Providers opt-in via interface implementation
+- **Local Provider**: Limited permissions (metadata-based), no external user directory
+- **GitHub Provider**: Full revision tracking via Git, teams via GitHub teams, no email sending
+- **API Provider**: Delegates to remote Hermes, capabilities depend on remote backend
+
+**Benefits of Focused Interfaces**:
+
+1. **Separation of Concerns**: Each interface has single responsibility (documents, content, revisions, etc.)
+2. **Capability Detection**: Check support via type assertion: `_, ok := provider.(PeopleProvider)`
+3. **Easier Testing**: Mock only needed interfaces (e.g., just `DocumentProvider` for CRUD tests)
+4. **Incremental Implementation**: API provider starts with core 3, adds optionals later
+5. **Provider Flexibility**: Local doesn't need `TeamProvider`, GitHub doesn't need `NotificationProvider`
+6. **Clearer Documentation**: Each interface self-contained with focused contract
+7. **Multi-Backend Ready**: All interfaces designed for UUID-based multi-backend tracking
 
 3. **Adapter Pattern for Existing Providers**:
 
