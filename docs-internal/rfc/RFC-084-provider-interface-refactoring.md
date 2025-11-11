@@ -116,15 +116,32 @@ Hermes currently supports three types of providers, each with direct backend int
     │ - Dex     │      │ - Google │      │ - Algolia  │
     │ - Okta    │      │ - Local  │      │ - Meili    │
     │ - Google  │      │          │      │            │
+    │ - GitHub  │      │          │      │            │
+    │ - IBM     │      │          │      │            │
+    │   Verify  │      │          │      │            │
     └───────────┘      └──────────┘      └────────────┘
        (OIDC)          (Direct)          (Direct)
 ```
+
+**Current Authentication Providers**:
+- **Dex**: Generic OIDC/OAuth2 provider with support for multiple identity backends
+- **Okta**: Enterprise identity management and SSO platform
+- **Google**: Google OAuth2/OIDC authentication
+- **GitHub**: GitHub OAuth2 authentication for developers
+- **IBM Verify**: IBM's cloud identity and access management platform (formerly IBM Cloud Identity)
+
+**Authentication Provider Characteristics**:
+- All support OIDC/OAuth2 protocols
+- Provide user identity, email, and profile information
+- Enable unified identity across multiple providers (e.g., jacob.repp@hashicorp.com = jrepp@ibm.com)
+- GitHub provides GitHub username and user ID for repository access
+- IBM Verify enables enterprise SSO with IBM Cloud and on-premise systems
 
 **Current Workspace Providers** (`pkg/workspace/provider.go`):
 - **Google Workspace**: Direct integration via Google Drive/Docs APIs
 - **Local**: Direct filesystem access for markdown-based documents
 
-**Provider Interface Characteristics**:
+**Workspace Provider Interface Characteristics**:
 - ~30 methods covering file operations, permissions, content, email, groups
 - Returns Google Drive/Docs types (`*drive.File`, `*docs.Document`)
 - Assumes direct backend access (no network proxy/delegation pattern)
@@ -250,7 +267,7 @@ The current architecture has several limitations:
 
 3. **No Remote Delegation**: Providers must directly access their backends. There's no way for one Hermes instance to delegate operations to another Hermes instance.
 
-4. **Limited Identity Unification**: No support for linking user identities across providers (jacob.repp@hashicorp.com = jrepp@ibm.com).
+4. **Limited Identity Unification**: No support for linking user identities across multiple authentication providers (jacob.repp@hashicorp.com = jrepp@ibm.com = jacob-repp on GitHub).
 
 ## Proposed Solution
 
@@ -448,7 +465,8 @@ type BackendRevision struct {
 
 ```go
 // UserIdentity represents a unified user identity across multiple auth providers
-// Addresses the requirement: jacob.repp@hashicorp.com = jrepp@ibm.com (same person)
+// Addresses the requirement: jacob.repp@hashicorp.com = jrepp@ibm.com = jacob-repp on GitHub (same person)
+// Supports multiple authentication providers: Google, GitHub, IBM Verify, Okta, Dex
 type UserIdentity struct {
     // Primary identifier (canonical email)
     Email       string `json:"email"`
@@ -464,9 +482,9 @@ type UserIdentity struct {
 
 // AlternateIdentity represents the same user in a different identity provider
 type AlternateIdentity struct {
-    Email          string `json:"email"`        // e.g., "jrepp@ibm.com"
-    Provider       string `json:"provider"`     // e.g., "ibm-verify", "google-workspace"
-    ProviderUserID string `json:"providerUserId,omitempty"`
+    Email          string `json:"email"`        // e.g., "jrepp@ibm.com", "jacob-repp@users.noreply.github.com"
+    Provider       string `json:"provider"`     // e.g., "ibm-verify", "google-workspace", "github", "okta", "dex"
+    ProviderUserID string `json:"providerUserId,omitempty"` // Provider-specific user ID
 }
 ```
 
@@ -663,12 +681,15 @@ type PeopleProvider interface {
     //   Input: unifiedID = "user-12345"
     //   Output: UserIdentity{
     //     Email: "jacob.repp@hashicorp.com",
-    //     AlternateEmails: [{Email: "jrepp@ibm.com", Provider: "ibm-verify"}]
+    //     AlternateEmails: [
+    //       {Email: "jrepp@ibm.com", Provider: "ibm-verify"},
+    //       {Email: "jacob-repp", Provider: "github", ProviderUserID: "12345678"},
+    //     ]
     //   }
     GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*UserIdentity, error)
 
     // ResolveIdentity resolves alternate identities for a user
-    // Used for identity unification: jacob.repp@hashicorp.com = jrepp@ibm.com
+    // Used for identity unification: jacob.repp@hashicorp.com = jrepp@ibm.com = jacob-repp on GitHub
     ResolveIdentity(ctx context.Context, email string) (*UserIdentity, error)
 }
 
