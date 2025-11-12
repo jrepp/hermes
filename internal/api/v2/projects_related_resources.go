@@ -1,9 +1,9 @@
 package api
 
 import (
-pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"encoding/json"
 	"errors"
+	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"net/http"
 
 	"github.com/hashicorp-forge/hermes/internal/server"
