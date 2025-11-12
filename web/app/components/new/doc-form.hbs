@@ -19,6 +19,7 @@
     class="px-2.5"
     placeholder="Enter a title"
     name="title"
+    {{on "input" this.onInput}}
     {{on "keydown" this.onKeydown}}
     as |F|
   >
@@ -50,6 +51,7 @@
       name="summary"
       class="mt-2 px-2.5 py-2 placeholder-color-palette-neutral-400"
       placeholder="One or two sentences outlining your doc."
+      {{on "input" this.onInput}}
       {{on "keydown" this.onKeydown}}
     />
   </div>

@@ -156,10 +156,10 @@ export default class NewDocFormComponent extends Component<NewDocFormComponentSi
   }
 
   /**
-   * Binds the FormData to our locally tracked properties.
-   * Conditionally validates.
+   * Updates tracked properties from form inputs.
+   * This ensures programmatic changes (like Playwright .fill()) are captured.
    */
-  @action protected onKeydown(e: KeyboardEvent) {
+  @action protected onInput() {
     const formObject = Object.fromEntries(new FormData(this.form).entries());
 
     assert("title is missing from formObject", "title" in formObject);
@@ -178,6 +178,17 @@ export default class NewDocFormComponent extends Component<NewDocFormComponentSi
       this.productArea = formObject["productArea"] as string;
     }
 
+    this.maybeValidate();
+  }
+
+  /**
+   * Binds the FormData to our locally tracked properties.
+   * Conditionally validates.
+   */
+  @action protected onKeydown(e: KeyboardEvent) {
+    // Update tracked properties on every keystroke
+    this.onInput();
+
     if (e.key === "Enter") {
       e.preventDefault();
       this.submit();
@@ -190,8 +201,6 @@ export default class NewDocFormComponent extends Component<NewDocFormComponentSi
         this.validate();
       });
     }
-
-    this.maybeValidate();
   }
 
   /**

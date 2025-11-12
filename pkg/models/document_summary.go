@@ -36,10 +36,10 @@ type DocumentSummary struct {
 	GenerationTimeMs *int   `gorm:"type:integer" json:"generationTimeMs,omitempty"`
 
 	// Document context at time of generation
-	DocumentTitle  string `gorm:"type:varchar(500)" json:"documentTitle,omitempty"`
-	DocumentType   string `gorm:"type:varchar(50);index:idx_doc_summaries_doc_type" json:"documentType,omitempty"`
-	ContentHash    string `gorm:"type:varchar(64);index:idx_doc_summaries_content_hash" json:"contentHash,omitempty"`
-	ContentLength  *int   `gorm:"type:integer" json:"contentLength,omitempty"`
+	DocumentTitle string `gorm:"type:varchar(500)" json:"documentTitle,omitempty"`
+	DocumentType  string `gorm:"type:varchar(50);index:idx_doc_summaries_doc_type" json:"documentType,omitempty"`
+	ContentHash   string `gorm:"type:varchar(64);index:idx_doc_summaries_content_hash" json:"contentHash,omitempty"`
+	ContentLength *int   `gorm:"type:integer" json:"contentLength,omitempty"`
 
 	// Timestamps
 	GeneratedAt time.Time `gorm:"not null;index:idx_doc_summaries_generated,sort:desc" json:"generatedAt"`
