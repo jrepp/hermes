@@ -30,10 +30,10 @@ func TestConvertToDocumentMetadata(t *testing.T) {
 		Owner:          "jacob.repp@hashicorp.com",
 		CompositeID:    &compositeID,
 		Metadata: map[string]any{
-			"tags":            []string{"rfc", "provider", "interface"},
-			"project":         "hermes-refactor",
-			"owning_team":     "Platform Team",
-			"workflow_status": "Draft",
+			"tags":             []string{"rfc", "provider", "interface"},
+			"project":          "hermes-refactor",
+			"owning_team":      "Platform Team",
+			"workflow_status":  "Draft",
 			"sidebar_position": 84,
 		},
 	}
@@ -208,13 +208,13 @@ func TestConvertFromDocumentMetadata(t *testing.T) {
 	now := time.Now().UTC()
 
 	meta := &workspace.DocumentMetadata{
-		UUID:           uuid,
-		ProviderType:   "local",
-		ProviderID:     "local:rfc-084",
-		Name:           "RFC-084",
-		MimeType:       "text/markdown",
-		CreatedTime:    now,
-		ModifiedTime:   now,
+		UUID:         uuid,
+		ProviderType: "local",
+		ProviderID:   "local:rfc-084",
+		Name:         "RFC-084",
+		MimeType:     "text/markdown",
+		CreatedTime:  now,
+		ModifiedTime: now,
 		Owner: &workspace.UserIdentity{
 			Email:       "test@example.com",
 			DisplayName: "Test User",

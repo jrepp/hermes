@@ -62,13 +62,13 @@ func DefaultCoreFields() map[string]bool {
 		"provider_id":   true,
 
 		// Core metadata
-		"title":        true,
-		"name":         true,
-		"mime_type":    true,
-		"created":      true,
-		"created_time": true,
-		"updated":      true,
-		"modified":     true,
+		"title":         true,
+		"name":          true,
+		"mime_type":     true,
+		"created":       true,
+		"created_time":  true,
+		"updated":       true,
+		"modified":      true,
 		"modified_time": true,
 
 		// Ownership
@@ -78,10 +78,10 @@ func DefaultCoreFields() map[string]bool {
 		"contributors": true,
 
 		// Organization
-		"parents":  true,
-		"project":  true,
+		"parents":    true,
+		"project":    true,
 		"project_id": true,
-		"tags":     true,
+		"tags":       true,
 
 		// Lifecycle
 		"sync_status":     true,
