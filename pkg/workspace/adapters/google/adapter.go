@@ -24,11 +24,29 @@ type Adapter struct {
 	service *Service
 }
 
+// Compile-time interface checks - ensures Adapter implements all RFC-084 interfaces
+var (
+	_ workspace.WorkspaceProvider        = (*Adapter)(nil)
+	_ workspace.DocumentProvider         = (*Adapter)(nil)
+	_ workspace.ContentProvider          = (*Adapter)(nil)
+	_ workspace.RevisionTrackingProvider = (*Adapter)(nil)
+	_ workspace.PermissionProvider       = (*Adapter)(nil)
+	_ workspace.PeopleProvider           = (*Adapter)(nil)
+	_ workspace.TeamProvider             = (*Adapter)(nil)
+	_ workspace.NotificationProvider     = (*Adapter)(nil)
+)
+
 // NewAdapter creates a new Google Workspace adapter.
 func NewAdapter(service *Service) workspace.WorkspaceProvider {
 	return &Adapter{
 		service: service,
 	}
+}
+
+// GetService returns the underlying Service for Google-specific operations.
+// This is useful for operations that need direct Google API access (e.g., GetDoc for suggestions).
+func (a *Adapter) GetService() *Service {
+	return a.service
 }
 
 // ===================================================================

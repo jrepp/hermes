@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -38,7 +37,7 @@ type DocumentContentResponse struct {
 func DocumentContentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if workspace provider supports content editing
-		if caps, ok := srv.LegacyProvider.(workspace.ProviderCapabilities); !ok || !caps.SupportsContentEditing() {
+		if caps, ok := srv.WorkspaceProvider.(workspace.ProviderCapabilities); !ok || !caps.SupportsContentEditing() {
 			srv.Logger.Warn("document content API not supported by workspace provider",
 				"path", r.URL.Path,
 				"method", r.Method,
@@ -108,36 +107,15 @@ func handleGetDocumentContent(
 	userEmail string,
 	model *models.Document,
 ) {
-	// Check if this is a local workspace provider
-	if localProvider, ok := srv.LegacyProvider.(*local.ProviderAdapter); ok {
-		// Get content through local workspace document storage
-		content, err := localProvider.GetAdapter().DocumentStorage().GetDocumentContent(context.Background(), docID)
-		if err != nil {
-			srv.Logger.Error("error getting document content from local workspace",
-				"error", err,
-				"doc_id", docID,
-			)
-			http.Error(w, "Error retrieving document content",
-				http.StatusInternalServerError)
-			return
-		}
+	// Use RFC-084 GetContent method
+	providerID := fmt.Sprintf("google:%s", docID) // Assume Google for now, adjust as needed
 
-		resp := DocumentContentResponse{
-			Content: content,
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			srv.Logger.Error("error encoding document content response",
-				"error", err,
-				"doc_id", docID,
-			)
-		}
-		return
+	// Check if this is a local workspace provider
+	if _, ok := srv.WorkspaceProvider.(*local.WorkspaceAdapter); ok {
+		providerID = fmt.Sprintf("local:%s", docID)
 	}
 
-	// Fallback: Try to get content from Google Docs
-	doc, err := srv.LegacyProvider.GetDoc(docID)
+	docContent, err := srv.WorkspaceProvider.GetContent(r.Context(), providerID)
 	if err != nil {
 		srv.Logger.Error("error getting document content",
 			"error", err,
@@ -148,8 +126,7 @@ func handleGetDocumentContent(
 		return
 	}
 
-	// Extract text content from Google Docs structure
-	content := extractTextFromGoogleDoc(doc)
+	content := docContent.Body
 
 	resp := DocumentContentResponse{
 		Content: content,
@@ -183,19 +160,22 @@ func handlePutDocumentContent(
 		return
 	}
 
-	// Check if document is locked
-	locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
-	if err != nil {
-		srv.Logger.Error("error checking document locked status",
-			"error", err,
-			"doc_id", docID,
-		)
-		http.Error(w, "Error getting document status", http.StatusInternalServerError)
-		return
-	}
-	if locked {
-		http.Error(w, "Document is locked", http.StatusLocked)
-		return
+	// Check if document is locked (Google Docs specific)
+	googleProvider := getGoogleDocsProvider(srv.WorkspaceProvider)
+	if googleProvider != nil {
+		locked, err := hcd.IsLocked(docID, srv.DB, googleProvider, srv.Logger)
+		if err != nil {
+			srv.Logger.Error("error checking document locked status",
+				"error", err,
+				"doc_id", docID,
+			)
+			http.Error(w, "Error getting document status", http.StatusInternalServerError)
+			return
+		}
+		if locked {
+			http.Error(w, "Document is locked", http.StatusLocked)
+			return
+		}
 	}
 
 	// Decode request
@@ -209,35 +189,31 @@ func handlePutDocumentContent(
 		return
 	}
 
+	// Use RFC-084 UpdateContent method
+	providerID := fmt.Sprintf("google:%s", docID)
+
 	// Check if this is a local workspace provider
-	if localProvider, ok := srv.LegacyProvider.(*local.ProviderAdapter); ok {
-		// Update content through local workspace
-		err := localProvider.GetAdapter().DocumentStorage().UpdateDocumentContent(context.Background(), docID, req.Content)
-		if err != nil {
-			srv.Logger.Error("error updating document content",
-				"error", err,
-				"doc_id", docID,
-			)
-			http.Error(w, "Error updating document content",
-				http.StatusInternalServerError)
-			return
-		}
+	if _, ok := srv.WorkspaceProvider.(*local.WorkspaceAdapter); ok {
+		providerID = fmt.Sprintf("local:%s", docID)
+	}
 
-		srv.Logger.Info("updated document content via local workspace provider",
-			"doc_id", docID,
-			"user", userEmail,
-		)
-
-		// Note: Re-indexing for search happens via the background indexer service
-	} else {
-		// Google Docs format is not supported for content editing
-		srv.Logger.Error("document content update not supported for Google workspace provider",
+	_, err := srv.WorkspaceProvider.UpdateContent(r.Context(), providerID, req.Content)
+	if err != nil {
+		srv.Logger.Error("error updating document content",
+			"error", err,
 			"doc_id", docID,
 		)
-		http.Error(w, "Content editing not supported for Google workspace documents",
-			http.StatusNotImplemented)
+		http.Error(w, "Error updating document content",
+			http.StatusInternalServerError)
 		return
 	}
+
+	srv.Logger.Info("updated document content",
+		"doc_id", docID,
+		"user", userEmail,
+	)
+
+	// Note: Re-indexing for search happens via the background indexer service
 
 	// Return success
 	w.WriteHeader(http.StatusOK)

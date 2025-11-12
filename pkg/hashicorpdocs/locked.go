@@ -5,28 +5,24 @@ import (
 	"strings"
 
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp/go-hclog"
 	"google.golang.org/api/docs/v1"
 	"gorm.io/gorm"
 )
 
-// IsFileID checks if a fileID is in SharePoint format
-// SharePoint file IDs tend to be longer and have specific patterns
-func IsFileID(fileID string) bool {
-	// SharePoint file IDs typically start with "01" and contain more characters
-	// than Google file IDs, often with specific patterns
-	return strings.HasPrefix(fileID, "01") && len(fileID) >= 20
+// GoogleDocsProvider is a minimal interface for Google Docs operations.
+// This is used for Google-specific functionality like checking for suggestions.
+type GoogleDocsProvider interface {
+	GetDoc(fileID string) (*docs.Document, error)
 }
 
 // IsLocked checks if a document contains one or more suggestions in the header,
 // locks/unlocks the document accordingly, and returns the lock status.
-// For SharePoint documents, we always return false (not locked) as the suggestion
-// tracking system is different.
+// This function is Google Docs-specific and requires a GoogleDocsProvider.
 func IsLocked(
 	fileID string,
 	db *gorm.DB,
-	provider workspace.Provider,
+	provider GoogleDocsProvider,
 	log hclog.Logger,
 ) (bool, error) {
 

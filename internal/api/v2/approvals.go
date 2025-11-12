@@ -167,22 +167,26 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
-			if err != nil {
-				srv.Logger.Error("error checking document locked status",
-					"error", err,
-					"path", r.URL.Path,
-					"method", r.Method,
-					"doc_id", docID,
-				)
-				http.Error(w, "Error getting document status", http.StatusNotFound)
-				return
-			}
-			// Don't continue if document is locked.
-			if locked {
-				http.Error(w, "Document is locked", http.StatusLocked)
-				return
+			// Check if document is locked (Google Docs specific).
+			// Extract Google provider for Google-specific operations
+			googleProvider := getGoogleDocsProvider(srv.WorkspaceProvider)
+			if googleProvider != nil {
+				locked, err := hcd.IsLocked(docID, srv.DB, googleProvider, srv.Logger)
+				if err != nil {
+					srv.Logger.Error("error checking document locked status",
+						"error", err,
+						"path", r.URL.Path,
+						"method", r.Method,
+						"doc_id", docID,
+					)
+					http.Error(w, "Error getting document status", http.StatusNotFound)
+					return
+				}
+				// Don't continue if document is locked.
+				if locked {
+					http.Error(w, "Document is locked", http.StatusLocked)
+					return
+				}
 			}
 
 			// Add email to slice of users who have requested changes of the document.
@@ -198,8 +202,10 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 			doc.ApprovedBy = newApprovedBy
 
-			// Get latest Google Drive file revision.
-			latestRev, err := srv.LegacyProvider.GetLatestRevision(docID)
+			// Get latest file revision using RFC-084 interface.
+			// Note: We need to construct a providerID from the docID
+			providerID := fmt.Sprintf("google:%s", docID)
+			latestRev, err := getLatestRevisionRFC084(r.Context(), providerID, srv.WorkspaceProvider)
 			if err != nil {
 				srv.Logger.Error("error getting latest revision",
 					"error", err,
@@ -212,14 +218,14 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 
 			// Mark latest revision to be kept forever.
-			_, err = srv.LegacyProvider.KeepRevisionForever(docID, latestRev.Id)
+			err = srv.WorkspaceProvider.KeepRevisionForever(r.Context(), providerID, latestRev.RevisionID)
 			if err != nil {
 				srv.Logger.Error("error marking revision to keep forever",
 					"error", err,
 					"method", r.Method,
 					"path", r.URL.Path,
 					"doc_id", docID,
-					"rev_id", latestRev.Id)
+					"rev_id", latestRev.RevisionID)
 				http.Error(w, "Error updating document status",
 					http.StatusInternalServerError)
 				return
@@ -227,13 +233,15 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 
 			// Record file revision in the Algolia document object.
 			revisionName := fmt.Sprintf("Changes requested by %s", userEmail)
-			doc.SetFileRevision(revisionID, revisionName)
+			doc.SetFileRevision(latestRev.RevisionID, revisionName)
 
 			// Create file revision in the database.
 			fr := models.DocumentFileRevision{
-				Document:       srv.NewDocumentByFileID(docID),
-				FileRevisionID: revisionID,
-				Name:           revisionName,
+				Document: models.Document{
+					GoogleFileID: docID,
+				},
+				GoogleDriveFileRevisionID: latestRev.RevisionID,
+				Name:                      revisionName,
 			}
 			if err := fr.Create(srv.DB); err != nil {
 				srv.Logger.Error("error creating document file revision",
@@ -241,7 +249,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 					"method", r.Method,
 					"path", r.URL.Path,
 					"doc_id", docID,
-					"rev_id", revisionID)
+					"rev_id", latestRev.RevisionID)
 				http.Error(w, "Error updating document status",
 					http.StatusInternalServerError)
 				return
@@ -260,19 +268,26 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Replace the doc header.
-			if err := doc.ReplaceHeader(
-				srv.Config.BaseURL, false, srv.LegacyProvider,
-			); err != nil {
-				srv.Logger.Error("error replacing doc header",
-					"error", err,
-					"doc_id", docID,
-					"method", r.Method,
-					"path", r.URL.Path,
-				)
-				http.Error(w, "Error updating document status",
-					http.StatusInternalServerError)
-				return
+			// Replace the doc header (Google Docs specific).
+			// Extract Google provider for Google-specific operations
+			googleUpdater := getGoogleDocsUpdater(srv.WorkspaceProvider)
+			if googleUpdater == nil {
+				srv.Logger.Warn("ReplaceHeader skipped - not using Google Workspace",
+					"doc_id", docID)
+			} else {
+				if err := doc.ReplaceHeader(
+					srv.Config.BaseURL, false, googleUpdater,
+				); err != nil {
+					srv.Logger.Error("error replacing doc header",
+						"error", err,
+						"doc_id", docID,
+						"method", r.Method,
+						"path", r.URL.Path,
+					)
+					http.Error(w, "Error updating document status",
+						http.StatusInternalServerError)
+					return
+				}
 			}
 
 			// Write response.
@@ -397,7 +412,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 
 			// User is not an approver or in an approver group.
 			inApproverGroup, err := isUserInGroups(
-				userEmail, doc.ApproverGroups, srv.LegacyProvider)
+				r.Context(), userEmail, doc.ApproverGroups, srv.WorkspaceProvider)
 			if err != nil {
 				srv.Logger.Error("error calculating if user is in an approver group",
 					"error", err,
@@ -444,7 +459,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				return
 			}
 			inApproverGroup, err := isUserInGroups(
-				userEmail, doc.ApproverGroups, srv.LegacyProvider)
+				r.Context(), userEmail, doc.ApproverGroups, srv.WorkspaceProvider)
 			if err != nil {
 				srv.Logger.Error("error calculating if user is in an approver group",
 					"error", err,
@@ -468,22 +483,26 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
-			if err != nil {
-				srv.Logger.Error("error checking document locked status",
-					"error", err,
-					"path", r.URL.Path,
-					"method", r.Method,
-					"doc_id", docID,
-				)
-				http.Error(w, "Error getting document status", http.StatusNotFound)
-				return
-			}
-			// Don't continue if document is locked.
-			if locked {
-				http.Error(w, "Document is locked", http.StatusLocked)
-				return
+			// Check if document is locked (Google Docs specific).
+			// Extract Google provider for Google-specific operations
+			googleProvider := getGoogleDocsProvider(srv.WorkspaceProvider)
+			if googleProvider != nil {
+				locked, err := hcd.IsLocked(docID, srv.DB, googleProvider, srv.Logger)
+				if err != nil {
+					srv.Logger.Error("error checking document locked status",
+						"error", err,
+						"path", r.URL.Path,
+						"method", r.Method,
+						"doc_id", docID,
+					)
+					http.Error(w, "Error getting document status", http.StatusNotFound)
+					return
+				}
+				// Don't continue if document is locked.
+				if locked {
+					http.Error(w, "Document is locked", http.StatusLocked)
+					return
+				}
 			}
 
 			// If the user is a group approver, they won't be in the approvers list.
@@ -521,8 +540,10 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 			doc.ChangesRequestedBy = newChangesRequestedBy
 
-			// Get latest Google Drive file revision.
-			latestRev, err := srv.LegacyProvider.GetLatestRevision(docID)
+			// Get latest file revision using RFC-084 interface.
+			// Note: We need to construct a providerID from the docID
+			providerID := fmt.Sprintf("google:%s", docID)
+			latestRev, err := getLatestRevisionRFC084(r.Context(), providerID, srv.WorkspaceProvider)
 			if err != nil {
 				srv.Logger.Error("error getting latest revision",
 					"error", err,
@@ -535,14 +556,14 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 
 			// Mark latest revision to be kept forever.
-			_, err = srv.LegacyProvider.KeepRevisionForever(docID, latestRev.Id)
+			err = srv.WorkspaceProvider.KeepRevisionForever(r.Context(), providerID, latestRev.RevisionID)
 			if err != nil {
 				srv.Logger.Error("error marking revision to keep forever",
 					"error", err,
 					"method", r.Method,
 					"path", r.URL.Path,
 					"doc_id", docID,
-					"rev_id", latestRev.Id)
+					"rev_id", latestRev.RevisionID)
 				http.Error(w, "Error approving document",
 					http.StatusInternalServerError)
 				return
@@ -550,13 +571,15 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 
 			// Record file revision in the Algolia document object.
 			revisionName := fmt.Sprintf("Approved by %s", userEmail)
-			doc.SetFileRevision(revisionID, revisionName)
+			doc.SetFileRevision(latestRev.RevisionID, revisionName)
 
 			// Create file revision in the database.
 			fr := models.DocumentFileRevision{
-				Document:       srv.NewDocumentByFileID(docID),
-				FileRevisionID: revisionID,
-				Name:           revisionName,
+				Document: models.Document{
+					GoogleFileID: docID,
+				},
+				GoogleDriveFileRevisionID: latestRev.RevisionID,
+				Name:                      revisionName,
 			}
 			if err := fr.Create(srv.DB); err != nil {
 				srv.Logger.Error("error creating document file revision",
@@ -564,7 +587,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 					"method", r.Method,
 					"path", r.URL.Path,
 					"doc_id", docID,
-					"rev_id", revisionID)
+					"rev_id", latestRev.RevisionID)
 				http.Error(w, "Error updating document status",
 					http.StatusInternalServerError)
 				return
@@ -583,18 +606,25 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Replace the doc header.
-			err = doc.ReplaceHeader(srv.Config.BaseURL, false, srv.LegacyProvider)
-			if err != nil {
-				srv.Logger.Error("error replacing doc header",
-					"error", err,
-					"doc_id", docID,
-					"method", r.Method,
-					"path", r.URL.Path,
-				)
-				http.Error(w, "Error approving document",
-					http.StatusInternalServerError)
-				return
+			// Replace the doc header (Google Docs specific).
+			// Extract Google provider for Google-specific operations
+			googleUpdater := getGoogleDocsUpdater(srv.WorkspaceProvider)
+			if googleUpdater == nil {
+				srv.Logger.Warn("ReplaceHeader skipped - not using Google Workspace",
+					"doc_id", docID)
+			} else {
+				err = doc.ReplaceHeader(srv.Config.BaseURL, false, googleUpdater)
+				if err != nil {
+					srv.Logger.Error("error replacing doc header",
+						"error", err,
+						"doc_id", docID,
+						"method", r.Method,
+						"path", r.URL.Path,
+					)
+					http.Error(w, "Error approving document",
+						http.StatusInternalServerError)
+					return
+				}
 			}
 
 			// Write response.
@@ -625,8 +655,8 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 					approver := email.User{
 						EmailAddress: userEmail,
 					}
-					ppl, err := srv.LegacyProvider.SearchPeople(
-						userEmail, "emailAddresses,names")
+					ppl, err := srv.WorkspaceProvider.SearchPeople(
+						r.Context(), userEmail)
 					if err != nil {
 						srv.Logger.Warn("error searching directory for approver",
 							"error", err,
@@ -637,7 +667,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 						)
 					}
 					if len(ppl) == 1 {
-						approver.Name = ppl[0].Names[0].DisplayName
+						approver.Name = ppl[0].DisplayName
 					}
 
 					// Get document URL.
@@ -676,7 +706,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 						},
 						[]string{doc.Owners[0]},
 						srv.Config.Email.FromAddress,
-						srv.LegacyProvider,
+						getCompatProvider(srv.WorkspaceProvider),
 					); err != nil {
 						srv.Logger.Error("error sending document approved email",
 							"error", err,

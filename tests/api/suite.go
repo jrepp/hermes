@@ -260,10 +260,10 @@ func (s *Suite) setupServer() error {
 	// TODO: Migrate remaining v1 handlers (drafts, reviews) to use SearchProvider
 
 	// Create server with SearchProvider and WorkspaceProvider support (v2 API uses these)
+	// TODO: Update test suite to use RFC-084 WorkspaceProvider types
 	srv := &server.Server{
-		SearchProvider: s.SearchProvider,    // Use the search provider from suite (Meilisearch or mock)
-		LegacyProvider: s.WorkspaceProvider, // Use mock workspace provider for tests (legacy interface)
-		// TODO: Add WorkspaceProvider field when tests are migrated to RFC-084 types
+		SearchProvider: s.SearchProvider,
+		// WorkspaceProvider: // TODO: Add RFC-084 provider when mock is migrated
 		Config: s.Config,
 		DB:     s.DB,
 		Logger: hclog.NewNullLogger(),

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp-forge/hermes/internal/server"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // PeopleDataRequest contains the fields that are allowed to
@@ -28,9 +29,9 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			users, err := srv.LegacyProvider.SearchPeople(
+			users, err := srv.WorkspaceProvider.SearchPeople(
+				r.Context(),
 				req.Query,
-				"emailAddresses,names,photos",
 			)
 			if err != nil {
 				srv.Logger.Error("error searching people directory", "error", err)
@@ -65,12 +66,12 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 					http.StatusBadRequest)
 			} else {
 				emails := strings.Split(query["emails"][0], ",")
-				var people []*people.Person
+				var people []*workspace.UserIdentity
 
 				for _, email := range emails {
-					result, err := srv.LegacyProvider.SearchPeople(
+					result, err := srv.WorkspaceProvider.SearchPeople(
+						r.Context(),
 						email,
-						"emailAddresses,names,photos",
 					)
 
 					if err == nil && len(result) > 0 {

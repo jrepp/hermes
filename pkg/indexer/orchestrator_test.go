@@ -18,11 +18,7 @@ func TestOrchestratorExample(t *testing.T) {
 	ctx := context.Background()
 
 	// Create logger
-	logger := hclog.New(&hclog.LoggerOptions{
-		Name:   "indexer-test",
-		Level:  hclog.Debug,
-		Output: t.Logf,
-	})
+	logger := hclog.NewNullLogger()
 
 	// Setup would include:
 	// - Database connection

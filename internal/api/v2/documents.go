@@ -229,10 +229,11 @@ func DocumentHandler(srv server.Server) http.Handler {
 		case "GET":
 			now := time.Now()
 
-			// Get file from workspace provider so we can return the latest modified time.
-			file, err := srv.LegacyProvider.GetFile(docID)
+			// Get document metadata from workspace provider so we can return the latest modified time.
+			providerID := fmt.Sprintf("google:%s", docID)
+			docMeta, err := srv.WorkspaceProvider.GetDocument(r.Context(), providerID)
 			if err != nil {
-				srv.Logger.Error("error getting document file from workspace",
+				srv.Logger.Error("error getting document metadata from workspace",
 					"error", err,
 					"path", r.URL.Path,
 					"method", r.Method,
@@ -243,51 +244,9 @@ func DocumentHandler(srv server.Server) http.Handler {
 				return
 			}
 
-				// Parse modified time
-				modifiedTime, err := time.Parse(time.RFC3339, fileDetails.LastModified)
-				if err != nil {
-					srv.Logger.Error("error parsing modified time",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", docID,
-					)
-					http.Error(w,
-						"Error requesting document", http.StatusInternalServerError)
-					return
-				}
-				doc.ModifiedTime = modifiedTime.Unix()
-				directEditURL = fileDetails.WebURL
-			} else {
-				// Get file from Google Drive
-				file, err := srv.GWService.GetFile(docID)
-				if err != nil {
-					srv.Logger.Error("error getting document file",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", docID,
-					)
-					http.Error(w,
-						"Error requesting document", http.StatusInternalServerError)
-					return
-				}
-
-				modifiedTime, err := time.Parse(time.RFC3339, file.ModifiedTime)
-				if err != nil {
-					srv.Logger.Error("error parsing modified time",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", docID,
-					)
-					http.Error(w,
-						"Error requesting document", http.StatusInternalServerError)
-					return
-				}
-				doc.ModifiedTime = modifiedTime.Unix()
-				directEditURL = file.WebViewLink
-			}
+			// Use modified time from metadata
+			modifiedTime := docMeta.ModifiedTime
+			doc.ModifiedTime = modifiedTime.Unix()
 
 			// Convert document to Algolia object because this is how it is expected
 			// by the frontend.
@@ -560,23 +519,24 @@ func DocumentHandler(srv server.Server) http.Handler {
 				}
 			}
 
-			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
-			if err != nil {
-				srv.Logger.Error("error checking document locked status",
-					"error", err,
-					"path", r.URL.Path,
-					"method", r.Method,
-					"doc_id", docID,
-				)
-				http.Error(w, "Error getting document status", http.StatusNotFound)
-				return
-			}
-			if req.ApproverGroups != nil && len(*req.ApproverGroups) > 0 {
-				if len(doc.ApproverGroups) == 0 { // no existing groups => all are new
-					newGroupApprovers = append(newGroupApprovers, *req.ApproverGroups...)
-				} else {
-					newGroupApprovers = compareSlices(doc.ApproverGroups, *req.ApproverGroups)
+			// Check if document is locked (Google Docs specific).
+			googleProvider := getGoogleDocsProvider(srv.WorkspaceProvider)
+			if googleProvider != nil {
+				locked, err := hcd.IsLocked(docID, srv.DB, googleProvider, srv.Logger)
+				if err != nil {
+					srv.Logger.Error("error checking document locked status",
+						"error", err,
+						"path", r.URL.Path,
+						"method", r.Method,
+						"doc_id", docID,
+					)
+					http.Error(w, "Error getting document status", http.StatusNotFound)
+					return
+				}
+				// Don't continue if document is locked.
+				if locked {
+					http.Error(w, "Document is locked", http.StatusLocked)
+					return
 				}
 			}
 
@@ -741,8 +701,9 @@ func DocumentHandler(srv server.Server) http.Handler {
 				isAcquireOwnership := isContributorAcquiringOwnership(userEmail, *doc, req)
 
 				// Give new owner edit access to the document.
-				if err := srv.LegacyProvider.ShareFile(
-					docID, doc.Owners[0], "writer"); err != nil {
+				providerID := fmt.Sprintf("google:%s", docID)
+				if err := srv.WorkspaceProvider.ShareDocument(
+					r.Context(), providerID, doc.Owners[0], "writer"); err != nil {
 					srv.Logger.Error("error sharing file with new owner",
 						"error", err,
 						"method", r.Method,
@@ -838,9 +799,10 @@ func DocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Give new document approvers edit access to the document.
+			providerID := fmt.Sprintf("google:%s", docID)
 			for _, a := range approversToEmail {
-				if err := srv.LegacyProvider.ShareFile(docID, a, "writer"); err != nil {
-					srv.Logger.Error("error sharing file with approver",
+				if err := srv.WorkspaceProvider.ShareDocument(r.Context(), providerID, a, "writer"); err != nil {
+					srv.Logger.Error("error sharing document with approver",
 						"error", err,
 						"doc_id", docID,
 						"method", r.Method,
@@ -916,9 +878,12 @@ func DocumentHandler(srv server.Server) http.Handler {
 				}
 			}
 
-			// Replace the doc header.
-			if err := doc.ReplaceHeader(
-				srv.Config.BaseURL, false, srv.LegacyProvider,
+			// Replace the doc header (Google Docs specific).
+			googleUpdater := getGoogleDocsUpdater(srv.WorkspaceProvider)
+			if googleUpdater == nil {
+				srv.Logger.Warn("ReplaceHeader skipped - not using Google Workspace", "doc_id", docID)
+			} else if err := doc.ReplaceHeader(
+				srv.Config.BaseURL, false, googleUpdater,
 			); err != nil {
 				srv.Logger.Error("error replacing document header",
 					"error", err, "doc_id", docID)
@@ -927,9 +892,12 @@ func DocumentHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Rename file with new title.
-			srv.LegacyProvider.RenameFile(docID,
-				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
+			// Rename document with new title (Google Docs specific).
+			if googleUpdater != nil {
+				providerID := fmt.Sprintf("google:%s", docID)
+				srv.WorkspaceProvider.RenameDocument(r.Context(), providerID,
+					fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
+			}
 
 			// Get document record from database so we can modify it for updating.
 			model := srv.NewDocumentByFileID(docID)
@@ -1155,8 +1123,8 @@ func DocumentHandler(srv server.Server) http.Handler {
 					newOwner := email.User{
 						EmailAddress: doc.Owners[0],
 					}
-					ppl, err := srv.LegacyProvider.SearchPeople(
-						doc.Owners[0], "emailAddresses,names")
+					ppl, err := srv.WorkspaceProvider.SearchPeople(
+						r.Context(), doc.Owners[0])
 					if err != nil {
 						srv.Logger.Warn("error searching directory for new owner",
 							"error", err,
@@ -1166,16 +1134,16 @@ func DocumentHandler(srv server.Server) http.Handler {
 							"person", doc.Owners[0],
 						)
 					}
-					if len(ppl) == 1 && ppl[0].Names != nil {
-						newOwner.Name = ppl[0].Names[0].DisplayName
+					if len(ppl) == 1 {
+						newOwner.Name = ppl[0].DisplayName
 					}
 
 					// Get name of old document owner.
 					oldOwner := email.User{
 						EmailAddress: userEmail,
 					}
-					ppl, err = srv.LegacyProvider.SearchPeople(
-						userEmail, "emailAddresses,names")
+					ppl, err = srv.WorkspaceProvider.SearchPeople(
+						r.Context(), userEmail)
 					if err != nil {
 						srv.Logger.Warn("error searching directory for old owner",
 							"error", err,
@@ -1185,8 +1153,8 @@ func DocumentHandler(srv server.Server) http.Handler {
 							"person", doc.Owners[0],
 						)
 					}
-					if len(ppl) == 1 && ppl[0].Names != nil {
-						oldOwner.Name = ppl[0].Names[0].DisplayName
+					if len(ppl) == 1 {
+						oldOwner.Name = ppl[0].DisplayName
 					}
 
 					if err := email.SendNewOwnerEmail(
@@ -1203,7 +1171,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 						},
 						[]string{doc.Owners[0]},
 						srv.Config.Email.FromAddress,
-						srv.LegacyProvider,
+						getCompatProvider(srv.WorkspaceProvider),
 					); err != nil {
 						srv.Logger.Error("error sending new owner email",
 							"error", err,
@@ -1303,7 +1271,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 								},
 								newContributors,
 								srv.Config.Email.FromAddress,
-								srv.LegacyProvider,
+								getCompatProvider(srv.WorkspaceProvider),
 							)
 						},
 						docID,

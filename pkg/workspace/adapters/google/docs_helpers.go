@@ -31,6 +31,14 @@ func (s *Service) GetDoc(id string) (*docs.Document, error) {
 	return d, nil
 }
 
+// UpdateDoc updates a Google Doc with batch update requests.
+func (s *Service) UpdateDoc(fileID string, requests []*docs.Request) (*docs.BatchUpdateDocumentResponse, error) {
+	req := &docs.BatchUpdateDocumentRequest{
+		Requests: requests,
+	}
+	return s.Docs.Documents.BatchUpdate(fileID, req).Do()
+}
+
 // GetLinkURLs returns all link URLs in a Google Doc Body.
 func GetLinkURLs(b *docs.Body) []string {
 	var urls []string

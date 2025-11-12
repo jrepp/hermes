@@ -16,9 +16,9 @@ import (
 	"google.golang.org/api/docs/v1"
 )
 
-// mockProviderWithCapabilities wraps a mock provider and adds capabilities interface
+// mockProviderWithCapabilities wraps a fake provider and adds capabilities interface
 type mockProviderWithContentEditing struct {
-	workspace.Provider
+	workspace.WorkspaceProvider
 	supportsEditing bool
 }
 
@@ -54,8 +54,8 @@ func TestDocumentContentHandler_ProviderCapabilities(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock provider with capability
 			mockProvider := &mockProviderWithContentEditing{
-				Provider:        mock.NewAdapter(),
-				supportsEditing: tt.supportsEditing,
+				WorkspaceProvider: mock.NewFakeAdapter(),
+				supportsEditing:   tt.supportsEditing,
 			}
 
 			// Create test server

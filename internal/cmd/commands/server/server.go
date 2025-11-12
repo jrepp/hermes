@@ -375,10 +375,9 @@ func (c *Command) Run(args []string) int {
 	c.UI.Info(fmt.Sprintf("Using workspace provider: %s", workspaceProviderName))
 	c.UI.Info(fmt.Sprintf("Using search provider: %s", searchProviderName))
 
-	// Initialize workspace providers (both RFC-084 and legacy) based on selection.
+	// Initialize workspace provider (RFC-084) based on selection.
 	var workspaceProvider workspace.WorkspaceProvider
-	var legacyProvider workspace.Provider
-	var goog *gw.Service // Keep for legacy auth that still uses it directly
+	var goog *gw.Service // Keep for auth that still uses it directly
 
 	switch workspaceProviderName {
 	case "google":
@@ -412,9 +411,8 @@ func (c *Command) Run(args []string) int {
 			}
 		}
 
-		// Create both RFC-084 and legacy adapters
+		// Create RFC-084 adapter
 		workspaceProvider = gw.NewAdapter(goog)
-		legacyProvider = gw.NewCompatAdapter(goog)
 
 	case "local":
 		if cfg.LocalWorkspace == nil {
@@ -429,9 +427,8 @@ func (c *Command) Run(args []string) int {
 			return 1
 		}
 
-		// Create both RFC-084 and legacy adapters
+		// Create RFC-084 adapter
 		workspaceProvider = localadapter.NewWorkspaceAdapter(adapter)
-		legacyProvider = localadapter.NewProviderAdapter(adapter)
 
 		// Note: searchProvider not yet initialized at this point
 		// Document indexing will be triggered after search provider is initialized
@@ -737,7 +734,6 @@ func (c *Command) Run(args []string) int {
 	srv := server.Server{
 		SearchProvider:    searchProvider,
 		WorkspaceProvider: workspaceProvider,
-		LegacyProvider:    legacyProvider,
 		Config:            cfg,
 		DB:                db,
 		Jira:              jiraSvc,
