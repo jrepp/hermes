@@ -6,201 +6,209 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 )
 
-// Document represents a storage-agnostic document.
-type Document struct {
-	// ID is the unique identifier for the document.
-	// For Google Workspace, this is the GoogleFileID.
-	// For Local Workspace, this is the local file path.
-	ID string
+// RFC-084 Types: Provider-agnostic document metadata and content types
+// These types support multi-backend document tracking with enhanced metadata
 
-	// CompositeID is the fully-qualified document identifier that includes
-	// UUID, provider type, and project ID. This enables documents to be
-	// uniquely identified across providers and projects.
-	CompositeID *docid.CompositeID
+// DocumentMetadata represents provider-agnostic document metadata
+// Works with DocID system (UUID + ProviderID)
+//
+// Design Philosophy:
+// - Core attributes: Universal metadata present across all document types
+// - Extensible attributes: Document-type-specific metadata in ExtendedMetadata map
+type DocumentMetadata struct {
+	// Global identifier (RFC-082)
+	UUID docid.UUID `json:"uuid"`
 
-	// Name is the document name/title.
-	Name string
+	// Backend-specific identifier
+	ProviderType string `json:"providerType"` // "google", "local", "office365", "github"
+	ProviderID   string `json:"providerID"`   // Backend-specific ID
 
-	// Content is the document content (may be empty if not loaded).
-	Content string
+	// Core Metadata
+	Name         string    `json:"name"`         // Document title
+	MimeType     string    `json:"mimeType"`     // MIME type (e.g., "text/markdown", "application/vnd.google-apps.document")
+	CreatedTime  time.Time `json:"createdTime"`  // When document was created
+	ModifiedTime time.Time `json:"modifiedTime"` // Last modification timestamp
 
-	// MimeType is the document MIME type.
-	MimeType string
+	// Ownership (unified identity aware)
+	Owner        *UserIdentity   `json:"owner,omitempty"`        // Individual owner (can be nil if team-owned)
+	OwningTeam   string          `json:"owningTeam,omitempty"`   // Team/group ownership (e.g., "Engineering Team")
+	Contributors []UserIdentity  `json:"contributors,omitempty"` // Document contributors/collaborators
 
-	// ParentFolderID is the parent folder identifier.
-	ParentFolderID string
+	// Hierarchy and Organization
+	Parents []string `json:"parents,omitempty"` // Parent folder/directory IDs
+	Project string   `json:"project,omitempty"` // Project association (e.g., "agf-iac-remediation-poc")
+	Tags    []string `json:"tags,omitempty"`    // Universal tags for categorization and search
 
-	// CreatedTime is when the document was created.
-	CreatedTime time.Time
+	// Document Lifecycle
+	SyncStatus     string `json:"syncStatus"`                // Multi-backend sync: "canonical", "mirror", "conflict", "archived"
+	WorkflowStatus string `json:"workflowStatus,omitempty"` // Document workflow: "Draft", "In Review", "Published", "Deprecated"
 
-	// ModifiedTime is when the document was last modified.
-	ModifiedTime time.Time
+	// Multi-backend tracking
+	ContentHash string `json:"contentHash"` // SHA-256 for drift detection
 
-	// Owner is the email of the document owner.
-	Owner string
-
-	// Permissions contains document permissions.
-	Permissions []Permission
-
-	// ThumbnailURL is the URL to a thumbnail image.
-	ThumbnailURL string
-
-	// Metadata contains flexible key-value metadata.
-	Metadata map[string]any
-
-	// Trashed indicates if the document is in trash.
-	Trashed bool
+	// Extensible metadata for document-type-specific fields
+	// Examples: RFC id ("rfc-010"), sidebar_position (10), rfc_type ("Architecture")
+	ExtendedMetadata map[string]any `json:"extendedMetadata,omitempty"`
 }
 
-// DocumentCreate contains fields for creating a new document.
-type DocumentCreate struct {
-	// Name is the document name.
-	Name string
+// DocumentContent represents document content with backend-specific revision info
+type DocumentContent struct {
+	// Document identification
+	UUID       docid.UUID `json:"uuid"`
+	ProviderID string     `json:"providerID"`
 
-	// ParentFolderID is where the document should be created.
-	ParentFolderID string
+	// Content
+	Title  string `json:"title"`
+	Body   string `json:"body"`
+	Format string `json:"format"` // "markdown", "html", "plain", "richtext"
 
-	// TemplateID is an optional document to copy from.
-	TemplateID string
+	// Backend-specific revision information
+	BackendRevision *BackendRevision `json:"backendRevision"`
 
-	// Content is the initial document content.
-	Content string
-
-	// Owner is the document owner email.
-	Owner string
-
-	// Metadata contains initial metadata.
-	Metadata map[string]any
+	// Content tracking
+	ContentHash  string    `json:"contentHash"` // SHA-256
+	LastModified time.Time `json:"lastModified"`
 }
 
-// DocumentUpdate contains fields that can be updated.
-type DocumentUpdate struct {
-	// Name updates the document name if non-nil.
-	Name *string
+// BackendRevision captures backend-specific revision metadata
+//
+// Real-world revision ID formats by provider:
+//
+// Google Drive/Docs:
+//   - RevisionID format: Numeric string (e.g., "123", "456")
+//   - Increments with each revision
+//   - Can be marked "keepForever" to prevent auto-pruning
+//   - Example: "123" for the 123rd revision of the document
+//
+// Git (Local/GitHub):
+//   - RevisionID format: 40-character SHA-1 hash (e.g., "a1b2c3d4e5f67890abcdef1234567890abcdef12")
+//   - Full commit hash, can use short form (7-8 chars) for display
+//   - Immutable and globally unique within repository
+//   - Example: "a1b2c3d4e5f67890abcdef1234567890abcdef12"
+//
+// Office 365 (OneDrive/SharePoint):
+//   - RevisionID format: Version string or timestamp (e.g., "2.0", "1.1", "2023-10-15T14:30:00Z")
+//   - Can be semantic version (major.minor) or complex version identifiers
+//   - May include version labels like "1.0", "2.0" or timestamp-based IDs
+//   - Example: "2.0" or "AWQiRU9kdkNVVnVjM1Z5WTJWelBIQStQSFJoWW14bFBqeHdjajQ4ZEdRKw"
+//
+// GitHub API:
+//   - RevisionID format: 40-character SHA-1 hash (same as Git)
+//   - Retrieved via GitHub API with additional metadata
+//   - Example: "e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6"
+type BackendRevision struct {
+	ProviderType string `json:"providerType"` // "google", "git", "office365", "github"
 
-	// Content updates the document content if non-nil.
-	Content *string
+	// Backend-specific revision ID (varies by provider - see format docs above)
+	RevisionID string `json:"revisionID"`
 
-	// ParentFolderID moves the document if non-nil.
-	ParentFolderID *string
+	// Revision metadata
+	ModifiedTime time.Time     `json:"modifiedTime"`
+	ModifiedBy   *UserIdentity `json:"modifiedBy,omitempty"`
+	Comment      string        `json:"comment,omitempty"`    // Git commit message, Drive comment, etc.
+	KeepForever  bool          `json:"keepForever,omitempty"` // Google Drive feature
 
-	// Metadata updates metadata fields.
-	Metadata map[string]any
-}
-
-// Folder represents a storage folder/directory.
-type Folder struct {
-	// ID is the unique identifier for the folder.
-	ID string
-
-	// Name is the folder name.
-	Name string
-
-	// ParentID is the parent folder identifier.
-	ParentID string
-
-	// CreatedTime is when the folder was created.
-	CreatedTime time.Time
-
-	// ModifiedTime is when the folder was last modified.
-	ModifiedTime time.Time
-
-	// Metadata contains flexible key-value metadata.
-	Metadata map[string]any
-}
-
-// Revision represents a document revision/version.
-type Revision struct {
-	// ID is the unique identifier for the revision.
-	ID string
-
-	// DocumentID is the document this revision belongs to.
-	DocumentID string
-
-	// ModifiedTime is when this revision was created.
-	ModifiedTime time.Time
-
-	// ModifiedBy is the email of who created this revision.
-	ModifiedBy string
-
-	// Name is an optional custom name for this revision.
-	Name string
-
-	// Content is the content at this revision (may be empty).
-	Content string
-}
-
-// User represents a user/person.
-type User struct {
-	// Email is the user's email address.
-	Email string `json:"email"`
-
-	// Name is the user's full name.
-	Name string `json:"name"`
-
-	// GivenName is the user's first name.
-	GivenName string `json:"given_name"`
-
-	// FamilyName is the user's last name.
-	FamilyName string `json:"family_name"`
-
-	// PhotoURL is the URL to the user's profile photo.
-	PhotoURL string `json:"photo_url"`
-
-	// Metadata contains flexible user metadata.
+	// Backend-specific metadata (flexible for different systems)
+	// Examples:
+	//   - Google: {"published": true, "size": 12345}
+	//   - Git: {"tree": "abc123", "parent": "def456", "author": "..."}
+	//   - O365: {"versionLabel": "Major", "size": 12345, "comment": "..."}
 	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
-// Permission represents a document permission.
-type Permission struct {
-	// Email is the email of the user/group with this permission.
-	Email string
+// UserIdentity represents a unified user identity across multiple auth providers
+// Addresses the requirement: jacob.repp@hashicorp.com = jrepp@ibm.com = jacob-repp on GitHub (same person)
+// Supports multiple authentication providers: Google, GitHub, IBM Verify, Okta, Dex
+type UserIdentity struct {
+	// Primary identifier (canonical email)
+	Email       string `json:"email"`
+	DisplayName string `json:"displayName"`
+	PhotoURL    string `json:"photoURL,omitempty"`
 
-	// Role is the permission role (e.g., "owner", "writer", "reader").
-	Role string
+	// Unified identity tracking
+	UnifiedUserID string `json:"unifiedUserId,omitempty"` // Links identities across providers
 
-	// Type is the permission type (e.g., "user", "group", "domain").
-	Type string
+	// Provider-specific identities (same person, multiple providers)
+	AlternateEmails []AlternateIdentity `json:"alternateEmails,omitempty"`
 }
 
-// AuthInfo contains authentication information.
-type AuthInfo struct {
-	// Valid indicates if the token is valid.
-	Valid bool
-
-	// Email is the authenticated user's email.
-	Email string
-
-	// ExpiresAt is when the authentication expires.
-	ExpiresAt time.Time
+// AlternateIdentity represents the same user in a different identity provider
+type AlternateIdentity struct {
+	Email          string `json:"email"`                    // e.g., "jrepp@ibm.com", "jacob-repp@users.noreply.github.com"
+	Provider       string `json:"provider"`                 // e.g., "ibm-verify", "google-workspace", "github", "okta", "dex"
+	ProviderUserID string `json:"providerUserId,omitempty"` // Provider-specific user ID
 }
 
-// UserInfo contains user information from authentication.
-type UserInfo struct {
-	// ID is the user's unique identifier.
-	ID string
+// FilePermission represents file access permissions
+type FilePermission struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Role  string `json:"role"` // "owner", "writer", "reader"
+	Type  string `json:"type"` // "user", "group", "domain", "anyone"
 
-	// Email is the user's email address.
-	Email string
+	// Identity tracking
+	User *UserIdentity `json:"user,omitempty"`
+}
 
-	// Name is the user's full name.
-	Name string
+// Team represents a group/team (renamed from Group to avoid confusion)
+type Team struct {
+	ID          string `json:"id"`
+	Email       string `json:"email,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	MemberCount int    `json:"memberCount"`
 
-	// GivenName is the user's first name.
-	GivenName string
+	// Provider-specific
+	ProviderType string `json:"providerType"`
+	ProviderID   string `json:"providerID"`
+}
 
-	// FamilyName is the user's last name.
-	FamilyName string
+// RevisionInfo represents a document revision for conflict detection
+type RevisionInfo struct {
+	UUID            docid.UUID       `json:"uuid"`
+	ProviderType    string           `json:"providerType"`
+	ProviderID      string           `json:"providerID"`
+	BackendRevision *BackendRevision `json:"backendRevision"`
+	ContentHash     string           `json:"contentHash"`
+	SyncStatus      string           `json:"syncStatus"` // "canonical", "mirror", "conflict"
+}
 
-	// Picture is the URL to the user's profile picture.
-	Picture string
+// ContentComparison represents a content comparison result
+type ContentComparison struct {
+	UUID           docid.UUID
+	Revision1      *BackendRevision
+	Revision2      *BackendRevision
+	ContentMatch   bool   // True if content hashes match
+	HashDifference string // "same", "minor", "major"
+}
 
-	// Locale is the user's locale (e.g., "en").
-	Locale string
+// SyncStatus represents document synchronization state
+type SyncStatus struct {
+	UUID         docid.UUID `json:"uuid"`
+	LastSyncTime time.Time  `json:"lastSyncTime"`
+	SyncState    string     `json:"syncState"` // "synced", "pending", "failed"
+	ErrorMessage string     `json:"errorMessage,omitempty"`
+}
 
-	// HD is the hosted domain (e.g., "hashicorp.com").
-	HD string
+// MergeRequest represents a request to merge two document UUIDs
+type MergeRequest struct {
+	SourceUUID     docid.UUID `json:"sourceUUID"`      // UUID to be merged (deprecated)
+	TargetUUID     docid.UUID `json:"targetUUID"`      // UUID to keep (canonical)
+	MergeRevisions bool       `json:"mergeRevisions"`  // Merge revision histories
+	MergeStrategy  string     `json:"mergeStrategy"`   // "keep-target", "keep-source", "merge-all"
+	InitiatedBy    string     `json:"initiatedBy"`     // User email
+}
 
-	// VerifiedEmail indicates if the email is verified.
-	VerifiedEmail bool
+// OAuthFlow represents OAuth flow initiation data
+type OAuthFlow struct {
+	AuthURL  string `json:"authUrl"`
+	State    string `json:"state"`
+	Provider string `json:"provider"`
+}
+
+// JoinIdentityRequest represents identity join completion request
+type JoinIdentityRequest struct {
+	Provider string `json:"provider"`
+	Code     string `json:"code"`
+	State    string `json:"state"`
 }

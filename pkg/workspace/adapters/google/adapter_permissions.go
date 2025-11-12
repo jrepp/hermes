@@ -13,7 +13,7 @@ import (
 // ===================================================================
 
 // ShareDocument grants access to a user/group.
-func (a *AdapterRFC084) ShareDocument(ctx context.Context, providerID, email, role string) error {
+func (a *Adapter) ShareDocument(ctx context.Context, providerID, email, role string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func (a *AdapterRFC084) ShareDocument(ctx context.Context, providerID, email, ro
 }
 
 // ShareDocumentWithDomain grants access to entire domain.
-func (a *AdapterRFC084) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+func (a *Adapter) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ func (a *AdapterRFC084) ShareDocumentWithDomain(ctx context.Context, providerID,
 }
 
 // ListPermissions lists all permissions for a document.
-func (a *AdapterRFC084) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+func (a *Adapter) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func (a *AdapterRFC084) ListPermissions(ctx context.Context, providerID string) 
 }
 
 // RemovePermission revokes access.
-func (a *AdapterRFC084) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+func (a *Adapter) RemovePermission(ctx context.Context, providerID, permissionID string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (a *AdapterRFC084) RemovePermission(ctx context.Context, providerID, permis
 }
 
 // UpdatePermission changes permission role.
-func (a *AdapterRFC084) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+func (a *Adapter) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (a *AdapterRFC084) UpdatePermission(ctx context.Context, providerID, permis
 // ===================================================================
 
 // SearchPeople searches for users in the directory.
-func (a *AdapterRFC084) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
+func (a *Adapter) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
 	persons, err := a.service.SearchPeople(query, "emailAddresses,names,photos")
 	if err != nil {
 		return nil, fmt.Errorf("failed to search people: %w", err)
@@ -121,7 +121,7 @@ func (a *AdapterRFC084) SearchPeople(ctx context.Context, query string) ([]*work
 }
 
 // GetPerson retrieves a user by email.
-func (a *AdapterRFC084) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (a *Adapter) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
 	persons, err := a.SearchPeople(ctx, email)
 	if err != nil {
 		return nil, err
@@ -137,14 +137,14 @@ func (a *AdapterRFC084) GetPerson(ctx context.Context, email string) (*workspace
 // GetPersonByUnifiedID retrieves user by unified ID (cross-provider lookup).
 // Note: Google adapter does not have access to unified ID system.
 // This would need to be implemented by a higher-level service.
-func (a *AdapterRFC084) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
+func (a *Adapter) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("GetPersonByUnifiedID not supported by Google adapter (requires identity service)")
 }
 
 // ResolveIdentity resolves alternate identities for a user.
 // Note: Google adapter does not have access to cross-provider identity resolution.
 // This would need to be implemented by a higher-level identity service.
-func (a *AdapterRFC084) ResolveIdentity(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (a *Adapter) ResolveIdentity(ctx context.Context, email string) (*workspace.UserIdentity, error) {
 	// For now, just return the Google identity
 	return a.GetPerson(ctx, email)
 }
@@ -154,7 +154,7 @@ func (a *AdapterRFC084) ResolveIdentity(ctx context.Context, email string) (*wor
 // ===================================================================
 
 // ListTeams lists teams matching query.
-func (a *AdapterRFC084) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+func (a *Adapter) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
 	// Use the admin directory API to list groups
 	groupsCall := a.service.AdminDirectory.Groups.List().
 		Domain(domain).
@@ -189,7 +189,7 @@ func (a *AdapterRFC084) ListTeams(ctx context.Context, domain, query string, max
 }
 
 // GetTeam retrieves team details.
-func (a *AdapterRFC084) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+func (a *Adapter) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
 	group, err := a.service.AdminDirectory.Groups.Get(teamID).
 		Context(ctx).
 		Do()
@@ -210,7 +210,7 @@ func (a *AdapterRFC084) GetTeam(ctx context.Context, teamID string) (*workspace.
 }
 
 // GetUserTeams lists all teams a user belongs to.
-func (a *AdapterRFC084) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+func (a *Adapter) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
 	// List groups for user
 	groups, err := a.service.AdminDirectory.Groups.List().
 		UserKey(userEmail).
@@ -240,7 +240,7 @@ func (a *AdapterRFC084) GetUserTeams(ctx context.Context, userEmail string) ([]*
 }
 
 // GetTeamMembers lists all members of a team.
-func (a *AdapterRFC084) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+func (a *Adapter) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
 	// List members of group
 	members, err := a.service.AdminDirectory.Members.List(teamID).
 		Context(ctx).
@@ -269,13 +269,13 @@ func (a *AdapterRFC084) GetTeamMembers(ctx context.Context, teamID string) ([]*w
 // ===================================================================
 
 // SendEmail sends an email notification.
-func (a *AdapterRFC084) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+func (a *Adapter) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
 	// Use Gmail API to send email
 	return a.service.SendEmail(to, from, subject, body)
 }
 
 // SendEmailWithTemplate sends email using template.
-func (a *AdapterRFC084) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+func (a *Adapter) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
 	// For now, just send plain email
 	// Template rendering would be implemented by a higher-level service
 	return a.service.SendEmail(to, "", template, fmt.Sprintf("%v", data))
