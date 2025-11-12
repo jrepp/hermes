@@ -102,7 +102,7 @@ func GroupsHandler(srv server.Server) http.Handler {
 
 				prefixQuery := fmt.Sprintf(
 					"%s%s", searchPrefix, query)
-				groupsResult, err := srv.WorkspaceProvider.ListGroups(
+				groupsResult, err := srv.LegacyProvider.ListGroups(
 					srv.Config.GoogleWorkspace.Domain,
 					fmt.Sprintf("email:%s*", prefixQuery),
 					maxPrefixGroupResults,
@@ -120,7 +120,7 @@ func GroupsHandler(srv server.Server) http.Handler {
 			}
 
 			// Retrieve groups without prefix.
-			groupsResult, err := srv.WorkspaceProvider.ListGroups(
+			groupsResult, err := srv.LegacyProvider.ListGroups(
 				srv.Config.GoogleWorkspace.Domain,
 				fmt.Sprintf("email:%s*", query),
 				int64(maxNonPrefixGroups),

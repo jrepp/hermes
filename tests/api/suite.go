@@ -261,11 +261,12 @@ func (s *Suite) setupServer() error {
 
 	// Create server with SearchProvider and WorkspaceProvider support (v2 API uses these)
 	srv := &server.Server{
-		SearchProvider:    s.SearchProvider,    // Use the search provider from suite (Meilisearch or mock)
-		WorkspaceProvider: s.WorkspaceProvider, // Use mock workspace provider for tests
-		Config:            s.Config,
-		DB:                s.DB,
-		Logger:            hclog.NewNullLogger(),
+		SearchProvider: s.SearchProvider,    // Use the search provider from suite (Meilisearch or mock)
+		LegacyProvider: s.WorkspaceProvider, // Use mock workspace provider for tests (legacy interface)
+		// TODO: Add WorkspaceProvider field when tests are migrated to RFC-084 types
+		Config: s.Config,
+		DB:     s.DB,
+		Logger: hclog.NewNullLogger(),
 	}
 
 	// Create mux and register endpoints (mimicking internal/cmd/commands/server/server.go)

@@ -21,6 +21,12 @@ func NewWorkspaceAdapter(adapter *Adapter) workspace.WorkspaceProvider {
 	}
 }
 
+// GetAdapter returns the underlying Adapter for direct access.
+// This is useful for operations that need the low-level adapter interface.
+func (w *WorkspaceAdapter) GetAdapter() *Adapter {
+	return w.adapter
+}
+
 // ===================================================================
 // DocumentProvider Implementation
 // ===================================================================

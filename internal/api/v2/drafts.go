@@ -173,7 +173,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 			if srv.Config.GoogleWorkspace.Auth != nil &&
 				srv.Config.GoogleWorkspace.Auth.CreateDocsAsUser {
 				// Create file as the logged-in user using the provider's impersonation method.
-				f, err = srv.WorkspaceProvider.CreateFileAsUser(
+				f, err = srv.LegacyProvider.CreateFileAsUser(
 					template,
 					srv.Config.GoogleWorkspace.DraftsFolder,
 					title,
@@ -205,7 +205,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 				}
 			} else {
 				// Copy template to new draft file as service user.
-				f, err = srv.WorkspaceProvider.CopyFile(
+				f, err = srv.LegacyProvider.CopyFile(
 					template, srv.Config.GoogleWorkspace.DraftsFolder, title)
 				if err != nil {
 					srv.Logger.Error("error parsing draft created time",
@@ -237,7 +237,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 
 			// Get owner photo by searching Google Workspace directory.
 			op := []string{}
-			people, err := srv.WorkspaceProvider.SearchPeople(userEmail, "photos")
+			people, err := srv.LegacyProvider.SearchPeople(userEmail, "photos")
 			if err != nil {
 				srv.Logger.Error(
 					"error searching directory for person",
@@ -288,7 +288,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 			// This replaces placeholders like {{title}}, {{owner}}, {{created_date}} etc.
 			// with actual values from the document metadata.
 			if srv.Config.LocalWorkspace != nil {
-				content, err := srv.WorkspaceProvider.GetDocumentContent(f.Id)
+				content, err := srv.LegacyProvider.GetDocumentContent(f.Id)
 				if err != nil {
 					srv.Logger.Warn("error getting document content for template expansion",
 						"error", err,
@@ -300,7 +300,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 					expandedContent := document.ExpandTemplate(content, templateData)
 
 					// Update the document content with expanded template
-					err = srv.WorkspaceProvider.UpdateDocumentContent(f.Id, expandedContent)
+					err = srv.LegacyProvider.UpdateDocumentContent(f.Id, expandedContent)
 					if err != nil {
 						srv.Logger.Error("error updating document with expanded template",
 							"error", err,
@@ -318,7 +318,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 				}
 			} // Replace the doc header.
 			if err = doc.ReplaceHeader(
-				srv.Config.BaseURL, true, srv.WorkspaceProvider,
+				srv.Config.BaseURL, true, srv.LegacyProvider,
 			); err != nil {
 				srv.Logger.Error("error replacing draft doc header",
 					"error", err,
@@ -381,7 +381,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 			}
 
 			// Share file with the owner
-			if err := srv.WorkspaceProvider.ShareFile(f.Id, userEmail, "writer"); err != nil {
+			if err := srv.LegacyProvider.ShareFile(f.Id, userEmail, "writer"); err != nil {
 				srv.Logger.Error("error sharing file with the owner",
 					"error", err,
 					"method", r.Method,
@@ -397,7 +397,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 			// Google Drive API limitation is that you can only share files with one
 			// user at a time.
 			for _, c := range req.Contributors {
-				if err := srv.WorkspaceProvider.ShareFile(f.Id, c, "writer"); err != nil {
+				if err := srv.LegacyProvider.ShareFile(f.Id, c, "writer"); err != nil {
 					srv.Logger.Error("error sharing file with the contributor",
 						"error", err,
 						"method", r.Method,
@@ -898,7 +898,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			return
 		case shareableDocumentSubcollectionRequestType:
 			draftsShareableHandler(w, r, docID, *doc, *srv.Config, srv.Logger,
-				srv.SearchProvider, srv.WorkspaceProvider, srv.DB)
+				srv.SearchProvider, srv.LegacyProvider, srv.DB)
 			return
 		}
 
@@ -950,7 +950,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			now := time.Now()
 
 			// Get file from Google Drive so we can return the latest modified time.
-			file, err := srv.WorkspaceProvider.GetFile(docID)
+			file, err := srv.LegacyProvider.GetFile(docID)
 			if err != nil {
 				srv.Logger.Error("error getting document file from Google",
 					"error", err,
@@ -1142,7 +1142,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Delete document in Google Drive.
-			err = srv.WorkspaceProvider.DeleteFile(docID)
+			err = srv.LegacyProvider.DeleteFile(docID)
 			if err != nil {
 				srv.Logger.Error(
 					"error deleting document",
@@ -1325,7 +1325,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.WorkspaceProvider, srv.Logger)
+			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
 			if err != nil {
 				srv.Logger.Error("error checking document locked status",
 					"error", err,
@@ -1378,7 +1378,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			// Google Drive API limitation is that you can only share files with one
 			// user at a time.
 			for _, c := range contributorsToAddSharing {
-				if err := srv.WorkspaceProvider.ShareFile(docID, c, "writer"); err != nil {
+				if err := srv.LegacyProvider.ShareFile(docID, c, "writer"); err != nil {
 					srv.Logger.Error("error sharing file with the contributor",
 						"error", err,
 						"method", r.Method,
@@ -1519,7 +1519,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				// associated with the permission doesn't
 				// match owner email(s).
 				if !contains(doc.Owners, c) {
-					if err := removeSharing(srv.WorkspaceProvider, docID, c); err != nil {
+					if err := removeSharing(srv.LegacyProvider, docID, c); err != nil {
 						srv.Logger.Error("error removing contributor from file",
 							"error", err,
 							"method", r.Method,
@@ -1867,7 +1867,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				}
 
 				// Share file with new owner.
-				if err := srv.WorkspaceProvider.ShareFile(
+				if err := srv.LegacyProvider.ShareFile(
 					docID, doc.Owners[0], "writer"); err != nil {
 					srv.Logger.Error("error sharing file with new owner",
 						"error", err,
@@ -1966,7 +1966,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				newOwner := email.User{
 					EmailAddress: doc.Owners[0],
 				}
-				ppl, err := srv.WorkspaceProvider.SearchPeople(
+				ppl, err := srv.LegacyProvider.SearchPeople(
 					doc.Owners[0], "emailAddresses,names")
 				if err != nil {
 					srv.Logger.Warn("error searching directory for new owner",
@@ -1985,7 +1985,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				oldOwner := email.User{
 					EmailAddress: userEmail,
 				}
-				ppl, err = srv.WorkspaceProvider.SearchPeople(
+				ppl, err = srv.LegacyProvider.SearchPeople(
 					userEmail, "emailAddresses,names")
 				if err != nil {
 					srv.Logger.Warn("error searching directory for old owner",
@@ -2014,7 +2014,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 					},
 					[]string{doc.Owners[0]},
 					srv.Config.Email.FromAddress,
-					srv.WorkspaceProvider,
+					srv.LegacyProvider,
 				); err != nil {
 					srv.Logger.Error("error sending new owner email",
 						"error", err,
@@ -2043,7 +2043,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 
 			// Replace the doc header.
 			if err := doc.ReplaceHeader(
-				srv.Config.BaseURL, true, srv.WorkspaceProvider,
+				srv.Config.BaseURL, true, srv.LegacyProvider,
 			); err != nil {
 				srv.Logger.Error("error replacing draft doc header",
 					"error", err,
@@ -2057,7 +2057,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Rename file with new title.
-			srv.WorkspaceProvider.RenameFile(docID,
+			srv.LegacyProvider.RenameFile(docID,
 				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
 
 			w.WriteHeader(http.StatusOK)

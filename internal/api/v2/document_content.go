@@ -38,7 +38,7 @@ type DocumentContentResponse struct {
 func DocumentContentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if workspace provider supports content editing
-		if caps, ok := srv.WorkspaceProvider.(workspace.ProviderCapabilities); !ok || !caps.SupportsContentEditing() {
+		if caps, ok := srv.LegacyProvider.(workspace.ProviderCapabilities); !ok || !caps.SupportsContentEditing() {
 			srv.Logger.Warn("document content API not supported by workspace provider",
 				"path", r.URL.Path,
 				"method", r.Method,
@@ -109,7 +109,7 @@ func handleGetDocumentContent(
 	model *models.Document,
 ) {
 	// Check if this is a local workspace provider
-	if localProvider, ok := srv.WorkspaceProvider.(*local.ProviderAdapter); ok {
+	if localProvider, ok := srv.LegacyProvider.(*local.ProviderAdapter); ok {
 		// Get content through local workspace document storage
 		content, err := localProvider.GetAdapter().DocumentStorage().GetDocumentContent(context.Background(), docID)
 		if err != nil {
@@ -137,7 +137,7 @@ func handleGetDocumentContent(
 	}
 
 	// Fallback: Try to get content from Google Docs
-	doc, err := srv.WorkspaceProvider.GetDoc(docID)
+	doc, err := srv.LegacyProvider.GetDoc(docID)
 	if err != nil {
 		srv.Logger.Error("error getting document content",
 			"error", err,
@@ -184,7 +184,7 @@ func handlePutDocumentContent(
 	}
 
 	// Check if document is locked
-	locked, err := hcd.IsLocked(docID, srv.DB, srv.WorkspaceProvider, srv.Logger)
+	locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
 	if err != nil {
 		srv.Logger.Error("error checking document locked status",
 			"error", err,
@@ -210,7 +210,7 @@ func handlePutDocumentContent(
 	}
 
 	// Check if this is a local workspace provider
-	if localProvider, ok := srv.WorkspaceProvider.(*local.ProviderAdapter); ok {
+	if localProvider, ok := srv.LegacyProvider.(*local.ProviderAdapter); ok {
 		// Update content through local workspace
 		err := localProvider.GetAdapter().DocumentStorage().UpdateDocumentContent(context.Background(), docID, req.Content)
 		if err != nil {
