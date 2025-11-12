@@ -195,9 +195,9 @@ func MeHandler(srv server.Server) http.Handler {
 
 					// Build response from workspace provider data (RFC-084 UserIdentity)
 					resp = MeGetResponse{
-						ID:            p.Email,       // Use email as ID
+						ID:            p.Email, // Use email as ID
 						Email:         p.Email,
-						VerifiedEmail: true,          // If SearchPeople returned it, it's verified
+						VerifiedEmail: true, // If SearchPeople returned it, it's verified
 						Name:          p.DisplayName,
 						// GivenName and FamilyName not available in RFC-084 UserIdentity
 					}

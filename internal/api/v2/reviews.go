@@ -46,21 +46,21 @@ func ReviewsHandler(srv server.Server) http.Handler {
 				srv.Logger.Warn("IsLocked skipped - not using Google Workspace", "doc_id", docID)
 			} else {
 				locked, err := hcd.IsLocked(docID, srv.DB, googleProvider, srv.Logger)
-			if err != nil {
-				srv.Logger.Error("error checking document locked status",
-					"error", err,
-					"path", r.URL.Path,
-					"method", r.Method,
-					"doc_id", docID,
-				)
-				http.Error(w, "Error getting document status", http.StatusNotFound)
-				return
-			}
-			// Don't continue if document is locked.
-			if locked {
-				http.Error(w, "Document is locked", http.StatusLocked)
-				return
-			}
+				if err != nil {
+					srv.Logger.Error("error checking document locked status",
+						"error", err,
+						"path", r.URL.Path,
+						"method", r.Method,
+						"doc_id", docID,
+					)
+					http.Error(w, "Error getting document status", http.StatusNotFound)
+					return
+				}
+				// Don't continue if document is locked.
+				if locked {
+					http.Error(w, "Document is locked", http.StatusLocked)
+					return
+				}
 			}
 
 			// Begin database transaction.

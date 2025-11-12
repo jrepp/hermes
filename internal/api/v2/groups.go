@@ -120,7 +120,7 @@ func GroupsHandler(srv server.Server) http.Handler {
 
 			// Retrieve groups without prefix.
 			teamsResult, err := srv.WorkspaceProvider.ListTeams(
-			r.Context(),
+				r.Context(),
 				srv.Config.GoogleWorkspace.Domain,
 				fmt.Sprintf("email:%s*", query),
 				int64(maxNonPrefixGroups),

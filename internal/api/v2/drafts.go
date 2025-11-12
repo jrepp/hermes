@@ -128,8 +128,18 @@ func DraftsHandler(srv server.Server) http.Handler {
 			)
 
 			// Copy template to new draft file using RFC-084.
-			templateProviderID := fmt.Sprintf("google:%s", template)
+			// Use the appropriate provider prefix based on workspace configuration
+			workspaceProvider := "google" // default for backwards compatibility
+			if srv.Config.Providers != nil && srv.Config.Providers.Workspace != "" {
+				workspaceProvider = srv.Config.Providers.Workspace
+			}
+			templateProviderID := fmt.Sprintf("%s:%s", workspaceProvider, template)
+
+			// Get the appropriate destination folder based on provider
 			destFolderID := srv.Config.GoogleWorkspace.DraftsFolder
+			if workspaceProvider == "local" && srv.Config.LocalWorkspace != nil {
+				destFolderID = srv.Config.LocalWorkspace.DraftsPath
+			}
 
 			// Use RFC-084 CopyDocument (RFC-084 doesn't support user impersonation directly)
 			docMeta, err = srv.WorkspaceProvider.CopyDocument(
@@ -147,8 +157,12 @@ func DraftsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Extract file ID from provider ID (format: "google:fileID")
-			fileID := strings.TrimPrefix(docMeta.ProviderID, "google:")
+			// Extract file ID from provider ID (format: "provider:fileID")
+			// Strip any provider prefix (google:, local:, etc.)
+			fileID := docMeta.ProviderID
+			if idx := strings.Index(fileID, ":"); idx != -1 {
+				fileID = fileID[idx+1:]
+			}
 
 			// Build created date.
 			ct := docMeta.CreatedTime
@@ -292,23 +306,44 @@ func DraftsHandler(srv server.Server) http.Handler {
 			}
 
 			// Share document with the owner
+			// Skip sharing for local workspace (not supported)
 			if err := srv.WorkspaceProvider.ShareDocument(r.Context(), docMeta.ProviderID, userEmail, "writer"); err != nil {
-				srv.Logger.Error("error sharing document with the owner",
-					"error", err,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"doc_id", fileID,
-				)
-				http.Error(w, "Error creating document draft",
-					http.StatusInternalServerError)
-				return
+				// Only log as warning for local workspace, not an error
+				if workspaceProvider == "local" {
+					srv.Logger.Debug("skipping document sharing for local workspace",
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", fileID,
+					)
+				} else {
+					srv.Logger.Error("error sharing document with the owner",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", fileID,
+					)
+					http.Error(w, "Error creating document draft",
+						http.StatusInternalServerError)
+					return
+				}
 			}
 
 			// Share document with contributors.
 			// Google Drive API limitation is that you can only share files with one
 			// user at a time.
+			// Skip sharing for local workspace (not supported)
 			for _, c := range req.Contributors {
 				if err := srv.WorkspaceProvider.ShareDocument(r.Context(), docMeta.ProviderID, c, "writer"); err != nil {
+					// Only log as warning for local workspace, not an error
+					if workspaceProvider == "local" {
+						srv.Logger.Debug("skipping contributor sharing for local workspace",
+							"method", r.Method,
+							"path", r.URL.Path,
+							"doc_id", fileID,
+							"contributor", c,
+						)
+						continue
+					}
 					srv.Logger.Error("error sharing file with the contributor",
 						"error", err,
 						"method", r.Method,
@@ -631,6 +666,15 @@ func DraftsHandler(srv server.Server) http.Handler {
 	})
 }
 
+// getWorkspaceProviderID constructs a provider ID (format: "provider:docID") based on workspace configuration
+func getWorkspaceProviderID(cfg *config.Config, docID string) string {
+	workspaceProvider := "google" // default for backwards compatibility
+	if cfg.Providers != nil && cfg.Providers.Workspace != "" {
+		workspaceProvider = cfg.Providers.Workspace
+	}
+	return fmt.Sprintf("%s:%s", workspaceProvider, docID)
+}
+
 func DraftsDocumentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Parse document ID and request type from the URL path.
@@ -761,7 +805,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			now := time.Now()
 
 			// Get document metadata from workspace provider so we can return the latest modified time.
-			providerID := fmt.Sprintf("google:%s", docID)
+			providerID := getWorkspaceProviderID(srv.Config, docID)
 			docMeta, err := srv.WorkspaceProvider.GetDocument(r.Context(), providerID)
 			if err != nil {
 				srv.Logger.Error("error getting document metadata from workspace",
@@ -908,7 +952,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Delete document in workspace provider.
-			providerID := fmt.Sprintf("google:%s", docID)
+			providerID := getWorkspaceProviderID(srv.Config, docID)
 			err = srv.WorkspaceProvider.DeleteDocument(r.Context(), providerID)
 			if err != nil {
 				srv.Logger.Error(
@@ -1140,7 +1184,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			// Share file with contributors.
 			// Google Drive API limitation is that you can only share files with one
 			// user at a time.
-			providerID := fmt.Sprintf("google:%s", docID)
+			providerID := getWorkspaceProviderID(srv.Config, docID)
 			for _, c := range contributorsToAddSharing {
 				if err := srv.WorkspaceProvider.ShareDocument(r.Context(), providerID, c, "writer"); err != nil {
 					srv.Logger.Error("error sharing file with the contributor",
@@ -1381,7 +1425,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				}
 
 				// Share document with new owner.
-				providerID = fmt.Sprintf("google:%s", docID)
+				providerID = getWorkspaceProviderID(srv.Config, docID)
 				if err := srv.WorkspaceProvider.ShareDocument(
 					r.Context(), providerID, doc.Owners[0], "writer"); err != nil {
 					srv.Logger.Error("error sharing file with new owner",
@@ -1536,7 +1580,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Rename document with new title.
-			providerID = fmt.Sprintf("google:%s", docID)
+			providerID = getWorkspaceProviderID(srv.Config, docID)
 			srv.WorkspaceProvider.RenameDocument(r.Context(), providerID,
 				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
 
