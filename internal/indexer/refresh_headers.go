@@ -160,7 +160,7 @@ func refreshDocumentHeader(
 	log := idx.Logger
 
 	// Check if document is locked.
-	provider := gw.NewAdapter(idx.GoogleWorkspaceService)
+	provider := gw.NewCompatAdapter(idx.GoogleWorkspaceService)
 	locked, err := hcd.IsLocked(
 		file.Id, idx.Database, provider, log)
 	if err != nil {

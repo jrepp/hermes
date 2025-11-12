@@ -370,7 +370,7 @@ func (c *Command) Run(args []string) int {
 			}
 		}
 
-		workspaceProvider = gw.NewAdapter(goog)
+		workspaceProvider = gw.NewCompatAdapter(goog)
 
 	case "local":
 		if cfg.LocalWorkspace == nil {
