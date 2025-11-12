@@ -1,0 +1,63 @@
+# Pre-commit hooks for Hermes project
+# Install with: pre-commit install
+# Run manually with: pre-commit run --all-files
+
+repos:
+  - repo: local
+    hooks:
+      - id: gofmt
+        name: gofmt
+        entry: gofmt
+        language: system
+        types: [go]
+        args: [-w, -l]
+        pass_filenames: true
+
+      - id: go-vet
+        name: go vet
+        entry: go vet
+        language: system
+        types: [go]
+        pass_filenames: false
+        args: [./...]
+
+      - id: go-build
+        name: go build
+        entry: bash -c 'go build -o /dev/null ./...'
+        language: system
+        types: [go]
+        pass_filenames: false
+
+      - id: go-test-compile
+        name: go test compile
+        entry: bash -c 'go test -run=^$ ./...'
+        language: system
+        types: [go]
+        pass_filenames: false
+
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: bash -c 'go mod tidy && git diff --exit-code go.mod go.sum'
+        language: system
+        types: [go]
+        pass_filenames: false
+
+      - id: go-complexity
+        name: go complexity check
+        entry: bash -c './scripts/check-complexity.sh'
+        language: system
+        types: [go]
+        pass_filenames: false
+        stages: [pre-push]  # Only run on push, not on every commit
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        types: [go]
+      - id: end-of-file-fixer
+        types: [go]
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
