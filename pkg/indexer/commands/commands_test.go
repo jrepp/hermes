@@ -189,7 +189,7 @@ func TestDiscoverCommand(t *testing.T) {
 		discovered, err := cmd.Discover(context.Background())
 		require.NoError(t, err)
 		assert.Len(t, discovered, 2)
-		
+
 		// Verify doc-3 was not discovered (different folder)
 		for _, doc := range discovered {
 			assert.NotEqual(t, "doc-3", doc.Document.ID)

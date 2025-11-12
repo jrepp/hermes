@@ -37,7 +37,7 @@ func TestV2Products_Get(t *testing.T) {
 		Config:         suite.Config,
 		DB:             suite.DB,
 		// GWService removed:      &gw.Service{},
-		Logger:         log,
+		Logger: log,
 	}
 
 	// Wrap the products handler with auth middleware
@@ -79,7 +79,7 @@ func TestV2Products_MethodNotAllowed(t *testing.T) {
 		Config:         suite.Config,
 		DB:             suite.DB,
 		// GWService removed:      &gw.Service{},
-		Logger:         log,
+		Logger: log,
 	}
 
 	handler := pkgauth.Middleware(mockAuth, log)(apiv2.ProductsHandler(*srv))
@@ -120,7 +120,7 @@ func TestV2Products_Unauthorized(t *testing.T) {
 		Config:         suite.Config,
 		DB:             suite.DB,
 		// GWService removed:      &gw.Service{},
-		Logger:         log,
+		Logger: log,
 	}
 
 	handler := pkgauth.Middleware(mockAuth, log)(apiv2.ProductsHandler(*srv))

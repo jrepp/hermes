@@ -202,11 +202,11 @@ func TestIntegration_ExpandAndCleanTemplate(t *testing.T) {
 	// Simulate a real RFC template
 	template := `# {{title}}
 
-**Status**: Draft  
-**Created**: {{created_date}}  
-**Owner**: {{owner}}  
-**Stakeholders**: {{stakeholders}}  
-**Current Version**: {{current_version}}  
+**Status**: Draft
+**Created**: {{created_date}}
+**Owner**: {{owner}}
+**Stakeholders**: {{stakeholders}}
+**Current Version**: {{current_version}}
 **Target Version**: {{target_version}}
 
 ## Overview

@@ -94,8 +94,7 @@ type Document struct {
 	// Status is the status of the document.
 	Status DocumentStatus
 
-	// ShareableAsDraft is true if the document can be shared in the WIP (draft)
-	// status.
+	// ShareableAsDraft is true if the document can be shared in the WIP (draft) status.
 	ShareableAsDraft bool
 
 	// Summary is a summary of the document.

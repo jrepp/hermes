@@ -113,12 +113,10 @@ test.describe('CRITICAL BUG: Document Content Display After Save', () => {
     await authenticateUser(page);
     await page.screenshot({ path: 'test-results/bug-01-authenticated.png', fullPage: true });
 
-    // Step 2: Navigate to an existing document instead of creating one
-    // Use the document ID we know exists from the testing summary
-    const docId = 'e92a95903b8fcfd3ac01f2d858741a18';
-    await page.goto(`/document/${docId}?draft=true`);
-    await page.waitForLoadState('networkidle');
-    
+    // Step 2: Create a new document for testing
+    const docTitle = `Content Display Test ${Date.now()}`;
+    const docId = await createNewRFC(page, docTitle);
+
     await page.screenshot({ path: 'test-results/bug-02-document-loaded.png', fullPage: true });
 
     // Step 3: Verify we're on the document page and can see the Edit button

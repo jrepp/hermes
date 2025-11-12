@@ -113,23 +113,45 @@ test.describe('Document Creation Flow', () => {
     const documentTitle = `Test RFC ${timestamp}`;
     const documentSummary = `This is an automated test document created at ${new Date().toISOString()}`;
 
-    // Look for title input field
+    // Look for title input field - using Playwright's role-based locators
     const titleInputs = [
+      page.getByRole('textbox', { name: 'Title' }),
+      page.getByPlaceholder('Enter a title'),
       page.locator('input[name="title"]'),
       page.locator('input[placeholder*="title" i]'),
       page.locator('[data-test-document-title]'),
-      page.locator('input[type="text"]').first(),
     ];
 
+    let titleFilled = false;
     for (const input of titleInputs) {
       try {
-        await input.waitFor({ timeout: 3000 });
+        // Wait for element to be visible and enabled
+        await input.waitFor({ state: 'visible', timeout: 3000 });
+
+        // Click to focus before filling
+        await input.click();
+        await page.waitForTimeout(100); // Small delay to ensure field is ready
+
+        // Fill the field
         await input.fill(documentTitle);
-        console.log(`✓ Filled title: ${documentTitle}`);
-        break;
+
+        // Verify the value was actually set
+        const value = await input.inputValue();
+        if (value === documentTitle) {
+          console.log(`✓ Filled title: ${documentTitle}`);
+          titleFilled = true;
+          break;
+        } else {
+          console.log(`⚠ Title value mismatch: expected "${documentTitle}", got "${value}"`);
+        }
       } catch (e) {
         // Try next input
+        console.log(`⚠ Failed to fill title with selector, trying next...`);
       }
+    }
+
+    if (!titleFilled) {
+      throw new Error('Failed to fill title field with any selector');
     }
 
     // Look for summary/description field
