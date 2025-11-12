@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,9 +11,11 @@ import (
 	"strings"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
+	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-multierror"
 	"github.com/iancoleman/strcase"
@@ -566,21 +569,14 @@ func CompareAlgoliaAndDatabaseDocument(
 
 // isUserInGroups returns true if a user is in any supplied groups, false
 // otherwise.
+// NOTE: This uses RFC-084 WorkspaceProvider interface.
 func isUserInGroups(
-	userEmail string, groupEmails []string, provider workspace.Provider) (bool, error) {
-	// Get groups for user.
-	userGroups, err := provider.ListUserGroups(userEmail)
-	if err != nil {
-		return false, fmt.Errorf("error getting groups for user: %w", err)
-	}
+	ctx context.Context,
+	userEmail string,
+	groupEmails []string,
+	provider workspace.WorkspaceProvider) (bool, error) {
 
-	for _, g := range userGroups {
-		if contains(groupEmails, g.Email) {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return isUserInGroupsRFC084(ctx, userEmail, groupEmails, provider)
 }
 
 func getBooleanValue(in map[string]any, key string) (bool, error) {
@@ -676,4 +672,76 @@ func getStringSliceValue(in map[string]any, key string) ([]string, error) {
 	}
 
 	return result, nil
+}
+
+// ===================================================================
+// RFC-084 Migration Helpers
+// ===================================================================
+
+// getGoogleDocsProvider extracts GoogleDocsProvider from WorkspaceProvider if it's Google.
+// Returns nil if the provider is not Google Workspace.
+func getGoogleDocsProvider(provider workspace.WorkspaceProvider) hashicorpdocs.GoogleDocsProvider {
+	// Check if provider is Google Workspace adapter
+	if googleAdapter, ok := provider.(*gw.Adapter); ok {
+		return googleAdapter.GetService()
+	}
+	return nil
+}
+
+// getCompatProvider converts WorkspaceProvider to the old Provider interface.
+// This is a temporary helper during migration to support legacy code expecting workspace.Provider.
+func getCompatProvider(provider workspace.WorkspaceProvider) workspace.Provider {
+	if googleAdapter, ok := provider.(*gw.Adapter); ok {
+		// Return a compat adapter that implements the full Provider interface
+		return gw.NewCompatAdapter(googleAdapter.GetService())
+	}
+	// TODO: Add support for local provider if needed
+	return nil
+}
+
+// getGoogleDocsUpdater extracts the old Provider interface from WorkspaceProvider if it's Google.
+// This is needed for ReplaceHeader operations which require GetDoc, UpdateDoc, and RenameFile.
+func getGoogleDocsUpdater(provider workspace.WorkspaceProvider) workspace.Provider {
+	return getCompatProvider(provider)
+}
+
+// isUserInGroupsRFC084 checks if a user is in any supplied groups using RFC-084 interfaces.
+func isUserInGroupsRFC084(
+	ctx context.Context,
+	userEmail string,
+	groupEmails []string,
+	provider workspace.WorkspaceProvider) (bool, error) {
+
+	// Get teams for user using RFC-084 TeamProvider interface
+	userTeams, err := provider.GetUserTeams(ctx, userEmail)
+	if err != nil {
+		return false, fmt.Errorf("error getting teams for user: %w", err)
+	}
+
+	for _, team := range userTeams {
+		if contains(groupEmails, team.Email) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// getLatestRevisionRFC084 gets the latest revision using RFC-084 RevisionTrackingProvider.
+func getLatestRevisionRFC084(
+	ctx context.Context,
+	providerID string,
+	provider workspace.WorkspaceProvider) (*workspace.BackendRevision, error) {
+
+	// Get revision history with limit 1 to get only the latest
+	revisions, err := provider.GetRevisionHistory(ctx, providerID, 1)
+	if err != nil {
+		return nil, fmt.Errorf("error getting revision history: %w", err)
+	}
+
+	if len(revisions) == 0 {
+		return nil, fmt.Errorf("no revisions found for document")
+	}
+
+	return revisions[0], nil
 }

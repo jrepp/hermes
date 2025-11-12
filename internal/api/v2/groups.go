@@ -92,10 +92,11 @@ func GroupsHandler(srv server.Server) http.Handler {
 
 				prefixQuery := fmt.Sprintf(
 					"%s%s", searchPrefix, query)
-				groupsResult, err := srv.LegacyProvider.ListGroups(
+				teamsResult, err := srv.WorkspaceProvider.ListTeams(
+					r.Context(),
 					srv.Config.GoogleWorkspace.Domain,
 					fmt.Sprintf("email:%s*", prefixQuery),
-					maxPrefixGroupResults,
+					int64(maxPrefixGroupResults),
 				)
 				if err != nil {
 					srv.Logger.Error("error searching groups with prefix",
@@ -106,11 +107,20 @@ func GroupsHandler(srv server.Server) http.Handler {
 						http.StatusInternalServerError)
 					return
 				}
+				// Convert teams to admin.Groups format for compatibility
+				groupsResult := make([]*admin.Group, len(teamsResult))
+				for i, t := range teamsResult {
+					groupsResult[i] = &admin.Group{
+						Email: t.Email,
+						Name:  t.Name,
+					}
+				}
 				prefixGroups = &admin.Groups{Groups: groupsResult}
 			}
 
 			// Retrieve groups without prefix.
-			groupsResult, err := srv.LegacyProvider.ListGroups(
+			teamsResult, err := srv.WorkspaceProvider.ListTeams(
+			r.Context(),
 				srv.Config.GoogleWorkspace.Domain,
 				fmt.Sprintf("email:%s*", query),
 				int64(maxNonPrefixGroups),
@@ -124,7 +134,15 @@ func GroupsHandler(srv server.Server) http.Handler {
 					http.StatusInternalServerError)
 				return
 			}
-			groups = &admin.Groups{Groups: groupsResult}
+			// Convert teams to admin.Groups format for compatibility
+			nonPrefixGroupsResult := make([]*admin.Group, len(teamsResult))
+			for i, t := range teamsResult {
+				nonPrefixGroupsResult[i] = &admin.Group{
+					Email: t.Email,
+					Name:  t.Name,
+				}
+			}
+			groups = &admin.Groups{Groups: nonPrefixGroupsResult}
 
 			allGroups = concatGroupSlicesAndRemoveDuplicates(
 				prefixGroups.Groups, groups.Groups)

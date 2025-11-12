@@ -14,6 +14,18 @@ type WorkspaceAdapter struct {
 	adapter *Adapter
 }
 
+// Compile-time interface checks - ensures WorkspaceAdapter implements all RFC-084 interfaces
+var (
+	_ workspace.WorkspaceProvider        = (*WorkspaceAdapter)(nil)
+	_ workspace.DocumentProvider         = (*WorkspaceAdapter)(nil)
+	_ workspace.ContentProvider          = (*WorkspaceAdapter)(nil)
+	_ workspace.RevisionTrackingProvider = (*WorkspaceAdapter)(nil)
+	_ workspace.PermissionProvider       = (*WorkspaceAdapter)(nil)
+	_ workspace.PeopleProvider           = (*WorkspaceAdapter)(nil)
+	_ workspace.TeamProvider             = (*WorkspaceAdapter)(nil)
+	_ workspace.NotificationProvider     = (*WorkspaceAdapter)(nil)
+)
+
 // NewWorkspaceAdapter creates a new WorkspaceProvider-compliant adapter.
 func NewWorkspaceAdapter(adapter *Adapter) workspace.WorkspaceProvider {
 	return &WorkspaceAdapter{

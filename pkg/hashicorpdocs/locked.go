@@ -4,18 +4,24 @@ import (
 	"fmt"
 
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp/go-hclog"
 	"google.golang.org/api/docs/v1"
 	"gorm.io/gorm"
 )
 
+// GoogleDocsProvider is a minimal interface for Google Docs operations.
+// This is used for Google-specific functionality like checking for suggestions.
+type GoogleDocsProvider interface {
+	GetDoc(fileID string) (*docs.Document, error)
+}
+
 // IsLocked checks if a document contains one or more suggestions in the header,
 // locks/unlocks the document accordingly, and returns the lock status.
+// This function is Google Docs-specific and requires a GoogleDocsProvider.
 func IsLocked(
 	fileID string,
 	db *gorm.DB,
-	provider workspace.Provider,
+	provider GoogleDocsProvider,
 	log hclog.Logger,
 ) (bool, error) {
 

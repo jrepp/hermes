@@ -40,8 +40,12 @@ func ReviewsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
+			// Check if document is locked (Google Docs specific).
+			googleProvider := getGoogleDocsProvider(srv.WorkspaceProvider)
+			if googleProvider == nil {
+				srv.Logger.Warn("IsLocked skipped - not using Google Workspace", "doc_id", docID)
+			} else {
+				locked, err := hcd.IsLocked(docID, srv.DB, googleProvider, srv.Logger)
 			if err != nil {
 				srv.Logger.Error("error checking document locked status",
 					"error", err,
@@ -56,6 +60,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			if locked {
 				http.Error(w, "Document is locked", http.StatusLocked)
 				return
+			}
 			}
 
 			// Begin database transaction.
@@ -191,14 +196,14 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			doc.Status = "In-Review"
 
 			// Replace the doc header.
-			err = doc.ReplaceHeader(srv.Config.BaseURL, false, srv.LegacyProvider)
+			err = doc.ReplaceHeader(srv.Config.BaseURL, false, getGoogleDocsUpdater(srv.WorkspaceProvider))
 			revertFuncs = append(revertFuncs, func() error {
 				// Change back document number to "ABC-???" and status to "WIP".
 				doc.DocNumber = fmt.Sprintf("%s-???", product.Abbreviation)
 				doc.Status = "WIP"
 
 				if err = doc.ReplaceHeader(
-					srv.Config.BaseURL, false, srv.LegacyProvider,
+					srv.Config.BaseURL, false, getGoogleDocsUpdater(srv.WorkspaceProvider),
 				); err != nil {
 					return fmt.Errorf("error replacing doc header: %w", err)
 				}
@@ -226,10 +231,11 @@ func ReviewsHandler(srv server.Server) http.Handler {
 				"path", r.URL.Path,
 			)
 
-			// Get file from Google Drive so we can get the latest modified time.
-			file, err := srv.LegacyProvider.GetFile(docID)
+			// Get document metadata from workspace provider to get the latest modified time.
+			providerID := fmt.Sprintf("google:%s", docID)
+			docMeta, err := srv.WorkspaceProvider.GetDocument(r.Context(), providerID)
 			if err != nil {
-				srv.Logger.Error("error getting document file from Google",
+				srv.Logger.Error("error getting document metadata from workspace",
 					"error", err,
 					"path", r.URL.Path,
 					"method", r.Method,
@@ -246,8 +252,8 @@ func ReviewsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Parse and set modified time.
-			modifiedTime, err := time.Parse(time.RFC3339Nano, file.ModifiedTime)
+			// Use modified time directly (no parsing needed - RFC-084 returns time.Time)
+			modifiedTime := docMeta.ModifiedTime
 			if err != nil {
 				srv.Logger.Error("error parsing modified time",
 					"error", err,
@@ -267,8 +273,9 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			}
 			doc.ModifiedTime = modifiedTime.Unix()
 
-			// Get latest Google Drive file revision.
-			latestRev, err := srv.LegacyProvider.GetLatestRevision(docID)
+			// Get latest revision using RFC-084.
+			providerID = fmt.Sprintf("google:%s", docID)
+			latestRev, err := getLatestRevisionRFC084(r.Context(), providerID, srv.WorkspaceProvider)
 			if err != nil {
 				srv.Logger.Error("error getting latest revision",
 					"error", err,
@@ -289,25 +296,16 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			}
 
 			// Mark latest revision to be kept forever.
-			_, err = srv.LegacyProvider.KeepRevisionForever(docID, latestRev.Id)
-			revertFuncs = append(revertFuncs, func() error {
-				// Mark latest revision to not be kept forever.
-				if err = srv.LegacyProvider.UpdateKeepRevisionForever(
-					docID, latestRev.Id, false,
-				); err != nil {
-					return fmt.Errorf(
-						"error marking revision to not be kept forever: %w", err)
-				}
-
-				return nil
-			})
+			err = srv.WorkspaceProvider.KeepRevisionForever(r.Context(), providerID, latestRev.RevisionID)
+			// Note: RFC-084 does not support undoing KeepRevisionForever, so we don't add a revert function.
+			// In case of errors, the revision will remain kept forever.
 			if err != nil {
 				srv.Logger.Error("error marking revision to keep forever",
 					"error", err,
 					"method", r.Method,
 					"path", r.URL.Path,
 					"doc_id", docID,
-					"rev_id", latestRev.Id)
+					"rev_id", latestRev.RevisionID)
 				http.Error(w, "Error creating review",
 					http.StatusInternalServerError)
 
@@ -328,14 +326,14 @@ func ReviewsHandler(srv server.Server) http.Handler {
 
 			// Record file revision in the Algolia document object.
 			revisionName := "Requested review"
-			doc.SetFileRevision(latestRev.Id, revisionName)
+			doc.SetFileRevision(latestRev.RevisionID, revisionName)
 
 			// Create file revision in the database.
 			fr := models.DocumentFileRevision{
 				Document: models.Document{
 					GoogleFileID: docID,
 				},
-				GoogleDriveFileRevisionID: latestRev.Id,
+				GoogleDriveFileRevisionID: latestRev.RevisionID,
 				Name:                      revisionName,
 			}
 			if err := fr.Create(tx); err != nil {
@@ -344,7 +342,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 					"method", r.Method,
 					"path", r.URL.Path,
 					"doc_id", docID,
-					"rev_id", latestRev.Id)
+					"rev_id", latestRev.RevisionID)
 				http.Error(w, "Error creating review",
 					http.StatusInternalServerError)
 
@@ -358,13 +356,14 @@ func ReviewsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Move document to published docs location in Google Drive.
-			_, err = srv.LegacyProvider.MoveFile(
-				docID, srv.Config.GoogleWorkspace.DocsFolder)
+			// Move document to published docs location.
+			providerID = fmt.Sprintf("google:%s", docID)
+			_, err = srv.WorkspaceProvider.MoveDocument(
+				r.Context(), providerID, srv.Config.GoogleWorkspace.DocsFolder)
 			revertFuncs = append(revertFuncs, func() error {
 				// Move document back to drafts folder in Google Drive.
-				if _, err := srv.LegacyProvider.MoveFile(
-					doc.ObjectID, srv.Config.GoogleWorkspace.DraftsFolder); err != nil {
+				if _, err := srv.WorkspaceProvider.MoveDocument(
+					r.Context(), fmt.Sprintf("google:%s", doc.ObjectID), srv.Config.GoogleWorkspace.DraftsFolder); err != nil {
 
 					return fmt.Errorf("error moving doc back to drafts folder: %w", err)
 
@@ -397,7 +396,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			)
 
 			// Create shortcut in hierarchical folder structure.
-			_, err = createShortcut(srv.Config, *doc, srv.LegacyProvider)
+			_, err = createShortcut(srv.Config, *doc, getCompatProvider(srv.WorkspaceProvider))
 			if err != nil {
 				srv.Logger.Error("error creating shortcut",
 					"error", err,
@@ -509,7 +508,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			// Give document approvers and approver groups edit access to the
 			// document.
 			for _, a := range allApprovers {
-				if err := srv.LegacyProvider.ShareFile(docID, a, "writer"); err != nil {
+				if err := srv.WorkspaceProvider.ShareDocument(r.Context(), fmt.Sprintf("google:%s", docID), a, "writer"); err != nil {
 					srv.Logger.Error("error sharing file with approver",
 						"error", err,
 						"doc_id", docID,
@@ -570,7 +569,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 							},
 							[]string{approverEmail},
 							srv.Config.Email.FromAddress,
-							srv.LegacyProvider,
+							getCompatProvider(srv.WorkspaceProvider),
 						)
 						if err != nil {
 							srv.Logger.Error("error sending approver email",
@@ -713,7 +712,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 								},
 								[]string{subscriber.EmailAddress},
 								srv.Config.Email.FromAddress,
-								srv.LegacyProvider,
+								getCompatProvider(srv.WorkspaceProvider),
 							)
 							if err != nil {
 								srv.Logger.Error("error sending subscriber email",

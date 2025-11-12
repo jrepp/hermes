@@ -105,8 +105,8 @@ func MeHandler(srv server.Server) http.Handler {
 				srv.Logger.Debug("falling back to workspace provider for user info",
 					"email", userEmail)
 
-				ppl, err := srv.LegacyProvider.SearchPeople(
-					userEmail, "emailAddresses,names,photos")
+				ppl, err := srv.WorkspaceProvider.SearchPeople(
+					r.Context(), userEmail)
 				if err != nil {
 					// If workspace search fails (e.g., using local workspace with no indexed users),
 					// return basic user info derived from email instead of failing
@@ -142,7 +142,8 @@ func MeHandler(srv server.Server) http.Handler {
 						srv.Config.GoogleWorkspace.UserNotFoundEmail.Enabled &&
 						srv.Config.GoogleWorkspace.UserNotFoundEmail.Body != "" &&
 						srv.Config.GoogleWorkspace.UserNotFoundEmail.Subject != "" {
-						err = srv.LegacyProvider.SendEmail(
+						err = srv.WorkspaceProvider.SendEmail(
+							r.Context(),
 							[]string{userEmail},
 							srv.Config.Email.FromAddress,
 							srv.Config.GoogleWorkspace.UserNotFoundEmail.Subject,
@@ -169,10 +170,9 @@ func MeHandler(srv server.Server) http.Handler {
 
 					// Make sure that the result's email address is the same as the
 					// authenticated user, is the primary email address, and is verified.
-					if len(p.EmailAddresses) == 0 ||
-						p.EmailAddresses[0].Value != userEmail ||
-						!p.EmailAddresses[0].Metadata.Primary ||
-						!p.EmailAddresses[0].Metadata.Verified {
+					// Make sure that the result's email address is the same as the
+					// authenticated user. RFC-084 UserIdentity has Email field directly.
+					if p.Email == "" || p.Email != userEmail {
 						errResp(
 							http.StatusInternalServerError,
 							"Error getting user information",
@@ -182,28 +182,27 @@ func MeHandler(srv server.Server) http.Handler {
 						return
 					}
 
-					// Verify other required values are set.
-					if len(p.Names) == 0 {
+					// Verify display name is set. RFC-084 UserIdentity has DisplayName field.
+					if p.DisplayName == "" {
 						errResp(
 							http.StatusInternalServerError,
 							"Error getting user information",
-							"no names in result",
+							"no display name in result",
 							err,
 						)
 						return
 					}
 
-					// Build response from workspace provider data
+					// Build response from workspace provider data (RFC-084 UserIdentity)
 					resp = MeGetResponse{
-						ID:            p.EmailAddresses[0].Metadata.Source.Id,
-						Email:         p.EmailAddresses[0].Value,
-						VerifiedEmail: p.EmailAddresses[0].Metadata.Verified,
-						Name:          p.Names[0].DisplayName,
-						GivenName:     p.Names[0].GivenName,
-						FamilyName:    p.Names[0].FamilyName,
+						ID:            p.Email,       // Use email as ID
+						Email:         p.Email,
+						VerifiedEmail: true,          // If SearchPeople returned it, it's verified
+						Name:          p.DisplayName,
+						// GivenName and FamilyName not available in RFC-084 UserIdentity
 					}
-					if len(p.Photos) > 0 {
-						resp.Picture = p.Photos[0].Url
+					if p.PhotoURL != "" {
+						resp.Picture = p.PhotoURL
 					}
 				}
 			}

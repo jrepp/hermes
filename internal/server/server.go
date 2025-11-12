@@ -18,13 +18,7 @@ type Server struct {
 
 	// WorkspaceProvider is the workspace/storage backend (Google Drive, local, etc).
 	// Uses RFC-084 WorkspaceProvider interface for multi-provider architecture.
-	// PREFERRED for new code.
 	WorkspaceProvider workspace.WorkspaceProvider
-
-	// LegacyProvider is the old Provider interface for backward compatibility.
-	// DEPRECATED: Use WorkspaceProvider for new code.
-	// Required temporarily for functions that haven't been migrated yet.
-	LegacyProvider workspace.Provider
 
 	// Config is the config for the server.
 	Config *config.Config
