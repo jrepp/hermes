@@ -199,16 +199,6 @@ type MergeRequest struct {
 	InitiatedBy    string     `json:"initiatedBy"`     // User email
 }
 
-// MergeRecord represents a historical UUID merge operation
-type MergeRecord struct {
-	MergeID       string     `json:"mergeId"`
-	SourceUUID    docid.UUID `json:"sourceUuid"`
-	TargetUUID    docid.UUID `json:"targetUuid"`
-	MergedAt      time.Time  `json:"mergedAt"`
-	InitiatedBy   string     `json:"initiatedBy"`
-	RevisionCount int        `json:"revisionCount"`
-}
-
 // OAuthFlow represents OAuth flow initiation data
 type OAuthFlow struct {
 	AuthURL  string `json:"authUrl"`
