@@ -708,7 +708,7 @@ local_workspace {
   users_path   = %q
   tokens_path  = %q
   domain       = "localhost"
-  
+
   smtp {
     enabled = false
   }

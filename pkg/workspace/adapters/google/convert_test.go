@@ -79,10 +79,10 @@ func TestConvertToDocumentMetadata(t *testing.T) {
 
 func TestConvertToDocumentMetadata_NoUUID(t *testing.T) {
 	file := &drive.File{
-		Id:          "file123",
-		Name:        "Test Document",
-		MimeType:    "text/markdown",
-		Properties:  map[string]string{},
+		Id:         "file123",
+		Name:       "Test Document",
+		MimeType:   "text/markdown",
+		Properties: map[string]string{},
 	}
 
 	meta, err := ConvertToDocumentMetadata(file)

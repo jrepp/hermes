@@ -30,9 +30,9 @@ type DocumentMetadata struct {
 	ModifiedTime time.Time `json:"modifiedTime"` // Last modification timestamp
 
 	// Ownership (unified identity aware)
-	Owner        *UserIdentity   `json:"owner,omitempty"`        // Individual owner (can be nil if team-owned)
-	OwningTeam   string          `json:"owningTeam,omitempty"`   // Team/group ownership (e.g., "Engineering Team")
-	Contributors []UserIdentity  `json:"contributors,omitempty"` // Document contributors/collaborators
+	Owner        *UserIdentity  `json:"owner,omitempty"`        // Individual owner (can be nil if team-owned)
+	OwningTeam   string         `json:"owningTeam,omitempty"`   // Team/group ownership (e.g., "Engineering Team")
+	Contributors []UserIdentity `json:"contributors,omitempty"` // Document contributors/collaborators
 
 	// Hierarchy and Organization
 	Parents []string `json:"parents,omitempty"` // Parent folder/directory IDs
@@ -40,7 +40,7 @@ type DocumentMetadata struct {
 	Tags    []string `json:"tags,omitempty"`    // Universal tags for categorization and search
 
 	// Document Lifecycle
-	SyncStatus     string `json:"syncStatus"`                // Multi-backend sync: "canonical", "mirror", "conflict", "archived"
+	SyncStatus     string `json:"syncStatus"`               // Multi-backend sync: "canonical", "mirror", "conflict", "archived"
 	WorkflowStatus string `json:"workflowStatus,omitempty"` // Document workflow: "Draft", "In Review", "Published", "Deprecated"
 
 	// Multi-backend tracking
@@ -105,7 +105,7 @@ type BackendRevision struct {
 	// Revision metadata
 	ModifiedTime time.Time     `json:"modifiedTime"`
 	ModifiedBy   *UserIdentity `json:"modifiedBy,omitempty"`
-	Comment      string        `json:"comment,omitempty"`    // Git commit message, Drive comment, etc.
+	Comment      string        `json:"comment,omitempty"`     // Git commit message, Drive comment, etc.
 	KeepForever  bool          `json:"keepForever,omitempty"` // Google Drive feature
 
 	// Backend-specific metadata (flexible for different systems)
@@ -192,11 +192,11 @@ type SyncStatus struct {
 
 // MergeRequest represents a request to merge two document UUIDs
 type MergeRequest struct {
-	SourceUUID     docid.UUID `json:"sourceUUID"`      // UUID to be merged (deprecated)
-	TargetUUID     docid.UUID `json:"targetUUID"`      // UUID to keep (canonical)
-	MergeRevisions bool       `json:"mergeRevisions"`  // Merge revision histories
-	MergeStrategy  string     `json:"mergeStrategy"`   // "keep-target", "keep-source", "merge-all"
-	InitiatedBy    string     `json:"initiatedBy"`     // User email
+	SourceUUID     docid.UUID `json:"sourceUUID"`     // UUID to be merged (deprecated)
+	TargetUUID     docid.UUID `json:"targetUUID"`     // UUID to keep (canonical)
+	MergeRevisions bool       `json:"mergeRevisions"` // Merge revision histories
+	MergeStrategy  string     `json:"mergeStrategy"`  // "keep-target", "keep-source", "merge-all"
+	InitiatedBy    string     `json:"initiatedBy"`    // User email
 }
 
 // OAuthFlow represents OAuth flow initiation data
