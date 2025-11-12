@@ -105,7 +105,7 @@ func MeHandler(srv server.Server) http.Handler {
 				srv.Logger.Debug("falling back to workspace provider for user info",
 					"email", userEmail)
 
-				ppl, err := srv.WorkspaceProvider.SearchPeople(
+				ppl, err := srv.LegacyProvider.SearchPeople(
 					userEmail, "emailAddresses,names,photos")
 				if err != nil {
 					// If workspace search fails (e.g., using local workspace with no indexed users),
@@ -142,7 +142,7 @@ func MeHandler(srv server.Server) http.Handler {
 						srv.Config.GoogleWorkspace.UserNotFoundEmail.Enabled &&
 						srv.Config.GoogleWorkspace.UserNotFoundEmail.Body != "" &&
 						srv.Config.GoogleWorkspace.UserNotFoundEmail.Subject != "" {
-						err = srv.WorkspaceProvider.SendEmail(
+						err = srv.LegacyProvider.SendEmail(
 							[]string{userEmail},
 							srv.Config.Email.FromAddress,
 							srv.Config.GoogleWorkspace.UserNotFoundEmail.Subject,

@@ -115,7 +115,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 
 			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.WorkspaceProvider, srv.Logger)
+			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
 			if err != nil {
 				srv.Logger.Error("error checking document locked status",
 					"error", err,
@@ -146,7 +146,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			doc.ApprovedBy = newApprovedBy
 
 			// Get latest Google Drive file revision.
-			latestRev, err := srv.WorkspaceProvider.GetLatestRevision(docID)
+			latestRev, err := srv.LegacyProvider.GetLatestRevision(docID)
 			if err != nil {
 				srv.Logger.Error("error getting latest revision",
 					"error", err,
@@ -159,7 +159,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 
 			// Mark latest revision to be kept forever.
-			_, err = srv.WorkspaceProvider.KeepRevisionForever(docID, latestRev.Id)
+			_, err = srv.LegacyProvider.KeepRevisionForever(docID, latestRev.Id)
 			if err != nil {
 				srv.Logger.Error("error marking revision to keep forever",
 					"error", err,
@@ -211,7 +211,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 
 			// Replace the doc header.
 			if err := doc.ReplaceHeader(
-				srv.Config.BaseURL, false, srv.WorkspaceProvider,
+				srv.Config.BaseURL, false, srv.LegacyProvider,
 			); err != nil {
 				srv.Logger.Error("error replacing doc header",
 					"error", err,
@@ -337,7 +337,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 
 			// User is not an approver or in an approver group.
 			inApproverGroup, err := isUserInGroups(
-				userEmail, doc.ApproverGroups, srv.WorkspaceProvider)
+				userEmail, doc.ApproverGroups, srv.LegacyProvider)
 			if err != nil {
 				srv.Logger.Error("error calculating if user is in an approver group",
 					"error", err,
@@ -373,7 +373,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				return
 			}
 			inApproverGroup, err := isUserInGroups(
-				userEmail, doc.ApproverGroups, srv.WorkspaceProvider)
+				userEmail, doc.ApproverGroups, srv.LegacyProvider)
 			if err != nil {
 				srv.Logger.Error("error calculating if user is in an approver group",
 					"error", err,
@@ -393,7 +393,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 
 			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.WorkspaceProvider, srv.Logger)
+			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
 			if err != nil {
 				srv.Logger.Error("error checking document locked status",
 					"error", err,
@@ -446,7 +446,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			doc.ChangesRequestedBy = newChangesRequestedBy
 
 			// Get latest Google Drive file revision.
-			latestRev, err := srv.WorkspaceProvider.GetLatestRevision(docID)
+			latestRev, err := srv.LegacyProvider.GetLatestRevision(docID)
 			if err != nil {
 				srv.Logger.Error("error getting latest revision",
 					"error", err,
@@ -459,7 +459,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 
 			// Mark latest revision to be kept forever.
-			_, err = srv.WorkspaceProvider.KeepRevisionForever(docID, latestRev.Id)
+			_, err = srv.LegacyProvider.KeepRevisionForever(docID, latestRev.Id)
 			if err != nil {
 				srv.Logger.Error("error marking revision to keep forever",
 					"error", err,
@@ -510,7 +510,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 
 			// Replace the doc header.
-			err = doc.ReplaceHeader(srv.Config.BaseURL, false, srv.WorkspaceProvider)
+			err = doc.ReplaceHeader(srv.Config.BaseURL, false, srv.LegacyProvider)
 			if err != nil {
 				srv.Logger.Error("error replacing doc header",
 					"error", err,
@@ -542,7 +542,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 					approver := email.User{
 						EmailAddress: userEmail,
 					}
-					ppl, err := srv.WorkspaceProvider.SearchPeople(
+					ppl, err := srv.LegacyProvider.SearchPeople(
 						userEmail, "emailAddresses,names")
 					if err != nil {
 						srv.Logger.Warn("error searching directory for approver",
@@ -586,7 +586,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 						},
 						[]string{doc.Owners[0]},
 						srv.Config.Email.FromAddress,
-						srv.WorkspaceProvider,
+						srv.LegacyProvider,
 					); err != nil {
 						srv.Logger.Error("error sending document approved email",
 							"error", err,

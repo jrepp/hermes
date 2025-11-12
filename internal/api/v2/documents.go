@@ -180,7 +180,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 			now := time.Now()
 
 			// Get file from workspace provider so we can return the latest modified time.
-			file, err := srv.WorkspaceProvider.GetFile(docID)
+			file, err := srv.LegacyProvider.GetFile(docID)
 			if err != nil {
 				srv.Logger.Error("error getting document file from workspace",
 					"error", err,
@@ -388,7 +388,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.WorkspaceProvider, srv.Logger)
+			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
 			if err != nil {
 				srv.Logger.Error("error checking document locked status",
 					"error", err,
@@ -534,7 +534,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 				doc.Owners = *req.Owners
 
 				// Give new owner edit access to the document.
-				if err := srv.WorkspaceProvider.ShareFile(
+				if err := srv.LegacyProvider.ShareFile(
 					docID, doc.Owners[0], "writer"); err != nil {
 					srv.Logger.Error("error sharing file with new owner",
 						"error", err,
@@ -562,7 +562,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 
 			// Give new document approvers edit access to the document.
 			for _, a := range approversToEmail {
-				if err := srv.WorkspaceProvider.ShareFile(docID, a, "writer"); err != nil {
+				if err := srv.LegacyProvider.ShareFile(docID, a, "writer"); err != nil {
 					srv.Logger.Error("error sharing file with approver",
 						"error", err,
 						"doc_id", docID,
@@ -577,7 +577,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 
 			// Replace the doc header.
 			if err := doc.ReplaceHeader(
-				srv.Config.BaseURL, false, srv.WorkspaceProvider,
+				srv.Config.BaseURL, false, srv.LegacyProvider,
 			); err != nil {
 				srv.Logger.Error("error replacing document header",
 					"error", err, "doc_id", docID)
@@ -587,7 +587,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Rename file with new title.
-			srv.WorkspaceProvider.RenameFile(docID,
+			srv.LegacyProvider.RenameFile(docID,
 				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
 
 			// Get document record from database so we can modify it for updating.
@@ -787,7 +787,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 					newOwner := email.User{
 						EmailAddress: doc.Owners[0],
 					}
-					ppl, err := srv.WorkspaceProvider.SearchPeople(
+					ppl, err := srv.LegacyProvider.SearchPeople(
 						doc.Owners[0], "emailAddresses,names")
 					if err != nil {
 						srv.Logger.Warn("error searching directory for new owner",
@@ -806,7 +806,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 					oldOwner := email.User{
 						EmailAddress: userEmail,
 					}
-					ppl, err = srv.WorkspaceProvider.SearchPeople(
+					ppl, err = srv.LegacyProvider.SearchPeople(
 						userEmail, "emailAddresses,names")
 					if err != nil {
 						srv.Logger.Warn("error searching directory for old owner",
@@ -835,7 +835,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 						},
 						[]string{doc.Owners[0]},
 						srv.Config.Email.FromAddress,
-						srv.WorkspaceProvider,
+						srv.LegacyProvider,
 					); err != nil {
 						srv.Logger.Error("error sending new owner email",
 							"error", err,
@@ -882,7 +882,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 								},
 								[]string{approverEmail},
 								srv.Config.Email.FromAddress,
-								srv.WorkspaceProvider,
+								srv.LegacyProvider,
 							)
 							if err != nil {
 								srv.Logger.Error("error sending approver email",

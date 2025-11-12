@@ -41,7 +41,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			}
 
 			// Check if document is locked.
-			locked, err := hcd.IsLocked(docID, srv.DB, srv.WorkspaceProvider, srv.Logger)
+			locked, err := hcd.IsLocked(docID, srv.DB, srv.LegacyProvider, srv.Logger)
 			if err != nil {
 				srv.Logger.Error("error checking document locked status",
 					"error", err,
@@ -191,14 +191,14 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			doc.Status = "In-Review"
 
 			// Replace the doc header.
-			err = doc.ReplaceHeader(srv.Config.BaseURL, false, srv.WorkspaceProvider)
+			err = doc.ReplaceHeader(srv.Config.BaseURL, false, srv.LegacyProvider)
 			revertFuncs = append(revertFuncs, func() error {
 				// Change back document number to "ABC-???" and status to "WIP".
 				doc.DocNumber = fmt.Sprintf("%s-???", product.Abbreviation)
 				doc.Status = "WIP"
 
 				if err = doc.ReplaceHeader(
-					srv.Config.BaseURL, false, srv.WorkspaceProvider,
+					srv.Config.BaseURL, false, srv.LegacyProvider,
 				); err != nil {
 					return fmt.Errorf("error replacing doc header: %w", err)
 				}
@@ -227,7 +227,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			)
 
 			// Get file from Google Drive so we can get the latest modified time.
-			file, err := srv.WorkspaceProvider.GetFile(docID)
+			file, err := srv.LegacyProvider.GetFile(docID)
 			if err != nil {
 				srv.Logger.Error("error getting document file from Google",
 					"error", err,
@@ -268,7 +268,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			doc.ModifiedTime = modifiedTime.Unix()
 
 			// Get latest Google Drive file revision.
-			latestRev, err := srv.WorkspaceProvider.GetLatestRevision(docID)
+			latestRev, err := srv.LegacyProvider.GetLatestRevision(docID)
 			if err != nil {
 				srv.Logger.Error("error getting latest revision",
 					"error", err,
@@ -289,10 +289,10 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			}
 
 			// Mark latest revision to be kept forever.
-			_, err = srv.WorkspaceProvider.KeepRevisionForever(docID, latestRev.Id)
+			_, err = srv.LegacyProvider.KeepRevisionForever(docID, latestRev.Id)
 			revertFuncs = append(revertFuncs, func() error {
 				// Mark latest revision to not be kept forever.
-				if err = srv.WorkspaceProvider.UpdateKeepRevisionForever(
+				if err = srv.LegacyProvider.UpdateKeepRevisionForever(
 					docID, latestRev.Id, false,
 				); err != nil {
 					return fmt.Errorf(
@@ -359,11 +359,11 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			}
 
 			// Move document to published docs location in Google Drive.
-			_, err = srv.WorkspaceProvider.MoveFile(
+			_, err = srv.LegacyProvider.MoveFile(
 				docID, srv.Config.GoogleWorkspace.DocsFolder)
 			revertFuncs = append(revertFuncs, func() error {
 				// Move document back to drafts folder in Google Drive.
-				if _, err := srv.WorkspaceProvider.MoveFile(
+				if _, err := srv.LegacyProvider.MoveFile(
 					doc.ObjectID, srv.Config.GoogleWorkspace.DraftsFolder); err != nil {
 
 					return fmt.Errorf("error moving doc back to drafts folder: %w", err)
@@ -397,7 +397,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			)
 
 			// Create shortcut in hierarchical folder structure.
-			_, err = createShortcut(srv.Config, *doc, srv.WorkspaceProvider)
+			_, err = createShortcut(srv.Config, *doc, srv.LegacyProvider)
 			if err != nil {
 				srv.Logger.Error("error creating shortcut",
 					"error", err,
@@ -509,7 +509,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			// Give document approvers and approver groups edit access to the
 			// document.
 			for _, a := range allApprovers {
-				if err := srv.WorkspaceProvider.ShareFile(docID, a, "writer"); err != nil {
+				if err := srv.LegacyProvider.ShareFile(docID, a, "writer"); err != nil {
 					srv.Logger.Error("error sharing file with approver",
 						"error", err,
 						"doc_id", docID,
@@ -570,7 +570,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 							},
 							[]string{approverEmail},
 							srv.Config.Email.FromAddress,
-							srv.WorkspaceProvider,
+							srv.LegacyProvider,
 						)
 						if err != nil {
 							srv.Logger.Error("error sending approver email",
@@ -713,7 +713,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 								},
 								[]string{subscriber.EmailAddress},
 								srv.Config.Email.FromAddress,
-								srv.WorkspaceProvider,
+								srv.LegacyProvider,
 							)
 							if err != nil {
 								srv.Logger.Error("error sending subscriber email",

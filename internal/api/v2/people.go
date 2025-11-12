@@ -32,7 +32,7 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			users, err := srv.WorkspaceProvider.SearchPeople(
+			users, err := srv.LegacyProvider.SearchPeople(
 				req.Query,
 				"emailAddresses,names,photos",
 			)
@@ -68,7 +68,7 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 				var people []*people.Person
 
 				for _, email := range emails {
-					result, err := srv.WorkspaceProvider.SearchPeople(
+					result, err := srv.LegacyProvider.SearchPeople(
 						email,
 						"emailAddresses,names,photos",
 					)
