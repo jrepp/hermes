@@ -109,3 +109,4 @@ test_*.log
 **/projects.internal.json
 **/projects.local.json
 
+/notifier
