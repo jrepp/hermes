@@ -46,7 +46,7 @@ type MainTestSuite struct {
 	DB                *gorm.DB
 	DBSchema          string
 	SearchProvider    search.Provider
-	WorkspaceProvider workspace.Provider
+	WorkspaceProvider workspace.WorkspaceProvider
 	Config            *config.Config
 	TestServer        *httptest.Server
 	Client            *Client
@@ -145,8 +145,8 @@ func (s *MainTestSuite) setupSearchProvider() {
 // TODO: In the future, we can enhance this to use the local adapter with afero
 // in-memory filesystem for closer end-to-end testing.
 func (s *MainTestSuite) setupWorkspaceProvider() {
-	// Use mock adapter which implements workspace.Provider directly
-	s.WorkspaceProvider = mock.NewAdapter()
+	// Use FakeAdapter which implements workspace.WorkspaceProvider (RFC-084)
+	s.WorkspaceProvider = mock.NewFakeAdapter()
 
 	s.T.Logf("📁 Created mock workspace provider (TODO: migrate to local adapter with afero)")
 }

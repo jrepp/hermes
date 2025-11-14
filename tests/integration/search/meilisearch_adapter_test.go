@@ -32,10 +32,12 @@ func TestMeilisearchAdapter_BasicUsage(t *testing.T) {
 		progress("Got Meilisearch config")
 
 		adapter, err := meilisearch.NewAdapter(&meilisearch.Config{
-			Host:            host,
-			APIKey:          apiKey,
-			DocsIndexName:   "integration-test-docs",
-			DraftsIndexName: "integration-test-drafts",
+			Host:              host,
+			APIKey:            apiKey,
+			DocsIndexName:     "integration-test-docs",
+			DraftsIndexName:   "integration-test-drafts",
+			ProjectsIndexName: "integration-test-projects",
+			LinksIndexName:    "integration-test-links",
 		})
 		require.NoError(t, err, "Failed to create adapter")
 		progress("Created adapter")
@@ -224,10 +226,12 @@ func TestMeilisearchAdapter_EdgeCases(t *testing.T) {
 		progress("Got Meilisearch config")
 
 		adapter, err := meilisearch.NewAdapter(&meilisearch.Config{
-			Host:            host,
-			APIKey:          apiKey,
-			DocsIndexName:   "integration-test-edge-cases",
-			DraftsIndexName: "integration-test-edge-cases-drafts",
+			Host:              host,
+			APIKey:            apiKey,
+			DocsIndexName:     "integration-test-edge-cases",
+			DraftsIndexName:   "integration-test-edge-cases-drafts",
+			ProjectsIndexName: "integration-test-edge-cases-projects",
+			LinksIndexName:    "integration-test-edge-cases-links",
 		})
 		require.NoError(t, err, "Failed to create adapter")
 		progress("Created adapter")

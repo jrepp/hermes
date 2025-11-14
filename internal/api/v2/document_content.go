@@ -113,6 +113,8 @@ func handleGetDocumentContent(
 	// Check if this is a local workspace provider
 	if _, ok := srv.WorkspaceProvider.(*local.WorkspaceAdapter); ok {
 		providerID = fmt.Sprintf("local:%s", docID)
+	} else if _, ok := srv.WorkspaceProvider.(*local.ProviderAdapter); ok {
+		providerID = fmt.Sprintf("local:%s", docID)
 	}
 
 	docContent, err := srv.WorkspaceProvider.GetContent(r.Context(), providerID)
@@ -194,6 +196,8 @@ func handlePutDocumentContent(
 
 	// Check if this is a local workspace provider
 	if _, ok := srv.WorkspaceProvider.(*local.WorkspaceAdapter); ok {
+		providerID = fmt.Sprintf("local:%s", docID)
+	} else if _, ok := srv.WorkspaceProvider.(*local.ProviderAdapter); ok {
 		providerID = fmt.Sprintf("local:%s", docID)
 	}
 

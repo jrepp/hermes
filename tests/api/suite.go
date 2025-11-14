@@ -48,8 +48,8 @@ type Suite struct {
 	// SearchProvider is the search backend (Meilisearch or mock)
 	SearchProvider search.Provider
 
-	// WorkspaceProvider is the workspace backend (mock for tests)
-	WorkspaceProvider workspace.Provider
+	// WorkspaceProvider is the workspace backend (mock for tests, implements RFC-084)
+	WorkspaceProvider workspace.WorkspaceProvider
 
 	// Config is the server configuration
 	Config *config.Config
@@ -97,8 +97,8 @@ func NewSuite(t *testing.T, opts ...Option) *Suite {
 		t.Fatalf("Failed to setup search: %v", err)
 	}
 
-	// Create workspace provider (mock for tests)
-	suite.WorkspaceProvider = mock.NewAdapter()
+	// Create workspace provider (RFC-084 FakeAdapter for tests)
+	suite.WorkspaceProvider = mock.NewFakeAdapter()
 
 	// Create test configuration
 	suite.Config = suite.createTestConfig()

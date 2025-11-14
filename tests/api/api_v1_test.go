@@ -10,8 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/internal/api"
+	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,12 @@ func TestAPI_DocumentTypesHandler(t *testing.T) {
 	}
 
 	log := hclog.NewNullLogger()
-	handler := api.DocumentTypesHandler(cfg, log)
+	srv := server.Server{
+		Config: &cfg,
+		DB:     suite.DB,
+		Logger: log,
+	}
+	handler := apiv2.DocumentTypesHandler(srv)
 
 	t.Run("GET returns document types", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/api/v1/document-types", nil)
@@ -98,7 +104,12 @@ func TestAPI_DocumentTypesHandler(t *testing.T) {
 				DocumentType: []*config.DocumentType{},
 			},
 		}
-		emptyHandler := api.DocumentTypesHandler(emptyCfg, log)
+		emptySrv := server.Server{
+			Config: &emptyCfg,
+			DB:     suite.DB,
+			Logger: log,
+		}
+		emptyHandler := apiv2.DocumentTypesHandler(emptySrv)
 
 		req := httptest.NewRequest("GET", "/api/v1/document-types", nil)
 		w := httptest.NewRecorder()
@@ -138,7 +149,12 @@ func TestAPI_AnalyticsHandler(t *testing.T) {
 	defer suite.Cleanup()
 
 	log := hclog.NewNullLogger()
-	handler := api.AnalyticsHandler(log)
+	srv := server.Server{
+		Config: suite.Config,
+		DB:     suite.DB,
+		Logger: log,
+	}
+	handler := apiv2.AnalyticsHandler(srv)
 
 	t.Run("POST valid analytics event with document_id", func(t *testing.T) {
 		// Valid analytics request

@@ -25,6 +25,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes ./cmd/hermes
 # Build the migration binary (supports both PostgreSQL and SQLite)
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes-migrate ./cmd/hermes-migrate
 
+# Build the notifier binary (RFC-087)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes-notifier ./cmd/notifier
+
 # Final stage - minimal runtime image
 FROM alpine:3.19
 
@@ -36,6 +39,7 @@ WORKDIR /app
 # Copy binaries from builder
 COPY --from=builder /build/hermes /app/hermes
 COPY --from=builder /build/hermes-migrate /app/hermes-migrate
+COPY --from=builder /build/hermes-notifier /app/hermes-notifier
 
 # Copy configs (optional, can be mounted as volume)
 COPY --from=builder /build/configs /app/configs

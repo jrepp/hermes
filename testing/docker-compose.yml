@@ -1,27 +1,29 @@
-# Docker Compose for Testing Environment
-# 
-# Purpose: Full-stack containerized environment for testing and manual QA.
-#          Runs complete Hermes application (backend + frontend) with all dependencies.
+# Docker Compose for Testing Environment - RFC-085 Edge-to-Central Architecture
+#
+# Purpose: Full-stack containerized environment for testing edge-to-central Hermes architecture.
+#          Runs both central Hermes (full capabilities) and edge Hermes (local authoring + delegation).
 #
 # Usage:
 #   cd testing
-#   docker compose up -d --build            # Build and start all services
-#   open http://localhost:4201              # Access web UI
-#   docker compose logs -f hermes           # View backend logs
-#   docker compose down                     # Stop and remove containers
-#   docker compose down -v                  # Stop and remove containers + volumes
+#   docker compose up -d --build                  # Build and start all services
+#   open http://localhost:4200                    # Access central web UI
+#   docker compose logs -f hermes-central         # View central logs
+#   docker compose logs -f hermes-edge            # View edge logs
+#   docker compose down                           # Stop and remove containers
+#   docker compose down -v                        # Stop and remove containers + volumes
 #
 # Architecture:
-#   - Uses profile-based configuration (config-profiles.hcl)
-#   - Backend: Hermes server with Meilisearch + local workspace adapter
+#   - Central Hermes: Full capabilities (documents, directory, permissions, notifications)
+#   - Edge Hermes: Local authoring + API delegation to central (RFC-085)
+#   - Shared infrastructure: PostgreSQL, Meilisearch, Dex authentication
 #   - Frontend: Node.js serve package serving pre-built Ember app (SPA mode)
-#   - Database: PostgreSQL for persistence
-#   - Search: Meilisearch for document indexing
 #
 # Ports (non-conflicting with integration testing):
 #   - PostgreSQL: 5433 (host) -> 5432 (container)
 #   - Meilisearch: 7701 (host) -> 7700 (container)
-#   - Hermes API: 8001 (host) -> 8000 (container)
+#   - Dex: 5558 (host) -> 5557 (container)
+#   - Central Hermes API: 8000 (host) -> 8000 (container)
+#   - Edge Hermes API: 8002 (host) -> 8000 (container)
 #   - Web UI: 4201 (host) -> 4200 (container)
 
 name: hermes-testing
@@ -107,16 +109,18 @@ services:
       - hermes-testing
     restart: on-failure
 
-  hermes:
-    container_name: hermes-server
+  # Central Hermes - Primary server with full capabilities
+  # Receives delegated operations from edge instances
+  hermes-central:
+    container_name: hermes-central
     build:
       context: ..
       dockerfile: Dockerfile
     ports:
-      - "8001:8000"
+      - "8000:8000"  # Central on standard port 8000
     volumes:
-      # Mount testing configuration
-      - ./config.hcl:/app/config.hcl:ro
+      # Mount central configuration
+      - ./config-central.hcl:/app/config.hcl:ro
       # Mount projects configuration
       - ./projects.hcl:/app/projects.hcl:ro
       - ./projects:/app/projects:ro
@@ -124,15 +128,14 @@ services:
       - ./users.json:/app/workspace_data/users.json:ro
       # Mount template documents (for document creation - seeded templates)
       - ./workspace_data/templates:/app/workspace_data/templates:ro
-      # Mount workspace data (persists across restarts - runtime data)
-      - hermes_workspace:/app/workspace_data
+      # Mount central workspace data (persists across restarts - runtime data)
+      - hermes_central_workspace:/app/workspace_data
       # Mount project workspaces to consistent base path
-      - ./workspaces/testing:/app/workspaces/testing
-      - ./workspaces/docs:/app/workspaces/docs
+      - ./workspaces/central:/app/workspaces/central
       # Mount shared volume for indexer token
       - indexer_shared:/app/shared
     environment:
-      HERMES_BASE_URL: http://localhost:4201  # Frontend in testing environment
+      HERMES_BASE_URL: http://localhost:4200  # Central frontend
       HERMES_SEARCH_PROVIDER: meilisearch
       HERMES_MEILISEARCH_URL: http://meilisearch:7700
       HERMES_MEILISEARCH_KEY: masterKey123
@@ -147,7 +150,6 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-      # Note: dex dependency removed - using shared Dex from root docker-compose via host.docker.internal
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8000/health"]
       interval: 3s
@@ -157,29 +159,79 @@ services:
     networks:
       - hermes-testing
 
-  hermes-indexer:
-    container_name: hermes-indexer
+  # Edge Hermes - Local authoring with delegation to central
+  # Documents authored locally, directory/permissions delegated to central
+  hermes-edge:
+    container_name: hermes-edge
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"  # Edge on port 8002 externally
+    volumes:
+      # Mount edge configuration
+      - ./config-edge.hcl:/app/config.hcl:ro
+      # Mount projects configuration
+      - ./projects.hcl:/app/projects.hcl:ro
+      - ./projects:/app/projects:ro
+      # Mount test users data
+      - ./users.json:/app/workspace_data/users.json:ro
+      # Mount template documents
+      - ./workspace_data/templates:/app/workspace_data/templates:ro
+      # Mount edge workspace data (separate from central)
+      - hermes_edge_workspace:/app/workspace_data
+      # Mount project workspaces
+      - ./workspaces/edge:/app/workspaces/edge
+    environment:
+      HERMES_BASE_URL: http://localhost:4202  # Edge frontend (future)
+      HERMES_CENTRAL_URL: http://hermes-central:8000  # Central Hermes URL for API provider
+      HERMES_EDGE_INSTANCE_ID: edge-dev-1  # Edge instance identifier
+      HERMES_SEARCH_PROVIDER: meilisearch
+      HERMES_MEILISEARCH_URL: http://meilisearch:7700
+      HERMES_MEILISEARCH_KEY: masterKey123
+    command: ["server", "-config=/app/config.hcl"]
+    extra_hosts:
+      - "localhost:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      hermes-central:
+        condition: service_healthy  # Edge requires central to be running
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8000/health"]
+      interval: 3s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
+    networks:
+      - hermes-testing
+
+  hermes-central-indexer:
+    container_name: hermes-central-indexer
     build:
       context: ..
       dockerfile: Dockerfile
     volumes:
       # Shared token volume (read-only access)
       - indexer_shared:/app/shared:ro
-      # Access to workspace directories to index
-      - ./workspaces/testing:/app/workspaces/testing:ro
-      - ./workspaces/docs:/app/workspaces/docs:ro
+      # Access to central workspace directories to index
+      - ./workspaces/central:/app/workspaces/central:ro
     environment:
       HERMES_INDEXER_TOKEN_PATH: /app/shared/indexer-token.txt
-      HERMES_CENTRAL_URL: http://hermes:8000
+      HERMES_CENTRAL_URL: http://hermes-central:8000
       HERMES_WORKSPACE_PATH: /app/workspaces
       HERMES_INDEXER_TYPE: local-workspace
       HERMES_INDEXER_HEALTHCHECK_ENABLED: "true"
     command: ["indexer-agent"]
     depends_on:
-      hermes:
+      hermes-central:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://hermes:8000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://hermes-central:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -195,10 +247,10 @@ services:
     ports:
       - "4201:4200"
     environment:
-      # Point to the Hermes backend (container-to-container communication)
-      HERMES_API_URL: http://hermes:8000
+      # Point to the central Hermes backend (container-to-container communication)
+      HERMES_API_URL: http://hermes-central:8000
     depends_on:
-      hermes:
+      hermes-central:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://127.0.0.1:4200/"]
@@ -209,6 +261,105 @@ services:
     networks:
       - hermes-testing
 
+  # Redpanda - Kafka-compatible message broker for notifications (RFC-087)
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.11
+    container_name: hermes-redpanda
+    command:
+      - redpanda
+      - start
+      - --smp 1
+      - --memory 512M
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19192
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19192
+    ports:
+      - "19192:19192"  # Kafka API (external access)
+      - "18181:8081"   # Schema Registry
+      - "18182:8082"   # HTTP Proxy (Pandaproxy)
+      - "19744:9644"   # Admin API
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy:.+true' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - hermes-testing
+
+  # Mailhog - Test SMTP server for email testing (RFC-087)
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: hermes-mailhog
+    ports:
+      - "1025:1025"  # SMTP port
+      - "8025:8025"  # Web UI
+    networks:
+      - hermes-testing
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8025"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # RFC-087 Notifiers - Multiple instances for different backends
+  # Each notifier handles only specific backends to avoid head-of-queue blocking
+  # All notifiers share the same consumer group for load balancing
+
+  # Notifier for audit backend (logs all notifications)
+  notifier-audit:
+    container_name: hermes-notifier-audit
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["/app/hermes-notifier", "-config=/app/config/notifier-audit.hcl"]
+    volumes:
+      - ./notifier-audit.hcl:/app/config/notifier-audit.hcl:ro
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    networks:
+      - hermes-testing
+    restart: unless-stopped
+
+  # Notifier for mail backend (sends email notifications)
+  notifier-mail:
+    container_name: hermes-notifier-mail
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["/app/hermes-notifier", "-config=/app/config/notifier-mail.hcl"]
+    volumes:
+      - ./notifier-mail.hcl:/app/config/notifier-mail.hcl:ro
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      mailhog:
+        condition: service_healthy
+    networks:
+      - hermes-testing
+    restart: unless-stopped
+
+  # Notifier for ntfy backend (sends push notifications to ntfy.sh)
+  notifier-ntfy:
+    container_name: hermes-notifier-ntfy
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["/app/hermes-notifier", "-config=/app/config/notifier-ntfy.hcl"]
+    volumes:
+      - ./notifier-ntfy.hcl:/app/config/notifier-ntfy.hcl:ro
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    networks:
+      - hermes-testing
+    restart: unless-stopped
+
 networks:
   hermes-testing:
     driver: bridge
@@ -216,5 +367,7 @@ networks:
 volumes:
   postgres_testing:
   meilisearch_testing:
-  hermes_workspace:
+  hermes_central_workspace:  # Central Hermes workspace data
+  hermes_edge_workspace:     # Edge Hermes workspace data
   indexer_shared:
+  redpanda_data:             # Redpanda data storage (RFC-087)

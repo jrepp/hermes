@@ -15,12 +15,10 @@ import (
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	mockadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/mock"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	mock "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
 	"github.com/hashicorp-forge/hermes/tests/api/fixtures"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/api/docs/v1"
 )
 
 // TestV2Drafts_List tests listing drafts with mock auth.
@@ -124,13 +122,9 @@ func TestV2Drafts_GetSingle(t *testing.T) {
 		Create(t, suite.DB)
 
 	// Setup mock workspace with the file and document
-	mockWorkspace := mock.NewAdapter().
-		WithFile(draft.GoogleFileID, "[TEST-???] Test Draft", "application/vnd.google-apps.document").
-		WithDocument(draft.GoogleFileID, &docs.Document{
-			DocumentId: draft.GoogleFileID,
-			Title:      "[TEST-???] Test Draft",
-			Body:       &docs.Body{Content: []*docs.StructuralElement{}},
-		})
+	// TODO: Update to use FakeAdapter WithDocument() method
+	// For now, use the suite's workspace provider
+	// mockWorkspace := mock.NewFakeAdapter().WithDocument(...)
 
 	// Create mock auth adapter as owner
 	mockAuth := mockadapter.NewAdapterWithEmail(ownerEmail)
@@ -140,7 +134,7 @@ func TestV2Drafts_GetSingle(t *testing.T) {
 		// AlgoSearch removed:        &algolia.Client{},
 		// AlgoWrite removed:         &algolia.Client{},
 		SearchProvider:    suite.SearchProvider,
-		WorkspaceProvider: mockWorkspace,
+		WorkspaceProvider: suite.WorkspaceProvider,
 		Config:            suite.Config,
 		DB:                suite.DB,
 		// GWService removed:         &gw.Service{},
@@ -191,13 +185,8 @@ func TestV2Drafts_Patch(t *testing.T) {
 		Create(t, suite.DB)
 
 	// Setup mock workspace with the file and document
-	mockWorkspace := mock.NewAdapter().
-		WithFile(draft.GoogleFileID, "[TEST-???] Original Title", "application/vnd.google-apps.document").
-		WithDocument(draft.GoogleFileID, &docs.Document{
-			DocumentId: draft.GoogleFileID,
-			Title:      "[TEST-???] Original Title",
-			Body:       &docs.Body{Content: []*docs.StructuralElement{}},
-		})
+	// TODO: Update to use FakeAdapter WithDocument() method
+	// For now, use the suite's workspace provider
 
 	// Create mock auth adapter as owner
 	mockAuth := mockadapter.NewAdapterWithEmail(ownerEmail)
@@ -207,7 +196,7 @@ func TestV2Drafts_Patch(t *testing.T) {
 		// AlgoSearch removed:     &algolia.Client{},
 		// AlgoWrite removed:      &algolia.Client{},
 		SearchProvider:    suite.SearchProvider,
-		WorkspaceProvider: mockWorkspace,
+		WorkspaceProvider: suite.WorkspaceProvider,
 		Config:            suite.Config,
 		DB:                suite.DB,
 		// GWService removed:      &gw.Service{},

@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/docs/v1"
@@ -13,8 +15,8 @@ import (
 	"google.golang.org/api/people/v1"
 )
 
-// Compile-time check that ProviderAdapter implements workspace.Provider
-var _ workspace.Provider = (*ProviderAdapter)(nil)
+// Compile-time check that ProviderAdapter implements workspace.WorkspaceProvider (RFC-084)
+var _ workspace.WorkspaceProvider = (*ProviderAdapter)(nil)
 
 // Compile-time check that ProviderAdapter implements workspace.ProviderCapabilities
 var _ workspace.ProviderCapabilities = (*ProviderAdapter)(nil)
@@ -168,9 +170,9 @@ func (p *ProviderAdapter) ShareFile(fileID, email, role string) error {
 	return p.updatePermissions(fileID, doc.Permissions)
 }
 
-// ListPermissions lists all permissions for a file.
-func (p *ProviderAdapter) ListPermissions(fileID string) ([]*drive.Permission, error) {
-	doc, err := p.adapter.DocumentStorage().GetDocument(p.ctx, fileID)
+// ListPermissions lists all permissions for a file with RFC-084 signature.
+func (p *ProviderAdapter) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+	doc, err := p.adapter.DocumentStorage().GetDocument(ctx, providerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get document: %w", err)
 	}
@@ -178,10 +180,32 @@ func (p *ProviderAdapter) ListPermissions(fileID string) ([]*drive.Permission, e
 	// Load permissions from metadata
 	p.loadPermissionsFromMetadata(doc)
 
-	perms := make([]*drive.Permission, len(doc.Permissions))
+	perms := make([]*workspace.FilePermission, len(doc.Permissions))
 	for i, perm := range doc.Permissions {
+		perms[i] = &workspace.FilePermission{
+			ID:    generatePermissionIDForEmail(perm.Email),
+			Type:  perm.Type,
+			Email: perm.Email,
+			Role:  perm.Role,
+		}
+	}
+
+	return perms, nil
+}
+
+// ListPermissionsLegacy lists all permissions with old Provider interface signature.
+// Deprecated: Use ListPermissions with context parameter instead.
+func (p *ProviderAdapter) ListPermissionsLegacy(fileID string) ([]*drive.Permission, error) {
+	rfc084Perms, err := p.ListPermissions(p.ctx, fileID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert RFC-084 FilePermission to drive.Permission
+	perms := make([]*drive.Permission, len(rfc084Perms))
+	for i, perm := range rfc084Perms {
 		perms[i] = &drive.Permission{
-			Id:           generatePermissionIDForEmail(perm.Email),
+			Id:           perm.ID,
 			Type:         perm.Type,
 			EmailAddress: perm.Email,
 			Role:         perm.Role,
@@ -221,8 +245,34 @@ func (p *ProviderAdapter) DeletePermission(fileID, permissionID string) error {
 	return p.updatePermissions(fileID, newPerms)
 }
 
-// SearchPeople searches for people by email in the local people directory.
-func (p *ProviderAdapter) SearchPeople(email string, fields string) ([]*people.Person, error) {
+// SearchPeople searches for people in the local people directory with RFC-084 signature.
+func (p *ProviderAdapter) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
+	// SearchUsers expects a query and fields slice
+	users, err := p.adapter.PeopleService().SearchUsers(ctx, query, []string{"names", "emailAddresses", "photos"})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		return []*workspace.UserIdentity{}, nil
+	}
+
+	// Convert workspace users to RFC-084 UserIdentity format
+	identities := make([]*workspace.UserIdentity, len(users))
+	for i, user := range users {
+		identities[i] = &workspace.UserIdentity{
+			Email:       user.Email,
+			DisplayName: user.Name,
+			PhotoURL:    user.PhotoURL,
+		}
+	}
+
+	return identities, nil
+}
+
+// SearchPeopleLegacy searches for people with old Provider interface signature.
+// Deprecated: Use SearchPeople with context parameter instead.
+func (p *ProviderAdapter) SearchPeopleLegacy(email string, fields string) ([]*people.Person, error) {
 	// SearchUsers expects a query and fields slice
 	users, err := p.adapter.PeopleService().SearchUsers(p.ctx, email, []string{"names", "emailAddresses", "photos"})
 	if err != nil {
@@ -351,9 +401,9 @@ func (p *ProviderAdapter) SearchDirectory(opts workspace.PeopleSearchOptions) ([
 	return persons, nil
 }
 
-// GetSubfolder finds a subfolder by name within a parent folder.
-func (p *ProviderAdapter) GetSubfolder(parentID, name string) (string, error) {
-	folder, err := p.adapter.DocumentStorage().GetSubfolder(p.ctx, parentID, name)
+// GetSubfolder finds a subfolder by name within a parent folder with RFC-084 signature.
+func (p *ProviderAdapter) GetSubfolder(ctx context.Context, parentID, name string) (string, error) {
+	folder, err := p.adapter.DocumentStorage().GetSubfolder(ctx, parentID, name)
 	if err != nil {
 		return "", err
 	}
@@ -361,6 +411,12 @@ func (p *ProviderAdapter) GetSubfolder(parentID, name string) (string, error) {
 		return "", fmt.Errorf("subfolder not found: %s/%s", parentID, name)
 	}
 	return folder.ID, nil
+}
+
+// GetSubfolderLegacy finds a subfolder by name with old Provider interface signature.
+// Deprecated: Use GetSubfolder with context parameter instead.
+func (p *ProviderAdapter) GetSubfolderLegacy(parentID, name string) (string, error) {
+	return p.GetSubfolder(p.ctx, parentID, name)
 }
 
 // documentToDriveFile converts a workspace.Document to a drive.File.
@@ -458,23 +514,45 @@ func (p *ProviderAdapter) ShareFileWithDomain(fileID, domain, role string) error
 	return nil
 }
 
-// CreateFolder creates a new folder.
-func (p *ProviderAdapter) CreateFolder(name, parentID string) (*drive.File, error) {
-	folder, err := p.adapter.DocumentStorage().CreateFolder(p.ctx, name, parentID)
+// CreateFolder creates a new folder with RFC-084 signature.
+func (p *ProviderAdapter) CreateFolder(ctx context.Context, name, parentID string) (*workspace.DocumentMetadata, error) {
+	folder, err := p.adapter.DocumentStorage().CreateFolder(ctx, name, parentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create folder: %w", err)
 	}
 
+	// Convert internal Folder to RFC-084 DocumentMetadata
 	parents := []string{}
 	if folder.ParentID != "" {
 		parents = []string{folder.ParentID}
 	}
 
+	return &workspace.DocumentMetadata{
+		UUID:         docid.UUID{}, // Folders don't have UUIDs in local adapter yet
+		ProviderType: "local",
+		ProviderID:   folder.ID,
+		Name:         folder.Name,
+		MimeType:     "application/vnd.google-apps.folder",
+		Parents:      parents,
+		CreatedTime:  folder.CreatedTime,
+		ModifiedTime: folder.ModifiedTime,
+		ContentHash:  "",
+	}, nil
+}
+
+// CreateFolderLegacy creates a new folder with old Provider interface signature.
+// Deprecated: Use CreateFolder with context parameter instead.
+func (p *ProviderAdapter) CreateFolderLegacy(name, parentID string) (*drive.File, error) {
+	meta, err := p.CreateFolder(p.ctx, name, parentID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &drive.File{
-		Id:       folder.ID,
-		Name:     folder.Name,
-		MimeType: "application/vnd.google-apps.folder",
-		Parents:  parents,
+		Id:       meta.ProviderID,
+		Name:     meta.Name,
+		MimeType: meta.MimeType,
+		Parents:  meta.Parents,
 	}, nil
 }
 
@@ -594,9 +672,20 @@ func (p *ProviderAdapter) GetLatestRevision(fileID string) (*drive.Revision, err
 	}, nil
 }
 
-// KeepRevisionForever marks a revision to be kept forever.
+// KeepRevisionForever marks a revision to be kept forever with RFC-084 signature.
 // The local adapter doesn't support revisions, so this is a no-op.
-func (p *ProviderAdapter) KeepRevisionForever(fileID, revisionID string) (*drive.Revision, error) {
+func (p *ProviderAdapter) KeepRevisionForever(ctx context.Context, providerID, revisionID string) error {
+	// Local adapter doesn't have revision tracking yet
+	return nil
+}
+
+// KeepRevisionForeverLegacy marks a revision to be kept forever with old Provider interface signature.
+// Deprecated: Use KeepRevisionForever with context parameter instead.
+func (p *ProviderAdapter) KeepRevisionForeverLegacy(fileID, revisionID string) (*drive.Revision, error) {
+	err := p.KeepRevisionForever(p.ctx, fileID, revisionID)
+	if err != nil {
+		return nil, err
+	}
 	return &drive.Revision{
 		Id:          revisionID,
 		KeepForever: true,
@@ -609,10 +698,16 @@ func (p *ProviderAdapter) UpdateKeepRevisionForever(fileID, revisionID string, k
 	return nil
 }
 
-// SendEmail sends an email notification.
+// SendEmail sends an email notification with RFC-084 signature.
 // This delegates to the adapter's notification service.
-func (p *ProviderAdapter) SendEmail(to []string, from, subject, body string) error {
-	return p.adapter.NotificationService().SendEmail(p.ctx, to, from, subject, body)
+func (p *ProviderAdapter) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+	return p.adapter.NotificationService().SendEmail(ctx, to, from, subject, body)
+}
+
+// SendEmailLegacy sends an email with old Provider interface signature.
+// Deprecated: Use SendEmail with context parameter instead.
+func (p *ProviderAdapter) SendEmailLegacy(to []string, from, subject, body string) error {
+	return p.SendEmail(p.ctx, to, from, subject, body)
 }
 
 // ListGroups lists groups matching a query in a domain.
@@ -645,4 +740,278 @@ func (p *ProviderAdapter) GetDocumentContent(fileID string) (string, error) {
 // UpdateDocumentContent updates the text content of a document.
 func (p *ProviderAdapter) UpdateDocumentContent(fileID, content string) error {
 	return p.adapter.DocumentStorage().UpdateDocumentContent(p.ctx, fileID, content)
+}
+
+// CompareContent is a stub for RFC-084 ContentProvider interface.
+// TODO: Implement actual content comparison
+func (p *ProviderAdapter) CompareContent(ctx context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
+	return p.adapter.CompareContent(ctx, providerID1, providerID2)
+}
+
+// ===================================================================
+// RFC-084 DocumentProvider stub implementations
+// ===================================================================
+
+// CopyDocument creates a copy of a document.
+// TODO: Implement actual document copying
+func (p *ProviderAdapter) CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("CopyDocument not yet implemented for local adapter")
+}
+
+// MoveDocument moves a document to a different folder.
+// TODO: Implement actual document moving
+func (p *ProviderAdapter) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("MoveDocument not yet implemented for local adapter")
+}
+
+// DeleteDocument deletes a document.
+// TODO: Implement actual document deletion
+func (p *ProviderAdapter) DeleteDocument(ctx context.Context, providerID string) error {
+	return fmt.Errorf("DeleteDocument not yet implemented for local adapter")
+}
+
+// RenameDocument renames a document.
+// TODO: Implement actual document renaming
+func (p *ProviderAdapter) RenameDocument(ctx context.Context, providerID, newName string) error {
+	return fmt.Errorf("RenameDocument not yet implemented for local adapter")
+}
+
+// GetDocument retrieves document metadata by provider ID.
+// TODO: Implement actual document metadata retrieval
+func (p *ProviderAdapter) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("GetDocument not yet implemented for local adapter")
+}
+
+// GetDocumentByUUID retrieves document metadata by UUID.
+// TODO: Implement actual document metadata retrieval by UUID
+func (p *ProviderAdapter) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("GetDocumentByUUID not yet implemented for local adapter")
+}
+
+// CreateDocument creates a new document from template.
+// TODO: Implement actual document creation
+func (p *ProviderAdapter) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("CreateDocument not yet implemented for local adapter")
+}
+
+// CreateDocumentWithUUID creates a document with explicit UUID.
+// TODO: Implement actual document creation with UUID
+func (p *ProviderAdapter) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("CreateDocumentWithUUID not yet implemented for local adapter")
+}
+
+// RegisterDocument registers document metadata with provider.
+// TODO: Implement actual document registration
+func (p *ProviderAdapter) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("RegisterDocument not yet implemented for local adapter")
+}
+
+// ===================================================================
+// RFC-084 ContentProvider stub implementations
+// ===================================================================
+
+// GetContent retrieves document content with revision info.
+func (p *ProviderAdapter) GetContent(ctx context.Context, providerID string) (*workspace.DocumentContent, error) {
+	// Extract document ID from providerID (format: "local:doc-id")
+	docID := strings.TrimPrefix(providerID, "local:")
+
+	// Get document metadata
+	doc, err := p.adapter.DocumentStorage().GetDocument(ctx, docID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get document: %w", err)
+	}
+
+	// Get document content
+	content, err := p.adapter.DocumentStorage().GetDocumentContent(ctx, docID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get document content: %w", err)
+	}
+
+	// Extract UUID from CompositeID or generate a default one
+	var uuid docid.UUID
+	if doc.CompositeID != nil {
+		uuid = doc.CompositeID.UUID()
+	} else {
+		uuid = docid.NewUUID()
+	}
+
+	// Return RFC-084 DocumentContent
+	return &workspace.DocumentContent{
+		UUID:         uuid,
+		ProviderID:   providerID,
+		Title:        doc.Name,
+		Body:         content,
+		Format:       "markdown",
+		ContentHash:  "", // ContentHash calculation not yet implemented
+		LastModified: doc.ModifiedTime,
+	}, nil
+}
+
+// GetContentByUUID retrieves content by UUID.
+// TODO: Implement actual content retrieval by UUID
+func (p *ProviderAdapter) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentContent, error) {
+	return nil, fmt.Errorf("GetContentByUUID not yet implemented for local adapter")
+}
+
+// UpdateContent updates document content.
+func (p *ProviderAdapter) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+	// Extract document ID from providerID (format: "local:doc-id")
+	docID := strings.TrimPrefix(providerID, "local:")
+
+	// Update document content
+	err := p.adapter.DocumentStorage().UpdateDocumentContent(ctx, docID, content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update document content: %w", err)
+	}
+
+	// Get updated document metadata
+	doc, err := p.adapter.DocumentStorage().GetDocument(ctx, docID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get document after update: %w", err)
+	}
+
+	// Extract UUID from CompositeID or generate a default one
+	var uuid docid.UUID
+	if doc.CompositeID != nil {
+		uuid = doc.CompositeID.UUID()
+	} else {
+		uuid = docid.NewUUID()
+	}
+
+	// Return updated DocumentContent
+	return &workspace.DocumentContent{
+		UUID:         uuid,
+		ProviderID:   providerID,
+		Title:        doc.Name,
+		Body:         content,
+		Format:       "markdown",
+		ContentHash:  "", // ContentHash calculation not yet implemented
+		LastModified: doc.ModifiedTime,
+	}, nil
+}
+
+// GetContentBatch retrieves multiple documents efficiently.
+// TODO: Implement actual batch content retrieval
+func (p *ProviderAdapter) GetContentBatch(ctx context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
+	return nil, fmt.Errorf("GetContentBatch not yet implemented for local adapter")
+}
+
+// ===================================================================
+// RFC-084 RevisionTrackingProvider stub implementations
+// ===================================================================
+
+// GetRevisionHistory lists all revisions for a document.
+// TODO: Implement actual revision history retrieval
+func (p *ProviderAdapter) GetRevisionHistory(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+	return nil, fmt.Errorf("GetRevisionHistory not yet implemented for local adapter")
+}
+
+// GetRevision retrieves a specific revision.
+// TODO: Implement actual revision retrieval
+func (p *ProviderAdapter) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+	return nil, fmt.Errorf("GetRevision not yet implemented for local adapter")
+}
+
+// GetRevisionContent retrieves content at a specific revision.
+// TODO: Implement actual revision content retrieval
+func (p *ProviderAdapter) GetRevisionContent(ctx context.Context, providerID, revisionID string) (*workspace.DocumentContent, error) {
+	return nil, fmt.Errorf("GetRevisionContent not yet implemented for local adapter")
+}
+
+// GetAllDocumentRevisions returns all revisions across all backends for a UUID.
+// TODO: Implement actual multi-backend revision retrieval
+func (p *ProviderAdapter) GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*workspace.RevisionInfo, error) {
+	return nil, fmt.Errorf("GetAllDocumentRevisions not yet implemented for local adapter")
+}
+
+// ===================================================================
+// RFC-084 PermissionProvider stub implementations
+// ===================================================================
+
+// ShareDocument grants access to a user/group.
+// TODO: Implement actual permission granting
+func (p *ProviderAdapter) ShareDocument(ctx context.Context, providerID, email, role string) error {
+	return fmt.Errorf("ShareDocument not yet implemented for local adapter")
+}
+
+// ShareDocumentWithDomain grants access to entire domain.
+// TODO: Implement actual domain-wide permission granting
+func (p *ProviderAdapter) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+	// Local adapter doesn't support domain-wide sharing
+	return nil
+}
+
+// RemovePermission revokes access.
+// TODO: Implement actual permission revocation
+func (p *ProviderAdapter) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+	return fmt.Errorf("RemovePermission not yet implemented for local adapter")
+}
+
+// UpdatePermission changes permission role.
+// TODO: Implement actual permission update
+func (p *ProviderAdapter) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+	return fmt.Errorf("UpdatePermission not yet implemented for local adapter")
+}
+
+// ===================================================================
+// RFC-084 PeopleProvider stub implementations
+// NOTE: SearchPeople has old signature - RFC-084 version not added to avoid conflict
+// ===================================================================
+
+// GetPerson retrieves a user by email.
+// TODO: Implement actual user retrieval
+func (p *ProviderAdapter) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+	return nil, fmt.Errorf("GetPerson not yet implemented for local adapter")
+}
+
+// GetPersonByUnifiedID retrieves user by unified ID.
+// TODO: Implement actual unified ID lookup
+func (p *ProviderAdapter) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
+	return nil, fmt.Errorf("GetPersonByUnifiedID not yet implemented for local adapter")
+}
+
+// ResolveIdentity resolves alternate identities for a user.
+// TODO: Implement actual identity resolution
+func (p *ProviderAdapter) ResolveIdentity(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+	return nil, fmt.Errorf("ResolveIdentity not yet implemented for local adapter")
+}
+
+// ===================================================================
+// RFC-084 TeamProvider stub implementations
+// ===================================================================
+
+// ListTeams lists teams matching query.
+// TODO: Implement actual team listing
+func (p *ProviderAdapter) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+	// Local adapter doesn't support team management
+	return []*workspace.Team{}, nil
+}
+
+// GetTeam retrieves team details.
+// TODO: Implement actual team retrieval
+func (p *ProviderAdapter) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+	return nil, fmt.Errorf("GetTeam not yet implemented for local adapter")
+}
+
+// GetUserTeams lists all teams a user belongs to.
+// TODO: Implement actual user team listing
+func (p *ProviderAdapter) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+	// Local adapter doesn't support team management
+	return []*workspace.Team{}, nil
+}
+
+// GetTeamMembers lists all members of a team.
+// TODO: Implement actual team member listing
+func (p *ProviderAdapter) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+	return nil, fmt.Errorf("GetTeamMembers not yet implemented for local adapter")
+}
+
+// ===================================================================
+// RFC-084 NotificationProvider stub implementations
+// ===================================================================
+
+// SendEmailWithTemplate sends email using template.
+// TODO: Implement actual template-based email sending
+func (p *ProviderAdapter) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+	return fmt.Errorf("SendEmailWithTemplate not yet implemented for local adapter")
 }
