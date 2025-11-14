@@ -2,6 +2,7 @@
 package local
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -151,4 +152,10 @@ func (a *Adapter) findDocumentPath(id string) (string, bool, bool, error) {
 // getFolderPath returns the filesystem path for folder metadata.
 func (a *Adapter) getFolderPath(id string) string {
 	return filepath.Join(a.foldersPath, id+".json")
+}
+
+// CompareContent is a stub implementation for RFC-084 ContentProvider interface.
+// TODO: Implement actual content comparison once GetContent is available
+func (a *Adapter) CompareContent(ctx context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
+	return nil, fmt.Errorf("CompareContent not yet implemented for local adapter")
 }

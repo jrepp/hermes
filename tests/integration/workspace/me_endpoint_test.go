@@ -164,8 +164,9 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 				// Verify response contains expected user data from users.json
 				assert.Equal(t, tc.userEmail, resp.Email, "Email should match")
 				assert.Equal(t, tc.expectedName, resp.Name, "Name should match users.json")
-				assert.Equal(t, tc.expectedGiven, resp.GivenName, "Given name should match users.json")
-				assert.Equal(t, tc.expectedFamily, resp.FamilyName, "Family name should match users.json")
+				// RFC-084: GivenName and FamilyName are not available in RFC-084 UserIdentity
+				// assert.Equal(t, tc.expectedGiven, resp.GivenName, "Given name should match users.json")
+				// assert.Equal(t, tc.expectedFamily, resp.FamilyName, "Family name should match users.json")
 				assert.Equal(t, tc.expectedPhoto, resp.Picture, "Photo URL should match users.json")
 				assert.True(t, resp.VerifiedEmail, "Email should be verified")
 
@@ -206,7 +207,7 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 		})
 
 		// Test user not in users.json
-		t.Run("User Not In UsersJSON Returns Error", func(t *testing.T) {
+		t.Run("User Not In UsersJSON Returns Fallback", func(t *testing.T) {
 			progress("Testing user not found in users.json")
 
 			handler := api.MeHandler(mockServer)
@@ -217,8 +218,17 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 
 			handler.ServeHTTP(rr, req)
 
-			assert.Equal(t, http.StatusInternalServerError, rr.Code, "Expected HTTP 500 for user not found")
-			progress("✓ Correctly handled missing user")
+			// RFC-084: Handler now returns HTTP 200 with fallback user info instead of 500
+			assert.Equal(t, http.StatusOK, rr.Code, "Expected HTTP 200 with fallback user info")
+
+			// Verify fallback response
+			var resp api.MeGetResponse
+			err := json.NewDecoder(rr.Body).Decode(&resp)
+			require.NoError(t, err, "Failed to decode response")
+			assert.Equal(t, "nonexistent@hermes.local", resp.Email, "Email should match")
+			assert.Equal(t, "nonexistent", resp.Name, "Name should be derived from email local part")
+
+			progress("✓ Correctly handled missing user with fallback")
 		})
 
 		progress("All /me endpoint tests completed successfully")

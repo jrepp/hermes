@@ -45,6 +45,11 @@ test-integration: ## Run integration tests only
 	@echo "Running integration tests..."
 	@go test -tags=integration ./...
 
+.PHONY: test-edge-sync
+test-edge-sync: ## Run edge sync authentication integration tests
+	@echo "Running edge sync authentication integration tests..."
+	@go test -tags=integration -v ./tests/integration/edgesync/...
+
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage
 	@echo "Running tests with coverage..."

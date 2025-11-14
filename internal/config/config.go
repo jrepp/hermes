@@ -37,6 +37,9 @@ type Config struct {
 	// Email configures Hermes to send email notifications.
 	Email *Email `hcl:"email,block"`
 
+	// Notifications configures the RFC-087 notification system.
+	Notifications *Notifications `hcl:"notifications,block"`
+
 	// FeatureFlags contain available feature flags.
 	FeatureFlags *FeatureFlags `hcl:"feature_flags,block"`
 
@@ -198,6 +201,53 @@ type Email struct {
 
 	// FromAddress is the email address to send emails from.
 	FromAddress string `hcl:"from_address,optional"`
+}
+
+// Notifications configures the RFC-087 notification system.
+type Notifications struct {
+	// Enabled enables the RFC-087 notification system.
+	Enabled bool `hcl:"enabled,optional"`
+
+	// Brokers is a comma-separated list of Kafka/Redpanda broker addresses.
+	Brokers string `hcl:"brokers,optional"`
+
+	// Topic is the Kafka/Redpanda topic for notifications.
+	Topic string `hcl:"topic,optional"`
+
+	// Backends is a comma-separated list of enabled notification backends
+	// (e.g., "audit,mail,slack").
+	Backends string `hcl:"backends,optional"`
+
+	// TemplatesPath is an optional path to override embedded templates.
+	// If not specified, uses embedded templates from internal/notifications/templates.
+	TemplatesPath string `hcl:"templates_path,optional"`
+
+	// SMTP configuration for mail backend
+	SMTP *SMTPConfig `hcl:"smtp,block"`
+}
+
+// SMTPConfig configures SMTP for email notifications.
+type SMTPConfig struct {
+	// Host is the SMTP server hostname.
+	Host string `hcl:"host,optional"`
+
+	// Port is the SMTP server port (typically 587 for TLS, 25 for plaintext).
+	Port string `hcl:"port,optional"`
+
+	// Username for SMTP authentication (optional).
+	Username string `hcl:"username,optional"`
+
+	// Password for SMTP authentication (optional).
+	Password string `hcl:"password,optional"`
+
+	// FromAddress is the "from" email address for notifications.
+	FromAddress string `hcl:"from_address,optional"`
+
+	// FromName is the "from" display name for notifications.
+	FromName string `hcl:"from_name,optional"`
+
+	// UseTLS enables STARTTLS (recommended for port 587).
+	UseTLS bool `hcl:"use_tls,optional"`
 }
 
 // FeatureFlags contain available feature flags.

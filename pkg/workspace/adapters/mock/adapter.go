@@ -2,9 +2,11 @@
 package mock
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/docs/v1"
@@ -618,4 +620,124 @@ func (a *Adapter) UpdateDocumentContent(fileID, content string) error {
 	}
 
 	return nil
+}
+
+// RFC-084 WorkspaceProvider interface stub implementations
+// These allow the old mock.Adapter to satisfy both workspace.Provider and workspace.WorkspaceProvider interfaces
+// TODO: Migrate tests to use mock.FakeAdapter which has full RFC-084 implementations
+
+// CompareContent is a stub implementation of the RFC-084 ContentProvider interface.
+// Returns a basic comparison that indicates content is different if provider IDs differ.
+func (a *Adapter) CompareContent(ctx context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
+	content1, ok1 := a.FileContents[providerID1]
+	content2, ok2 := a.FileContents[providerID2]
+
+	if !ok1 && !ok2 {
+		return nil, fmt.Errorf("both provider IDs not found")
+	}
+	if !ok1 {
+		return nil, fmt.Errorf("provider ID 1 not found: %s", providerID1)
+	}
+	if !ok2 {
+		return nil, fmt.Errorf("provider ID 2 not found: %s", providerID2)
+	}
+
+	contentMatch := content1 == content2
+	hashDiff := "same"
+	if !contentMatch {
+		hashDiff = "major"
+	}
+
+	return &workspace.ContentComparison{
+		ContentMatch:   contentMatch,
+		HashDifference: hashDiff,
+	}, nil
+}
+
+// RFC-084 DocumentProvider stub implementations (minimal to satisfy interface)
+
+func (a *Adapter) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: GetDocument")
+}
+
+func (a *Adapter) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: GetDocumentByUUID")
+}
+
+func (a *Adapter) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: CreateDocument")
+}
+
+func (a *Adapter) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: CreateDocumentWithUUID")
+}
+
+func (a *Adapter) UpdateDocument(ctx context.Context, providerID string, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: UpdateDocument")
+}
+
+func (a *Adapter) DeleteDocument(ctx context.Context, providerID string) error {
+	return fmt.Errorf("not implemented: DeleteDocument")
+}
+
+func (a *Adapter) ListDocuments(ctx context.Context, folderID string, recursive bool) ([]*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: ListDocuments")
+}
+
+func (a *Adapter) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: RegisterDocument")
+}
+
+func (a *Adapter) CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: CopyDocument")
+}
+
+func (a *Adapter) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: MoveDocument")
+}
+
+func (a *Adapter) RenameDocument(ctx context.Context, providerID, newName string) (*workspace.DocumentMetadata, error) {
+	return nil, fmt.Errorf("not implemented: RenameDocument")
+}
+
+// RFC-084 ContentProvider stub implementations (beyond CompareContent)
+
+func (a *Adapter) GetContent(ctx context.Context, providerID string) (*workspace.DocumentContent, error) {
+	return nil, fmt.Errorf("not implemented: GetContent")
+}
+
+func (a *Adapter) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentContent, error) {
+	return nil, fmt.Errorf("not implemented: GetContentByUUID")
+}
+
+func (a *Adapter) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+	return nil, fmt.Errorf("not implemented: UpdateContent")
+}
+
+func (a *Adapter) GetContentBatch(ctx context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
+	return nil, fmt.Errorf("not implemented: GetContentBatch")
+}
+
+// RFC-084 RevisionTrackingProvider stub implementations
+
+func (a *Adapter) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+	return nil, fmt.Errorf("not implemented: GetRevision")
+}
+
+func (a *Adapter) ListRevisions(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+	return nil, fmt.Errorf("not implemented: ListRevisions")
+}
+
+func (a *Adapter) GetCurrentRevision(ctx context.Context, providerID string) (*workspace.BackendRevision, error) {
+	return nil, fmt.Errorf("not implemented: GetCurrentRevision")
+}
+
+// RFC-084 metadata methods
+
+func (a *Adapter) Name() string {
+	return "mock"
+}
+
+func (a *Adapter) ProviderType() string {
+	return "mock"
 }

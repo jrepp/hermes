@@ -168,10 +168,10 @@ func TestProviderCompliance_ShareFile(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify permission was added
-	perms, err := provider.ListPermissions(doc.ID)
+	perms, err := provider.ListPermissions(ctx, doc.ID)
 	require.NoError(t, err)
 	require.Len(t, perms, 1)
-	assert.Equal(t, "user@example.com", perms[0].EmailAddress)
+	assert.Equal(t, "user@example.com", perms[0].Email)
 	assert.Equal(t, "writer", perms[0].Role)
 }
 
@@ -188,7 +188,7 @@ func TestProviderCompliance_ListPermissions(t *testing.T) {
 	require.NoError(t, err)
 
 	// Initially no permissions
-	perms, err := provider.ListPermissions(doc.ID)
+	perms, err := provider.ListPermissions(ctx, doc.ID)
 	require.NoError(t, err)
 	assert.Len(t, perms, 0)
 
@@ -197,7 +197,7 @@ func TestProviderCompliance_ListPermissions(t *testing.T) {
 	provider.ShareFile(doc.ID, "user2@example.com", "writer")
 
 	// Verify permissions
-	perms, err = provider.ListPermissions(doc.ID)
+	perms, err = provider.ListPermissions(ctx, doc.ID)
 	require.NoError(t, err)
 	assert.Len(t, perms, 2)
 }
@@ -216,15 +216,15 @@ func TestProviderCompliance_DeletePermission(t *testing.T) {
 
 	// Add permission
 	provider.ShareFile(doc.ID, "user@example.com", "writer")
-	perms, _ := provider.ListPermissions(doc.ID)
+	perms, _ := provider.ListPermissions(ctx, doc.ID)
 	require.Len(t, perms, 1)
 
 	// Delete permission
-	err = provider.DeletePermission(doc.ID, perms[0].Id)
+	err = provider.DeletePermission(doc.ID, perms[0].ID)
 	require.NoError(t, err)
 
 	// Verify deletion
-	perms, _ = provider.ListPermissions(doc.ID)
+	perms, _ = provider.ListPermissions(ctx, doc.ID)
 	assert.Len(t, perms, 0)
 }
 
@@ -245,12 +245,12 @@ func TestProviderCompliance_GetSubfolder(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test GetSubfolder
-	id, err := provider.GetSubfolder(parent.ID, "Subfolder")
+	id, err := provider.GetSubfolder(ctx, parent.ID, "Subfolder")
 	require.NoError(t, err)
 	assert.Equal(t, subfolder.ID, id)
 
 	// Test non-existent subfolder
-	_, err = provider.GetSubfolder(parent.ID, "NonExistent")
+	_, err = provider.GetSubfolder(ctx, parent.ID, "NonExistent")
 	assert.Error(t, err, "should error on non-existent subfolder")
 }
 
@@ -261,6 +261,7 @@ func TestProviderCompliance_SearchPeople_Initial(t *testing.T) {
 	defer cleanup()
 
 	provider := NewProviderAdapter(adapter)
+	ctx := context.Background()
 
 	// Create users.json file - note: people service expects map, not array
 	usersJSON := `{
@@ -276,10 +277,10 @@ func TestProviderCompliance_SearchPeople_Initial(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test SearchPeople
-	people, err := provider.SearchPeople("user@example.com", "names,emailAddresses")
+	people, err := provider.SearchPeople(ctx, "user@example.com")
 	require.NoError(t, err)
 	require.Len(t, people, 1)
-	assert.Equal(t, "user@example.com", people[0].EmailAddresses[0].Value)
+	assert.Equal(t, "user@example.com", people[0].Email)
 }
 
 // setupTestAdapter creates a test adapter with an in-memory filesystem.
@@ -472,6 +473,7 @@ func TestProviderCompliance_SearchPeople(t *testing.T) {
 	defer cleanup()
 
 	provider := NewProviderAdapter(adapter)
+	ctx := context.Background()
 
 	// Create users.json file - map format, not array
 	usersJSON := `{
@@ -495,24 +497,24 @@ func TestProviderCompliance_SearchPeople(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test search by email
-	people, err := provider.SearchPeople("john.doe@example.com", "emailAddresses,names")
+	people, err := provider.SearchPeople(ctx, "john.doe@example.com")
 	require.NoError(t, err)
 	assert.Len(t, people, 1)
-	assert.Equal(t, "john.doe@example.com", people[0].EmailAddresses[0].Value)
+	assert.Equal(t, "john.doe@example.com", people[0].Email)
 
 	// Test partial email match
-	people, err = provider.SearchPeople("example.com", "emailAddresses,names")
+	people, err = provider.SearchPeople(ctx, "example.com")
 	require.NoError(t, err)
 	assert.Len(t, people, 2)
 
 	// Test search by name
-	people, err = provider.SearchPeople("Jane", "emailAddresses,names")
+	people, err = provider.SearchPeople(ctx, "Jane")
 	require.NoError(t, err)
 	assert.Len(t, people, 1)
-	assert.Equal(t, "Jane Smith", people[0].Names[0].DisplayName)
+	assert.Equal(t, "Jane Smith", people[0].DisplayName)
 
 	// Test no matches
-	people, err = provider.SearchPeople("nonexistent", "emailAddresses,names")
+	people, err = provider.SearchPeople(ctx, "nonexistent")
 	require.NoError(t, err)
 	assert.Empty(t, people)
 }
@@ -590,7 +592,7 @@ func TestProviderCompliance_CreateFolder(t *testing.T) {
 	provider := NewProviderAdapter(adapter)
 
 	t.Run("BasicFolderCreation", func(t *testing.T) {
-		folder, err := provider.CreateFolder("New Folder", "")
+		folder, err := provider.CreateFolderLegacy("New Folder", "")
 		require.NoError(t, err)
 		assert.NotEmpty(t, folder.Id)
 		assert.Equal(t, "New Folder", folder.Name)
@@ -599,11 +601,11 @@ func TestProviderCompliance_CreateFolder(t *testing.T) {
 
 	t.Run("NestedFolderCreation", func(t *testing.T) {
 		// Create parent folder
-		parent, err := provider.CreateFolder("Parent Folder", "")
+		parent, err := provider.CreateFolderLegacy("Parent Folder", "")
 		require.NoError(t, err)
 
 		// Create child folder
-		child, err := provider.CreateFolder("Child Folder", parent.Id)
+		child, err := provider.CreateFolderLegacy("Child Folder", parent.Id)
 		require.NoError(t, err)
 		assert.NotEmpty(t, child.Id)
 		assert.Equal(t, "Child Folder", child.Name)
@@ -611,7 +613,7 @@ func TestProviderCompliance_CreateFolder(t *testing.T) {
 	})
 
 	t.Run("EmptyFolderName", func(t *testing.T) {
-		_, err := provider.CreateFolder("", "")
+		_, err := provider.CreateFolderLegacy("", "")
 		assert.Error(t, err, "Should error on empty folder name")
 	})
 }
@@ -716,7 +718,7 @@ func TestProviderCompliance_RevisionManagement(t *testing.T) {
 	})
 
 	t.Run("KeepRevisionForever", func(t *testing.T) {
-		revision, err := provider.KeepRevisionForever(doc.ID, "1")
+		revision, err := provider.KeepRevisionForeverLegacy(doc.ID, "1")
 		require.NoError(t, err)
 		assert.Equal(t, "1", revision.Id)
 		assert.True(t, revision.KeepForever)
@@ -737,9 +739,11 @@ func TestProviderCompliance_SendEmail(t *testing.T) {
 	defer cleanup()
 
 	provider := NewProviderAdapter(adapter)
+	ctx := context.Background()
 
 	// Test SendEmail delegates to notification service
 	err := provider.SendEmail(
+		ctx,
 		[]string{"recipient@example.com"},
 		"sender@example.com",
 		"Test Subject",
@@ -749,6 +753,7 @@ func TestProviderCompliance_SendEmail(t *testing.T) {
 
 	// Test with multiple recipients
 	err = provider.SendEmail(
+		ctx,
 		[]string{"user1@example.com", "user2@example.com"},
 		"sender@example.com",
 		"Multi Recipient Test",
@@ -758,6 +763,7 @@ func TestProviderCompliance_SendEmail(t *testing.T) {
 
 	// Test with empty recipients - notification service logs but doesn't error
 	err = provider.SendEmail(
+		ctx,
 		[]string{},
 		"sender@example.com",
 		"No Recipients",
@@ -814,7 +820,7 @@ func TestProviderCompliance_ShareFileWithDomain(t *testing.T) {
 	assert.NoError(t, err, "ShareFileWithDomain should be no-op for local adapter")
 
 	// Verify no permissions were added
-	perms, err := provider.ListPermissions(doc.ID)
+	perms, err := provider.ListPermissions(ctx, doc.ID)
 	require.NoError(t, err)
 	assert.Empty(t, perms, "Domain sharing should not add permissions in local adapter")
 }
@@ -892,7 +898,7 @@ func TestProviderCompliance_ShareFile_EdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify all permissions exist
-		perms, err := provider.ListPermissions(doc.ID)
+		perms, err := provider.ListPermissions(ctx, doc.ID)
 		require.NoError(t, err)
 		assert.Len(t, perms, 3)
 	})
@@ -906,12 +912,12 @@ func TestProviderCompliance_ShareFile_EdgeCases(t *testing.T) {
 		require.NoError(t, err)
 
 		// Count permissions for this user
-		perms, err := provider.ListPermissions(doc.ID)
+		perms, err := provider.ListPermissions(ctx, doc.ID)
 		require.NoError(t, err)
 
 		count := 0
 		for _, p := range perms {
-			if p.EmailAddress == "duplicate@example.com" {
+			if p.Email == "duplicate@example.com" {
 				count++
 			}
 		}
@@ -938,16 +944,16 @@ func TestProviderCompliance_GetSubfolder_Nested(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test finding at different levels
-	foundID, err := provider.GetSubfolder(parent.ID, "Child")
+	foundID, err := provider.GetSubfolder(ctx, parent.ID, "Child")
 	require.NoError(t, err)
 	assert.Equal(t, child.ID, foundID)
 
-	foundID, err = provider.GetSubfolder(child.ID, "Grandchild")
+	foundID, err = provider.GetSubfolder(ctx, child.ID, "Grandchild")
 	require.NoError(t, err)
 	assert.Equal(t, grandchild.ID, foundID)
 
 	// Test not found
-	_, err = provider.GetSubfolder(parent.ID, "Nonexistent")
+	_, err = provider.GetSubfolder(ctx, parent.ID, "Nonexistent")
 	assert.Error(t, err, "Should error on nonexistent subfolder")
 }
 

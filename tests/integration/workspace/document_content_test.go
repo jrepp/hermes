@@ -428,7 +428,7 @@ trashed: false
 
 // mockProviderWithCapabilities wraps a mock provider and adds capabilities interface
 type mockProviderWithCapabilities struct {
-	workspace.Provider
+	workspace.WorkspaceProvider
 	supportsEditing bool
 }
 
@@ -445,8 +445,8 @@ func TestUnsupportedProvider_DocumentContentAPI(t *testing.T) {
 
 		// Create mock workspace provider that does NOT support content editing
 		mockProvider := &mockProviderWithCapabilities{
-			Provider:        mock.NewAdapter(),
-			supportsEditing: false,
+			WorkspaceProvider: mock.NewFakeAdapter(),
+			supportsEditing:   false,
 		}
 
 		// Create minimal mock server

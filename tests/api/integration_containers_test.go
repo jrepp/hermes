@@ -65,10 +65,12 @@ func NewIntegrationSuite(t *testing.T, opts ...Option) *IntegrationSuite {
 
 	// Create Meilisearch adapter using shared container
 	searchAdapter, err := meilisearch.NewAdapter(&meilisearch.Config{
-		Host:            containers.MeilisearchHost,
-		APIKey:          containers.MeilisearchAPIKey,
-		DocsIndexName:   fmt.Sprintf("test-docs-%d", time.Now().UnixNano()),
-		DraftsIndexName: fmt.Sprintf("test-drafts-%d", time.Now().UnixNano()),
+		Host:              containers.MeilisearchHost,
+		APIKey:            containers.MeilisearchAPIKey,
+		DocsIndexName:     fmt.Sprintf("test-docs-%d", time.Now().UnixNano()),
+		DraftsIndexName:   fmt.Sprintf("test-drafts-%d", time.Now().UnixNano()),
+		ProjectsIndexName: fmt.Sprintf("test-projects-%d", time.Now().UnixNano()),
+		LinksIndexName:    fmt.Sprintf("test-links-%d", time.Now().UnixNano()),
 	})
 	require.NoError(t, err, "Failed to create Meilisearch adapter")
 
@@ -88,8 +90,8 @@ func NewIntegrationSuite(t *testing.T, opts ...Option) *IntegrationSuite {
 		cleanupFuncs:   make([]func(), 0),
 	}
 
-	// Create mock workspace provider
-	suite.WorkspaceProvider = mock.NewAdapter()
+	// Create RFC-084 FakeAdapter workspace provider
+	suite.WorkspaceProvider = mock.NewFakeAdapter()
 
 	// Create test configuration
 	suite.Config = suite.createTestConfig()

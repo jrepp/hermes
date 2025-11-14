@@ -1,0 +1,7 @@
+{{if .OldDocumentOwner.Name}}{{.OldDocumentOwner.Name}}{{else}}{{.OldDocumentOwner.EmailAddress}}{{end}} has transferred a document to you.
+
+**{{.DocumentTitle}}** {{.DocumentShortName}}
+Status: {{.DocumentStatus}} · {{.DocumentType}}
+Product: {{.Product}}
+
+[View in Hermes]({{.DocumentURL}})

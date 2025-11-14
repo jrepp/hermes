@@ -740,7 +740,8 @@ func (c *Command) Run(args []string) int {
 	unauthenticatedEndpoints := []endpoint{
 		{"/health", healthHandler()},
 		{"/pub/", http.StripPrefix("/pub/", pub.Handler())},
-		{"/api/v2/indexer/", apiv2.IndexerHandler(srv)}, // Indexer API (handles own token auth)
+		{"/api/v2/indexer/", apiv2.IndexerHandler(srv)},                                  // Indexer API (handles own token auth)
+		{"/api/v2/edge/", apiv2.EdgeSyncAuthMiddleware(srv, apiv2.EdgeSyncHandler(srv))}, // Edge sync API (token auth)
 	}
 
 	// Add Dex OIDC auth endpoints if Dex is configured

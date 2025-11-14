@@ -86,7 +86,7 @@ func handleIndexerRegister(srv server.Server, w http.ResponseWriter, r *http.Req
 	}
 
 	// Validate token (for now, just check it's not empty - in production, verify against stored registration tokens)
-	// TODO: Implement proper token validation against indexer_tokens table
+	// TODO: Implement proper token validation against service_tokens table
 	tokenHash := models.HashToken(req.Token)
 	var token models.IndexerToken
 	if err := token.GetByHash(srv.DB, tokenHash); err != nil {

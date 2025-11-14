@@ -63,7 +63,7 @@ func (t *IndexerToken) BeforeCreate(tx *gorm.DB) error {
 
 // TableName specifies the table name for GORM.
 func (IndexerToken) TableName() string {
-	return "indexer_tokens"
+	return "service_tokens"
 }
 
 // IndexerTokens is a slice of indexer tokens.

@@ -22,7 +22,7 @@ type LocalWorkspaceFixture struct {
 	t         *testing.T
 	tempDir   string
 	adapter   *local.Adapter
-	provider  workspace.Provider
+	provider  workspace.WorkspaceProvider
 	documents map[string]*workspace.Document // document name -> document
 }
 
@@ -73,7 +73,7 @@ func (f *LocalWorkspaceFixture) GetAdapter() *local.Adapter {
 }
 
 // GetProvider returns the provider interface
-func (f *LocalWorkspaceFixture) GetProvider() workspace.Provider {
+func (f *LocalWorkspaceFixture) GetProvider() workspace.WorkspaceProvider {
 	return f.provider
 }
 

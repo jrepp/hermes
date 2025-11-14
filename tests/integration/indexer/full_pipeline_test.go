@@ -623,15 +623,9 @@ func (c *SimpleTransformCommand) Execute(ctx context.Context, doc *indexer.Docum
 		DocType:      "Markdown",  // Default type
 	}
 
-	// Add UUID if available
-	if doc.DocumentUUID.String() != "00000000-0000-0000-0000-000000000000" {
-		searchDoc.DocumentUUID = doc.DocumentUUID.String()
-	}
-
-	// Add summary if available
-	if doc.Revision != nil && doc.Revision.Summary != "" {
-		searchDoc.Summary = doc.Revision.Summary
-	}
+	// Note: DocumentUUID and Summary fields have been removed from document.Document
+	// These were part of an older schema and are no longer available
+	// UUID tracking is now handled via the models.Document database table
 
 	doc.Transformed = searchDoc
 
