@@ -1,0 +1,16 @@
+{
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "title": "RFC-123: Test Document",
+  "document_type": "RFC",
+  "status": "In-Review",
+  "owners": ["test@example.com"],
+  "edge_instance": "edge-dev-1",
+  "provider_id": "local:docs/rfc-123.md",
+  "product": "Test Product",
+  "tags": ["test", "rfc"],
+  "parents": ["/docs"],
+  "metadata": {"version": "1.0"},
+  "content_hash": "sha256:abc123",
+  "created_at": "2025-11-13T00:00:00Z",
+  "updated_at": "2025-11-13T01:00:00Z"
+}
