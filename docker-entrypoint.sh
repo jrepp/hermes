@@ -6,10 +6,16 @@
 set -e
 
 # Fix permissions on shared volume mount (created by Docker with root ownership)
+# Skip if directory is read-only (e.g., indexer with read-only token mount)
 if [ -d /app/shared ]; then
-    echo "Fixing permissions on /app/shared..."
-    chown -R hermes:hermes /app/shared
-    chmod 755 /app/shared
+    if touch /app/shared/.writable_test 2>/dev/null; then
+        echo "Fixing permissions on /app/shared..."
+        rm -f /app/shared/.writable_test
+        chown -R hermes:hermes /app/shared
+        chmod 755 /app/shared
+    else
+        echo "Skipping permissions fix on /app/shared (read-only mount)"
+    fi
 fi
 
 # Fix permissions on workspace_data volume mount (if it exists and is root-owned)

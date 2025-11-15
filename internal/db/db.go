@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/pkg/database"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -28,22 +29,38 @@ type DatabaseConfig struct {
 
 // NewDB returns a new migrated database.
 // This maintains backward compatibility with existing code using config.Postgres.
+// It now uses the shared pkg/database connection logic.
 func NewDB(cfg config.Postgres) (*gorm.DB, error) {
-	// Convert config.Postgres to DatabaseConfig
-	dbConfig := DatabaseConfig{
-		Driver:   "postgres", // Default to postgres for existing configs
+	// Convert config.Postgres to database.Config
+	dbConfig := database.Config{
 		Host:     cfg.Host,
 		Port:     cfg.Port,
 		User:     cfg.User,
 		Password: cfg.Password,
 		DBName:   cfg.DBName,
+		SSLMode:  "disable", // Default for backward compatibility
 	}
-	return NewDBWithConfig(dbConfig)
+
+	// Use shared database connection logic (no logger here for backward compatibility)
+	db, err := database.Connect(dbConfig, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Setup join tables (GORM-specific configuration)
+	if err := setupJoinTables(db); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
 // NewDBWithConfig returns a new database connection using DatabaseConfig.
 // NOTE: Server binary only supports PostgreSQL to avoid SQLite driver conflicts.
 // For SQLite support, use the hermes-migrate binary.
+//
+// Deprecated: This function is kept for backward compatibility.
+// New code should use database.Connect() from pkg/database instead.
 func NewDBWithConfig(cfg DatabaseConfig) (*gorm.DB, error) {
 	var dialector gorm.Dialector
 

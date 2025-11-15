@@ -21,6 +21,8 @@
 # Ports (non-conflicting with integration testing):
 #   - PostgreSQL: 5433 (host) -> 5432 (container)
 #   - Meilisearch: 7701 (host) -> 7700 (container)
+#   - MinIO S3 API: 9000 (host) -> 9000 (container)
+#   - MinIO Console: 9001 (host) -> 9001 (container)
 #   - Dex: 5558 (host) -> 5557 (container)
 #   - Central Hermes API: 8000 (host) -> 8000 (container)
 #   - Edge Hermes API: 8002 (host) -> 8000 (container)
@@ -63,6 +65,47 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - hermes-testing
+
+  # MinIO - S3-compatible object storage (RFC-089)
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+    container_name: hermes-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hermes-testing
+
+  # MinIO Client - Create initial bucket for testing
+  minio-setup:
+    image: minio/mc:latest
+    container_name: hermes-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/hermes-documents --ignore-existing;
+      mc mb myminio/hermes-archive --ignore-existing;
+      mc version enable myminio/hermes-documents;
+      mc version enable myminio/hermes-archive;
+      echo 'MinIO buckets created and versioning enabled';
+      "
     networks:
       - hermes-testing
 
@@ -360,6 +403,37 @@ services:
       - hermes-testing
     restart: unless-stopped
 
+  # RFC-088 Indexer Services - Event-Driven Document Indexing
+  # NOTE: Relay is now embedded in the main hermes-central server (see RFC-088)
+  # Only the stateless consumer worker runs as a separate service
+
+  # Indexer Consumer - Processes document revision events from Redpanda (stateless)
+  hermes-indexer:
+    container_name: hermes-indexer
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["/app/hermes-indexer", "-config=/app/config/indexer-worker.hcl"]
+    volumes:
+      - ./indexer-worker.hcl:/app/config/indexer-worker.hcl:ro
+    environment:
+      REDPANDA_BROKERS: "redpanda:9092"
+      DOCUMENT_REVISION_TOPIC: "hermes.document-revisions"
+      CONSUMER_GROUP: "hermes-indexer-workers"
+      HERMES_SEARCH_PROVIDER: "meilisearch"
+      HERMES_MEILISEARCH_URL: "http://meilisearch:7700"
+      HERMES_MEILISEARCH_KEY: "masterKey123"
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+      hermes-central:
+        condition: service_healthy  # Depends on central server which runs the relay
+    networks:
+      - hermes-testing
+    restart: unless-stopped
+
 networks:
   hermes-testing:
     driver: bridge
@@ -367,6 +441,7 @@ networks:
 volumes:
   postgres_testing:
   meilisearch_testing:
+  minio_data:                # MinIO S3-compatible storage (RFC-089)
   hermes_central_workspace:  # Central Hermes workspace data
   hermes_edge_workspace:     # Edge Hermes workspace data
   indexer_shared:

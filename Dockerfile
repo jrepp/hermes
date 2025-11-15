@@ -26,7 +26,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes ./cmd/hermes
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes-migrate ./cmd/hermes-migrate
 
 # Build the notifier binary (RFC-087)
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes-notifier ./cmd/notifier
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes-notify ./cmd/hermes-notify
+
+# Build the indexer binary (RFC-088)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o hermes-indexer ./cmd/hermes-indexer
 
 # Final stage - minimal runtime image
 FROM alpine:3.19
@@ -39,7 +42,8 @@ WORKDIR /app
 # Copy binaries from builder
 COPY --from=builder /build/hermes /app/hermes
 COPY --from=builder /build/hermes-migrate /app/hermes-migrate
-COPY --from=builder /build/hermes-notifier /app/hermes-notifier
+COPY --from=builder /build/hermes-notify /app/hermes-notify
+COPY --from=builder /build/hermes-indexer /app/hermes-indexer
 
 # Copy configs (optional, can be mounted as volume)
 COPY --from=builder /build/configs /app/configs
