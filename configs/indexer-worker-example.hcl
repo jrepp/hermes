@@ -77,8 +77,10 @@ indexer {
       # Step-specific configuration
       config = {
         embeddings = {
-          model      = "text-embedding-3-small"
-          dimensions = 1536
+          model      = "text-embedding-3-small"  # OpenAI embedding model
+          dimensions = 1536                       # Vector dimensions
+          provider   = "openai"                   # LLM provider
+          chunk_size = 8000                       # Characters per chunk (0 = no chunking)
         }
 
         llm_summary = {
@@ -165,20 +167,20 @@ indexer {
   # LLM Model Examples:
   # ============================================================================
   #
-  # OpenAI Models:
+  # Chat/Summary Models (OpenAI):
   #   - gpt-4o               # Most capable, highest cost
   #   - gpt-4o-mini          # Fast and cost-effective (recommended default)
   #   - gpt-4-turbo          # Previous generation
   #   - gpt-3.5-turbo        # Fastest, lowest cost
   #
-  # AWS Bedrock Models:
+  # Chat/Summary Models (AWS Bedrock):
   #   - us.anthropic.claude-3-7-sonnet-20250219-v1:0    # Latest Claude (recommended)
   #   - us.anthropic.claude-3-5-sonnet-20241022-v2:0    # Previous Claude
   #   - anthropic.claude-3-opus-20240229-v1:0           # Most capable Claude
   #   - anthropic.claude-3-haiku-20240307-v1:0          # Fast, cost-effective
   #   - amazon.titan-text-express-v1                    # Amazon's model
   #
-  # Ollama Models (Local):
+  # Chat/Summary Models (Ollama - Local):
   #   - llama3               # Meta's Llama 3 (8B)
   #   - llama3:70b           # Llama 3 70B (requires more resources)
   #   - mistral              # Mistral 7B
@@ -187,6 +189,44 @@ indexer {
   #   - phi                  # Microsoft Phi
   #   - qwen2                # Alibaba Qwen 2
   #   - gemma2               # Google Gemma 2
+  #
+  # Embeddings Models (OpenAI):
+  #   - text-embedding-3-small   # 1536 dimensions, cost-effective (recommended)
+  #   - text-embedding-3-large   # 3072 dimensions, highest quality
+  #   - text-embedding-ada-002   # 1536 dimensions, previous generation
+  #
+  # ============================================================================
+  #
+  # Embeddings Pipeline Step Configuration:
+  # ============================================================================
+  #
+  # The embeddings step generates vector embeddings for semantic search.
+  #
+  # Configuration options:
+  #   - model: Embedding model name (e.g., "text-embedding-3-small")
+  #   - dimensions: Vector dimensions (1536, 3072, etc.)
+  #   - provider: LLM provider ("openai", "bedrock", "ollama")
+  #   - chunk_size: Max characters per chunk (0 = no chunking)
+  #
+  # Chunking:
+  #   Large documents can be split into chunks for better semantic search.
+  #   Each chunk gets its own embedding vector.
+  #
+  # Example configurations:
+  #
+  #   embeddings = {
+  #     model      = "text-embedding-3-small"
+  #     dimensions = 1536
+  #     provider   = "openai"
+  #     chunk_size = 8000  # Split docs longer than 8000 chars
+  #   }
+  #
+  #   embeddings = {
+  #     model      = "text-embedding-3-large"
+  #     dimensions = 3072
+  #     provider   = "openai"
+  #     chunk_size = 0     # No chunking
+  #   }
   #
   # ============================================================================
 }
