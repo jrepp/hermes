@@ -29,6 +29,18 @@ search {
   }
 }
 
+# LLM provider configuration (RFC-088)
+llm {
+  # OpenAI configuration (requires API key)
+  openai_api_key = "sk-..."  # Set via environment variable: OPENAI_API_KEY
+
+  # Ollama configuration (local LLM server)
+  ollama_url = "http://localhost:11434"  # Default Ollama server
+
+  # AWS Bedrock configuration (uses AWS credentials from environment/IAM)
+  bedrock_region = "us-east-1"  # AWS region for Bedrock
+}
+
 # Indexer configuration (RFC-088)
 indexer {
   # Redpanda/Kafka configuration
@@ -109,7 +121,74 @@ indexer {
         }
       }
     },
+
+    # Ruleset 4: Use local Ollama for cost-effective summaries
+    {
+      name = "local-llm-summaries"
+
+      conditions = {
+        document_type = "Meeting Notes,Memo"
+      }
+
+      pipeline = ["search_index", "llm_summary"]
+
+      config = {
+        llm_summary = {
+          model      = "llama3"      # Ollama model (local)
+          max_tokens = 300
+          style      = "bullet-points"
+        }
+      }
+    },
+
+    # Ruleset 5: Use AWS Bedrock Claude for high-quality analysis
+    {
+      name = "bedrock-claude-analysis"
+
+      conditions = {
+        document_type = "Strategy,Vision"
+      }
+
+      pipeline = ["search_index", "llm_summary"]
+
+      config = {
+        llm_summary = {
+          model      = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"  # AWS Bedrock
+          max_tokens = 1000
+          style      = "executive"
+        }
+      }
+    },
   ]
+
+  # ============================================================================
+  # LLM Model Examples:
+  # ============================================================================
+  #
+  # OpenAI Models:
+  #   - gpt-4o               # Most capable, highest cost
+  #   - gpt-4o-mini          # Fast and cost-effective (recommended default)
+  #   - gpt-4-turbo          # Previous generation
+  #   - gpt-3.5-turbo        # Fastest, lowest cost
+  #
+  # AWS Bedrock Models:
+  #   - us.anthropic.claude-3-7-sonnet-20250219-v1:0    # Latest Claude (recommended)
+  #   - us.anthropic.claude-3-5-sonnet-20241022-v2:0    # Previous Claude
+  #   - anthropic.claude-3-opus-20240229-v1:0           # Most capable Claude
+  #   - anthropic.claude-3-haiku-20240307-v1:0          # Fast, cost-effective
+  #   - amazon.titan-text-express-v1                    # Amazon's model
+  #
+  # Ollama Models (Local):
+  #   - llama3               # Meta's Llama 3 (8B)
+  #   - llama3:70b           # Llama 3 70B (requires more resources)
+  #   - mistral              # Mistral 7B
+  #   - mistral-large        # Mistral Large
+  #   - codellama            # Code-focused Llama
+  #   - phi                  # Microsoft Phi
+  #   - qwen2                # Alibaba Qwen 2
+  #   - gemma2               # Google Gemma 2
+  #
+  # ============================================================================
 }
 
 # Logging configuration
