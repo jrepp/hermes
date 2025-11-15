@@ -285,12 +285,22 @@ google_workspace {
   }
 }
 
-// Indexer configuration
+// Legacy Indexer configuration (for backward compatibility)
 indexer {
   max_parallel_docs              = 5
   update_doc_headers             = false
   update_draft_headers           = false
   use_database_for_document_data = true
+
+  // RFC-088: Event-Driven Indexer with Outbox Relay
+  // The relay runs embedded in the main server process
+  redpanda_brokers = ["redpanda:9092"]
+  topic            = "hermes.document-revisions"
+  poll_interval    = "1s"   // How often relay polls the outbox table
+  batch_size       = 100    // Batch size for relay publishing
+
+  // Rulesets are only needed by consumer workers, not the relay
+  // The relay simply publishes outbox events to Redpanda
 }
 
 // Jira (disabled for testing)

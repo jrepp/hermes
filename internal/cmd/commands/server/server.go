@@ -29,7 +29,10 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/structs"
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
+	"github.com/hashicorp-forge/hermes/pkg/indexer/relay"
+	"github.com/hashicorp-forge/hermes/pkg/kafka"
 	"github.com/hashicorp-forge/hermes/pkg/links"
+	"github.com/hashicorp-forge/hermes/pkg/migration"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
 	"github.com/hashicorp-forge/hermes/pkg/search"
@@ -717,10 +720,13 @@ func (c *Command) Run(args []string) int {
 			apiv2.MeRecentlyViewedProjectsHandler(srv)},
 		{"/api/v2/me/reviews", apiv2.MeReviewsHandler(srv)},
 		{"/api/v2/me/subscriptions", apiv2.MeSubscriptionsHandler(srv)},
+		{"/api/v2/migrations/", apiv2.MigrationsHandler(srv)},
 		{"/api/v2/people", apiv2.PeopleDataHandler(srv)},
 		{"/api/v2/products", apiv2.ProductsHandler(srv)},
 		{"/api/v2/projects", apiv2.ProjectsHandler(srv)},
 		{"/api/v2/projects/", apiv2.ProjectHandler(srv)},
+		{"/api/v2/providers", apiv2.ProvidersHandler(srv)},
+		{"/api/v2/providers/", apiv2.ProvidersHandler(srv)},
 		{"/api/v2/reviews/", apiv2.ReviewsHandler(srv)},
 		{"/api/v2/search/", apiv2.SearchHandler(srv)},
 		{"/api/v2/web/analytics", apiv2.AnalyticsHandler(srv)},
@@ -817,6 +823,111 @@ func (c *Command) Run(args []string) int {
 			os.Exit(1)
 		}
 	}()
+
+	// RFC-088: Start outbox relay goroutine (publishes outbox events to Redpanda)
+	// The relay runs in the main server process to keep database writes transactional
+	if cfg.Indexer != nil {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		brokers := kafka.GetBrokers(cfg)
+		topic := kafka.GetDocumentRevisionTopic(cfg)
+
+		relayService, err := relay.New(relay.Config{
+			DB:           db,
+			Brokers:      brokers,
+			Topic:        topic,
+			PollInterval: cfg.Indexer.PollInterval,
+			BatchSize:    cfg.Indexer.BatchSize,
+			Logger:       c.Log.Named("outbox-relay"),
+		})
+		if err != nil {
+			c.Log.Error(fmt.Sprintf("failed to create outbox relay service: %v", err))
+			os.Exit(1)
+		}
+
+		// Start relay goroutine
+		go func() {
+			c.Log.Info("starting outbox relay service")
+			if err := relayService.Start(ctx); err != nil {
+				c.Log.Error(fmt.Sprintf("outbox relay service failed: %v", err))
+			}
+		}()
+
+		// Start cleanup goroutine (runs every 24 hours)
+		go func() {
+			ticker := time.NewTicker(24 * time.Hour)
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					if err := relayService.CleanupOldEntries(7 * 24 * time.Hour); err != nil {
+						c.Log.Error(fmt.Sprintf("failed to cleanup old outbox entries: %v", err))
+					}
+				}
+			}
+		}()
+
+		// Cancel relay context on shutdown
+		defer cancel()
+	}
+
+	// RFC-089: Start migration worker goroutine (processes migration tasks)
+	// The worker runs in the main server process to handle document migrations
+	if cfg.Migration != nil && cfg.Migration.Enabled {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		// Get underlying SQL DB from GORM
+		sqlDB, err := db.DB()
+		if err != nil {
+			c.Log.Error(fmt.Sprintf("failed to get SQL DB for migration worker: %v", err))
+			os.Exit(1)
+		}
+
+		// For now, create a simple provider map with just the primary provider
+		// TODO: In the future, this should use the multi-provider router
+		providerMap := make(map[string]workspace.WorkspaceProvider)
+		providerMap[workspaceProviderName] = workspaceProvider
+
+		// Set defaults for migration config
+		pollInterval := 5 * time.Second
+		if cfg.Migration.PollInterval > 0 {
+			pollInterval = cfg.Migration.PollInterval
+		}
+
+		maxConcurrency := 5
+		if cfg.Migration.MaxConcurrency > 0 {
+			maxConcurrency = cfg.Migration.MaxConcurrency
+		}
+
+		workerCfg := &migration.WorkerConfig{
+			PollInterval:   pollInterval,
+			MaxConcurrency: maxConcurrency,
+		}
+
+		migrationWorker := migration.NewWorker(sqlDB, providerMap, c.Log.Named("migration-worker"), workerCfg)
+
+		// Start worker goroutine
+		go func() {
+			c.Log.Info("starting migration worker",
+				"poll_interval", pollInterval,
+				"max_concurrency", maxConcurrency)
+			if err := migrationWorker.Start(ctx); err != nil && err != context.Canceled {
+				c.Log.Error(fmt.Sprintf("migration worker failed: %v", err))
+			}
+		}()
+
+		c.Log.Info("RFC-089 migration system enabled",
+			"write_strategy", cfg.Migration.WriteStrategy,
+			"read_strategy", cfg.Migration.ReadStrategy)
+
+		// Cancel worker context on shutdown
+		defer cancel()
+	}
 
 	return c.WaitForInterrupt(c.ShutdownServer(server))
 }

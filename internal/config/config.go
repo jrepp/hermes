@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	dexadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/dex"
 	oktaadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/okta"
@@ -64,6 +65,9 @@ type Config struct {
 
 	// Meilisearch configures Hermes to work with Meilisearch.
 	Meilisearch *Meilisearch `hcl:"meilisearch,block"`
+
+	// Migration configures the RFC-089 storage migration system.
+	Migration *Migration `hcl:"migration,block"`
 
 	// Bleve configures Hermes to work with Bleve (embedded full-text search).
 	Bleve *Bleve `hcl:"bleve,block"`
@@ -285,6 +289,41 @@ type Indexer struct {
 	// UseDatabaseForDocumentData will use the database instead of Algolia as the
 	// source of truth for document data, if true.
 	UseDatabaseForDocumentData bool `hcl:"use_database_for_document_data,optional"`
+
+	// RFC-088: Event-driven indexer configuration
+
+	// RedpandaBrokers contains the Redpanda/Kafka broker addresses.
+	RedpandaBrokers []string `hcl:"redpanda_brokers,optional"`
+
+	// Topic is the Redpanda topic name for document revision events.
+	Topic string `hcl:"topic,optional"`
+
+	// ConsumerGroup is the Kafka consumer group for indexer workers.
+	ConsumerGroup string `hcl:"consumer_group,optional"`
+
+	// PollInterval is how often the outbox relay polls for pending events.
+	PollInterval time.Duration `hcl:"poll_interval,optional"`
+
+	// BatchSize is the maximum number of outbox entries to process per batch.
+	BatchSize int `hcl:"batch_size,optional"`
+
+	// Rulesets defines pipeline rulesets for document processing.
+	Rulesets []IndexerRuleset `hcl:"rulesets,block"`
+}
+
+// IndexerRuleset defines when and how to process a document revision.
+type IndexerRuleset struct {
+	// Name is the ruleset identifier.
+	Name string `hcl:"name,label"`
+
+	// Conditions are the matching criteria for this ruleset.
+	Conditions map[string]string `hcl:"conditions,optional"`
+
+	// Pipeline is the ordered list of pipeline steps to execute.
+	Pipeline []string `hcl:"pipeline"`
+
+	// Config contains step-specific configuration.
+	Config map[string]interface{} `hcl:"config,optional"`
 }
 
 // GoogleWorkspace is the configuration to work with Google Workspace.
@@ -500,6 +539,26 @@ type Bleve struct {
 	// IndexPath is the directory where Bleve indexes are stored.
 	// E.g., "./docs-cms/data/fts.index"
 	IndexPath string `hcl:"index_path"`
+}
+
+// Migration configures the RFC-089 storage migration system.
+type Migration struct {
+	// Enabled indicates whether migration functionality is enabled.
+	Enabled bool `hcl:"enabled,optional"`
+
+	// PollInterval is how often the migration worker polls for pending tasks.
+	PollInterval time.Duration `hcl:"poll_interval,optional"`
+
+	// MaxConcurrency is the maximum number of concurrent migration tasks.
+	MaxConcurrency int `hcl:"max_concurrency,optional"`
+
+	// WriteStrategy determines how writes are distributed across providers.
+	// Options: "primary_only", "all_writable", "mirror"
+	WriteStrategy string `hcl:"write_strategy,optional"`
+
+	// ReadStrategy determines how reads are handled across providers.
+	// Options: "primary_only", "primary_fallback", "load_balance"
+	ReadStrategy string `hcl:"read_strategy,optional"`
 }
 
 // Ollama configures Hermes to work with Ollama for local AI summarization.

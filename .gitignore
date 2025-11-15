@@ -1,8 +1,24 @@
 /hermes
 
-# Build artifacts
+# Build artifacts directory
+# Exclude all contents but keep structure files
 /build/*
+!/build/README.md
 !/build/.gitkeep
+!/build/bin/
+!/build/coverage/
+!/build/reports/
+!/build/test/
+!/build/logs/
+!/build/tmp/
+/build/bin/*
+/build/coverage/*
+/build/reports/*
+/build/test/*
+/build/logs/*
+/build/tmp/*
+!/build/**/.gitkeep
+!/build/**/README.md
 
 # Google OAuth 2.0
 /credentials.json
@@ -71,6 +87,9 @@ test_*.log
 # Project workspaces (testing environment)
 /testing/workspaces/*
 !/testing/workspaces/README.md
+
+# Old testing build artifacts (deprecated, moved to /build)
+/testing/build-artifacts/
 
 # Distributed projects configuration (internal/production)
 # HCL-based modular configs with safe examples in testing/projects/
