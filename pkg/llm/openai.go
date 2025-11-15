@@ -338,3 +338,188 @@ type OpenAIErrorResponse struct {
 		Code    string `json:"code"`
 	} `json:"error"`
 }
+
+// Embeddings API
+
+// GenerateEmbeddings generates embeddings for the given text using OpenAI's embeddings API.
+func (c *OpenAIClient) GenerateEmbeddings(ctx context.Context, text string, model string, dimensions int) ([]float64, error) {
+	startTime := time.Now()
+
+	// Prepare the request
+	reqBody := OpenAIEmbeddingsRequest{
+		Input:      text,
+		Model:      model,
+		Dimensions: dimensions,
+	}
+
+	reqJSON, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/embeddings", bytes.NewReader(reqJSON))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	c.logger.Debug("sending embeddings request to OpenAI",
+		"model", model,
+		"dimensions", dimensions,
+		"text_length", len(text),
+	)
+
+	// Send request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Check for errors
+	if resp.StatusCode != http.StatusOK {
+		var errResp OpenAIErrorResponse
+		if err := json.Unmarshal(respBody, &errResp); err == nil {
+			return nil, fmt.Errorf("OpenAI API error (%d): %s", resp.StatusCode, errResp.Error.Message)
+		}
+		return nil, fmt.Errorf("OpenAI API error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	// Parse response
+	var embResp OpenAIEmbeddingsResponse
+	if err := json.Unmarshal(respBody, &embResp); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(embResp.Data) == 0 {
+		return nil, fmt.Errorf("no embeddings in response")
+	}
+
+	generationTime := time.Since(startTime)
+
+	c.logger.Info("generated embeddings via OpenAI",
+		"model", model,
+		"dimensions", len(embResp.Data[0].Embedding),
+		"tokens_used", embResp.Usage.TotalTokens,
+		"generation_time_ms", generationTime.Milliseconds(),
+	)
+
+	return embResp.Data[0].Embedding, nil
+}
+
+// GenerateEmbeddingsBatch generates embeddings for multiple texts in a single API call.
+func (c *OpenAIClient) GenerateEmbeddingsBatch(ctx context.Context, texts []string, model string, dimensions int) ([][]float64, error) {
+	startTime := time.Now()
+
+	// Prepare the request
+	reqBody := OpenAIEmbeddingsRequest{
+		Input:      texts,
+		Model:      model,
+		Dimensions: dimensions,
+	}
+
+	reqJSON, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Create HTTP request
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/embeddings", bytes.NewReader(reqJSON))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	c.logger.Debug("sending batch embeddings request to OpenAI",
+		"model", model,
+		"dimensions", dimensions,
+		"num_texts", len(texts),
+	)
+
+	// Send request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Check for errors
+	if resp.StatusCode != http.StatusOK {
+		var errResp OpenAIErrorResponse
+		if err := json.Unmarshal(respBody, &errResp); err == nil {
+			return nil, fmt.Errorf("OpenAI API error (%d): %s", resp.StatusCode, errResp.Error.Message)
+		}
+		return nil, fmt.Errorf("OpenAI API error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	// Parse response
+	var embResp OpenAIEmbeddingsResponse
+	if err := json.Unmarshal(respBody, &embResp); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(embResp.Data) == 0 {
+		return nil, fmt.Errorf("no embeddings in response")
+	}
+
+	generationTime := time.Since(startTime)
+
+	c.logger.Info("generated batch embeddings via OpenAI",
+		"model", model,
+		"num_embeddings", len(embResp.Data),
+		"dimensions", dimensions,
+		"tokens_used", embResp.Usage.TotalTokens,
+		"generation_time_ms", generationTime.Milliseconds(),
+	)
+
+	// Extract embeddings in order
+	embeddings := make([][]float64, len(embResp.Data))
+	for _, data := range embResp.Data {
+		embeddings[data.Index] = data.Embedding
+	}
+
+	return embeddings, nil
+}
+
+// OpenAI Embeddings API types
+
+type OpenAIEmbeddingsRequest struct {
+	Input      interface{} `json:"input"` // string or []string
+	Model      string      `json:"model"`
+	Dimensions int         `json:"dimensions,omitempty"`
+}
+
+type OpenAIEmbeddingsResponse struct {
+	Object string                `json:"object"`
+	Data   []OpenAIEmbeddingData `json:"data"`
+	Model  string                `json:"model"`
+	Usage  OpenAIEmbeddingsUsage `json:"usage"`
+}
+
+type OpenAIEmbeddingData struct {
+	Object    string    `json:"object"`
+	Index     int       `json:"index"`
+	Embedding []float64 `json:"embedding"`
+}
+
+type OpenAIEmbeddingsUsage struct {
+	PromptTokens int `json:"prompt_tokens"`
+	TotalTokens  int `json:"total_tokens"`
+}
