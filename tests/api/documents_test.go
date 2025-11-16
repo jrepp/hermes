@@ -113,7 +113,7 @@ func TestDocuments_Get(t *testing.T) {
 
 // TestDocuments_Patch tests the PATCH /api/v2/documents/:id endpoint.
 func TestDocuments_Patch(t *testing.T) {
-	suite := NewSuite(t)
+	suite := NewIntegrationSuite(t)
 	defer suite.Cleanup()
 
 	t.Run("Update document title", func(t *testing.T) {
@@ -183,7 +183,7 @@ func TestDocuments_Patch(t *testing.T) {
 
 // TestDocuments_Delete tests the DELETE /api/v2/documents/:id endpoint.
 func TestDocuments_Delete(t *testing.T) {
-	suite := NewSuite(t)
+	suite := NewIntegrationSuite(t)
 	defer suite.Cleanup()
 
 	t.Run("Delete existing document", func(t *testing.T) {
@@ -214,7 +214,7 @@ func TestDocuments_Delete(t *testing.T) {
 
 // TestDocuments_List tests the GET /api/v2/documents endpoint (list).
 func TestDocuments_List(t *testing.T) {
-	suite := NewSuite(t)
+	suite := NewIntegrationSuite(t)
 	defer suite.Cleanup()
 
 	t.Run("List all documents", func(t *testing.T) {

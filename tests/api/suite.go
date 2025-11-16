@@ -164,10 +164,12 @@ func (s *Suite) setupSearch() error {
 	}
 
 	adapter, err := meilisearch.NewAdapter(&meilisearch.Config{
-		Host:            meilisearchHost,
-		APIKey:          "masterKey123",
-		DocsIndexName:   fmt.Sprintf("test-docs-%d", time.Now().UnixNano()),
-		DraftsIndexName: fmt.Sprintf("test-drafts-%d", time.Now().UnixNano()),
+		Host:              meilisearchHost,
+		APIKey:            "masterKey123",
+		DocsIndexName:     fmt.Sprintf("test-docs-%d", time.Now().UnixNano()),
+		DraftsIndexName:   fmt.Sprintf("test-drafts-%d", time.Now().UnixNano()),
+		ProjectsIndexName: fmt.Sprintf("test-projects-%d", time.Now().UnixNano()),
+		LinksIndexName:    fmt.Sprintf("test-links-%d", time.Now().UnixNano()),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create meilisearch adapter: %w", err)
@@ -188,6 +190,8 @@ func (s *Suite) setupSearch() error {
 		ctx := context.Background()
 		adapter.DocumentIndex().Clear(ctx)
 		adapter.DraftIndex().Clear(ctx)
+		adapter.ProjectIndex().Clear(ctx)
+		adapter.LinksIndex().Clear(ctx)
 	})
 
 	return nil

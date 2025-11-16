@@ -114,10 +114,12 @@ func (s *MainTestSuite) setupSearchProvider() {
 	testID := time.Now().UnixNano()
 
 	adapter, err := meilisearch.NewAdapter(&meilisearch.Config{
-		Host:            s.containers.MeilisearchHost,
-		APIKey:          s.containers.MeilisearchAPIKey,
-		DocsIndexName:   fmt.Sprintf("test-docs-%d", testID),
-		DraftsIndexName: fmt.Sprintf("test-drafts-%d", testID),
+		Host:              s.containers.MeilisearchHost,
+		APIKey:            s.containers.MeilisearchAPIKey,
+		DocsIndexName:     fmt.Sprintf("test-docs-%d", testID),
+		DraftsIndexName:   fmt.Sprintf("test-drafts-%d", testID),
+		ProjectsIndexName: fmt.Sprintf("test-projects-%d", testID),
+		LinksIndexName:    fmt.Sprintf("test-links-%d", testID),
 	})
 	require.NoError(s.T, err, "Failed to create Meilisearch adapter")
 
@@ -135,9 +137,11 @@ func (s *MainTestSuite) setupSearchProvider() {
 		ctx := context.Background()
 		adapter.DocumentIndex().Clear(ctx)
 		adapter.DraftIndex().Clear(ctx)
+		adapter.ProjectIndex().Clear(ctx)
+		adapter.LinksIndex().Clear(ctx)
 	})
 
-	s.T.Logf("🔍 Created search indexes: test-docs-%d, test-drafts-%d", testID, testID)
+	s.T.Logf("🔍 Created search indexes: test-docs-%d, test-drafts-%d, test-projects-%d, test-links-%d", testID, testID, testID, testID)
 }
 
 // setupWorkspaceProvider creates a workspace provider for testing.
