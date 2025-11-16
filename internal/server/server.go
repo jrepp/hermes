@@ -36,4 +36,12 @@ type Server struct {
 	// This enables different projects to use different workspace providers
 	// (local, Google Workspace, remote Hermes) and supports migration scenarios.
 	ProjectConfig *projectconfig.Config
+
+	// SemanticSearch provides semantic/vector search capabilities (RFC-088).
+	// Uses OpenAI embeddings and pgvector for similarity search.
+	SemanticSearch *search.SemanticSearch
+
+	// HybridSearch combines keyword and semantic search (RFC-088).
+	// Provides weighted combination of Meilisearch and pgvector results.
+	HybridSearch *search.HybridSearch
 }

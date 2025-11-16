@@ -729,6 +729,9 @@ func (c *Command) Run(args []string) int {
 		{"/api/v2/providers/", apiv2.ProvidersHandler(srv)},
 		{"/api/v2/reviews/", apiv2.ReviewsHandler(srv)},
 		{"/api/v2/search/", apiv2.SearchHandler(srv)},
+		{"/api/v2/search/semantic", apiv2.SemanticSearchHandler(srv)}, // RFC-088: Semantic search
+		{"/api/v2/search/hybrid", apiv2.HybridSearchHandler(srv)},     // RFC-088: Hybrid search
+		{"/api/v2/documents/", apiv2.SimilarDocumentsHandler(srv)},    // RFC-088: Similar documents
 		{"/api/v2/web/analytics", apiv2.AnalyticsHandler(srv)},
 		{"/api/v2/workspace-projects", apiv2.WorkspaceProjectsHandler(srv)},
 		{"/api/v2/workspace-projects/", apiv2.WorkspaceProjectHandler(srv)},
