@@ -112,7 +112,7 @@ func TestParallel_DatabaseOperations(t *testing.T) {
 		t.Skip("Skipping in short mode")
 	}
 
-	suite := NewSuite(t)
+	suite := NewIntegrationSuite(t)
 	defer suite.Cleanup()
 
 	t.Run("group", func(t *testing.T) {
@@ -142,7 +142,7 @@ func TestOptimized_SearchBatch(t *testing.T) {
 		t.Skip("Skipping in short mode")
 	}
 
-	suite := NewSuite(t)
+	suite := NewIntegrationSuite(t)
 	defer suite.Cleanup()
 
 	tx := suite.DB.Begin()
@@ -188,7 +188,7 @@ func TestOptimized_SearchBatch(t *testing.T) {
 
 // TestWithMockSearch demonstrates using mock search for faster tests.
 func TestWithMockSearch(t *testing.T) {
-	suite := NewSuite(t, WithMockSearch())
+	suite := NewIntegrationSuite(t, WithMockSearch())
 	defer suite.Cleanup()
 
 	// Mock search is instant - no network calls
@@ -234,7 +234,7 @@ func TestHelper_TransactionIsolation(t *testing.T) {
 		t.Skip("Skipping in short mode")
 	}
 
-	suite := NewSuite(t)
+	suite := NewIntegrationSuite(t)
 	defer suite.Cleanup()
 
 	// First transaction
@@ -266,7 +266,7 @@ func TestPerformanceComparison(t *testing.T) {
 	t.Run("WithNewSuiteEachTest", func(t *testing.T) {
 		// This is slow - creates new database
 		start := time.Now()
-		suite := NewSuite(t)
+		suite := NewIntegrationSuite(t)
 		defer suite.Cleanup()
 
 		doc := fixtures.NewDocument().
@@ -279,7 +279,7 @@ func TestPerformanceComparison(t *testing.T) {
 
 	t.Run("WithSharedSuiteAndTransaction", func(t *testing.T) {
 		// This is fast - reuses database
-		suite := NewSuite(t)
+		suite := NewIntegrationSuite(t)
 		defer suite.Cleanup()
 
 		start := time.Now()
