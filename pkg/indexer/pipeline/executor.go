@@ -89,7 +89,9 @@ func (e *Executor) Execute(ctx context.Context, revision *models.DocumentRevisio
 		if !ok {
 			err := fmt.Errorf("unknown pipeline step: %s", stepName)
 			if e.db != nil && execution != nil {
-				execution.MarkAsFailed(e.db, stepName, err)
+				if markErr := execution.MarkAsFailed(e.db, stepName, err); markErr != nil {
+					e.logger.Warn("failed to mark execution as failed", "error", markErr)
+				}
 			}
 			return err
 		}
@@ -112,10 +114,12 @@ func (e *Executor) Execute(ctx context.Context, revision *models.DocumentRevisio
 
 			// Record step failure (only if database is available)
 			if e.db != nil && execution != nil {
-				execution.RecordStepResult(e.db, stepName, models.StepStatusFailed, map[string]interface{}{
+				if recordErr := execution.RecordStepResult(e.db, stepName, models.StepStatusFailed, map[string]interface{}{
 					"error":       err.Error(),
 					"duration_ms": stepDuration.Milliseconds(),
-				})
+				}); recordErr != nil {
+					e.logger.Warn("failed to record step failure", "step", stepName, "error", recordErr)
+				}
 			}
 
 			allSucceeded = false
@@ -127,7 +131,9 @@ func (e *Executor) Execute(ctx context.Context, revision *models.DocumentRevisio
 			if !step.IsRetryable(err) {
 				// Permanent failure, stop pipeline
 				if e.db != nil && execution != nil {
-					execution.MarkAsFailed(e.db, stepName, err)
+					if markErr := execution.MarkAsFailed(e.db, stepName, err); markErr != nil {
+						e.logger.Warn("failed to mark execution as failed", "step", stepName, "error", markErr)
+					}
 				}
 				return fmt.Errorf("pipeline failed at step %s: %w", stepName, err)
 			}
@@ -145,9 +151,11 @@ func (e *Executor) Execute(ctx context.Context, revision *models.DocumentRevisio
 		)
 
 		if e.db != nil && execution != nil {
-			execution.RecordStepResult(e.db, stepName, models.StepStatusSuccess, map[string]interface{}{
+			if recordErr := execution.RecordStepResult(e.db, stepName, models.StepStatusSuccess, map[string]interface{}{
 				"duration_ms": stepDuration.Milliseconds(),
-			})
+			}); recordErr != nil {
+				e.logger.Warn("failed to record step success", "step", stepName, "error", recordErr)
+			}
 		}
 	}
 

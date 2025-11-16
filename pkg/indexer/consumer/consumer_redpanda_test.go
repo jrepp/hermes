@@ -121,7 +121,9 @@ func TestConsumer_ConsumeFromRedpanda(t *testing.T) {
 		"docker.redpanda.com/redpandadata/redpanda:latest",
 	)
 	require.NoError(t, err)
-	defer redpandaContainer.Terminate(ctx)
+	defer func() {
+		_ = redpandaContainer.Terminate(ctx)
+	}()
 
 	brokers, err := redpandaContainer.KafkaSeedBroker(ctx)
 	require.NoError(t, err)
@@ -251,7 +253,9 @@ func TestConsumer_RulesetMatching(t *testing.T) {
 		"docker.redpanda.com/redpandadata/redpanda:latest",
 	)
 	require.NoError(t, err)
-	defer redpandaContainer.Terminate(ctx)
+	defer func() {
+		_ = redpandaContainer.Terminate(ctx)
+	}()
 
 	brokers, err := redpandaContainer.KafkaSeedBroker(ctx)
 	require.NoError(t, err)
@@ -372,7 +376,9 @@ func TestConsumer_NoMatchingRuleset(t *testing.T) {
 		"docker.redpanda.com/redpandadata/redpanda:latest",
 	)
 	require.NoError(t, err)
-	defer redpandaContainer.Terminate(ctx)
+	defer func() {
+		_ = redpandaContainer.Terminate(ctx)
+	}()
 
 	brokers, err := redpandaContainer.KafkaSeedBroker(ctx)
 	require.NoError(t, err)
@@ -494,7 +500,9 @@ func TestConsumer_Idempotency(t *testing.T) {
 		"docker.redpanda.com/redpandadata/redpanda:latest",
 	)
 	require.NoError(t, err)
-	defer redpandaContainer.Terminate(ctx)
+	defer func() {
+		_ = redpandaContainer.Terminate(ctx)
+	}()
 
 	brokers, err := redpandaContainer.KafkaSeedBroker(ctx)
 	require.NoError(t, err)
