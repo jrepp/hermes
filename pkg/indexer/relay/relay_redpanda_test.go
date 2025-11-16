@@ -56,7 +56,9 @@ func TestRelay_PublishToRedpanda(t *testing.T) {
 		"docker.redpanda.com/redpandadata/redpanda:latest",
 	)
 	require.NoError(t, err)
-	defer redpandaContainer.Terminate(ctx)
+	defer func() {
+		_ = redpandaContainer.Terminate(ctx)
+	}()
 
 	// Get broker address
 	brokers, err := redpandaContainer.KafkaSeedBroker(ctx)
@@ -180,7 +182,9 @@ func TestRelay_MultipleBatches(t *testing.T) {
 		"docker.redpanda.com/redpandadata/redpanda:latest",
 	)
 	require.NoError(t, err)
-	defer redpandaContainer.Terminate(ctx)
+	defer func() {
+		_ = redpandaContainer.Terminate(ctx)
+	}()
 
 	brokers, err := redpandaContainer.KafkaSeedBroker(ctx)
 	require.NoError(t, err)
@@ -331,7 +335,9 @@ func TestRelay_RetryFailed(t *testing.T) {
 		"docker.redpanda.com/redpandadata/redpanda:latest",
 	)
 	require.NoError(t, err)
-	defer redpandaContainer.Terminate(ctx)
+	defer func() {
+		_ = redpandaContainer.Terminate(ctx)
+	}()
 
 	brokers, err := redpandaContainer.KafkaSeedBroker(ctx)
 	require.NoError(t, err)
@@ -409,7 +415,9 @@ func TestRelay_CleanupOldEntries_WithRedpanda(t *testing.T) {
 		"docker.redpanda.com/redpandadata/redpanda:latest",
 	)
 	require.NoError(t, err)
-	defer redpandaContainer.Terminate(ctx)
+	defer func() {
+		_ = redpandaContainer.Terminate(ctx)
+	}()
 
 	brokers, err := redpandaContainer.KafkaSeedBroker(ctx)
 	require.NoError(t, err)

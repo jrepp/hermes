@@ -179,10 +179,7 @@ func TestConvertFiltersToMap(t *testing.T) {
 			assert := assert.New(t)
 			got := convertFiltersToMap(c.input)
 
-			if c.errMsg != "" {
-				// For now, convertFiltersToMap ignores invalid filters
-				// This test documents the behavior
-			}
+			// Note: convertFiltersToMap ignores invalid filters (documented by errMsg cases)
 			assert.Equal(c.want, got)
 		})
 	}

@@ -297,7 +297,9 @@ func (r *Relay) RetryFailed(ctx context.Context, limit int) error {
 			)
 
 			// Mark as failed again
-			entry.MarkAsFailed(r.db, err)
+			if markErr := entry.MarkAsFailed(r.db, err); markErr != nil {
+				r.logger.Warn("failed to mark entry as failed", "outbox_id", entry.ID, "error", markErr)
+			}
 			continue
 		}
 

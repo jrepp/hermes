@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/hashicorp-forge/hermes/internal/server"
@@ -229,16 +228,4 @@ func parseSearchIndexFromURLPath(path string) (string, error) {
 	}
 
 	return indexName, nil
-}
-
-// Helper function to parse page number from query parameter
-func parsePageNumber(pageStr string) int {
-	if pageStr == "" {
-		return 0
-	}
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 0 {
-		return 0
-	}
-	return page
 }

@@ -156,7 +156,12 @@ func (c *Consumer) Start(ctx context.Context) error {
 					}
 
 					// Commit offset after successful processing
-					c.kafkaClient.CommitRecords(ctx, record)
+					if err := c.kafkaClient.CommitRecords(ctx, record); err != nil {
+						c.logger.Warn("failed to commit Kafka offset",
+							"partition", record.Partition,
+							"offset", record.Offset,
+							"error", err)
+					}
 				}
 			})
 		}
