@@ -19,6 +19,12 @@ type Config struct {
 	Password string
 	DBName   string
 	SSLMode  string
+
+	// Connection pool settings (RFC-088 optimization)
+	MaxIdleConns    int           // Maximum idle connections in pool (default: 10)
+	MaxOpenConns    int           // Maximum open connections (default: 25)
+	ConnMaxLifetime time.Duration // Maximum connection lifetime (default: 5 minutes)
+	ConnMaxIdleTime time.Duration // Maximum connection idle time (default: 10 minutes)
 }
 
 // Connect establishes a database connection using the provided configuration.
@@ -46,14 +52,84 @@ func Connect(cfg Config, log hclog.Logger) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
+	// Configure connection pooling for optimal performance (RFC-088)
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying SQL DB: %w", err)
+	}
+
+	// Apply connection pool settings with sensible defaults
+	maxIdleConns := cfg.MaxIdleConns
+	if maxIdleConns == 0 {
+		maxIdleConns = 10 // Default: maintain 10 idle connections
+	}
+	sqlDB.SetMaxIdleConns(maxIdleConns)
+
+	maxOpenConns := cfg.MaxOpenConns
+	if maxOpenConns == 0 {
+		maxOpenConns = 25 // Default: allow up to 25 concurrent connections
+	}
+	sqlDB.SetMaxOpenConns(maxOpenConns)
+
+	connMaxLifetime := cfg.ConnMaxLifetime
+	if connMaxLifetime == 0 {
+		connMaxLifetime = 5 * time.Minute // Default: recycle connections after 5 minutes
+	}
+	sqlDB.SetConnMaxLifetime(connMaxLifetime)
+
+	connMaxIdleTime := cfg.ConnMaxIdleTime
+	if connMaxIdleTime == 0 {
+		connMaxIdleTime = 10 * time.Minute // Default: close idle connections after 10 minutes
+	}
+	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
+
 	if log != nil {
-		log.Info("connected to database",
+		log.Info("connected to database with connection pooling",
 			"host", cfg.Host,
 			"database", cfg.DBName,
+			"max_idle_conns", maxIdleConns,
+			"max_open_conns", maxOpenConns,
+			"conn_max_lifetime", connMaxLifetime,
+			"conn_max_idle_time", connMaxIdleTime,
 		)
 	}
 
 	return db, nil
+}
+
+// PoolStats holds database connection pool statistics.
+type PoolStats struct {
+	MaxOpenConnections int           // Maximum number of open connections to the database
+	OpenConnections    int           // The number of established connections both in use and idle
+	InUse              int           // The number of connections currently in use
+	Idle               int           // The number of idle connections
+	WaitCount          int64         // The total number of connections waited for
+	WaitDuration       time.Duration // The total time blocked waiting for a new connection
+	MaxIdleClosed      int64         // The total number of connections closed due to SetMaxIdleConns
+	MaxIdleTimeClosed  int64         // The total number of connections closed due to SetConnMaxIdleTime
+	MaxLifetimeClosed  int64         // The total number of connections closed due to SetConnMaxLifetime
+}
+
+// GetPoolStats returns connection pool statistics from a GORM DB instance.
+// Useful for monitoring and debugging connection pool performance.
+func GetPoolStats(db *gorm.DB) (*PoolStats, error) {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying SQL DB: %w", err)
+	}
+
+	stats := sqlDB.Stats()
+	return &PoolStats{
+		MaxOpenConnections: stats.MaxOpenConnections,
+		OpenConnections:    stats.OpenConnections,
+		InUse:              stats.InUse,
+		Idle:               stats.Idle,
+		WaitCount:          stats.WaitCount,
+		WaitDuration:       stats.WaitDuration,
+		MaxIdleClosed:      stats.MaxIdleClosed,
+		MaxIdleTimeClosed:  stats.MaxIdleTimeClosed,
+		MaxLifetimeClosed:  stats.MaxLifetimeClosed,
+	}, nil
 }
 
 // gormHclogAdapter adapts hclog.Logger to gorm.logger.Interface.
