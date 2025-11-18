@@ -1,63 +1,113 @@
 # Pre-commit hooks for Hermes project
-# Install with: pre-commit install
+# Install with: pre-commit install && pre-commit install --hook-type commit-msg
 # Run manually with: pre-commit run --all-files
 
 repos:
+  # ============================================================================
+  # Commit Message Validation
+  # ============================================================================
+  - repo: local
+    hooks:
+      - id: commit-msg-validation
+        name: commit message validation
+        entry: ./scripts/check-commit-msg.sh
+        language: system
+        stages: [commit-msg]
+
+  # ============================================================================
+  # Go Code Quality Checks
+  # ============================================================================
   - repo: local
     hooks:
       - id: gofmt
-        name: gofmt
+        name: gofmt (format)
         entry: gofmt
         language: system
         types: [go]
         args: [-w, -l]
         pass_filenames: true
+        description: Format Go code with gofmt
+
+      - id: go-imports
+        name: goimports (organize imports)
+        entry: bash -c 'command -v goimports >/dev/null || go install golang.org/x/tools/cmd/goimports@latest; goimports -w -local github.com/hashicorp-forge/hermes'
+        language: system
+        types: [go]
+        pass_filenames: true
+        description: Organize Go imports
 
       - id: go-vet
-        name: go vet
+        name: go vet (static analysis)
         entry: go vet
         language: system
         types: [go]
         pass_filenames: false
         args: [./...]
+        description: Run go vet static analysis
+
+      - id: golangci-lint
+        name: golangci-lint (comprehensive linting)
+        entry: bash -c 'command -v golangci-lint >/dev/null || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; golangci-lint run --timeout=5m'
+        language: system
+        types: [go]
+        pass_filenames: false
+        description: Run golangci-lint for comprehensive Go linting
 
       - id: go-build
-        name: go build
+        name: go build (compilation check)
         entry: bash -c 'go build -o /dev/null ./...'
         language: system
         types: [go]
         pass_filenames: false
+        description: Verify code compiles
 
       - id: go-test-compile
-        name: go test compile
+        name: go test compile (test compilation check)
         entry: bash -c 'go test -run=^$ ./...'
         language: system
         types: [go]
         pass_filenames: false
+        description: Verify test code compiles
 
       - id: go-mod-tidy
-        name: go mod tidy
+        name: go mod tidy (dependency check)
         entry: bash -c 'go mod tidy && git diff --exit-code go.mod go.sum'
         language: system
         types: [go]
         pass_filenames: false
+        description: Ensure go.mod and go.sum are tidy
 
       - id: go-complexity
-        name: go complexity check
+        name: go complexity check (cyclomatic & cognitive)
         entry: bash -c './scripts/check-complexity.sh'
         language: system
         types: [go]
         pass_filenames: false
-        stages: [pre-push]  # Only run on push, not on every commit
+        stages: [pre-push]
+        description: Check code complexity (cyclomatic and cognitive)
 
+  # ============================================================================
+  # General File Quality Checks
+  # ============================================================================
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        types: [go]
+        types: [go, yaml, markdown]
+        description: Remove trailing whitespace
       - id: end-of-file-fixer
-        types: [go]
+        types: [go, yaml, markdown]
+        description: Ensure files end with newline
       - id: check-yaml
+        description: Validate YAML syntax
+      - id: check-json
+        description: Validate JSON syntax
       - id: check-added-large-files
         args: ['--maxkb=1000']
+        description: Prevent large files from being committed
       - id: check-merge-conflict
+        description: Check for merge conflict markers
+      - id: check-case-conflict
+        description: Check for case conflicts in filenames
+      - id: mixed-line-ending
+        description: Ensure consistent line endings
