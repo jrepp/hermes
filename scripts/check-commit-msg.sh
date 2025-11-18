@@ -53,7 +53,9 @@ fi
 echo "Checking for AI tool branding..."
 
 # Comprehensive AI branding patterns
+# Block all AI coding assistants and tool branding from commits
 AI_PATTERNS=(
+    # Major AI assistants
     "claude"
     "copilot"
     "co-pilot"
@@ -61,15 +63,43 @@ AI_PATTERNS=(
     "gpt-[0-9]"
     "openai"
     "anthropic"
+
+    # AI code editors and tools
+    "cline"
+    "cursor"
+    "windsurf"
+    "aider"
+    "tabnine"
+    "replit[[:space:]]+ai"
+    "amazon[[:space:]]+q"
+    "codewhisperer"
+    "gemini"
+    "bard"
+
+    # Specific branding patterns
     "github[[:space:]]+copilot"
+    "claude[[:space:]]+code"
     "generated[[:space:]]+with[[:space:]]+claude"
     "generated[[:space:]]+with[[:space:]]+copilot"
+    "generated[[:space:]]+with[[:space:]]+cline"
+    "generated[[:space:]]+with[[:space:]]+cursor"
+    "generated[[:space:]]+with[[:space:]]+windsurf"
+    "created[[:space:]]+with[[:space:]]+ai"
     "powered[[:space:]]+by"
-    "🤖"
+
+    # Co-author patterns
     "co-authored-by:[[:space:]]*claude"
     "co-authored-by:[[:space:]]*copilot"
+    "co-authored-by:[[:space:]]*cline"
+    "co-authored-by:[[:space:]]*cursor"
+    "co-authored-by:[[:space:]]*ai"
+
+    # Generic patterns
+    "🤖"
     "assistant"
     "ai[[:space:]]+generated"
+    "ai[[:space:]]+assisted"
+    "with[[:space:]]+ai[[:space:]]+help"
 )
 
 for pattern in "${AI_PATTERNS[@]}"; do
