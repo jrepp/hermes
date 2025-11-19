@@ -1,0 +1,302 @@
+name: PR Status Check
+
+on:
+  pull_request:
+    branches: [main]
+
+# This workflow acts as the single required status check for all PRs.
+# It uses a semaphore-based polling approach to wait for other workflows.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect-workflows:
+    name: Detect Required Workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs-only: ${{ steps.changes.outputs.docs-only }}
+      require-parallel-ci: ${{ steps.changes.outputs.require-parallel-ci }}
+      require-lint: ${{ steps.changes.outputs.require-lint }}
+      require-e2e-python: ${{ steps.changes.outputs.require-e2e-python }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        id: changes
+        run: |
+          # Get the base ref for comparison
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="origin/main"
+          fi
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_REF" HEAD || echo "")
+
+          # Define patterns
+          DOCS_PATTERN='(^docs/|^docs-demo/|^docs-internal/|\.md$)'
+          CODE_PATTERN='(\.go$|\.ts$|\.tsx$|\.js$|\.jsx$|\.py$|go\.mod|go\.sum|package\.json|yarn\.lock)'
+
+          # Categorize changes
+          DOCS_FILES=$(echo "$CHANGED_FILES" | grep -E "${DOCS_PATTERN}" || true)
+          CODE_FILES=$(echo "$CHANGED_FILES" | grep -E "${CODE_PATTERN}" || true)
+
+          # Determine what workflows are required
+          DOCS_ONLY="false"
+          REQUIRE_PARALLEL_CI="false"
+          REQUIRE_LINT="false"
+          REQUIRE_E2E_PYTHON="false"
+
+          if [ -z "$CODE_FILES" ] && [ -n "$DOCS_FILES" ]; then
+            DOCS_ONLY="true"
+          fi
+
+          if [ -n "$CODE_FILES" ]; then
+            REQUIRE_PARALLEL_CI="true"
+            REQUIRE_LINT="true"
+          fi
+
+          # Check for testing infrastructure changes
+          if echo "$CHANGED_FILES" | grep -qE '^testing/python/'; then
+            REQUIRE_E2E_PYTHON="true"
+          fi
+
+          # Output results
+          {
+            echo "docs-only=${DOCS_ONLY}"
+            echo "require-parallel-ci=${REQUIRE_PARALLEL_CI}"
+            echo "require-lint=${REQUIRE_LINT}"
+            echo "require-e2e-python=${REQUIRE_E2E_PYTHON}"
+          } >> "$GITHUB_OUTPUT"
+
+          # Display summary
+          {
+            echo "## 📋 Required Workflows"
+            echo ""
+            echo "| Workflow | Required |"
+            echo "|----------|----------|"
+            echo "| Parallel CI | $([ "$REQUIRE_PARALLEL_CI" = "true" ] && echo "✅ Yes" || echo "⏭️ No") |"
+            echo "| Lint | $([ "$REQUIRE_LINT" = "true" ] && echo "✅ Yes" || echo "⏭️ No") |"
+            echo "| E2E Python Tests | $([ "$REQUIRE_E2E_PYTHON" = "true" ] && echo "✅ Yes" || echo "⏭️ No") |"
+            echo ""
+            if [ "$DOCS_ONLY" = "true" ]; then
+              echo "**Note**: Documentation-only changes detected"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Semaphore job that waits for workflow completion signals
+  pr-status:
+    name: PR Status Check (Semaphore)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    needs: detect-workflows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for required workflow completions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DOCS_ONLY="${{ needs.detect-workflows.outputs.docs-only }}"
+          REQUIRE_PARALLEL_CI="${{ needs.detect-workflows.outputs.require-parallel-ci }}"
+          REQUIRE_LINT="${{ needs.detect-workflows.outputs.require-lint }}"
+          REQUIRE_E2E_PYTHON="${{ needs.detect-workflows.outputs.require-e2e-python }}"
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          MAX_WAIT=5400  # 90 minutes in seconds
+          CHECK_INTERVAL=15  # Check every 15 seconds
+          ELAPSED=0
+          STARTUP_GRACE=180  # 3 minute grace period for workflows to start
+
+          {
+            echo "## PR Status Check (Semaphore)"
+            echo ""
+            echo "**SHA**: \`$SHA\`"
+            echo "**PR**: #${{ github.event.pull_request.number }}"
+            echo ""
+            echo "### Change Detection"
+            echo "- Documentation-only: ${DOCS_ONLY}"
+            echo "- Require Parallel CI: ${REQUIRE_PARALLEL_CI}"
+            echo "- Require Lint: ${REQUIRE_LINT}"
+            echo "- Require E2E Python: ${REQUIRE_E2E_PYTHON}"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Determine which workflow names we need to wait for
+          REQUIRED_WORKFLOWS=()
+
+          if [[ "$DOCS_ONLY" == "true" ]]; then
+            # Documentation-only changes don't require any CI workflows
+            {
+              echo "### ✅ Status: SUCCESS (Documentation-only)"
+              echo ""
+              echo "This PR only modifies documentation files."
+              echo "No CI workflows need to complete for this change type."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          [[ "$REQUIRE_PARALLEL_CI" == "true" ]] && REQUIRED_WORKFLOWS+=("Parallel CI")
+          [[ "$REQUIRE_LINT" == "true" ]] && REQUIRED_WORKFLOWS+=("Lint")
+          [[ "$REQUIRE_E2E_PYTHON" == "true" ]] && REQUIRED_WORKFLOWS+=("E2E Python Tests")
+
+          {
+            echo "### Required Workflows"
+            for WF in "${REQUIRED_WORKFLOWS[@]}"; do
+              echo "- \`$WF\`"
+            done
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Waiting for: ${REQUIRED_WORKFLOWS[*]}"
+
+          # Function to get workflow run status
+          get_workflow_status() {
+            local workflow_name="$1"
+            gh api "repos/${{ github.repository }}/actions/runs" --paginate \
+              --jq ".workflow_runs[] | select(.name == \"$workflow_name\" and .head_sha == \"$SHA\") | {status: .status, conclusion: .conclusion, created_at: .created_at}" \
+              2>/dev/null | jq -s 'sort_by(.created_at) | reverse | .[0]'
+          }
+
+          # Wait for all required workflows to complete
+          LAST_STATUS=""
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            ALL_COMPLETE=true
+            ALL_SUCCESS=true
+            PENDING_WORKFLOWS=()
+            FAILED_WORKFLOWS=()
+            SUCCESS_WORKFLOWS=()
+
+            for WORKFLOW in "${REQUIRED_WORKFLOWS[@]}"; do
+              WORKFLOW_DATA=$(get_workflow_status "$WORKFLOW")
+
+              if [ -n "$WORKFLOW_DATA" ]; then
+                STATUS=$(echo "$WORKFLOW_DATA" | jq -r '.status')
+                CONCLUSION=$(echo "$WORKFLOW_DATA" | jq -r '.conclusion')
+
+                if [[ "$STATUS" == "completed" ]]; then
+                  if [[ "$CONCLUSION" == "success" ]]; then
+                    SUCCESS_WORKFLOWS+=("$WORKFLOW")
+                  else
+                    FAILED_WORKFLOWS+=("$WORKFLOW ($CONCLUSION)")
+                    ALL_SUCCESS=false
+                  fi
+                else
+                  ALL_COMPLETE=false
+                  PENDING_WORKFLOWS+=("$WORKFLOW ($STATUS)")
+                fi
+              else
+                # Workflow hasn't started yet
+                ALL_COMPLETE=false
+                if [ $ELAPSED -lt $STARTUP_GRACE ]; then
+                  PENDING_WORKFLOWS+=("$WORKFLOW (starting...)")
+                else
+                  # After grace period, this is an error
+                  PENDING_WORKFLOWS+=("$WORKFLOW (NOT STARTED - ERROR)")
+                fi
+              fi
+            done
+
+            # Generate status update
+            CURRENT_STATUS="Success: ${#SUCCESS_WORKFLOWS[@]} | Pending: ${#PENDING_WORKFLOWS[@]} | Failed: ${#FAILED_WORKFLOWS[@]}"
+
+            # Only print if status changed
+            if [ "$CURRENT_STATUS" != "$LAST_STATUS" ]; then
+              echo "[$ELAPSED s] $CURRENT_STATUS"
+              LAST_STATUS="$CURRENT_STATUS"
+            fi
+
+            # Check if we're done
+            if [[ "$ALL_COMPLETE" == "true" ]]; then
+              if [[ "$ALL_SUCCESS" == "true" ]]; then
+                {
+                  echo "### ✅ Status: SUCCESS"
+                  echo ""
+                  echo "All required workflows completed successfully:"
+                  for WF in "${SUCCESS_WORKFLOWS[@]}"; do
+                    echo "- ✅ \`$WF\`"
+                  done
+                  echo ""
+                  echo "**Total wait time**: ${ELAPSED}s"
+                } >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              else
+                {
+                  echo "### ❌ Status: FAILURE"
+                  echo ""
+                  echo "Failed workflows:"
+                  for WF in "${FAILED_WORKFLOWS[@]}"; do
+                    echo "- ❌ \`$WF\`"
+                  done
+                  if [ ${#SUCCESS_WORKFLOWS[@]} -gt 0 ]; then
+                    echo ""
+                    echo "Successful workflows:"
+                    for WF in "${SUCCESS_WORKFLOWS[@]}"; do
+                      echo "- ✅ \`$WF\`"
+                    done
+                  fi
+                } >> "$GITHUB_STEP_SUMMARY"
+                exit 1
+              fi
+            fi
+
+            # Still waiting - check for stalled workflows
+            if [ $ELAPSED -gt $STARTUP_GRACE ]; then
+              for WF in "${PENDING_WORKFLOWS[@]}"; do
+                if [[ "$WF" == *"NOT STARTED"* ]]; then
+                  {
+                    echo "### ❌ Status: ERROR"
+                    echo ""
+                    echo "Workflow \`${WF%% (*)}\` failed to start within ${STARTUP_GRACE}s grace period."
+                    echo ""
+                    echo "This usually indicates:"
+                    echo "1. Path filters prevented the workflow from triggering"
+                    echo "2. Workflow file has syntax errors"
+                    echo "3. GitHub Actions is experiencing issues"
+                  } >> "$GITHUB_STEP_SUMMARY"
+                  exit 1
+                fi
+              done
+            fi
+
+            sleep $CHECK_INTERVAL
+            ELAPSED=$((ELAPSED + CHECK_INTERVAL))
+          done
+
+          # Timeout
+          {
+            echo "### ❌ Status: TIMEOUT"
+            echo ""
+            echo "Timed out after ${MAX_WAIT}s waiting for workflows to complete."
+            echo ""
+            if [ ${#PENDING_WORKFLOWS[@]} -gt 0 ]; then
+              echo "Pending workflows:"
+              for WF in "${PENDING_WORKFLOWS[@]}"; do
+                echo "- ⏳ \`$WF\`"
+              done
+            fi
+            if [ ${#FAILED_WORKFLOWS[@]} -gt 0 ]; then
+              echo ""
+              echo "Failed workflows:"
+              for WF in "${FAILED_WORKFLOWS[@]}"; do
+                echo "- ❌ \`$WF\`"
+              done
+            fi
+            if [ ${#SUCCESS_WORKFLOWS[@]} -gt 0 ]; then
+              echo ""
+              echo "Successful workflows:"
+              for WF in "${SUCCESS_WORKFLOWS[@]}"; do
+                echo "- ✅ \`$WF\`"
+              done
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
