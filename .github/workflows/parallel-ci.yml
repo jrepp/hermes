@@ -2,7 +2,7 @@ name: Parallel CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/parallel-ci-infrastructure]
     paths-ignore:
       - 'docs/**'
       - 'docs-demo/**'
@@ -10,7 +10,7 @@ on:
       - '**/*.md'
       - '.github/workflows/docs*.yml'
   pull_request:
-    branches: [main]
+    branches: [main, feature/parallel-ci-infrastructure]
     paths-ignore:
       - 'docs/**'
       - 'docs-demo/**'
