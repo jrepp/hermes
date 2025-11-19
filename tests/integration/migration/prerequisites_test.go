@@ -307,7 +307,7 @@ func (pc *PrerequisiteChecker) checkMinioBucket(ctx context.Context) {
 
 	// Verify versioning is enabled
 	cmd = exec.Command("docker", "exec", "hermes-minio", "mc", "version", "info", fmt.Sprintf("myminio/%s", pc.minioBucket))
-	output, err = cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 
 	if err != nil {
 		pc.t.Logf("⚠️  Cannot verify versioning status: %v", err)
