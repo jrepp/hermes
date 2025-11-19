@@ -160,7 +160,7 @@ jobs:
         run: go mod download
 
       - name: Create placeholder web/dist for go:embed
-        run: mkdir -p web/dist && touch web/dist/.gitkeep
+        run: mkdir -p web/dist && echo "placeholder" > web/dist/index.html
 
       - name: Cache golangci-lint binary
         if: matrix.category == 'golangci-lint'
