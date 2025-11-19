@@ -329,7 +329,7 @@ func (v *MigrationValidator) ValidateOutboxIntegrity(ctx context.Context, jobID 
 	results = append(results, ValidationResult{
 		Name:        "AllIdempotentKeysUnique",
 		Passed:      err == nil && uniqueKeys == totalKeys,
-		Message:     fmt.Sprintf("All idempotent keys should be unique (no duplicates)"),
+		Message:     "All idempotent keys should be unique (no duplicates)",
 		ExpectedVal: totalKeys,
 		ActualVal:   uniqueKeys,
 	})
@@ -346,7 +346,7 @@ func (v *MigrationValidator) ValidateOutboxIntegrity(ctx context.Context, jobID 
 	results = append(results, ValidationResult{
 		Name:        "ReasonablePublishAttempts",
 		Passed:      err == nil && maxAttempts <= 3,
-		Message:     fmt.Sprintf("Publish attempts should be reasonable (max 3)"),
+		Message:     "Publish attempts should be reasonable (max 3)",
 		ExpectedVal: "≤ 3",
 		ActualVal:   fmt.Sprintf("max=%d, avg=%.2f", maxAttempts, avgAttempts),
 	})
@@ -373,7 +373,7 @@ func (v *MigrationValidator) ValidateOutboxIntegrity(ctx context.Context, jobID 
 		results = append(results, ValidationResult{
 			Name:        "AllPayloadsValid",
 			Passed:      invalidPayloads == 0,
-			Message:     fmt.Sprintf("All outbox payloads should be valid and non-empty"),
+			Message:     "All outbox payloads should be valid and non-empty",
 			ExpectedVal: 0,
 			ActualVal:   invalidPayloads,
 		})
@@ -405,7 +405,7 @@ func (v *MigrationValidator) ValidateMigrationInvariants(ctx context.Context, jo
 	results = append(results, ValidationResult{
 		Name:        "NoDataLoss",
 		Passed:      err == nil && completedItems == sourceDocCount,
-		Message:     fmt.Sprintf("All source documents should be migrated"),
+		Message:     "All source documents should be migrated",
 		ExpectedVal: sourceDocCount,
 		ActualVal:   completedItems,
 	})
@@ -421,7 +421,7 @@ func (v *MigrationValidator) ValidateMigrationInvariants(ctx context.Context, jo
 	results = append(results, ValidationResult{
 		Name:        "NoDuplication",
 		Passed:      err == nil && uniqueUUIDs == totalUUIDs,
-		Message:     fmt.Sprintf("All document UUIDs should be unique (no duplicates)"),
+		Message:     "All document UUIDs should be unique (no duplicates)",
 		ExpectedVal: totalUUIDs,
 		ActualVal:   uniqueUUIDs,
 	})
@@ -438,7 +438,7 @@ func (v *MigrationValidator) ValidateMigrationInvariants(ctx context.Context, jo
 	results = append(results, ValidationResult{
 		Name:        "ReferentialIntegrity",
 		Passed:      err == nil && orphanedItems == 0,
-		Message:     fmt.Sprintf("All migration items should reference valid job"),
+		Message:     "All migration items should reference valid job",
 		ExpectedVal: 0,
 		ActualVal:   orphanedItems,
 	})
@@ -451,7 +451,7 @@ func (v *MigrationValidator) ValidateMigrationInvariants(ctx context.Context, jo
 	results = append(results, ValidationResult{
 		Name:        "StateConsistency",
 		Passed:      jobMigrated == itemMigrated,
-		Message:     fmt.Sprintf("Job migrated_documents should match completed item count"),
+		Message:     "Job migrated_documents should match completed item count",
 		ExpectedVal: itemMigrated,
 		ActualVal:   jobMigrated,
 	})
@@ -467,7 +467,7 @@ func (v *MigrationValidator) ValidateMigrationInvariants(ctx context.Context, jo
 	results = append(results, ValidationResult{
 		Name:        "MonotonicProgress",
 		Passed:      err == nil && sum <= total,
-		Message:     fmt.Sprintf("Sum of processed documents should not exceed total"),
+		Message:     "Sum of processed documents should not exceed total",
 		ExpectedVal: fmt.Sprintf("≤ %d", total),
 		ActualVal:   sum,
 	})
@@ -550,7 +550,7 @@ func (v *MigrationValidator) ValidateS3Storage(ctx context.Context, jobID int64,
 	results = append(results, ValidationResult{
 		Name:        "AllDocumentsInS3",
 		Passed:      successCount == totalCount,
-		Message:     fmt.Sprintf("All completed migrations should have documents in S3"),
+		Message:     "All completed migrations should have documents in S3",
 		ExpectedVal: totalCount,
 		ActualVal:   successCount,
 	})
