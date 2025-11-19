@@ -20,12 +20,13 @@ import (
 
 // NotifierConfig holds the notifier configuration from HCL
 type NotifierConfig struct {
+	// Backends configuration (pointer - 8 bytes on 64-bit)
+	Backends *backends.Config `hcl:"backends,block"`
+
+	// Strings (16 bytes each on 64-bit due to struct layout)
 	Brokers       string `hcl:"brokers,optional"`
 	Topic         string `hcl:"topic,optional"`
 	ConsumerGroup string `hcl:"consumer_group,optional"`
-
-	// Backends configuration
-	Backends *backends.Config `hcl:"backends,block"`
 }
 
 func main() {
@@ -133,7 +134,9 @@ func main() {
 							// Don't commit offset on failure (RFC-087-ADDENDUM Section 9)
 						} else {
 							// Commit offset after successful processing
-							client.CommitRecords(ctx, rec)
+							if err := client.CommitRecords(ctx, rec); err != nil {
+								log.Printf("Failed to commit record offset: %v\n", err)
+							}
 						}
 					}(record)
 				}

@@ -114,7 +114,7 @@ func (pc *PrerequisiteChecker) checkContainersRunning() {
 
 		if len(output) == 0 {
 			pc.t.Fatalf("❌ %s container is not running\n"+
-				"   Run: cd testing && docker compose up -d %s", strings.Title(name), name)
+				"   Run: cd testing && docker compose up -d %s", capitalize(name), name)
 		}
 
 		// Check if container is healthy
@@ -123,9 +123,9 @@ func (pc *PrerequisiteChecker) checkContainersRunning() {
 			status := lines[0]
 			if !strings.Contains(status, "Up") {
 				pc.t.Fatalf("❌ %s container is not running: %s\n"+
-					"   Run: cd testing && docker compose up -d %s", strings.Title(name), status, name)
+					"   Run: cd testing && docker compose up -d %s", capitalize(name), status, name)
 			}
-			pc.t.Logf("✓ %s container is running", strings.Title(name))
+			pc.t.Logf("✓ %s container is running", capitalize(name))
 		}
 	}
 }
@@ -282,7 +282,7 @@ func (pc *PrerequisiteChecker) checkMinioBucket(ctx context.Context) {
 
 	// Check if bucket exists using Docker exec
 	cmd := exec.Command("docker", "exec", "hermes-minio", "mc", "ls", fmt.Sprintf("myminio/%s", pc.minioBucket))
-	output, err := cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 
 	if err != nil {
 		pc.t.Logf("⚠️  Bucket '%s' does not exist, creating...", pc.minioBucket)
@@ -307,7 +307,7 @@ func (pc *PrerequisiteChecker) checkMinioBucket(ctx context.Context) {
 
 	// Verify versioning is enabled
 	cmd = exec.Command("docker", "exec", "hermes-minio", "mc", "version", "info", fmt.Sprintf("myminio/%s", pc.minioBucket))
-	output, err = cmd.CombinedOutput()
+	output, err := cmd.CombinedOutput()
 
 	if err != nil {
 		pc.t.Logf("⚠️  Cannot verify versioning status: %v", err)
@@ -350,4 +350,12 @@ func (pc *PrerequisiteChecker) PrintServiceInfo() {
 	pc.t.Logf("MinIO Console: http://localhost:9001 (minioadmin/minioadmin)")
 	pc.t.Logf("Test Bucket:   %s", pc.minioBucket)
 	pc.t.Log("===========================")
+}
+
+// capitalize returns the string with the first letter capitalized.
+func capitalize(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
