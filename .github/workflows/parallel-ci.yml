@@ -195,8 +195,7 @@ jobs:
         if: matrix.category == 'vet'
         run: |
           echo "Running go vet..."
-          PACKAGES=$(go list ./... | grep -v '/web$')
-          go vet $PACKAGES
+          go list ./... | grep -v '/web$' | xargs go vet
 
       - name: Run golangci-lint
         if: matrix.category == 'golangci-lint'
