@@ -59,7 +59,7 @@ func main() {
 	// Run consumer mode
 	if err := runConsumer(ctx, cfg, logger); err != nil {
 		logger.Error("consumer failed", "error", err)
-		cancel() // Ensure context is cancelled before exit
+		cancel() // Ensure context is canceled before exit
 		os.Exit(1)
 	}
 
