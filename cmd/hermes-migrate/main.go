@@ -61,6 +61,7 @@ func main() {
 
 	// Verify connection
 	if err := sqlDB.Ping(); err != nil {
+		sqlDB.Close() // Ensure connection is closed before exit
 		log.Fatalf("Failed to ping database: %v\n", err)
 	}
 	log.Printf("✓ Connected to database\n")

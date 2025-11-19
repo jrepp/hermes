@@ -194,14 +194,12 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 	if err != nil {
 		result = multierror.Append(
 			result, fmt.Errorf("error getting title value: %w", err))
-	} else {
-		if searchTitle != dbDoc.Title {
-			result = multierror.Append(result,
-				fmt.Errorf(
-					"title not equal, search=%v, db=%v",
-					searchTitle, dbDoc.Title),
-			)
-		}
+	} else if searchTitle != dbDoc.Title {
+		result = multierror.Append(result,
+			fmt.Errorf(
+				"title not equal, search=%v, db=%v",
+				searchTitle, dbDoc.Title),
+		)
 	}
 
 	// Compare docType.
@@ -227,7 +225,7 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 			result, fmt.Errorf("error getting docNumber value: %w", err))
 	} else {
 		// Replace "-???" (how draft doc numbers are defined in search) with a zero.
-		re := regexp.MustCompile(`-\?\?\?$`)
+		re := regexp.MustCompile(`-\?{3}$`)
 		searchDocNumber = re.ReplaceAllString(searchDocNumber, "-000")
 
 		var dbDocNumber string
@@ -273,9 +271,9 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 			result, fmt.Errorf("error getting approvedBy value: %w", err))
 	}
 	dbApprovedBy := []string{}
-	for _, r := range dbDocReviews {
-		if r.Status == models.ApprovedDocumentReviewStatus {
-			dbApprovedBy = append(dbApprovedBy, r.User.EmailAddress)
+	for i := range dbDocReviews {
+		if dbDocReviews[i].Status == models.ApprovedDocumentReviewStatus {
+			dbApprovedBy = append(dbApprovedBy, dbDocReviews[i].User.EmailAddress)
 		}
 	}
 	if !assert.ElementsMatch(fakeT{}, searchApprovedBy, dbApprovedBy) {
@@ -312,9 +310,9 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 			result, fmt.Errorf("error getting changesRequestedBy value: %w", err))
 	}
 	dbChangesRequestedBy := []string{}
-	for _, r := range dbDocReviews {
-		if r.Status == models.ChangesRequestedDocumentReviewStatus {
-			dbChangesRequestedBy = append(dbChangesRequestedBy, r.User.EmailAddress)
+	for i := range dbDocReviews {
+		if dbDocReviews[i].Status == models.ChangesRequestedDocumentReviewStatus {
+			dbChangesRequestedBy = append(dbChangesRequestedBy, dbDocReviews[i].User.EmailAddress)
 		}
 	}
 	if !assert.ElementsMatch(

@@ -20,7 +20,6 @@ import (
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/hashicorp-forge/hermes/tests/integration"
@@ -774,7 +773,10 @@ func TestPrerequisites(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
 
-		resp, err := http.Get(centralURL + "/health")
+		req, err := http.NewRequestWithContext(ctx, "GET", centralURL+"/health", nil)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("❌ Central API unreachable: %v\n   URL: %s\n   Check: docker logs hermes-central",
 				err, centralURL)
