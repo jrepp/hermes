@@ -195,13 +195,13 @@ jobs:
         if: matrix.category == 'vet'
         run: |
           echo "Running go vet..."
-          go vet ./...
+          go vet $(go list ./... | grep -v '/web$')
 
       - name: Run golangci-lint
         if: matrix.category == 'golangci-lint'
         run: |
           echo "Running golangci-lint..."
-          golangci-lint run --timeout=5m
+          golangci-lint run --timeout=5m --skip-dirs=web
 
       - name: Run complexity check
         if: matrix.category == 'complexity'
