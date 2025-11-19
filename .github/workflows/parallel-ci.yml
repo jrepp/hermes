@@ -143,7 +143,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache: false
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-lint-${{ matrix.category }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-lint-${{ matrix.category }}-
+            ${{ runner.os }}-go-lint-
 
       - name: Cache golangci-lint binary
         if: matrix.category == 'golangci-lint'
@@ -210,7 +221,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache: false
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-build-
+            ${{ runner.os }}-go-
 
       - name: Build all binaries
         run: make build-binaries
@@ -252,7 +274,19 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache: false
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-test-${{ matrix.package }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-test-${{ matrix.package }}-
+            ${{ runner.os }}-go-test-
+            ${{ runner.os }}-go-
 
       - name: Run tests with coverage
         run: |
@@ -387,7 +421,19 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache: false
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-integration-${{ matrix.suite }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-integration-${{ matrix.suite }}-
+            ${{ runner.os }}-go-integration-
+            ${{ runner.os }}-go-
 
       - name: Download Go binaries
         uses: actions/download-artifact@v4
