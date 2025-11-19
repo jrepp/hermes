@@ -558,10 +558,7 @@ func testVerifyMigrationResults(t *testing.T, ctx context.Context, db *sql.DB, l
 		assert.Equal(t, doc.Content, content.Body, "Content should match for document %d", i)
 
 		// Strip "sha256:" prefix if present for comparison
-		contentHash := content.ContentHash
-		if strings.HasPrefix(contentHash, "sha256:") {
-			contentHash = strings.TrimPrefix(contentHash, "sha256:")
-		}
+		contentHash := strings.TrimPrefix(content.ContentHash, "sha256:")
 		assert.Equal(t, doc.Hash, contentHash, "Content hash should match for document %d", i)
 
 		t.Logf("✓ Verified document %d in S3 (UUID: %s)", i+1, doc.UUID.String()[:8]+"...")

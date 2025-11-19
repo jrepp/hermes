@@ -6,16 +6,9 @@ run:
   tests: true
   build-tags:
     - integration
-  skip-dirs:
-    - vendor
-    - node_modules
-    - web
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*_gen\\.go$"
 
 output:
-  format: colored-line-number
+  formats: colored-line-number
   print-issued-lines: true
   print-linter-name: true
   sort-results: true
@@ -125,9 +118,15 @@ linters:
     - gosec       # Security checks
     - dupl        # Code clone detection
     - prealloc    # Find slice declarations that could potentially be preallocated
-    - exportloopref # Check for loop variable capture issues
 
 issues:
+  exclude-dirs:
+    - vendor
+    - node_modules
+    - web
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_gen\\.go$"
   exclude-rules:
     # Exclude some linters from running on tests files
     - path: _test\.go
