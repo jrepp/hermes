@@ -1,0 +1,564 @@
+name: Parallel CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'docs-demo/**'
+      - 'docs-internal/**'
+      - '**/*.md'
+      - '.github/workflows/docs*.yml'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'docs-demo/**'
+      - 'docs-internal/**'
+      - '**/*.md'
+      - '.github/workflows/docs*.yml'
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: Detect changes to determine what to run
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run-go-tests: ${{ steps.changes.outputs.run-go-tests }}
+      run-web-tests: ${{ steps.changes.outputs.run-web-tests }}
+      run-python-tests: ${{ steps.changes.outputs.run-python-tests }}
+      run-integration-tests: ${{ steps.changes.outputs.run-integration-tests }}
+      run-e2e-tests: ${{ steps.changes.outputs.run-e2e-tests }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        id: changes
+        run: |
+          # Get the base ref for comparison
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            BASE_REF="${{ github.event.before }}"
+          else
+            BASE_REF="origin/main"
+          fi
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_REF" HEAD || echo "")
+
+          # Determine what needs to run
+          RUN_GO_TESTS="false"
+          RUN_WEB_TESTS="false"
+          RUN_PYTHON_TESTS="false"
+          RUN_INTEGRATION_TESTS="false"
+          RUN_E2E_TESTS="false"
+
+          # Check for Go code changes
+          if echo "$CHANGED_FILES" | grep -qE '(\.go$|go\.mod|go\.sum|Makefile|\.golangci\.yml)'; then
+            RUN_GO_TESTS="true"
+            RUN_INTEGRATION_TESTS="true"
+          fi
+
+          # Check for web changes
+          if echo "$CHANGED_FILES" | grep -qE '^web/'; then
+            RUN_WEB_TESTS="true"
+          fi
+
+          # Check for Python client changes
+          if echo "$CHANGED_FILES" | grep -qE '^python-client/'; then
+            RUN_PYTHON_TESTS="true"
+          fi
+
+          # Check for testing infrastructure changes
+          if echo "$CHANGED_FILES" | grep -qE '^testing/'; then
+            RUN_INTEGRATION_TESTS="true"
+            RUN_E2E_TESTS="true"
+          fi
+
+          # Check for API/internal changes that affect integration
+          if echo "$CHANGED_FILES" | grep -qE '^(internal/|pkg/|cmd/)'; then
+            RUN_INTEGRATION_TESTS="true"
+          fi
+
+          # Force run all tests if no base ref available
+          if [ -z "$CHANGED_FILES" ]; then
+            RUN_GO_TESTS="true"
+            RUN_WEB_TESTS="true"
+            RUN_PYTHON_TESTS="true"
+            RUN_INTEGRATION_TESTS="true"
+            RUN_E2E_TESTS="true"
+          fi
+
+          # Output results
+          {
+            echo "run-go-tests=${RUN_GO_TESTS}"
+            echo "run-web-tests=${RUN_WEB_TESTS}"
+            echo "run-python-tests=${RUN_PYTHON_TESTS}"
+            echo "run-integration-tests=${RUN_INTEGRATION_TESTS}"
+            echo "run-e2e-tests=${RUN_E2E_TESTS}"
+          } >> "$GITHUB_OUTPUT"
+
+          # Display summary
+          {
+            echo "## 📋 CI Execution Plan"
+            echo ""
+            echo "| Component | Status |"
+            echo "|-----------|--------|"
+            echo "| Go Tests | $([ "$RUN_GO_TESTS" = "true" ] && echo "✅ Will run" || echo "⏭️ Skipped") |"
+            echo "| Web Tests | $([ "$RUN_WEB_TESTS" = "true" ] && echo "✅ Will run" || echo "⏭️ Skipped") |"
+            echo "| Python Tests | $([ "$RUN_PYTHON_TESTS" = "true" ] && echo "✅ Will run" || echo "⏭️ Skipped") |"
+            echo "| Integration Tests | $([ "$RUN_INTEGRATION_TESTS" = "true" ] && echo "✅ Will run" || echo "⏭️ Skipped") |"
+            echo "| E2E Tests | $([ "$RUN_E2E_TESTS" = "true" ] && echo "✅ Will run" || echo "⏭️ Skipped") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Job 2: Lint Go code in parallel by category
+  lint-go:
+    name: Lint Go (${{ matrix.category }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run-go-tests == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        category: [format, vet, golangci-lint, complexity]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Cache golangci-lint binary
+        if: matrix.category == 'golangci-lint'
+        id: cache-golangci-lint
+        uses: actions/cache@v4
+        with:
+          path: ~/go/bin/golangci-lint
+          key: ${{ runner.os }}-golangci-lint-v1.55.2
+
+      - name: Install golangci-lint
+        if: matrix.category == 'golangci-lint' && steps.cache-golangci-lint.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+            | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+
+      - name: Install complexity tools
+        if: matrix.category == 'complexity'
+        run: |
+          go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+          go install github.com/uudashr/gocognit/cmd/gocognit@latest
+
+      - name: Run format check
+        if: matrix.category == 'format'
+        run: |
+          echo "Checking Go code formatting..."
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "The following files are not properly formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+          echo "✅ All Go files are properly formatted"
+
+      - name: Run go vet
+        if: matrix.category == 'vet'
+        run: |
+          echo "Running go vet..."
+          go vet ./...
+
+      - name: Run golangci-lint
+        if: matrix.category == 'golangci-lint'
+        run: |
+          echo "Running golangci-lint..."
+          golangci-lint run --timeout=5m
+
+      - name: Run complexity check
+        if: matrix.category == 'complexity'
+        run: |
+          echo "Running complexity analysis..."
+          ./scripts/check-complexity.sh
+
+  # Job 3: Build Go binaries
+  build-go:
+    name: Build Go Binaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: lint-go
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Build all binaries
+        run: make build-binaries
+
+      - name: Upload Go binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-binaries
+          path: build/bin/*
+          retention-days: 7
+
+  # Job 4: Test Go packages in parallel
+  test-go:
+    name: Test Go (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run-go-tests == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - internal/api
+          - internal/auth
+          - internal/config
+          - internal/db
+          - internal/indexer
+          - internal/notifier
+          - internal/server
+          - pkg
+          - cmd
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Run tests with coverage
+        run: |
+          if [ -d "${{ matrix.package }}" ]; then
+            cd ${{ matrix.package }}
+            go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+            if [ -f coverage.out ]; then
+              go tool cover -func=coverage.out | grep total | awk '{print "Coverage: " $3}'
+            fi
+          else
+            echo "Package directory not found, skipping"
+          fi
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.package }}
+          path: ${{ matrix.package }}/coverage.out
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Job 5: Build and test web
+  test-web:
+    name: Test Web Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run-web-tests == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+          cache: 'yarn'
+          cache-dependency-path: web/yarn.lock
+
+      - name: Set yarn version
+        run: make web/set-yarn-version
+        env:
+          SKIP_YARN_COREPACK_CHECK: true
+          YARN_IGNORE_NODE: 1
+
+      - name: Build web
+        run: make web/build
+
+      - name: Run web tests
+        run: make web/test
+
+      - name: Upload web build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: web/build/
+          retention-days: 7
+
+  # Job 6: Test Python client
+  test-python:
+    name: Test Python Client
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run-python-tests == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd python-client
+          pip install -e .
+          pip install pytest pytest-cov
+
+      - name: Run Python tests
+        run: |
+          cd python-client
+          pytest tests/ --cov=. --cov-report=xml
+
+      - name: Upload Python coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-python
+          path: python-client/coverage.xml
+          retention-days: 7
+
+  # Job 7: Integration tests
+  test-integration:
+    name: Integration Tests (${{ matrix.suite }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [detect-changes, build-go]
+    if: needs.detect-changes.outputs.run-integration-tests == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - api
+          - migration
+          - e2e
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hermes_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Download Go binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: go-binaries
+          path: build/bin/
+
+      - name: Make binaries executable
+        run: chmod +x build/bin/*
+
+      - name: Run integration tests - ${{ matrix.suite }}
+        run: |
+          if [ "${{ matrix.suite }}" = "api" ]; then
+            cd tests/api
+            go test -v -timeout=15m ./...
+          elif [ "${{ matrix.suite }}" = "migration" ]; then
+            go test -tags=integration -v -timeout=15m ./tests/integration/migration/...
+          elif [ "${{ matrix.suite }}" = "e2e" ]; then
+            cd tests/integration/e2e
+            go test -v -timeout=15m ./...
+          fi
+
+  # Job 8: E2E Playwright tests
+  test-e2e-playwright:
+    name: E2E Playwright Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [detect-changes, build-go, test-web]
+    if: needs.detect-changes.outputs.run-e2e-tests == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install E2E dependencies
+        run: |
+          cd testing/python
+          pip install -e .
+          pip install httpx pydantic-settings eval-type-backport
+
+      - name: Start testing environment
+        run: |
+          cd testing
+          docker compose up -d
+
+      - name: Wait for services
+        run: |
+          echo "Waiting for Hermes backend..."
+          timeout 120 bash -c 'until curl -sf http://localhost:8001/health; do sleep 2; done'
+          echo "✅ Services ready"
+
+      - name: Run E2E tests
+        run: |
+          cd testing/python
+          PYTHONPATH=../../python-client/src:. python3 scenario_automated.py --skip-auth-check
+        continue-on-error: true
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd testing
+          docker compose down -v
+
+  # Job 9: Coverage summary
+  coverage-summary:
+    name: Coverage Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [test-go, test-web, test-python, test-integration]
+    if: always()
+
+    steps:
+      - name: Download all coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          path: coverage-reports/
+
+      - name: Display coverage summary
+        run: |
+          {
+            echo "## 📊 Coverage Summary"
+            echo ""
+            echo "| Component | Status |"
+            echo "|-----------|--------|"
+            for dir in coverage-reports/*/; do
+              component=$(basename "$dir" | sed 's/^coverage-//')
+              if [ -f "$dir/coverage.out" ] || [ -f "$dir/coverage.xml" ]; then
+                echo "| $component | ✅ Present |"
+              else
+                echo "| $component | ⚠️ Missing |"
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Job 10: Parallel CI status check (required for merge)
+  parallel-ci-status:
+    name: Parallel CI Status
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - detect-changes
+      - lint-go
+      - build-go
+      - test-go
+      - test-web
+      - test-python
+      - test-integration
+      - test-e2e-playwright
+    if: always()
+
+    steps:
+      - name: Check all jobs status
+        run: |
+          # Function to check if a job passed (success or skipped)
+          check_job() {
+            local result="$1"
+            [[ "$result" == "success" ]] || [[ "$result" == "skipped" ]]
+          }
+
+          FAILED=false
+
+          # Check required jobs
+          if ! check_job "${{ needs.detect-changes.result }}"; then
+            echo "❌ detect-changes failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.lint-go.result }}"; then
+            echo "❌ lint-go failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.build-go.result }}"; then
+            echo "❌ build-go failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.test-go.result }}"; then
+            echo "❌ test-go failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.test-web.result }}"; then
+            echo "❌ test-web failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.test-python.result }}"; then
+            echo "❌ test-python failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.test-integration.result }}"; then
+            echo "❌ test-integration failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.test-e2e-playwright.result }}"; then
+            echo "❌ test-e2e-playwright failed"
+            FAILED=true
+          fi
+
+          if [ "$FAILED" = true ]; then
+            echo "❌ Parallel CI pipeline failed"
+            exit 1
+          else
+            echo "✅ Parallel CI pipeline passed"
+          fi
