@@ -159,6 +159,9 @@ jobs:
       - name: Download Go modules
         run: go mod download
 
+      - name: Create placeholder web/dist for go:embed
+        run: mkdir -p web/dist && touch web/dist/.gitkeep
+
       - name: Cache golangci-lint binary
         if: matrix.category == 'golangci-lint'
         id: cache-golangci-lint
