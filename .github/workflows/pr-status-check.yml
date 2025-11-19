@@ -2,7 +2,7 @@ name: PR Status Check
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feature/parallel-ci-infrastructure]
 
 # This workflow acts as the single required status check for all PRs.
 # It uses a semaphore-based polling approach to wait for other workflows.
