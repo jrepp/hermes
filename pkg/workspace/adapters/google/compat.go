@@ -3,24 +3,25 @@ package google
 import (
 	"fmt"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/people/v1"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // CompatAdapter wraps the Service to implement the old workspace.Provider interface.
 // This provides backward compatibility for code that hasn't been migrated to WorkspaceProvider yet.
 //
-// DEPRECATED: Use Adapter (which implements WorkspaceProvider) instead.
+// Deprecated: Use Adapter (which implements WorkspaceProvider) instead.
 type CompatAdapter struct {
 	service *Service
 }
 
 // NewCompatAdapter creates a compatibility adapter for the old Provider interface.
 //
-// DEPRECATED: Use NewAdapter instead.
+// Deprecated: Use NewAdapter instead.
 func NewCompatAdapter(service *Service) workspace.Provider {
 	return &CompatAdapter{
 		service: service,

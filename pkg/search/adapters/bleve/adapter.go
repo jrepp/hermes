@@ -41,7 +41,7 @@ func NewAdapter(cfg *Config) (*Adapter, error) {
 	}
 
 	// Create index directory
-	if err := os.MkdirAll(cfg.IndexPath, 0755); err != nil {
+	if err := os.MkdirAll(cfg.IndexPath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create index directory: %w", err)
 	}
 
