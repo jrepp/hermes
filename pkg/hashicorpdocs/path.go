@@ -200,6 +200,7 @@ func (d *PATH) parsePATHHeader(doc *docs.Document) {
 						d.parsePATHTimeInvestment(p)
 
 					case strings.HasPrefix(label, "Created"):
+						// Best effort parsing - ignore errors
 						_ = d.parsePATHCreated(p)
 
 					case strings.HasPrefix(label, "Owner:") ||
@@ -306,6 +307,7 @@ func (d *PATH) parsePATHSteps(p *docs.Paragraph) {
 	re := regexp.MustCompile(`\d+`)
 	match := re.FindString(stepsText)
 	if match != "" {
+		// Best effort parsing - ignore errors
 		_, _ = fmt.Sscanf(match, "%d", &d.Steps)
 	}
 }

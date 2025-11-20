@@ -162,6 +162,7 @@ func (r *PRD) parsePRDHeader(d *docs.Document) {
 						r.parsePRDContributors(p)
 
 					case strings.HasPrefix(label, "Created"):
+						// Best effort parsing - ignore errors
 						_ = r.parsePRDCreated(p)
 
 					case strings.HasPrefix(label, "Owner:") ||

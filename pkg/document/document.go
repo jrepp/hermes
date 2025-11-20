@@ -195,7 +195,13 @@ func NewFromAlgoliaObject(
 						cfVal := []string{}
 						if v, ok := in[ccName]; ok {
 							if reflect.TypeOf(v).Kind() == reflect.Slice {
-								for _, vv := range v.([]any) {
+								slice, ok := v.([]any)
+								if !ok {
+									return nil, fmt.Errorf(
+										"wrong type for custom field key %q, want []string",
+										ccName)
+								}
+								for _, vv := range slice {
 									if vv, ok := vv.(string); ok {
 										cfVal = append(cfVal, vv)
 									} else {
@@ -647,7 +653,11 @@ func (d *Document) UpsertCustomField(cf CustomField) error {
 				if reflect.TypeOf(cf.Value).Kind() != reflect.Slice {
 					return fmt.Errorf("incorrect value type for custom field")
 				}
-				for _, v := range cf.Value.([]any) {
+				slice, ok := cf.Value.([]any)
+				if !ok {
+					return fmt.Errorf("incorrect value type for custom field")
+				}
+				for _, v := range slice {
 					// Make sure slice is a string slice.
 					if _, ok := v.(string); !ok {
 						return fmt.Errorf("incorrect value type for custom field")
@@ -655,7 +665,7 @@ func (d *Document) UpsertCustomField(cf CustomField) error {
 				}
 				// If the value is empty, remove it from the document (by not appending
 				// here).
-				if len(cf.Value.([]any)) > 0 {
+				if len(slice) > 0 {
 					newCFs = append(newCFs, cf)
 				}
 			case "STRING":
@@ -715,7 +725,11 @@ func GetStringSliceValue(in map[string]any, key string) ([]string, error) {
 	ret := []string{}
 	if v, ok := in[key]; ok {
 		if reflect.TypeOf(v).Kind() == reflect.Slice {
-			for _, vv := range v.([]any) {
+			slice, ok := v.([]any)
+			if !ok {
+				return nil, fmt.Errorf("wrong type for key %q, want []string", key)
+			}
+			for _, vv := range slice {
 				if vv, ok := vv.(string); ok {
 					ret = append(ret, vv)
 				} else {
