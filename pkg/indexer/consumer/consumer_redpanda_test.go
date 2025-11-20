@@ -7,9 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline"
-	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,6 +15,10 @@ import (
 	"github.com/twmb/franz-go/pkg/kmsg"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline"
+	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // MockStep is a test implementation of pipeline.Step

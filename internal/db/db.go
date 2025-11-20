@@ -3,12 +3,13 @@ package db
 import (
 	"fmt"
 
-	"github.com/hashicorp-forge/hermes/internal/config"
-	"github.com/hashicorp-forge/hermes/pkg/database"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/pkg/database"
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // DatabaseConfig holds configuration for database connection.

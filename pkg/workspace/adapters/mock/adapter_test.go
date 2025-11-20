@@ -3,8 +3,9 @@ package mock
 import (
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // TestMockAdapter_ProviderInterface tests that mock adapter implements Provider interface.

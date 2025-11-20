@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iancoleman/strcase"
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/helpers"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/iancoleman/strcase"
-	"github.com/mitchellh/mapstructure"
 )
 
 type Document struct {

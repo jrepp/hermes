@@ -6,10 +6,11 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // BenchmarkEmbeddingsGenerator is a mock for benchmarking without external API calls

@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 )
 
 // Manager orchestrates document migration between storage providers

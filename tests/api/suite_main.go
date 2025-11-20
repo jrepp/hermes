@@ -23,6 +23,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/test"
 	"github.com/hashicorp-forge/hermes/pkg/models"
@@ -30,8 +33,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
-	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 )
 
 // MainTestSuite provides shared infrastructure for all API tests.

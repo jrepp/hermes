@@ -17,6 +17,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
+	"gorm.io/gorm"
+
 	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/server"
@@ -27,8 +30,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	mock "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
-	"github.com/hashicorp/go-hclog"
-	"gorm.io/gorm"
 )
 
 // Suite provides a complete test environment for API tests.

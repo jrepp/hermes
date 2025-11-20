@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/internal/structs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"gorm.io/gorm"
 )
 
 // ProductsHandler returns the product mappings to the Hermes frontend.

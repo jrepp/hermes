@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/spf13/afero"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // peopleService implements workspace.PeopleService.

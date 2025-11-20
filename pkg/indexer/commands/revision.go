@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp-forge/hermes/pkg/indexer"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer"
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // TrackRevisionCommand creates or updates a document revision record.

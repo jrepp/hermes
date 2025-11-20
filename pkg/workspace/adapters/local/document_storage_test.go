@@ -6,10 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // TestDocumentStorage_BasicOperations tests basic CRUD operations.

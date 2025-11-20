@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp-forge/hermes/pkg/search"
-	"github.com/hashicorp-forge/hermes/tests/api/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
+	"github.com/hashicorp-forge/hermes/pkg/search"
+	"github.com/hashicorp-forge/hermes/tests/api/fixtures"
 )
 
 // BenchmarkSuite_DatabaseSetup benchmarks database setup performance.

@@ -11,13 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/internal/test"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/internal/test"
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // SharedTestContainers holds the shared Docker containers for all API tests.

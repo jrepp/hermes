@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp-forge/hermes/pkg/indexer"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer"
 )
 
 // CalculateHashCommand calculates a SHA-256 hash of the document content.

@@ -9,9 +9,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"google.golang.org/api/docs/v1"
+
 	"github.com/hashicorp-forge/hermes/internal/helpers"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"google.golang.org/api/docs/v1"
 )
 
 // ReplaceHeader replaces the document header, which is assumed to be the first

@@ -5,10 +5,11 @@ import (
 	"errors"
 	"net/http"
 
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/server"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"gorm.io/gorm"
 )
 
 type recentlyViewedDoc struct {

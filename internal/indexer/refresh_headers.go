@@ -6,11 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/api/drive/v3"
+
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
-	"google.golang.org/api/drive/v3"
 )
 
 // folderType is a temporary hack until we only fetch document data from the

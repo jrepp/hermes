@@ -8,10 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/internal/server"
-	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hashicorp-forge/hermes/internal/server"
+	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 )
 
 // TODO: To properly test the happy paths with mocked search services, we need to:

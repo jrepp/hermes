@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // Relay polls the document_revision_outbox table and publishes events to Redpanda.

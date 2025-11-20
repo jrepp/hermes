@@ -4,13 +4,14 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/hashicorp/go-hclog"
+	gormlogger "gorm.io/gorm/logger"
+
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp/go-hclog"
-	gormlogger "gorm.io/gorm/logger"
 )
 
 type AssignUUIDsCommand struct {

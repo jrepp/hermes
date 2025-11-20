@@ -10,6 +10,10 @@ import (
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/hashicorp/go-hclog"
+	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
+
 	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/config"
@@ -17,9 +21,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp/go-hclog"
-	"gorm.io/gorm"
-	gormlogger "gorm.io/gorm/logger"
 )
 
 type MigrateAlgoliaToPostgreSQLCommand struct {

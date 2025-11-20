@@ -8,13 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/docid"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	s3adapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/s3"
 	"github.com/hashicorp/go-hclog"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
+	s3adapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/s3"
 )
 
 // TestMigrationE2E tests the complete migration flow
