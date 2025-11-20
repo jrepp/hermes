@@ -7,6 +7,8 @@ import (
 	"math/rand"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/db"
@@ -14,7 +16,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	searchalgolia "github.com/hashicorp-forge/hermes/pkg/search/adapters/algolia"
 	searchmeilisearch "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
-	"gorm.io/gorm"
 )
 
 type Command struct {
@@ -341,26 +342,6 @@ func ensureCanaryTestData(database *gorm.DB) (*models.DocumentType, *models.Prod
 	}
 
 	return docType, product, user, nil
-}
-
-// getDefaultLocalConfig returns a default configuration for local docker-compose testing
-func getDefaultLocalConfig() *config.Config {
-	return &config.Config{
-		Postgres: &config.Postgres{
-			Host:     "localhost",
-			Port:     5432,
-			User:     "postgres",
-			Password: "postgres",
-			DBName:   "db",
-		},
-		Algolia: &searchalgolia.Config{
-			AppID:           "local-test",
-			SearchAPIKey:    "test-key",
-			WriteAPIKey:     "test-write-key",
-			DocsIndexName:   "docs",
-			DraftsIndexName: "drafts",
-		},
-	}
 }
 
 func stringPtr(s string) *string {

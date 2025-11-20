@@ -122,18 +122,3 @@ func (d *DocumentType) upsertAssocations(db *gorm.DB) error {
 
 	return nil
 }
-
-// getAssocations gets assocations.
-func (d *DocumentType) getAssocations(db *gorm.DB) error {
-	// Custom fields.
-	var customFields []DocumentTypeCustomField
-	for _, c := range d.CustomFields {
-		if err := c.Get(db); err != nil {
-			return fmt.Errorf("error getting document type custom field: %w", err)
-		}
-		customFields = append(customFields, c)
-	}
-	d.CustomFields = customFields
-
-	return nil
-}
