@@ -254,7 +254,11 @@ func (f *LocalWorkspaceFixture) createDocument(
 	require.NoError(f.t, err, "failed to write document file")
 
 	// Create document metadata
-	modTime, _ := time.Parse(time.RFC3339, "2025-10-22T12:00:00Z")
+	modTime, err := time.Parse(time.RFC3339, "2025-10-22T12:00:00Z")
+	if err != nil {
+		// This should never fail with a valid constant, use current time as fallback
+		modTime = time.Now()
+	}
 	doc := &workspace.Document{
 		ID:           id,
 		Name:         title,

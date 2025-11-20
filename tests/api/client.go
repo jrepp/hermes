@@ -147,7 +147,10 @@ type Response struct {
 // Returns the Response for method chaining.
 func (r *Response) AssertStatus(expected int) *Response {
 	if r.StatusCode != expected {
-		body, _ := io.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			r.t.Fatalf("Expected status %d, got %d. Failed to read body: %v", expected, r.StatusCode, err)
+		}
 		r.t.Fatalf("Expected status %d, got %d. Body: %s", expected, r.StatusCode, string(body))
 	}
 	return r
