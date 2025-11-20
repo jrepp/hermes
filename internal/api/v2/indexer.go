@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
@@ -175,7 +175,9 @@ func handleIndexerRegister(srv server.Server, w http.ResponseWriter, r *http.Req
 		"workspace_path", indexer.WorkspacePath)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // handleIndexerHeartbeat processes heartbeat updates from indexers.
@@ -256,7 +258,9 @@ func handleIndexerHeartbeat(srv server.Server, w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // handleIndexerDocuments processes document submissions from indexers.
@@ -300,13 +304,7 @@ func handleIndexerDocuments(srv server.Server, w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
-	json.NewEncoder(w).Encode(resp)
-}
-
-// healthHandler returns a simple health check endpoint.
-func healthHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"status":"ok"}`)
-	})
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
