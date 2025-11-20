@@ -250,7 +250,7 @@ func (f *LocalWorkspaceFixture) createDocument(
 
 	// Create document file
 	docPath := filepath.Join(f.tempDir, id+".md")
-	err := os.WriteFile(docPath, []byte(content), 0644)
+	err := os.WriteFile(docPath, []byte(content), 0600)
 	require.NoError(f.t, err, "failed to write document file")
 
 	// Create document metadata
@@ -295,7 +295,7 @@ func (f *LocalWorkspaceFixture) UpdateDocument(doc *workspace.Document, newConte
 
 	// Update file
 	docPath := filepath.Join(f.tempDir, doc.ID+".md")
-	err := os.WriteFile(docPath, []byte(newContent), 0644)
+	err := os.WriteFile(docPath, []byte(newContent), 0600)
 	require.NoError(f.t, err, "failed to update document file")
 }
 
