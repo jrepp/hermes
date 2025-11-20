@@ -7,14 +7,15 @@ import (
 	"regexp"
 	"strings"
 
+	"google.golang.org/api/docs/v1"
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/server"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
-	"google.golang.org/api/docs/v1"
-	"gorm.io/gorm"
 )
 
 // DocumentContentRequest contains the content to update.
