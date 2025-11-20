@@ -423,6 +423,7 @@ func updateProvider(w http.ResponseWriter, r *http.Request, srv server.Server, p
 	// Add provider ID to args
 	args = append(args, providerID)
 
+	// #nosec G202 - This is safe: we're building parameterized query placeholders ($1, $2, etc.), not concatenating user input
 	query := "UPDATE provider_storage SET " + strings.Join(updates, ", ") +
 		" WHERE id = $" + strconv.Itoa(argNum)
 

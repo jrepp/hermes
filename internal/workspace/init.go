@@ -129,7 +129,7 @@ func InitializeWorkspace(basePath string) error {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -143,14 +143,16 @@ func InitializeWorkspace(basePath string) error {
 
 	for name, content := range templates {
 		path := filepath.Join(basePath, "templates", name)
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		// #nosec G306 - Template files are meant to be user-readable
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 			return fmt.Errorf("failed to create template %s: %w", name, err)
 		}
 	}
 
 	// Write config.yaml
 	configPath := filepath.Join(basePath, "config.yaml")
-	if err := os.WriteFile(configPath, []byte(defaultConfigYAML), 0644); err != nil {
+	// #nosec G306 - Config file should be readable by user
+	if err := os.WriteFile(configPath, []byte(defaultConfigYAML), 0o644); err != nil {
 		return fmt.Errorf("failed to create config.yaml: %w", err)
 	}
 
@@ -187,7 +189,8 @@ To backup your workspace, simply copy this entire directory.
 For more information, visit: https://github.com/hashicorp/hermes
 `, "`hermes serve`", "`data/hermes.db`", "`data/fts.index`")
 
-	if err := os.WriteFile(readmePath, []byte(readmeContent), 0644); err != nil {
+	// #nosec G306 - README is meant to be world-readable
+	if err := os.WriteFile(readmePath, []byte(readmeContent), 0o644); err != nil {
 		return fmt.Errorf("failed to create README.md: %w", err)
 	}
 
