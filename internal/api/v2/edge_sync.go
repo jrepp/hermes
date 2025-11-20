@@ -183,7 +183,9 @@ func handleRegisterDocument(w http.ResponseWriter, r *http.Request, syncService 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(record)
+	if err := json.NewEncoder(w).Encode(record); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // handleSyncMetadata updates document metadata from edge
@@ -229,7 +231,9 @@ func handleSyncMetadata(w http.ResponseWriter, r *http.Request, uuidStr string, 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(record)
+	if err := json.NewEncoder(w).Encode(record); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // handleGetSyncStatus returns synchronization status for edge instance
@@ -265,7 +269,9 @@ func handleGetSyncStatus(w http.ResponseWriter, r *http.Request, syncService *se
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // handleGetDocumentByUUID retrieves a synced document by UUID
@@ -285,7 +291,9 @@ func handleGetDocumentByUUID(w http.ResponseWriter, r *http.Request, uuidStr str
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(record)
+	if err := json.NewEncoder(w).Encode(record); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // handleSearchDocuments searches edge documents
@@ -320,7 +328,9 @@ func handleSearchDocuments(w http.ResponseWriter, r *http.Request, syncService *
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // handleDeleteDocument deletes a synced document
@@ -357,7 +367,9 @@ func handleGetEdgeInstanceStats(w http.ResponseWriter, r *http.Request, syncServ
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+	if err := json.NewEncoder(w).Encode(stats); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // parseTimestamp parses a timestamp string in RFC3339 format
