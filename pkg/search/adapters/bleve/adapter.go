@@ -3,6 +3,7 @@ package bleve
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,6 +16,15 @@ import (
 
 	hermessearch "github.com/hashicorp-forge/hermes/pkg/search"
 )
+
+// safeUint64ToInt converts uint64 to int, checking for overflow.
+// Returns math.MaxInt if the value would overflow.
+func safeUint64ToInt(u uint64) int {
+	if u > math.MaxInt {
+		return math.MaxInt
+	}
+	return int(u)
+}
 
 // Adapter implements search.Provider for Bleve (embedded full-text search).
 type Adapter struct {
@@ -294,7 +304,7 @@ func (d *documentIndex) DeleteBatch(ctx context.Context, docIDs []string) error 
 
 // Search performs a search query.
 func (d *documentIndex) Search(ctx context.Context, searchQuery *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
-	return performSearch(d.index, searchQuery)
+	return performSearch(ctx, d.index, searchQuery)
 }
 
 // GetObject retrieves a single document by ID from the search index.
@@ -428,7 +438,7 @@ func (d *draftIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
 }
 
 func (d *draftIndex) Search(ctx context.Context, searchQuery *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
-	return performSearch(d.index, searchQuery)
+	return performSearch(ctx, d.index, searchQuery)
 }
 
 func (d *draftIndex) GetObject(ctx context.Context, docID string) (*hermessearch.Document, error) {
@@ -532,7 +542,7 @@ func (p *projectIndex) Delete(ctx context.Context, projectID string) error {
 }
 
 func (p *projectIndex) Search(ctx context.Context, searchQuery *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
-	return performSearch(p.index, searchQuery)
+	return performSearch(ctx, p.index, searchQuery)
 }
 
 func (p *projectIndex) GetObject(ctx context.Context, projectID string) (map[string]any, error) {
@@ -622,7 +632,7 @@ func (l *linksIndex) Clear(ctx context.Context) error {
 }
 
 // performSearch executes a search query on a Bleve index.
-func performSearch(index bleve.Index, searchQuery *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
+func performSearch(ctx context.Context, index bleve.Index, searchQuery *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
 	startTime := time.Now()
 
 	// Build Bleve query
@@ -781,14 +791,15 @@ func performSearch(index bleve.Index, searchQuery *hermessearch.SearchQuery) (*h
 		}
 	}
 
-	totalPages := int(searchResult.Total) / perPage
-	if int(searchResult.Total)%perPage > 0 {
+	totalHits := safeUint64ToInt(searchResult.Total)
+	totalPages := totalHits / perPage
+	if totalHits%perPage > 0 {
 		totalPages++
 	}
 
 	return &hermessearch.SearchResult{
 		Hits:       hits,
-		TotalHits:  int(searchResult.Total),
+		TotalHits:  totalHits,
 		Page:       page,
 		PerPage:    perPage,
 		TotalPages: totalPages,
