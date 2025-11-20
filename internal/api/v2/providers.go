@@ -201,7 +201,9 @@ func listProviders(w http.ResponseWriter, r *http.Request, srv server.Server) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // registerProvider registers a new storage provider
@@ -355,7 +357,9 @@ func getProvider(w http.ResponseWriter, r *http.Request, srv server.Server, prov
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(provider)
+	if err := json.NewEncoder(w).Encode(provider); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // updateProvider updates a provider
@@ -509,10 +513,12 @@ func removeProvider(w http.ResponseWriter, r *http.Request, srv server.Server, p
 	srv.Logger.Info("provider removed", "id", providerID)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"message":    "Provider removed successfully",
 		"providerId": providerID,
-	})
+	}); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // getProviderHealth gets health status for a provider
@@ -559,5 +565,7 @@ func getProviderHealth(w http.ResponseWriter, r *http.Request, srv server.Server
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(health)
+	if err := json.NewEncoder(w).Encode(health); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }

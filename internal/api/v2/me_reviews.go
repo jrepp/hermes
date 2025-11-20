@@ -78,9 +78,11 @@ func MeReviewsHandler(srv server.Server) http.Handler {
 				)
 				// Return empty list if user not found instead of error
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(MeReviewsGetResponse{
+				if err := json.NewEncoder(w).Encode(MeReviewsGetResponse{
 					Reviews: []ReviewItemResponse{},
-				})
+				}); err != nil {
+					srv.Logger.Error("error encoding response", "error", err)
+				}
 				return
 			}
 
