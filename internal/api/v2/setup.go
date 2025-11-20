@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/internal/config"
 )
 
 // SetupStatusResponse indicates whether Hermes is configured
@@ -208,7 +209,7 @@ This directory contains your Hermes document management system data.
 
 Create your first document using the web interface at http://localhost:8000
 `
-		if err := os.WriteFile(readmePath, []byte(readme), 0644); err != nil {
+		if err := os.WriteFile(readmePath, []byte(readme), 0o600); err != nil {
 			return fmt.Errorf("error creating README: %w", err)
 		}
 	}
