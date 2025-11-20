@@ -65,37 +65,37 @@ func TestComprehensiveE2E(t *testing.T) {
 
 	// Phase 1: Prerequisites
 	t.Run("Phase1_Prerequisites", func(t *testing.T) {
-		testServiceHealth(t, ctx)
+		testServiceHealth(ctx, t)
 	})
 
 	// Phase 2: Authentication
 	t.Run("Phase2_Authentication", func(t *testing.T) {
-		testBearerTokenAuth(t, ctx)
+		testBearerTokenAuth(ctx, t)
 	})
 
 	// Phase 3: Edge-to-Central Sync
 	t.Run("Phase3_EdgeToCentralSync", func(t *testing.T) {
-		testEdgeToCentralSync(t, ctx)
+		testEdgeToCentralSync(ctx, t)
 	})
 
 	// Phase 4: Search Integration
 	t.Run("Phase4_SearchIntegration", func(t *testing.T) {
-		testSearchIntegration(t, ctx)
+		testSearchIntegration(ctx, t)
 	})
 
 	// Phase 5: Notification System
 	t.Run("Phase5_NotificationSystem", func(t *testing.T) {
-		testNotificationSystem(t, ctx)
+		testNotificationSystem(ctx, t)
 	})
 
 	// Phase 6: End-to-End Validation
 	t.Run("Phase6_EndToEndValidation", func(t *testing.T) {
-		testEndToEndValidation(t, ctx)
+		testEndToEndValidation(ctx, t)
 	})
 }
 
 // testServiceHealth validates all required services are running and healthy.
-func testServiceHealth(t *testing.T, ctx context.Context) {
+func testServiceHealth(ctx context.Context, t *testing.T) {
 	t.Log("=== Phase 1: Service Health & Prerequisites ===")
 
 	services := []struct {
@@ -113,7 +113,7 @@ func testServiceHealth(t *testing.T, ctx context.Context) {
 			ctx, cancel := context.WithTimeout(ctx, serviceTimeout)
 			defer cancel()
 
-			req, err := http.NewRequestWithContext(ctx, "GET", svc.url, nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", svc.url, http.NoBody)
 			require.NoError(t, err)
 
 			resp, err := http.DefaultClient.Do(req)
@@ -203,7 +203,7 @@ func testServiceHealth(t *testing.T, ctx context.Context) {
 }
 
 // testBearerTokenAuth validates RFC-086 bearer token authentication.
-func testBearerTokenAuth(t *testing.T, ctx context.Context) {
+func testBearerTokenAuth(ctx context.Context, t *testing.T) {
 	t.Log("=== Phase 2: Bearer Token Authentication (RFC-086) ===")
 
 	fixture := integration.GetFixture()
@@ -246,7 +246,7 @@ func testBearerTokenAuth(t *testing.T, ctx context.Context) {
 	t.Run("ValidTokenAccepted", func(t *testing.T) {
 		req, err := http.NewRequestWithContext(ctx, "GET",
 			fmt.Sprintf("%s/api/v2/edge/documents/sync-status?edge_instance=%s",
-				centralURL, edgeInstance), nil)
+				centralURL, edgeInstance), http.NoBody)
 		require.NoError(t, err)
 
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -268,7 +268,7 @@ func testBearerTokenAuth(t *testing.T, ctx context.Context) {
 	t.Run("InvalidTokenRejected", func(t *testing.T) {
 		req, err := http.NewRequestWithContext(ctx, "GET",
 			fmt.Sprintf("%s/api/v2/edge/documents/sync-status?edge_instance=%s",
-				centralURL, edgeInstance), nil)
+				centralURL, edgeInstance), http.NoBody)
 		require.NoError(t, err)
 
 		req.Header.Set("Authorization", "Bearer invalid-token-12345")
@@ -289,7 +289,7 @@ func testBearerTokenAuth(t *testing.T, ctx context.Context) {
 	t.Run("MissingAuthRejected", func(t *testing.T) {
 		req, err := http.NewRequestWithContext(ctx, "GET",
 			fmt.Sprintf("%s/api/v2/edge/documents/sync-status?edge_instance=%s",
-				centralURL, edgeInstance), nil)
+				centralURL, edgeInstance), http.NoBody)
 		require.NoError(t, err)
 
 		resp, err := http.DefaultClient.Do(req)
@@ -308,7 +308,7 @@ func testBearerTokenAuth(t *testing.T, ctx context.Context) {
 }
 
 // testEdgeToCentralSync validates RFC-085 edge-to-central synchronization.
-func testEdgeToCentralSync(t *testing.T, ctx context.Context) {
+func testEdgeToCentralSync(ctx context.Context, t *testing.T) {
 	t.Log("=== Phase 3: Edge-to-Central Synchronization (RFC-085) ===")
 
 	fixture := integration.GetFixture()
@@ -336,7 +336,7 @@ func testEdgeToCentralSync(t *testing.T, ctx context.Context) {
 	t.Run("SyncStatusEndpoint", func(t *testing.T) {
 		req, err := http.NewRequestWithContext(ctx, "GET",
 			fmt.Sprintf("%s/api/v2/edge/documents/sync-status?edge_instance=%s",
-				centralURL, edgeInstance), nil)
+				centralURL, edgeInstance), http.NoBody)
 		require.NoError(t, err)
 
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -368,7 +368,7 @@ func testEdgeToCentralSync(t *testing.T, ctx context.Context) {
 	// Test edge stats endpoint
 	t.Run("EdgeStatsEndpoint", func(t *testing.T) {
 		req, err := http.NewRequestWithContext(ctx, "GET",
-			fmt.Sprintf("%s/api/v2/edge/stats", centralURL), nil)
+			fmt.Sprintf("%s/api/v2/edge/stats", centralURL), http.NoBody)
 		require.NoError(t, err)
 
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -406,12 +406,12 @@ func testEdgeToCentralSync(t *testing.T, ctx context.Context) {
 }
 
 // testSearchIntegration validates Meilisearch integration.
-func testSearchIntegration(t *testing.T, ctx context.Context) {
+func testSearchIntegration(ctx context.Context, t *testing.T) {
 	t.Log("=== Phase 4: Search Integration (Meilisearch) ===")
 
 	// Test basic search
 	t.Run("BasicSearch", func(t *testing.T) {
-		result := performSearch(t, ctx, "test", 10, nil)
+		result := performSearch(ctx, t, "test", 10, nil)
 		require.NotNil(t, result)
 
 		hits, ok := result["hits"].([]interface{})
@@ -425,7 +425,7 @@ func testSearchIntegration(t *testing.T, ctx context.Context) {
 	// Test filtered search
 	t.Run("FilteredSearch", func(t *testing.T) {
 		filter := "documentType = RFC"
-		result := performSearch(t, ctx, "", 10, &filter)
+		result := performSearch(ctx, t, "", 10, &filter)
 		require.NotNil(t, result)
 
 		hits, ok := result["hits"].([]interface{})
@@ -442,7 +442,7 @@ func testSearchIntegration(t *testing.T, ctx context.Context) {
 		defer cancel()
 
 		req, err := http.NewRequestWithContext(ctx, "GET",
-			fmt.Sprintf("%s/indexes/documents/stats", meilisearchURL), nil)
+			fmt.Sprintf("%s/indexes/documents/stats", meilisearchURL), http.NoBody)
 		require.NoError(t, err)
 
 		req.Header.Set("Authorization", "Bearer "+meilisearchKey)
@@ -476,7 +476,7 @@ func testSearchIntegration(t *testing.T, ctx context.Context) {
 }
 
 // testNotificationSystem validates RFC-087 notification system.
-func testNotificationSystem(t *testing.T, ctx context.Context) {
+func testNotificationSystem(ctx context.Context, t *testing.T) {
 	t.Log("=== Phase 5: Notification System (RFC-087) ===")
 
 	// Test Redpanda topics
@@ -520,7 +520,7 @@ func testNotificationSystem(t *testing.T, ctx context.Context) {
 		defer cancel()
 
 		req, err := http.NewRequestWithContext(ctx, "GET",
-			mailhogURL+"/api/v2/messages", nil)
+			mailhogURL+"/api/v2/messages", http.NoBody)
 		require.NoError(t, err)
 
 		resp, err := http.DefaultClient.Do(req)
@@ -566,68 +566,17 @@ func testNotificationSystem(t *testing.T, ctx context.Context) {
 }
 
 // testEndToEndValidation performs final system validation.
-func testEndToEndValidation(t *testing.T, ctx context.Context) {
+func testEndToEndValidation(ctx context.Context, t *testing.T) {
 	t.Log("=== Phase 6: End-to-End Validation ===")
 
 	// Verify all services still healthy
 	t.Run("ServicesStillHealthy", func(t *testing.T) {
-		services := map[string]string{
-			"Central": centralURL + "/health",
-			"Edge":    edgeURL + "/health",
-		}
-
-		for name, url := range services {
-			ctx, cancel := context.WithTimeout(ctx, serviceTimeout)
-			defer cancel()
-
-			req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-			require.NoError(t, err)
-
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil || resp.StatusCode != http.StatusOK {
-				t.Errorf("❌ %s became unhealthy during test", name)
-			} else {
-				resp.Body.Close()
-			}
-		}
-
-		t.Log("✓ All services remain healthy")
+		checkServicesHealthy(ctx, t)
 	})
 
 	// Check for critical errors in logs
 	t.Run("CheckServiceLogs", func(t *testing.T) {
-		containers := []string{
-			"hermes-central",
-			"hermes-edge",
-			"hermes-central-indexer",
-		}
-
-		for _, container := range containers {
-			cmd := exec.CommandContext(ctx, "docker", "logs", container, "--tail", "50")
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				t.Logf("⚠ Could not read logs for %s: %v", container, err)
-				continue
-			}
-
-			logs := string(output)
-			criticalErrors := countCriticalErrors(logs)
-
-			if criticalErrors > 0 {
-				t.Logf("⚠ Found %d potential critical error(s) in %s logs",
-					criticalErrors, container)
-				// Show first error
-				lines := strings.Split(logs, "\n")
-				for _, line := range lines {
-					if isCriticalError(line) {
-						t.Logf("  Example: %s", truncate(line, 150))
-						break
-					}
-				}
-			}
-		}
-
-		t.Log("✓ Log analysis complete")
+		checkServiceLogs(ctx, t)
 	})
 
 	// Overall system status
@@ -648,9 +597,75 @@ func testEndToEndValidation(t *testing.T, ctx context.Context) {
 	})
 }
 
+// checkServicesHealthy verifies all services are still healthy
+func checkServicesHealthy(ctx context.Context, t *testing.T) {
+	services := map[string]string{
+		"Central": centralURL + "/health",
+		"Edge":    edgeURL + "/health",
+	}
+
+	for name, url := range services {
+		ctx, cancel := context.WithTimeout(ctx, serviceTimeout)
+
+		req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
+		require.NoError(t, err)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil || resp.StatusCode != http.StatusOK {
+			t.Errorf("❌ %s became unhealthy during test", name)
+		} else {
+			resp.Body.Close()
+		}
+		cancel()
+	}
+
+	t.Log("✓ All services remain healthy")
+}
+
+// checkServiceLogs checks for critical errors in service logs
+func checkServiceLogs(ctx context.Context, t *testing.T) {
+	containers := []string{
+		"hermes-central",
+		"hermes-edge",
+		"hermes-central-indexer",
+	}
+
+	for _, container := range containers {
+		checkContainerLogs(ctx, t, container)
+	}
+
+	t.Log("✓ Log analysis complete")
+}
+
+// checkContainerLogs checks a single container's logs for critical errors
+func checkContainerLogs(ctx context.Context, t *testing.T, container string) {
+	cmd := exec.CommandContext(ctx, "docker", "logs", container, "--tail", "50")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("⚠ Could not read logs for %s: %v", container, err)
+		return
+	}
+
+	logs := string(output)
+	criticalErrors := countCriticalErrors(logs)
+
+	if criticalErrors > 0 {
+		t.Logf("⚠ Found %d potential critical error(s) in %s logs",
+			criticalErrors, container)
+		// Show first error
+		lines := strings.Split(logs, "\n")
+		for _, line := range lines {
+			if isCriticalError(line) {
+				t.Logf("  Example: %s", truncate(line, 150))
+				break
+			}
+		}
+	}
+}
+
 // Helper functions
 
-func performSearch(t *testing.T, ctx context.Context, query string, limit int, filter *string) map[string]interface{} {
+func performSearch(ctx context.Context, t *testing.T, query string, limit int, filter *string) map[string]interface{} {
 	t.Helper()
 
 	searchBody := map[string]interface{}{
@@ -773,7 +788,7 @@ func TestPrerequisites(t *testing.T) {
 		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
 
-		req, err := http.NewRequestWithContext(ctx, "GET", centralURL+"/health", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", centralURL+"/health", http.NoBody)
 		require.NoError(t, err)
 
 		resp, err := http.DefaultClient.Do(req)
