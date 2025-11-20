@@ -110,8 +110,8 @@ func (ds *documentStorage) CreateDocument(ctx context.Context, doc *workspace.Do
 	}
 
 	if err := ds.adapter.metadataStore.Set(docPath, meta, content); err != nil {
-		// Clean up document file on metadata failure
-		ds.adapter.fs.Remove(docPath)
+		// Clean up document file on metadata failure (best effort)
+		_ = ds.adapter.fs.Remove(docPath)
 		return nil, fmt.Errorf("failed to store metadata: %w", err)
 	}
 

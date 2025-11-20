@@ -368,6 +368,10 @@ func encodeTag(value string) string {
 
 // decodeTag URL-decodes a tag value
 func decodeTag(value string) string {
-	decoded, _ := url.QueryUnescape(value)
+	decoded, err := url.QueryUnescape(value)
+	if err != nil {
+		// Return original value if unescape fails
+		return value
+	}
 	return decoded
 }

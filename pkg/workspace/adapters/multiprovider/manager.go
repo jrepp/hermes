@@ -352,7 +352,7 @@ func (m *Manager) DeleteDocument(ctx context.Context, providerID string) error {
 		return fmt.Errorf("primary provider does not implement DocumentProvider")
 	}
 
-	// Get document metadata before deletion for sync
+	// Get document metadata before deletion for sync (best effort - ignore errors)
 	doc, _ := docProvider.GetDocument(ctx, providerID)
 
 	err := docProvider.DeleteDocument(ctx, providerID)
@@ -383,7 +383,7 @@ func (m *Manager) RenameDocument(ctx context.Context, providerID, newName string
 		return err
 	}
 
-	// Get updated metadata and queue sync
+	// Get updated metadata and queue sync (best effort - ignore errors)
 	doc, _ := docProvider.GetDocument(ctx, providerID)
 	if doc != nil {
 		m.queueSync(&SyncOperation{
@@ -447,7 +447,7 @@ func (m *Manager) UpdateContent(ctx context.Context, providerID string, content 
 		return nil, err
 	}
 
-	// Get document metadata and queue sync
+	// Get document metadata and queue sync (best effort - ignore errors)
 	docProvider, ok := m.config.Primary.(workspace.DocumentProvider)
 	if ok {
 		doc, _ := docProvider.GetDocument(ctx, providerID)

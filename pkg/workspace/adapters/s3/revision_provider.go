@@ -120,7 +120,10 @@ func (a *Adapter) GetRevisionContent(ctx context.Context, providerID, revisionID
 	contentHash := computeContentHash(content)
 
 	// Get metadata (best effort)
-	metadata, _ := a.metadataStore.Get(ctx, objectKey)
+	metadata, err := a.metadataStore.Get(ctx, objectKey)
+	if err != nil {
+		a.logger.Warn("failed to get metadata for revision", "error", err, "key", objectKey)
+	}
 	if metadata == nil {
 		// Create minimal metadata if not available
 		metadata = &workspace.DocumentMetadata{
