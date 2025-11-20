@@ -266,7 +266,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				log.Error("failed to encode JSON response", "error", err)
+			}
 			return
 		}
 
@@ -285,7 +287,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				log.Error("failed to encode JSON response", "error", err)
+			}
 			return
 		}
 		defer versionResp.Body.Close()
@@ -297,7 +301,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				log.Error("failed to encode JSON response", "error", err)
+			}
 			return
 		}
 
@@ -321,7 +327,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(response)
+				if err := json.NewEncoder(w).Encode(response); err != nil {
+					log.Error("failed to encode JSON response", "error", err)
+				}
 				return
 			}
 			defer tagsResp.Body.Close()
@@ -351,7 +359,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 					}
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					json.NewEncoder(w).Encode(response)
+					if err := json.NewEncoder(w).Encode(response); err != nil {
+						log.Error("failed to encode JSON response", "error", err)
+					}
 					return
 				}
 			}

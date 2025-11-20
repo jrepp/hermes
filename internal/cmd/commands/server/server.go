@@ -943,7 +943,10 @@ func (c *Command) Run(args []string) int {
 func healthHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			// Error already logged by HTTP server
+			return
+		}
 	})
 }
 

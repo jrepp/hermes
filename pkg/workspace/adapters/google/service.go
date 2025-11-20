@@ -208,7 +208,9 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token")
 	fmt.Printf("Go to the following link in your browser and authorize the app:"+
 		"\n%v\n", authURL)
-	browser.OpenURL(authURL)
+	if err := browser.OpenURL(authURL); err != nil {
+		log.Printf("Failed to open browser, please open the URL manually: %v", err)
+	}
 
 	if err := s.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatal("error starting listener: %w", err)
@@ -229,7 +231,9 @@ func saveToken(path string, token *oauth2.Token) {
 		log.Fatalf("Unable to cache OAuth token: %v", err)
 	}
 	defer f.Close()
-	json.NewEncoder(f).Encode(token)
+	if err := json.NewEncoder(f).Encode(token); err != nil {
+		log.Fatalf("Unable to encode OAuth token: %v", err)
+	}
 }
 
 // Retrieves a token from a local file.

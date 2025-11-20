@@ -35,7 +35,6 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/redpanda v0.40.0
 	github.com/twmb/franz-go v1.20.3
 	github.com/twmb/franz-go/pkg/kmsg v1.12.0
-	github.com/zclconf/go-cty v1.10.0
 	golang.org/x/oauth2 v0.31.0
 	google.golang.org/api v0.249.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.65.1
@@ -192,6 +191,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	github.com/zclconf/go-cty v1.10.0 // indirect
 	go.etcd.io/bbolt v1.4.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
