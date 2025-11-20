@@ -695,7 +695,7 @@ func (doc *FRD) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 	if isDraft {
 		docURLString += "?draft=true"
 	}
-	cellReqs, cellLength = createTextCellRequests(
+	cellReqs, _ = createTextCellRequests(
 		"NOTE",
 		"This document is managed by Hermes and this header will be periodically overwritten using document metadata.",
 		int64(pos))
@@ -734,7 +734,7 @@ func (doc *FRD) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 				},
 			},
 		}...)
-	pos += cellLength + 5
+	// pos is no longer needed after this point
 
 	// Do the batch update.
 	_, err = provider.UpdateDoc(fileID, reqs)
