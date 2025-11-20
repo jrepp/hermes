@@ -241,7 +241,11 @@ func calculateProjectConfigHash(cfg *projectconfig.Project) string {
 	}
 
 	// Marshal to JSON for consistent hashing
-	jsonBytes, _ := json.Marshal(data)
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		// Use empty hash if marshaling fails
+		return ""
+	}
 	hash := sha256.Sum256(jsonBytes)
 	return hex.EncodeToString(hash[:])
 }
