@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/docid"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/people/v1"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // Compile-time check that ProviderAdapter implements workspace.WorkspaceProvider (RFC-084)

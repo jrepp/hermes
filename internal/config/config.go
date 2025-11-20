@@ -6,16 +6,17 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsimple"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
+
 	dexadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/dex"
 	oktaadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/okta"
 	algoliaadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/algolia"
 	meilisearchadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	localadapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/hashicorp/hcl/v2/hclsimple"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
 // Config contains the Hermes configuration.
@@ -596,7 +597,10 @@ func NewConfig(filename string, profile string) (*Config, error) {
 	}
 
 	// Check if file has any profile blocks
-	body := file.Body.(*hclsyntax.Body)
+	body, ok := file.Body.(*hclsyntax.Body)
+	if !ok {
+		return nil, fmt.Errorf("unexpected HCL body type")
+	}
 	hasProfiles := false
 	for _, block := range body.Blocks {
 		if block.Type == "profile" {
@@ -861,5 +865,5 @@ email {
 		cfg.LocalWorkspace.TokensPath,
 	)
 
-	return os.WriteFile(path, []byte(content), 0644)
+	return os.WriteFile(path, []byte(content), 0o600)
 }

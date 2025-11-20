@@ -191,7 +191,10 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 
 		// Write response.
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("The token has been recorded and this window can be closed."))
+		if _, err := w.Write([]byte("The token has been recorded and this window can be closed.")); err != nil {
+			// Log error but don't fail since token was recorded
+			log.Printf("error writing response: %v", err)
+		}
 
 		// Shutdown server in a goroutine so it doesn't shutdown before writing a
 		// response.
@@ -205,7 +208,9 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 	authURL := config.AuthCodeURL("state-token")
 	fmt.Printf("Go to the following link in your browser and authorize the app:"+
 		"\n%v\n", authURL)
-	browser.OpenURL(authURL)
+	if err := browser.OpenURL(authURL); err != nil {
+		log.Printf("Failed to open browser, please open the URL manually: %v", err)
+	}
 
 	if err := s.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatal("error starting listener: %w", err)
@@ -221,12 +226,14 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 // Saves a token to a file path.
 func saveToken(path string, token *oauth2.Token) {
 	fmt.Printf("Saving credential file to: %s\n", path)
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		log.Fatalf("Unable to cache OAuth token: %v", err)
 	}
 	defer f.Close()
-	json.NewEncoder(f).Encode(token)
+	if err := json.NewEncoder(f).Encode(token); err != nil {
+		log.Fatalf("Unable to encode OAuth token: %v", err)
+	}
 }
 
 // Retrieves a token from a local file.

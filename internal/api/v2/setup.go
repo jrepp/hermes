@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/internal/config"
 )
 
 // SetupStatusResponse indicates whether Hermes is configured
@@ -75,7 +76,9 @@ func SetupStatusHandler(configPath string, log hclog.Logger) http.Handler {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("error encoding response", "error", err)
+		}
 	})
 }
 
@@ -136,7 +139,9 @@ func SetupConfigureHandler(log hclog.Logger) http.Handler {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("error encoding response", "error", err)
+		}
 	})
 }
 
@@ -208,7 +213,7 @@ This directory contains your Hermes document management system data.
 
 Create your first document using the web interface at http://localhost:8000
 `
-		if err := os.WriteFile(readmePath, []byte(readme), 0644); err != nil {
+		if err := os.WriteFile(readmePath, []byte(readme), 0o600); err != nil {
 			return fmt.Errorf("error creating README: %w", err)
 		}
 	}
@@ -261,7 +266,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				log.Error("failed to encode JSON response", "error", err)
+			}
 			return
 		}
 
@@ -280,7 +287,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				log.Error("failed to encode JSON response", "error", err)
+			}
 			return
 		}
 		defer versionResp.Body.Close()
@@ -292,7 +301,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				log.Error("failed to encode JSON response", "error", err)
+			}
 			return
 		}
 
@@ -316,7 +327,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(response)
+				if err := json.NewEncoder(w).Encode(response); err != nil {
+					log.Error("failed to encode JSON response", "error", err)
+				}
 				return
 			}
 			defer tagsResp.Body.Close()
@@ -346,7 +359,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 					}
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					json.NewEncoder(w).Encode(response)
+					if err := json.NewEncoder(w).Encode(response); err != nil {
+						log.Error("failed to encode JSON response", "error", err)
+					}
 					return
 				}
 			}
@@ -360,7 +375,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("error encoding response", "error", err)
+		}
 	})
 }
 

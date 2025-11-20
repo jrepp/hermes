@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // SyncToDatabase synchronizes workspace projects from the HCL configuration

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/pkg/ai"
 	"github.com/hashicorp-forge/hermes/pkg/indexer"
 	"github.com/hashicorp-forge/hermes/pkg/search"
-	"github.com/hashicorp/go-hclog"
 )
 
 // IndexVectorCommand indexes document embeddings into a vector search index.

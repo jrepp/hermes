@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/email"
 	"github.com/hashicorp-forge/hermes/internal/server"
@@ -19,7 +21,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"gorm.io/gorm"
 )
 
 type DraftsRequest struct {
@@ -435,9 +436,24 @@ func DraftsHandler(srv server.Server) http.Handler {
 				}
 
 				// Convert search.Document to map for comparison
-				algoDocBytes, _ := json.Marshal(indexedDoc)
+				algoDocBytes, err := json.Marshal(indexedDoc)
+				if err != nil {
+					srv.Logger.Error("error marshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", fileID)
+					return
+				}
 				var algoDoc map[string]any
-				json.Unmarshal(algoDocBytes, &algoDoc)
+				if err := json.Unmarshal(algoDocBytes, &algoDoc); err != nil {
+					srv.Logger.Error("error unmarshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", fileID)
+					return
+				}
 
 				// Get document from database.
 				dbDoc := models.Document{
@@ -896,9 +912,24 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				}
 
 				// Convert search.Document to map for comparison
-				algoDocBytes, _ := json.Marshal(indexedDoc)
+				algoDocBytes, err := json.Marshal(indexedDoc)
+				if err != nil {
+					srv.Logger.Error("error marshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID)
+					return
+				}
 				var algoDoc map[string]any
-				json.Unmarshal(algoDocBytes, &algoDoc)
+				if err := json.Unmarshal(algoDocBytes, &algoDoc); err != nil {
+					srv.Logger.Error("error unmarshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID)
+					return
+				}
 				// Get document from database.
 				dbDoc := models.Document{
 					GoogleFileID: docID,
@@ -1334,7 +1365,23 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 							return
 						}
 						cfVal := []string{}
-						for _, v := range cf.Value.([]any) {
+						values, ok := cf.Value.([]any)
+						if !ok {
+							srv.Logger.Error("invalid value type for people custom field",
+								"error", err,
+								"method", r.Method,
+								"path", r.URL.Path,
+								"custom_field", cf.Name,
+								"doc_id", docID)
+							http.Error(w,
+								fmt.Sprintf(
+									"Bad request: invalid value type for custom field %q",
+									cf.Name,
+								),
+								http.StatusBadRequest)
+							return
+						}
+						for _, v := range values {
 							if v, ok := v.(string); ok {
 								cfVal = append(cfVal, v)
 							} else {
@@ -1581,8 +1628,12 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 
 			// Rename document with new title.
 			providerID = getWorkspaceProviderID(srv.Config, docID)
-			srv.WorkspaceProvider.RenameDocument(r.Context(), providerID,
-				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
+			if err := srv.WorkspaceProvider.RenameDocument(r.Context(), providerID,
+				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title)); err != nil {
+				srv.Logger.Warn("failed to rename document in workspace provider",
+					"error", err,
+					"doc_id", docID)
+			}
 
 			w.WriteHeader(http.StatusOK)
 
@@ -1649,9 +1700,24 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				}
 
 				// Convert search.Document to map for comparison
-				algoDocBytes, _ := json.Marshal(indexedDoc)
+				algoDocBytes, err := json.Marshal(indexedDoc)
+				if err != nil {
+					srv.Logger.Error("error marshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID)
+					return
+				}
 				var algoDoc map[string]any
-				json.Unmarshal(algoDocBytes, &algoDoc)
+				if err := json.Unmarshal(algoDocBytes, &algoDoc); err != nil {
+					srv.Logger.Error("error unmarshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID)
+					return
+				}
 
 				// Get document from database.
 				dbDoc := models.Document{

@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/spf13/afero"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // authService implements workspace.AuthService.

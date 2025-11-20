@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // AssertDocument compares a document with expected values.

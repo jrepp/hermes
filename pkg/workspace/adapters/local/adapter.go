@@ -80,7 +80,10 @@ func (a *Adapter) AuthService() workspace.AuthService {
 // generateID generates a unique identifier.
 func generateID() string {
 	b := make([]byte, 16)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// crypto/rand.Read should never fail, but handle it anyway
+		panic(fmt.Sprintf("failed to generate random ID: %v", err))
+	}
 	return hex.EncodeToString(b)
 }
 

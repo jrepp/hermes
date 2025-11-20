@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/docid"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // ConvertToDocumentMetadata converts Google Drive file to RFC-084 DocumentMetadata.

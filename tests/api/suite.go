@@ -17,6 +17,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
+	"gorm.io/gorm"
+
 	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/server"
@@ -27,8 +30,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	mock "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
-	"github.com/hashicorp/go-hclog"
-	"gorm.io/gorm"
 )
 
 // Suite provides a complete test environment for API tests.
@@ -150,7 +151,9 @@ func (s *Suite) setupDatabase() error {
 
 	// Add cleanup function
 	s.cleanupFuncs = append(s.cleanupFuncs, func() {
-		test.DropTestDatabase(dsn, dbName)
+		if err := test.DropTestDatabase(dsn, dbName); err != nil {
+			s.T.Logf("Warning: failed to drop test database: %v", err)
+		}
 	})
 
 	return nil
@@ -188,10 +191,18 @@ func (s *Suite) setupSearch() error {
 	// Add cleanup to clear indexes
 	s.cleanupFuncs = append(s.cleanupFuncs, func() {
 		ctx := context.Background()
-		adapter.DocumentIndex().Clear(ctx)
-		adapter.DraftIndex().Clear(ctx)
-		adapter.ProjectIndex().Clear(ctx)
-		adapter.LinksIndex().Clear(ctx)
+		if err := adapter.DocumentIndex().Clear(ctx); err != nil {
+			s.T.Logf("Warning: failed to clear document index: %v", err)
+		}
+		if err := adapter.DraftIndex().Clear(ctx); err != nil {
+			s.T.Logf("Warning: failed to clear draft index: %v", err)
+		}
+		if err := adapter.ProjectIndex().Clear(ctx); err != nil {
+			s.T.Logf("Warning: failed to clear project index: %v", err)
+		}
+		if err := adapter.LinksIndex().Clear(ctx); err != nil {
+			s.T.Logf("Warning: failed to clear links index: %v", err)
+		}
 	})
 
 	return nil

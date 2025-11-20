@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/api/drive/v3"
+
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"google.golang.org/api/drive/v3"
 )
 
 // Adapter implements WorkspaceProvider interface for Google Workspace.

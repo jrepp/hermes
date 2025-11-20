@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+	"google.golang.org/api/drive/v3"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/email"
 	"github.com/hashicorp-forge/hermes/internal/server"
@@ -16,8 +19,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/links"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"github.com/hashicorp/go-multierror"
-	"google.golang.org/api/drive/v3"
 )
 
 func ReviewsHandler(srv server.Server) http.Handler {

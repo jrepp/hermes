@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // Executor executes pipeline steps for document revisions.

@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // MockEmbeddingsClient mocks the EmbeddingsClient interface.

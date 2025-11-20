@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/pkg/indexer"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"github.com/hashicorp/go-hclog"
 )
 
 // MigrateCommand migrates a document from one workspace provider to another.

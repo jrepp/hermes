@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/email"
 	"github.com/hashicorp-forge/hermes/internal/helpers"
 	"github.com/hashicorp-forge/hermes/internal/server"
@@ -17,7 +19,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"gorm.io/gorm"
 )
 
 // DocumentPatchRequest contains a subset of documents fields that are allowed
@@ -474,7 +475,23 @@ func DocumentHandler(srv server.Server) http.Handler {
 								http.StatusBadRequest)
 							return
 						}
-						for _, v := range cf.Value.([]any) {
+						values, ok := cf.Value.([]any)
+						if !ok {
+							srv.Logger.Error("invalid value type for people custom field",
+								"error", err,
+								"method", r.Method,
+								"path", r.URL.Path,
+								"custom_field", cf.Name,
+								"doc_id", docID)
+							http.Error(w,
+								fmt.Sprintf(
+									"Bad request: invalid value type for custom field %q",
+									cf.Name,
+								),
+								http.StatusBadRequest)
+							return
+						}
+						for _, v := range values {
 							if _, ok := v.(string); !ok {
 								srv.Logger.Error("invalid value type for people custom field",
 									"error", err,
@@ -587,8 +604,12 @@ func DocumentHandler(srv server.Server) http.Handler {
 			// Rename document with new title (Google Docs specific).
 			if googleUpdater != nil {
 				providerID := fmt.Sprintf("google:%s", docID)
-				srv.WorkspaceProvider.RenameDocument(r.Context(), providerID,
-					fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
+				if err := srv.WorkspaceProvider.RenameDocument(r.Context(), providerID,
+					fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title)); err != nil {
+					srv.Logger.Warn("failed to rename document in workspace provider",
+						"error", err,
+						"doc_id", docID)
+				}
 			}
 
 			// Get document record from database so we can modify it for updating.
@@ -678,7 +699,19 @@ func DocumentHandler(srv server.Server) http.Handler {
 								return
 							}
 							cfVal := []string{}
-							for _, v := range cf.Value.([]any) {
+							values, ok := cf.Value.([]any)
+							if !ok {
+								srv.Logger.Error("invalid value type for people custom field",
+									"error", err,
+									"method", r.Method,
+									"path", r.URL.Path,
+									"custom_field", cf.Name,
+									"doc_id", docID)
+								http.Error(w, "Error patching document",
+									http.StatusInternalServerError)
+								return
+							}
+							for _, v := range values {
 								if v, ok := v.(string); ok {
 									cfVal = append(cfVal, v)
 								} else {

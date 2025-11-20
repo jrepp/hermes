@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // LLMSummaryStep generates AI summaries for document revisions.

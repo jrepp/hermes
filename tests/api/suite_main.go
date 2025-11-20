@@ -23,6 +23,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/test"
 	"github.com/hashicorp-forge/hermes/pkg/models"
@@ -30,8 +33,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
-	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 )
 
 // MainTestSuite provides shared infrastructure for all API tests.
@@ -135,10 +136,18 @@ func (s *MainTestSuite) setupSearchProvider() {
 	// Add cleanup to clear indexes
 	s.cleanupFuncs = append(s.cleanupFuncs, func() {
 		ctx := context.Background()
-		adapter.DocumentIndex().Clear(ctx)
-		adapter.DraftIndex().Clear(ctx)
-		adapter.ProjectIndex().Clear(ctx)
-		adapter.LinksIndex().Clear(ctx)
+		if err := adapter.DocumentIndex().Clear(ctx); err != nil {
+			s.T.Logf("Warning: failed to clear document index: %v", err)
+		}
+		if err := adapter.DraftIndex().Clear(ctx); err != nil {
+			s.T.Logf("Warning: failed to clear draft index: %v", err)
+		}
+		if err := adapter.ProjectIndex().Clear(ctx); err != nil {
+			s.T.Logf("Warning: failed to clear project index: %v", err)
+		}
+		if err := adapter.LinksIndex().Clear(ctx); err != nil {
+			s.T.Logf("Warning: failed to clear links index: %v", err)
+		}
 	})
 
 	s.T.Logf("🔍 Created search indexes: test-docs-%d, test-drafts-%d, test-projects-%d, test-links-%d", testID, testID, testID, testID)
@@ -236,7 +245,9 @@ func (s *MainTestSuite) Cleanup() {
 
 	// Drop test schema
 	if s.DB != nil && s.DBSchema != "" {
-		test.DropTestDatabase(s.containers.PostgresDSN, s.DBSchema)
+		if err := test.DropTestDatabase(s.containers.PostgresDSN, s.DBSchema); err != nil {
+			s.T.Logf("Warning: failed to drop test database: %v", err)
+		}
 	}
 }
 

@@ -9,9 +9,10 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"google.golang.org/api/docs/v1"
+
 	"github.com/hashicorp-forge/hermes/internal/helpers"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"google.golang.org/api/docs/v1"
 )
 
 // ReplaceHeader replaces the document header, which is assumed to be the first
@@ -601,7 +602,12 @@ func (doc *Document) ReplaceHeader(
 				switch reflect.TypeOf(cf.Value).Elem().Kind() {
 				case reflect.Interface:
 					// If the value is an interface slice, convert to a string slice.
-					for _, v := range cf.Value.([]any) {
+					slice, ok := cf.Value.([]any)
+					if !ok {
+						return fmt.Errorf(
+							"wrong type for custom field %q, want []string", cf.Name)
+					}
+					for _, v := range slice {
 						if vv, ok := v.(string); ok {
 							cfVal = append(cfVal, vv)
 						} else {
@@ -723,7 +729,7 @@ func (doc *Document) ReplaceHeader(
 	if isDraft {
 		docURLString += "?draft=true"
 	}
-	cellReqs, cellLength = createTextCellRequests(
+	cellReqs, _ = createTextCellRequests(
 		"NOTE",
 		"This document is managed by Hermes and this header will be periodically overwritten using document metadata.",
 		int64(pos))
@@ -762,7 +768,7 @@ func (doc *Document) ReplaceHeader(
 				},
 			},
 		}...)
-	pos += cellLength + 5
+	// pos is no longer needed after this point
 
 	// Do the batch update.
 	_, err = provider.UpdateDoc(doc.ObjectID, reqs)

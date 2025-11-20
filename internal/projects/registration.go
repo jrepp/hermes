@@ -8,11 +8,12 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-hclog"
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/instance"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
-	"github.com/hashicorp/go-hclog"
-	"gorm.io/gorm"
 )
 
 // RegisterProject registers a single project from config with the current instance.
@@ -240,7 +241,11 @@ func calculateProjectConfigHash(cfg *projectconfig.Project) string {
 	}
 
 	// Marshal to JSON for consistent hashing
-	jsonBytes, _ := json.Marshal(data)
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		// Use empty hash if marshaling fails
+		return ""
+	}
 	hash := sha256.Sum256(jsonBytes)
 	return hex.EncodeToString(hash[:])
 }

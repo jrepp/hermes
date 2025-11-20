@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 )
 
 func TestFrontmatterParser_ParseFrontmatter_RFC(t *testing.T) {

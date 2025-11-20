@@ -9,14 +9,15 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/hashicorp/go-hclog"
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	"github.com/hashicorp-forge/hermes/pkg/links"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
-	"github.com/hashicorp/go-hclog"
-	"gorm.io/gorm"
 )
 
 const (

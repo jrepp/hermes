@@ -9,9 +9,10 @@ import (
 	"time"
 
 	"github.com/araddon/dateparse"
-	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
+
+	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
 
 // FRD contains metadata for documents based off of the HashiCorp FRD template.
@@ -168,7 +169,8 @@ func (r *FRD) parseFRDHeader(d *docs.Document) {
 						r.parseFRDContributors(p)
 
 					case strings.HasPrefix(label, "Created"):
-						r.parseFRDCreated(p)
+						// Best effort parsing - ignore errors
+						_ = r.parseFRDCreated(p)
 
 					case strings.HasPrefix(label, "Owner:") ||
 						strings.HasPrefix(label, "Owners:"):

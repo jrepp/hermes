@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
-	mock "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+
+	"github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
+	mock "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
 )
 
 // TestContainersContext is DEPRECATED - use GetSharedContainers() instead.

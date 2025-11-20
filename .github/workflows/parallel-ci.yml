@@ -143,7 +143,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache: false
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Create placeholder web/dist for go:embed
+        run: mkdir -p web/dist && echo "placeholder" > web/dist/index.html
 
       - name: Cache golangci-lint binary
         if: matrix.category == 'golangci-lint'
@@ -210,7 +216,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache: false
+
+
+      - name: Download Go modules
+        run: go mod download
 
       - name: Build all binaries
         run: make build-binaries
@@ -252,7 +262,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache: false
+
+
+      - name: Download Go modules
+        run: go mod download
 
       - name: Run tests with coverage
         run: |
@@ -270,7 +284,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.package }}
+          name: coverage-${{ matrix.package }}-${{ github.run_id }}
           path: ${{ matrix.package }}/coverage.out
           retention-days: 7
           if-no-files-found: ignore
@@ -387,7 +401,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache: false
+
+
+      - name: Download Go modules
+        run: go mod download
 
       - name: Download Go binaries
         uses: actions/download-artifact@v4

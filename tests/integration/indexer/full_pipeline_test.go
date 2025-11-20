@@ -12,6 +12,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
+
 	"github.com/hashicorp-forge/hermes/pkg/ai"
 	"github.com/hashicorp-forge/hermes/pkg/ai/ollama"
 	"github.com/hashicorp-forge/hermes/pkg/document"
@@ -21,10 +26,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
-	"github.com/hashicorp/go-hclog"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 )
 
 // TestFullPipelineWithDocsInternal tests the complete indexer pipeline:

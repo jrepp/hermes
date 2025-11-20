@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/pkg/indexer"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"gorm.io/gorm"
 )
 
 // TrackCommand updates database tracking information after processing documents.

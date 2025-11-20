@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // Helper function to create a test revision

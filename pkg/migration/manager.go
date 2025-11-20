@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 )
 
 // Manager orchestrates document migration between storage providers
@@ -131,7 +132,9 @@ func (m *Manager) QueueDocuments(ctx context.Context, jobID int64, documentUUIDs
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback() // Ignore error - will fail if already committed
+	}()
 
 	// Insert migration items
 	itemStmt, err := tx.PrepareContext(ctx, `
@@ -330,7 +333,9 @@ func (m *Manager) UpdateItemStatus(ctx context.Context, itemID int64, status Ite
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback() // Ignore error - will fail if already committed
+	}()
 
 	now := time.Now()
 

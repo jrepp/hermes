@@ -6,11 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/api/drive/v3"
+
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
-	"google.golang.org/api/drive/v3"
 )
 
 // folderType is a temporary hack until we only fetch document data from the
@@ -62,12 +63,16 @@ func refreshDocumentHeaders(
 	lockedDocs := models.Documents{}
 	switch ft {
 	case draftsFolderType:
-		lockedDocs.Find(idx.Database,
-			"locked = ? AND status = ?", true, models.WIPDocumentStatus)
+		if err := lockedDocs.Find(idx.Database,
+			"locked = ? AND status = ?", true, models.WIPDocumentStatus); err != nil {
+			return fmt.Errorf("error finding locked drafts: %w", err)
+		}
 	case documentsFolderType:
-		lockedDocs.Find(idx.Database,
+		if err := lockedDocs.Find(idx.Database,
 			// All document statuses > WIPDocumentStatus are for published documents.
-			"locked = ? AND status > ?", true, models.WIPDocumentStatus)
+			"locked = ? AND status > ?", true, models.WIPDocumentStatus); err != nil {
+			return fmt.Errorf("error finding locked documents: %w", err)
+		}
 	}
 	var lockedDocIDs []string
 	for _, d := range lockedDocs {

@@ -9,9 +9,10 @@ import (
 	"time"
 
 	"github.com/araddon/dateparse"
-	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
+
+	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
 
 // PRD contains metadata for documents based off of the HashiCorp PRD template.
@@ -161,7 +162,8 @@ func (r *PRD) parsePRDHeader(d *docs.Document) {
 						r.parsePRDContributors(p)
 
 					case strings.HasPrefix(label, "Created"):
-						r.parsePRDCreated(p)
+						// Best effort parsing - ignore errors
+						_ = r.parsePRDCreated(p)
 
 					case strings.HasPrefix(label, "Owner:") ||
 						strings.HasPrefix(label, "Owners:"):

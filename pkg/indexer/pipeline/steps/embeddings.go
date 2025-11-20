@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // EmbeddingsStep generates vector embeddings for document revisions.

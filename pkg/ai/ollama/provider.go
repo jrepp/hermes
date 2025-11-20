@@ -92,7 +92,10 @@ func (p *Provider) Summarize(ctx context.Context, req *ai.SummarizeRequest) (*ai
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("ollama returned status %d (unable to read body: %w)", resp.StatusCode, err)
+		}
 		return nil, fmt.Errorf("ollama returned status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -204,7 +207,10 @@ func (p *Provider) generateSingleEmbedding(ctx context.Context, text string) ([]
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("ollama returned status %d (unable to read body: %w)", resp.StatusCode, err)
+		}
 		return nil, fmt.Errorf("ollama returned status %d: %s", resp.StatusCode, string(body))
 	}
 

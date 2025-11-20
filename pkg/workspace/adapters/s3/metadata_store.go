@@ -11,9 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"github.com/hashicorp/go-hclog"
 )
 
 // MetadataStore defines the interface for storing and retrieving document metadata
@@ -367,6 +368,10 @@ func encodeTag(value string) string {
 
 // decodeTag URL-decodes a tag value
 func decodeTag(value string) string {
-	decoded, _ := url.QueryUnescape(value)
+	decoded, err := url.QueryUnescape(value)
+	if err != nil {
+		// Return original value if unescape fails
+		return value
+	}
 	return decoded
 }

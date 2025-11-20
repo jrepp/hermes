@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline/steps"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline/steps"
 )
 
 // OllamaClient implements the LLMClient interface for Ollama's local API.

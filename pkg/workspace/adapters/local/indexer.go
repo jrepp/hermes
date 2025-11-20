@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hashicorp-forge/hermes/pkg/search"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/afero"
+
+	"github.com/hashicorp-forge/hermes/pkg/search"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // DocumentIndexer handles indexing of local documents into the search provider.

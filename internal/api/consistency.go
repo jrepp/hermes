@@ -7,14 +7,19 @@ import (
 	"reflect"
 	"regexp"
 
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-multierror"
+	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/search"
-	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/go-multierror"
-	"github.com/iancoleman/strcase"
-	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
+)
+
+const (
+	// statusInReview is the standard format for the "In-Review" status string
+	statusInReview = "In-Review"
 )
 
 // DocumentConsistencyChecker validates documents across storage layers.
@@ -128,7 +133,10 @@ func (c *DocumentConsistencyChecker) CheckDocumentConsistency(
 
 	// Perform additional validation checks based on options.
 	if opts.ValidateOwners {
-		owners, _ := getStringSliceValue(searchDocMap, "owners")
+		owners, err := getStringSliceValue(searchDocMap, "owners")
+		if err != nil {
+			c.logger.Warn("error getting owners", "doc_id", docID, "error", err)
+		}
 		if len(owners) == 0 {
 			err := fmt.Errorf("document %s missing owners in search index", docID)
 			if opts.StrictMode {
@@ -139,14 +147,20 @@ func (c *DocumentConsistencyChecker) CheckDocumentConsistency(
 	}
 
 	if opts.ValidateContributors {
-		contributors, _ := getStringSliceValue(searchDocMap, "contributors")
+		contributors, err := getStringSliceValue(searchDocMap, "contributors")
+		if err != nil {
+			c.logger.Warn("error getting contributors", "doc_id", docID, "error", err)
+		}
 		if len(contributors) == 0 {
 			c.logger.Warn("document missing contributors", "doc_id", docID)
 		}
 	}
 
 	if opts.ValidateProduct {
-		product, _ := getStringValue(searchDocMap, "product")
+		product, err := getStringValue(searchDocMap, "product")
+		if err != nil {
+			c.logger.Warn("error getting product", "doc_id", docID, "error", err)
+		}
 		if product == "" {
 			err := fmt.Errorf("document %s missing product in search index", docID)
 			if opts.StrictMode {
@@ -360,80 +374,8 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 	}
 
 	// Compare custom fields.
-	foundDocType := false
-	for _, dt := range c.docTypes {
-		if dt.Name == searchDocType {
-			foundDocType = true
-			for _, cf := range dt.CustomFields {
-				searchCFName := strcase.ToLowerCamel(cf.Name)
-
-				switch cf.Type {
-				case "string":
-					searchCFVal, err := getStringValue(searchDoc, searchCFName)
-					if err != nil {
-						result = multierror.Append(
-							result, fmt.Errorf(
-								"error getting custom field (%s) value: %w", searchCFName, err))
-					} else {
-						var dbCFVal string
-						for _, c := range dbDoc.CustomFields {
-							if c.DocumentTypeCustomField.Name == cf.Name {
-								dbCFVal = c.Value
-								break
-							}
-						}
-						if searchCFVal != dbCFVal {
-							result = multierror.Append(result,
-								fmt.Errorf(
-									"custom field %s not equal, search=%v, db=%v",
-									searchCFName, searchCFVal, dbCFVal),
-							)
-						}
-					}
-				case "people":
-					searchCFVal, err := getStringSliceValue(searchDoc, searchCFName)
-					if err != nil {
-						result = multierror.Append(
-							result, fmt.Errorf(
-								"error getting custom field (%s) value: %w", searchCFName, err))
-					} else {
-						var dbCFVal []string
-						for _, c := range dbDoc.CustomFields {
-							if c.DocumentTypeCustomField.Name == cf.Name {
-								// Unmarshal person custom field value to string slice.
-								if err := json.Unmarshal(
-									[]byte(c.Value), &dbCFVal,
-								); err != nil {
-									result = multierror.Append(result,
-										fmt.Errorf(
-											"error unmarshaling custom field %s to string slice",
-											searchCFName),
-									)
-								}
-								break
-							}
-						}
-						if !assert.ElementsMatch(fakeT{}, searchCFVal, dbCFVal) {
-							result = multierror.Append(result,
-								fmt.Errorf(
-									"custom field %s not equal, search=%v, db=%v",
-									searchCFName, searchCFVal, dbCFVal),
-							)
-						}
-					}
-				default:
-					result = multierror.Append(result,
-						fmt.Errorf(
-							"unknown type for custom field key %q: %s", dt.Name, cf.Type))
-				}
-			}
-			break
-		}
-	}
-	if !foundDocType {
-		result = multierror.Append(result,
-			fmt.Errorf(
-				"doc type %q not found", searchDocType))
+	if err := compareCustomFields(c.docTypes, searchDoc, searchDocType, dbDoc, "search"); err != nil {
+		result = multierror.Append(result, err)
 	}
 
 	// Compare fileRevisions.
@@ -520,7 +462,7 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 		case models.WIPDocumentStatus:
 			dbStatus = "WIP"
 		case models.InReviewDocumentStatus:
-			dbStatus = "In-Review"
+			dbStatus = statusInReview
 		case models.ApprovedDocumentStatus:
 			dbStatus = "Approved"
 		case models.ObsoleteDocumentStatus:
@@ -529,7 +471,7 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 
 		// Standardize on "In-Review" status for the sake of comparison.
 		if searchStatus == "In Review" {
-			searchStatus = "In-Review"
+			searchStatus = statusInReview
 		}
 
 		if searchStatus != dbStatus {

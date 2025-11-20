@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/notifications"
-	"github.com/hashicorp-forge/hermes/pkg/notifications/backends"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kgo"
+
+	"github.com/hashicorp-forge/hermes/pkg/notifications"
+	"github.com/hashicorp-forge/hermes/pkg/notifications/backends"
 )
 
 const (

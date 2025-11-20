@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/pkg/indexer"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"github.com/hashicorp/go-hclog"
 )
 
 // AssignUUIDCommand ensures each document has a stable UUID across providers.

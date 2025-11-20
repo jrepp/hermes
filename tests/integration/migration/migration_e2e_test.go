@@ -19,11 +19,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/migration"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	s3adapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/s3"
-	"github.com/hashicorp/go-hclog"
 )
 
 // TestMigrationE2E validates the complete RFC-089 migration system.

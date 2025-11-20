@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // Worker processes migration tasks
@@ -134,11 +135,13 @@ func (w *Worker) processPendingTasks(ctx context.Context) error {
 				"error", err)
 
 			// Mark outbox event as failed
-			_, _ = w.db.ExecContext(ctx, `
+			if _, execErr := w.db.ExecContext(ctx, `
 				UPDATE migration_outbox
 				SET status = 'failed', last_error = $1, updated_at = NOW()
 				WHERE id = $2
-			`, err.Error(), task.outboxID)
+			`, err.Error(), task.outboxID); execErr != nil {
+				w.logger.Warn("failed to mark outbox event as failed", "error", execErr)
+			}
 		} else {
 			// Task completed successfully - outbox event stays as published
 			w.logger.Info("migration task completed", "item_id", task.itemID)
@@ -221,9 +224,11 @@ func (w *Worker) processTask(ctx context.Context, itemID int64, payloadJSON stri
 	}
 
 	// Update duration
-	_, _ = w.db.ExecContext(ctx, `
+	if _, err := w.db.ExecContext(ctx, `
 		UPDATE migration_items SET duration_ms = $1 WHERE id = $2
-	`, duration, itemID)
+	`, duration, itemID); err != nil {
+		w.logger.Warn("failed to update duration", "error", err, "item_id", itemID)
+	}
 
 	w.logger.Info("document migrated successfully",
 		"item_id", itemID,
@@ -258,7 +263,10 @@ func (w *Worker) migrateDocument(ctx context.Context, source, dest workspace.Wor
 	_, err = dest.UpdateContent(ctx, destDoc.ProviderID, sourceContent.Body)
 	if err != nil {
 		// Try to clean up
-		_ = dest.DeleteDocument(ctx, destDoc.ProviderID)
+		if delErr := dest.DeleteDocument(ctx, destDoc.ProviderID); delErr != nil {
+			w.logger.Warn("failed to clean up destination document after update error",
+				"error", delErr, "dest_provider_id", destDoc.ProviderID)
+		}
 		return "", nil, fmt.Errorf("failed to write dest content: %w", err)
 	}
 

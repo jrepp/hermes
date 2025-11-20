@@ -8,9 +8,10 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/hashicorp-forge/hermes/pkg/auth"
 	"github.com/hashicorp/go-hclog"
 	"golang.org/x/oauth2"
+
+	"github.com/hashicorp-forge/hermes/pkg/auth"
 )
 
 // Config is the configuration for Dex OIDC authentication.

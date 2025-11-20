@@ -108,7 +108,6 @@ func UpsertStringDocumentCustomField(
 					Value: customFieldValue,
 				},
 			)
-			documentCustomFields = newCFs
 		}
 		return newCFs
 	}
@@ -175,7 +174,6 @@ func UpsertStringSliceDocumentCustomField(
 				newCFs = append(newCFs, cf)
 			}
 		}
-		documentCustomFields = newCFs
 
 		return newCFs, nil
 	}

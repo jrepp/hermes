@@ -15,11 +15,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	"github.com/hashicorp-forge/hermes/tests/integration"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // TestMeilisearchAdapter_BasicUsage demonstrates basic usage of the Meilisearch adapter.

@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/internal/notifications"
-	pkgnotifications "github.com/hashicorp-forge/hermes/pkg/notifications"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/internal/notifications"
+	pkgnotifications "github.com/hashicorp-forge/hermes/pkg/notifications"
 )
 
 // TestNotificationE2E tests the complete notification flow:
