@@ -6,13 +6,14 @@ import (
 
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/email"
 	"github.com/hashicorp-forge/hermes/internal/helpers"
 	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"gorm.io/gorm"
 )
 
 func ApprovalsHandler(srv server.Server) http.Handler {
@@ -264,75 +265,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				}
 
 				// Save new modified doc object in search index.
-				if srv.SearchProvider != nil {
-					// Convert map to search.Document via JSON round-trip
-					docObj, err := mapToSearchDocument(docObjMap)
-					if err != nil {
-						srv.Logger.Error("error converting document to search document",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-						)
-						return
-					}
-
-					ctx := r.Context()
-					err = srv.SearchProvider.DocumentIndex().Index(ctx, docObj)
-					if err != nil {
-						srv.Logger.Error("error saving approved document in search index",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID)
-						http.Error(w, "Error updating document status",
-							http.StatusInternalServerError)
-						return
-					}
-
-					// Compare search index and database documents to find data inconsistencies.
-					// Get document from database.
-					dbDoc := models.Document{
-						GoogleFileID: docID,
-					}
-					if err := dbDoc.Get(srv.DB); err != nil {
-						srv.Logger.Error(
-							"error getting document from database for data comparison",
-							"error", err,
-							"path", r.URL.Path,
-							"method", r.Method,
-							"doc_id", docID,
-						)
-						return
-					}
-					// Get all reviews for the document.
-					var reviews models.DocumentReviews
-					if err := reviews.Find(srv.DB, models.DocumentReview{
-						Document: models.Document{
-							GoogleFileID: docID,
-						},
-					}); err != nil {
-						srv.Logger.Error(
-							"error getting all reviews for document for data comparison",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-						)
-						return
-					}
-					if err := CompareAlgoliaAndDatabaseDocument(
-						docObjMap, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
-					); err != nil {
-						srv.Logger.Warn(
-							"inconsistencies detected between search index and database docs",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-						)
-					}
-				}
+				indexAndValidateDocument(srv, w, r, docObjMap, docID)
 			}()
 
 		case "OPTIONS":
@@ -638,75 +571,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				}
 
 				// Save new modified doc object in search index.
-				if srv.SearchProvider != nil {
-					// Convert map to search.Document via JSON round-trip
-					docObj, err := mapToSearchDocument(docObjMap)
-					if err != nil {
-						srv.Logger.Error("error converting document to search document",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-						)
-						return
-					}
-
-					ctx := r.Context()
-					err = srv.SearchProvider.DocumentIndex().Index(ctx, docObj)
-					if err != nil {
-						srv.Logger.Error("error saving approved document in search index",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID)
-						http.Error(w, "Error updating document status",
-							http.StatusInternalServerError)
-						return
-					}
-
-					// Compare search index and database documents to find data inconsistencies.
-					// Get document from database.
-					dbDoc := models.Document{
-						GoogleFileID: docID,
-					}
-					if err := dbDoc.Get(srv.DB); err != nil {
-						srv.Logger.Error(
-							"error getting document from database for data comparison",
-							"error", err,
-							"path", r.URL.Path,
-							"method", r.Method,
-							"doc_id", docID,
-						)
-						return
-					}
-					// Get all reviews for the document.
-					var reviews models.DocumentReviews
-					if err := reviews.Find(srv.DB, models.DocumentReview{
-						Document: models.Document{
-							GoogleFileID: docID,
-						},
-					}); err != nil {
-						srv.Logger.Error(
-							"error getting all reviews for document for data comparison",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-						)
-						return
-					}
-					if err := CompareAlgoliaAndDatabaseDocument(
-						docObjMap, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
-					); err != nil {
-						srv.Logger.Warn(
-							"inconsistencies detected between search index and database docs",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-						)
-					}
-				}
+				indexAndValidateDocument(srv, w, r, docObjMap, docID)
 			}()
 
 		default:
@@ -751,4 +616,86 @@ func updateDocumentReviewsInDatabase(doc document.Document, db *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// indexAndValidateDocument indexes a document in the search provider and validates consistency
+// between the search index and database. This is a helper to reduce code duplication.
+func indexAndValidateDocument(
+	srv server.Server,
+	w http.ResponseWriter,
+	r *http.Request,
+	docObjMap map[string]any,
+	docID string,
+) {
+	if srv.SearchProvider == nil {
+		return
+	}
+
+	// Convert map to search.Document via JSON round-trip
+	docObj, err := mapToSearchDocument(docObjMap)
+	if err != nil {
+		srv.Logger.Error("error converting document to search document",
+			"error", err,
+			"method", r.Method,
+			"path", r.URL.Path,
+			"doc_id", docID,
+		)
+		return
+	}
+
+	ctx := r.Context()
+	err = srv.SearchProvider.DocumentIndex().Index(ctx, docObj)
+	if err != nil {
+		srv.Logger.Error("error saving approved document in search index",
+			"error", err,
+			"method", r.Method,
+			"path", r.URL.Path,
+			"doc_id", docID)
+		http.Error(w, "Error updating document status",
+			http.StatusInternalServerError)
+		return
+	}
+
+	// Compare search index and database documents to find data inconsistencies.
+	// Get document from database.
+	dbDoc := models.Document{
+		GoogleFileID: docID,
+	}
+	if err := dbDoc.Get(srv.DB); err != nil {
+		srv.Logger.Error(
+			"error getting document from database for data comparison",
+			"error", err,
+			"path", r.URL.Path,
+			"method", r.Method,
+			"doc_id", docID,
+		)
+		return
+	}
+	// Get all reviews for the document.
+	var reviews models.DocumentReviews
+	if err := reviews.Find(srv.DB, models.DocumentReview{
+		Document: models.Document{
+			GoogleFileID: docID,
+		},
+	}); err != nil {
+		srv.Logger.Error(
+			"error getting all reviews for document for data comparison",
+			"error", err,
+			"method", r.Method,
+			"path", r.URL.Path,
+			"doc_id", docID,
+		)
+		return
+	}
+	if err := CompareAlgoliaAndDatabaseDocument(
+		docObjMap, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
+	); err != nil {
+		srv.Logger.Warn(
+			"inconsistencies detected between search index and database docs",
+			"error", err,
+			"method", r.Method,
+			"path", r.URL.Path,
+			"doc_id", docID,
+		)
+	}
 }
