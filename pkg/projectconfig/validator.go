@@ -272,21 +272,33 @@ func (v *Validator) addWarning(field, message string) {
 func isValidVersion(version string) bool {
 	// Simplified semver check
 	pattern := `^\d+\.\d+\.\d+(-[a-z]+)?$`
-	matched, _ := regexp.MatchString(pattern, version)
+	matched, err := regexp.MatchString(pattern, version)
+	if err != nil {
+		// This should never happen with a constant pattern
+		return false
+	}
 	return matched
 }
 
 func isValidProjectName(name string) bool {
 	// Must be kebab-case: lowercase alphanumeric with hyphens
 	pattern := `^[a-z0-9][a-z0-9-]*[a-z0-9]$`
-	matched, _ := regexp.MatchString(pattern, name)
+	matched, err := regexp.MatchString(pattern, name)
+	if err != nil {
+		// This should never happen with a constant pattern
+		return false
+	}
 	return matched
 }
 
 func isValidShortName(name string) bool {
 	// 2-10 uppercase characters
 	pattern := `^[A-Z]{2,10}$`
-	matched, _ := regexp.MatchString(pattern, name)
+	matched, err := regexp.MatchString(pattern, name)
+	if err != nil {
+		// This should never happen with a constant pattern
+		return false
+	}
 	return matched
 }
 
@@ -326,7 +338,11 @@ func isValidURL(urlStr string) bool {
 func isValidFileExtension(ext string) bool {
 	// Must be alphanumeric, no dots
 	pattern := `^[a-z0-9]+$`
-	matched, _ := regexp.MatchString(pattern, ext)
+	matched, err := regexp.MatchString(pattern, ext)
+	if err != nil {
+		// This should never happen with a constant pattern
+		return false
+	}
 	return matched
 }
 

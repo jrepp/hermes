@@ -191,7 +191,10 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 
 		// Write response.
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("The token has been recorded and this window can be closed."))
+		if _, err := w.Write([]byte("The token has been recorded and this window can be closed.")); err != nil {
+			// Log error but don't fail since token was recorded
+			log.Printf("error writing response: %v", err)
+		}
 
 		// Shutdown server in a goroutine so it doesn't shutdown before writing a
 		// response.

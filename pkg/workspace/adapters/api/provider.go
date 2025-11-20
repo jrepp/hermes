@@ -137,7 +137,10 @@ func (p *Provider) discoverCapabilities(ctx context.Context) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("capabilities returned status %d (unable to read body: %w)", resp.StatusCode, err)
+		}
 		return fmt.Errorf("capabilities returned status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -175,7 +178,10 @@ func (p *Provider) doRequest(ctx context.Context, method, path string, body inte
 
 			// Reset body reader for retry
 			if body != nil {
-				bodyBytes, _ := json.Marshal(body)
+				bodyBytes, err := json.Marshal(body)
+				if err != nil {
+					return fmt.Errorf("failed to marshal retry body: %w", err)
+				}
 				bodyReader = bytes.NewReader(bodyBytes)
 			}
 		}
