@@ -46,7 +46,7 @@ func SaveDocumentRedirectDetails(
 	return nil
 }
 
-// DEPRECATED: DeleteDocumentRedirectDetailsLegacy is deprecated. Use DeleteDocumentRedirectDetails with search.Provider.
+// Deprecated: DeleteDocumentRedirectDetailsLegacy is deprecated. Use DeleteDocumentRedirectDetails with search.Provider.
 func DeleteDocumentRedirectDetailsLegacy(
 	algo *algolia.Client, id string, docType string, docNumString string) error {
 
@@ -65,7 +65,7 @@ func DeleteDocumentRedirectDetailsLegacy(
 	return nil
 }
 
-// DEPRECATED: SaveDocumentRedirectDetailsLegacy is deprecated. Use SaveDocumentRedirectDetails with search.Provider.
+// Deprecated: SaveDocumentRedirectDetailsLegacy is deprecated. Use SaveDocumentRedirectDetails with search.Provider.
 func SaveDocumentRedirectDetailsLegacy(
 	algo *algolia.Client, id string, docType string, docNumString string) error {
 
