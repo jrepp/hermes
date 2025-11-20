@@ -8,7 +8,6 @@ package bedrock
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -198,42 +197,4 @@ func (p *Provider) checkLimits() error {
 	}
 
 	return nil
-}
-
-// recordUsage tracks token usage for cost control.
-func (p *Provider) recordUsage(tokensUsed int) {
-	p.dailyTokens += tokensUsed
-	p.dailyRequests++
-}
-
-// parseSummarizeResponse parses Claude's JSON response (stub for when SDK is added).
-func (p *Provider) parseSummarizeResponse(responseBody []byte, req *ai.SummarizeRequest) (*ai.DocumentSummary, int) {
-	var response struct {
-		ExecutiveSummary string   `json:"executive_summary"`
-		KeyPoints        []string `json:"key_points"`
-		Topics           []string `json:"topics"`
-		SuggestedTags    []string `json:"suggested_tags"`
-		SuggestedStatus  string   `json:"suggested_status"`
-		Confidence       float64  `json:"confidence"`
-	}
-
-	if err := json.Unmarshal(responseBody, &response); err != nil {
-		return nil, 0
-	}
-
-	summary := &ai.DocumentSummary{
-		ExecutiveSummary: response.ExecutiveSummary,
-		KeyPoints:        response.KeyPoints,
-		Topics:           response.Topics,
-		Tags:             response.SuggestedTags,
-		SuggestedStatus:  response.SuggestedStatus,
-		Confidence:       response.Confidence,
-		GeneratedAt:      time.Now(),
-		Model:            p.cfg.SummarizeModel,
-	}
-
-	// Estimate tokens used (rough approximation)
-	tokensUsed := (len(req.Content) + len(response.ExecutiveSummary)) / 4
-
-	return summary, tokensUsed
 }

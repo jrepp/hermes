@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/zclconf/go-cty/cty"
 )
 
 // LoadConfig loads and parses the projects configuration
@@ -128,20 +126,6 @@ func parseProjectFileSimple(filename string) (*Project, error) {
 }
 
 // Helper functions
-
-func ctyListToStringSlice(val cty.Value) []string {
-	if val.IsNull() || !val.IsKnown() {
-		return nil
-	}
-
-	var result []string
-	it := val.ElementIterator()
-	for it.Next() {
-		_, v := it.Element()
-		result = append(result, v.AsString())
-	}
-	return result
-}
 
 func parseTime(s string) (time.Time, error) {
 	formats := []string{
