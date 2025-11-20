@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/araddon/dateparse"
-	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
+
+	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
 
 // PATH contains metadata for documents based off of the HashiCorp Golden Path template.
@@ -199,7 +200,7 @@ func (d *PATH) parsePATHHeader(doc *docs.Document) {
 						d.parsePATHTimeInvestment(p)
 
 					case strings.HasPrefix(label, "Created"):
-						d.parsePATHCreated(p)
+						_ = d.parsePATHCreated(p)
 
 					case strings.HasPrefix(label, "Owner:") ||
 						strings.HasPrefix(label, "Owners:") ||
@@ -305,7 +306,7 @@ func (d *PATH) parsePATHSteps(p *docs.Paragraph) {
 	re := regexp.MustCompile(`\d+`)
 	match := re.FindString(stepsText)
 	if match != "" {
-		fmt.Sscanf(match, "%d", &d.Steps)
+		_, _ = fmt.Sscanf(match, "%d", &d.Steps)
 	}
 }
 

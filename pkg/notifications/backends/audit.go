@@ -58,8 +58,12 @@ func (b *AuditBackend) Handle(ctx context.Context, msg *notifications.Notificati
 
 	// Log template context (for debugging)
 	if len(msg.TemplateContext) > 0 {
-		contextJSON, _ := json.MarshalIndent(msg.TemplateContext, "    ", "  ")
-		b.logger.Printf("  Template Context:\n    %s", string(contextJSON))
+		contextJSON, err := json.MarshalIndent(msg.TemplateContext, "    ", "  ")
+		if err != nil {
+			b.logger.Printf("  Template Context: <error marshaling: %v>", err)
+		} else {
+			b.logger.Printf("  Template Context:\n    %s", string(contextJSON))
+		}
 	}
 
 	// Log document context if present

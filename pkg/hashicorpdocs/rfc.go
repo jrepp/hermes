@@ -10,9 +10,10 @@ import (
 
 	"github.com/araddon/dateparse"
 	"github.com/forPelevin/gomoji"
-	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
+
+	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
 
 // RFC contains metadata for documents based off of the HashiCorp RFC template.
@@ -186,7 +187,7 @@ func (r *RFC) parseRFCHeader(d *docs.Document) {
 						r.parseRFCContributors(p)
 
 					case strings.HasPrefix(label, "Created"):
-						r.parseRFCCreated(p)
+						_ = r.parseRFCCreated(p)
 
 					case strings.HasPrefix(label, "Current Version"):
 						r.parseRFCCurrentVersion(p)
@@ -383,7 +384,8 @@ func parseEmails(s string) []string {
 	s = strings.ReplaceAll(s, " ", "")
 
 	// Handle "{a, b, c}@hashicorp.com" case.
-	if t, _ := regexp.MatchString("^{.+}@.+$", s); t {
+	t, _ := regexp.MatchString("^{.+}@.+$", s)
+	if t {
 		split := strings.SplitN(s, "@", 2)
 
 		// Get all email prefixes (before the @).

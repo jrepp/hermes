@@ -10,16 +10,17 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/go-multierror"
+	"github.com/iancoleman/strcase"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
-	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/go-multierror"
-	"github.com/iancoleman/strcase"
-	"github.com/stretchr/testify/assert"
 )
 
 // mapToSearchDocument converts a map[string]any to a search.Document via JSON round-trip.
@@ -618,7 +619,11 @@ func getMapStringStringValue(in map[string]any, key string) (
 
 	if v, ok := in[key]; ok {
 		if reflect.TypeOf(v).Kind() == reflect.Map {
-			for vk, vv := range v.(map[string]any) {
+			mapVal, ok := v.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("invalid type: cannot convert to map[string]any")
+			}
+			for vk, vv := range mapVal {
 				if vv, ok := vv.(string); ok {
 					result[vk] = vv
 				} else {
@@ -658,7 +663,11 @@ func getStringSliceValue(in map[string]any, key string) ([]string, error) {
 			return result, nil
 		}
 		if reflect.TypeOf(v).Kind() == reflect.Slice {
-			for _, vv := range v.([]any) {
+			sliceVal, ok := v.([]any)
+			if !ok {
+				return nil, fmt.Errorf("invalid type: cannot convert to []any")
+			}
+			for _, vv := range sliceVal {
 				if vv, ok := vv.(string); ok {
 					result = append(result, vv)
 				} else {

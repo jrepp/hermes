@@ -6,8 +6,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"google.golang.org/api/docs/v1"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // ReplaceHeader replaces the PATH document header, which is the first table

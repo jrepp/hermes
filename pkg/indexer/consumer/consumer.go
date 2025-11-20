@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline"
-	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline"
+	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // Consumer consumes document revision events from Redpanda and processes them.
@@ -290,11 +291,26 @@ func reconstructRevisionFromPayload(payload map[string]interface{}) (*models.Doc
 	}
 
 	// Extract required fields
-	id, _ := revisionData["id"].(float64) // JSON numbers are float64
-	documentUUID, _ := payload["document_uuid"].(string)
-	documentID, _ := payload["document_id"].(string)
-	providerType, _ := payload["provider_type"].(string)
-	contentHash, _ := revisionData["content_hash"].(string)
+	id, ok := revisionData["id"].(float64) // JSON numbers are float64
+	if !ok {
+		return nil, fmt.Errorf("invalid or missing revision id")
+	}
+	documentUUID, ok := payload["document_uuid"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid or missing document_uuid")
+	}
+	documentID, ok := payload["document_id"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid or missing document_id")
+	}
+	providerType, ok := payload["provider_type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid or missing provider_type")
+	}
+	contentHash, ok := revisionData["content_hash"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid or missing content_hash")
+	}
 
 	// Parse UUID
 	parsedUUID, err := uuid.Parse(documentUUID)

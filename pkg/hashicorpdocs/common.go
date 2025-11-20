@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"google.golang.org/api/drive/v3"
+
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
-	"google.golang.org/api/drive/v3"
 )
 
 const (
