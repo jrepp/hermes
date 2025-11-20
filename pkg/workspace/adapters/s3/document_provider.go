@@ -104,7 +104,10 @@ func (a *Adapter) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, t
 	// Store metadata
 	if err := a.metadataStore.Set(ctx, objectKey, doc); err != nil {
 		// Try to clean up the S3 object if metadata storage fails
-		_ = a.deleteObject(ctx, objectKey)
+		if delErr := a.deleteObject(ctx, objectKey); delErr != nil {
+			a.logger.Warn("failed to clean up S3 object after metadata error",
+				"error", delErr, "key", objectKey)
+		}
 		return nil, fmt.Errorf("failed to store metadata: %w", err)
 	}
 
@@ -180,7 +183,10 @@ func (a *Adapter) CopyDocument(ctx context.Context, srcProviderID, destFolderID,
 
 	// Store metadata
 	if err := a.metadataStore.Set(ctx, objectKey, destDoc); err != nil {
-		_ = a.deleteObject(ctx, objectKey)
+		if delErr := a.deleteObject(ctx, objectKey); delErr != nil {
+			a.logger.Warn("failed to clean up S3 object after metadata error",
+				"error", delErr, "key", objectKey)
+		}
 		return nil, fmt.Errorf("failed to store metadata: %w", err)
 	}
 
@@ -226,13 +232,22 @@ func (a *Adapter) MoveDocument(ctx context.Context, providerID, destFolderID str
 	doc.ProviderID = a.formatProviderID(newObjectKey)
 	doc.ModifiedTime = time.Now()
 	if err := a.metadataStore.Set(ctx, newObjectKey, doc); err != nil {
-		_ = a.deleteObject(ctx, newObjectKey)
+		if delErr := a.deleteObject(ctx, newObjectKey); delErr != nil {
+			a.logger.Warn("failed to clean up S3 object after metadata error",
+				"error", delErr, "key", newObjectKey)
+		}
 		return nil, fmt.Errorf("failed to update metadata: %w", err)
 	}
 
 	// Delete old location
-	_ = a.deleteObject(ctx, oldObjectKey)
-	_ = a.metadataStore.Delete(ctx, oldObjectKey)
+	if err := a.deleteObject(ctx, oldObjectKey); err != nil {
+		a.logger.Warn("failed to delete old S3 object after move",
+			"error", err, "key", oldObjectKey)
+	}
+	if err := a.metadataStore.Delete(ctx, oldObjectKey); err != nil {
+		a.logger.Warn("failed to delete old metadata after move",
+			"error", err, "key", oldObjectKey)
+	}
 
 	a.logger.Info("document moved",
 		"uuid", doc.UUID.String(),
@@ -302,13 +317,22 @@ func (a *Adapter) RenameDocument(ctx context.Context, providerID, newName string
 	doc.ProviderID = a.formatProviderID(newObjectKey)
 	doc.ModifiedTime = time.Now()
 	if err := a.metadataStore.Set(ctx, newObjectKey, doc); err != nil {
-		_ = a.deleteObject(ctx, newObjectKey)
+		if delErr := a.deleteObject(ctx, newObjectKey); delErr != nil {
+			a.logger.Warn("failed to clean up S3 object after metadata error",
+				"error", delErr, "key", newObjectKey)
+		}
 		return fmt.Errorf("failed to update metadata: %w", err)
 	}
 
 	// Delete old location
-	_ = a.deleteObject(ctx, oldObjectKey)
-	_ = a.metadataStore.Delete(ctx, oldObjectKey)
+	if err := a.deleteObject(ctx, oldObjectKey); err != nil {
+		a.logger.Warn("failed to delete old S3 object after rename",
+			"error", err, "key", oldObjectKey)
+	}
+	if err := a.metadataStore.Delete(ctx, oldObjectKey); err != nil {
+		a.logger.Warn("failed to delete old metadata after rename",
+			"error", err, "key", oldObjectKey)
+	}
 
 	a.logger.Info("document renamed",
 		"uuid", doc.UUID.String(),
@@ -358,7 +382,10 @@ func (a *Adapter) CreateFolder(ctx context.Context, name, parentID string) (*wor
 
 	// Store metadata
 	if err := a.metadataStore.Set(ctx, folderKey, folder); err != nil {
-		_ = a.deleteObject(ctx, folderKey)
+		if delErr := a.deleteObject(ctx, folderKey); delErr != nil {
+			a.logger.Warn("failed to clean up folder marker after metadata error",
+				"error", delErr, "key", folderKey)
+		}
 		return nil, fmt.Errorf("failed to store folder metadata: %w", err)
 	}
 

@@ -246,7 +246,11 @@ func (p *Provider) doRequest(ctx context.Context, method, path string, body inte
 
 // buildURL constructs a URL with query parameters
 func (p *Provider) buildURL(path string, params map[string]string) string {
-	u, _ := url.Parse(p.config.BaseURL + path)
+	u, err := url.Parse(p.config.BaseURL + path)
+	if err != nil {
+		// BaseURL should be validated during config, this shouldn't fail
+		panic(fmt.Sprintf("invalid base URL: %v", err))
+	}
 
 	if len(params) > 0 {
 		q := u.Query()

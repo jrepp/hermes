@@ -471,7 +471,7 @@ func (r *Router) checkProviderHealth(ctx context.Context, name string) {
 		config.HealthStatus = "unhealthy"
 	}
 
-	// Update database
+	// Update database (best effort - ignore errors)
 	_, _ = r.db.Exec(`
 		UPDATE provider_storage
 		SET health_status = $1, last_health_check = $2, updated_at = NOW()
