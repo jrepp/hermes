@@ -83,8 +83,8 @@ func AlgoliaProxyHandler(
 				http.StatusInternalServerError)
 			return
 		}
-		log.Debug("AlgoliaProxyHandler: Writing response body", "body_length", len(respBody))
-		w.Write(respBody)
-		log.Debug("AlgoliaProxyHandler: Request completed successfully")
+		if _, err := w.Write(respBody); err != nil {
+			log.Error("error writing response body", "error", err)
+		}
 	})
 }
