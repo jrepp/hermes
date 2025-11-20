@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -153,8 +154,17 @@ func createMigrationJob(w http.ResponseWriter, r *http.Request, srv server.Serve
 
 	// Get user email from context (set by auth middleware)
 	userEmail := r.Context().Value("user_email")
+	var createdBy string
 	if userEmail == nil {
-		userEmail = "system"
+		createdBy = "system"
+	} else {
+		emailStr, ok := userEmail.(string)
+		if !ok {
+			srv.Logger.Error("user_email context value is not a string", "type", fmt.Sprintf("%T", userEmail))
+			createdBy = "system"
+		} else {
+			createdBy = emailStr
+		}
 	}
 
 	// Get underlying SQL DB
@@ -179,7 +189,7 @@ func createMigrationJob(w http.ResponseWriter, r *http.Request, srv server.Serve
 		BatchSize:      req.BatchSize,
 		DryRun:         req.DryRun,
 		Validate:       req.Validate,
-		CreatedBy:      userEmail.(string),
+		CreatedBy:      createdBy,
 	}
 
 	job, err := manager.CreateJob(r.Context(), jobReq)
@@ -214,7 +224,9 @@ func createMigrationJob(w http.ResponseWriter, r *http.Request, srv server.Serve
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(job)
+	if err := json.NewEncoder(w).Encode(job); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // listMigrationJobs lists all migration jobs
@@ -308,7 +320,9 @@ func listMigrationJobs(w http.ResponseWriter, r *http.Request, srv server.Server
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // getMigrationJob gets a specific migration job
@@ -334,7 +348,9 @@ func getMigrationJob(w http.ResponseWriter, r *http.Request, srv server.Server, 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(job)
+	if err := json.NewEncoder(w).Encode(job); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // startMigrationJob starts a migration job
@@ -363,7 +379,9 @@ func startMigrationJob(w http.ResponseWriter, r *http.Request, srv server.Server
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(job)
+	if err := json.NewEncoder(w).Encode(job); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // pauseMigrationJob pauses a migration job
@@ -415,7 +433,9 @@ func pauseMigrationJob(w http.ResponseWriter, r *http.Request, srv server.Server
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(job)
+	if err := json.NewEncoder(w).Encode(job); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // cancelMigrationJob cancels a migration job
@@ -451,10 +471,12 @@ func cancelMigrationJob(w http.ResponseWriter, r *http.Request, srv server.Serve
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Job cancelled successfully",
 		"jobId":   jobID,
-	})
+	}); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // getMigrationProgress gets migration progress for a job
@@ -476,7 +498,9 @@ func getMigrationProgress(w http.ResponseWriter, r *http.Request, srv server.Ser
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(progress)
+	if err := json.NewEncoder(w).Encode(progress); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }
 
 // listMigrationItems lists migration items for a job
@@ -580,5 +604,7 @@ func listMigrationItems(w http.ResponseWriter, r *http.Request, srv server.Serve
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		srv.Logger.Error("error encoding response", "error", err)
+	}
 }

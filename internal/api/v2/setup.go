@@ -76,7 +76,9 @@ func SetupStatusHandler(configPath string, log hclog.Logger) http.Handler {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("error encoding response", "error", err)
+		}
 	})
 }
 
@@ -137,7 +139,9 @@ func SetupConfigureHandler(log hclog.Logger) http.Handler {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("error encoding response", "error", err)
+		}
 	})
 }
 
@@ -361,7 +365,9 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Error("error encoding response", "error", err)
+		}
 	})
 }
 

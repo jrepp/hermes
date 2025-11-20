@@ -442,9 +442,24 @@ func DraftsHandler(srv server.Server) http.Handler {
 				}
 
 				// Convert search.Document to map for comparison
-				algoDocBytes, _ := json.Marshal(indexedDoc)
+				algoDocBytes, err := json.Marshal(indexedDoc)
+				if err != nil {
+					srv.Logger.Error("error marshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", fileID)
+					return
+				}
 				var algoDoc map[string]any
-				json.Unmarshal(algoDocBytes, &algoDoc)
+				if err := json.Unmarshal(algoDocBytes, &algoDoc); err != nil {
+					srv.Logger.Error("error unmarshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", fileID)
+					return
+				}
 
 				// Get document from database.
 				dbDoc := models.Document{
@@ -955,9 +970,24 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				}
 
 				// Convert search.Document to map for comparison
-				algoDocBytes, _ := json.Marshal(indexedDoc)
+				algoDocBytes, err := json.Marshal(indexedDoc)
+				if err != nil {
+					srv.Logger.Error("error marshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID)
+					return
+				}
 				var algoDoc map[string]any
-				json.Unmarshal(algoDocBytes, &algoDoc)
+				if err := json.Unmarshal(algoDocBytes, &algoDoc); err != nil {
+					srv.Logger.Error("error unmarshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID)
+					return
+				}
 				// Get document from database.
 				dbDoc := srv.NewDocumentByFileID(docID)
 				if err := dbDoc.Get(srv.DB); err != nil {
@@ -2015,9 +2045,24 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				}
 
 				// Convert search.Document to map for comparison
-				algoDocBytes, _ := json.Marshal(indexedDoc)
+				algoDocBytes, err := json.Marshal(indexedDoc)
+				if err != nil {
+					srv.Logger.Error("error marshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID)
+					return
+				}
 				var algoDoc map[string]any
-				json.Unmarshal(algoDocBytes, &algoDoc)
+				if err := json.Unmarshal(algoDocBytes, &algoDoc); err != nil {
+					srv.Logger.Error("error unmarshaling indexed document for comparison",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID)
+					return
+				}
 
 				// Get document from database.
 				dbDoc := srv.NewDocumentByFileID(docID)
