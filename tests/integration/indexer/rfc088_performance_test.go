@@ -32,7 +32,7 @@ func BenchmarkEmbeddingsGeneration(b *testing.B) {
 		mock.AnythingOfType("string"),
 		"text-embedding-3-small",
 		1536,
-	).Return(generateTestEmbedding(1536), nil)
+	).Return(generateTestEmbedding(), nil)
 
 	embeddingsStep := steps.NewEmbeddingsStep(db, mockOpenAI, mockWorkspace, hclog.NewNullLogger())
 	ctx := context.Background()
@@ -71,7 +71,7 @@ func BenchmarkChunkedEmbeddings(b *testing.B) {
 	).Return(func(ctx context.Context, texts []string, model string, dimensions int) [][]float64 {
 		embeddings := make([][]float64, len(texts))
 		for i := range embeddings {
-			embeddings[i] = generateTestEmbedding(1536)
+			embeddings[i] = generateTestEmbedding()
 		}
 		return embeddings
 	}, nil)
@@ -128,7 +128,7 @@ func TestPipelineThroughput(t *testing.T) {
 		mock.AnythingOfType("string"),
 		"text-embedding-3-small",
 		1536,
-	).Return(generateTestEmbedding(1536), nil)
+	).Return(generateTestEmbedding(), nil)
 
 	llmStep := steps.NewLLMSummaryStep(db, mockOpenAI, mockWorkspace, hclog.NewNullLogger())
 	embeddingsStep := steps.NewEmbeddingsStep(db, mockOpenAI, mockWorkspace, hclog.NewNullLogger())
@@ -236,7 +236,7 @@ func TestMemoryUsage(t *testing.T) {
 	).Return(func(ctx context.Context, texts []string, model string, dimensions int) [][]float64 {
 		embeddings := make([][]float64, len(texts))
 		for i := range embeddings {
-			embeddings[i] = generateTestEmbedding(1536)
+			embeddings[i] = generateTestEmbedding()
 		}
 		return embeddings
 	}, nil)
@@ -325,7 +325,8 @@ func createPerfDocument(tb testing.TB, db *gorm.DB, title string, words int) *mo
 	return doc
 }
 
-func generateTestEmbedding(dimensions int) []float64 {
+func generateTestEmbedding() []float64 {
+	const dimensions = 1536
 	embedding := make([]float64, dimensions)
 	for i := range embedding {
 		embedding[i] = float64(i) * 0.001
