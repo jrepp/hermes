@@ -101,7 +101,9 @@ func setupFixtureImpl() error {
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
 		globalFixtureErr = fmt.Errorf("failed to get PostgreSQL connection string: %w", err)
-		_ = pgContainer.Terminate(ctx)
+		if termErr := pgContainer.Terminate(ctx); termErr != nil {
+			log.Printf("Warning: failed to terminate PostgreSQL container: %v\n", termErr)
+		}
 		return globalFixtureErr
 	}
 	fixture.PostgresURL = connStr
@@ -127,7 +129,9 @@ func setupFixtureImpl() error {
 	})
 	if err != nil {
 		// Clean up PostgreSQL if Meilisearch fails
-		_ = pgContainer.Terminate(ctx)
+		if termErr := pgContainer.Terminate(ctx); termErr != nil {
+			log.Printf("Warning: failed to terminate PostgreSQL container: %v\n", termErr)
+		}
 		globalFixtureErr = fmt.Errorf("failed to start Meilisearch container: %w", err)
 		return globalFixtureErr
 	}
@@ -136,16 +140,24 @@ func setupFixtureImpl() error {
 	// Get Meilisearch host
 	host, err := meilisearchContainer.Host(ctx)
 	if err != nil {
-		_ = pgContainer.Terminate(ctx)
-		_ = meilisearchContainer.Terminate(ctx)
+		if termErr := pgContainer.Terminate(ctx); termErr != nil {
+			log.Printf("Warning: failed to terminate PostgreSQL container: %v\n", termErr)
+		}
+		if termErr := meilisearchContainer.Terminate(ctx); termErr != nil {
+			log.Printf("Warning: failed to terminate Meilisearch container: %v\n", termErr)
+		}
 		globalFixtureErr = fmt.Errorf("failed to get Meilisearch host: %w", err)
 		return globalFixtureErr
 	}
 
 	mappedPort, err := meilisearchContainer.MappedPort(ctx, "7700")
 	if err != nil {
-		_ = pgContainer.Terminate(ctx)
-		_ = meilisearchContainer.Terminate(ctx)
+		if termErr := pgContainer.Terminate(ctx); termErr != nil {
+			log.Printf("Warning: failed to terminate PostgreSQL container: %v\n", termErr)
+		}
+		if termErr := meilisearchContainer.Terminate(ctx); termErr != nil {
+			log.Printf("Warning: failed to terminate Meilisearch container: %v\n", termErr)
+		}
 		globalFixtureErr = fmt.Errorf("failed to get Meilisearch port: %w", err)
 		return globalFixtureErr
 	}
