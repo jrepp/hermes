@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"google.golang.org/api/people/v1"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // SearchPeople searches the Google People API.

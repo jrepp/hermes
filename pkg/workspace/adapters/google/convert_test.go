@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 )
 
 func TestConvertToDocumentMetadata(t *testing.T) {

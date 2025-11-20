@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hashicorp-forge/hermes/pkg/algolia"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/pkg/algolia"
 )
 
 // sharedRFCsFolderURL is the Google Drive URL to the shared RFCs folder

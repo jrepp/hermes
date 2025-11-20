@@ -10,8 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
-	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline/steps"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline/steps"
 )
 
 // BedrockConverseAPI defines the interface for Bedrock Converse operations.

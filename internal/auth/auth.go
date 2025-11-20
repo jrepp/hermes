@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	googleadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/google"
 	oktaadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/okta"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
-	"github.com/hashicorp/go-hclog"
 )
 
 const (

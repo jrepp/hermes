@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"os"
 
-	"github.com/hashicorp-forge/hermes/internal/version"
 	"github.com/hashicorp/go-hclog"
 	"github.com/mitchellh/cli"
+
+	"github.com/hashicorp-forge/hermes/internal/version"
 )
 
 // Main runs the CLI with the given arguments and returns the exit code.

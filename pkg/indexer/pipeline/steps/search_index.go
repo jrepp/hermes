@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/search"
-	"github.com/hashicorp/go-hclog"
 )
 
 // SearchIndexStep updates the search index (Meilisearch/Algolia) for a document revision.

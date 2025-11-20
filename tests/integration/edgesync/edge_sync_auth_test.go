@@ -21,12 +21,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
-	"github.com/hashicorp-forge/hermes/internal/server"
-	"github.com/hashicorp-forge/hermes/tests/integration"
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
+	"github.com/hashicorp-forge/hermes/internal/server"
+	"github.com/hashicorp-forge/hermes/tests/integration"
 )
 
 // TestEdgeSyncAuthenticationMiddleware tests the Bearer token authentication middleware
@@ -55,12 +56,12 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 	}
 
 	t.Run("RejectMissingAuthorizationHeader", func(t *testing.T) {
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("authenticated"))
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -70,11 +71,11 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 	})
 
 	t.Run("RejectInvalidAuthorizationFormat", func(t *testing.T) {
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "InvalidFormat token123")
 		w := httptest.NewRecorder()
 
@@ -85,11 +86,11 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 	})
 
 	t.Run("RejectEmptyBearerToken", func(t *testing.T) {
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer ")
 		w := httptest.NewRecorder()
 
@@ -100,12 +101,12 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 	})
 
 	t.Run("RejectNonExistentToken", func(t *testing.T) {
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
 		fakeToken := generateTestToken("edge")
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+fakeToken)
 		w := httptest.NewRecorder()
 
@@ -118,14 +119,14 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 	t.Run("RejectRevokedToken", func(t *testing.T) {
 		// Create revoked token
 		token := generateTestToken("edge")
-		tokenID := insertToken(t, ctx, db, token, "edge", true, nil)
-		defer deleteToken(t, ctx, db, tokenID)
+		tokenID := insertToken(ctx, t, db, token, "edge", true, nil)
+		defer deleteToken(ctx, t, db, tokenID)
 
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -139,14 +140,14 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 		// Create expired token
 		token := generateTestToken("edge")
 		expiredTime := time.Now().Add(-24 * time.Hour)
-		tokenID := insertToken(t, ctx, db, token, "edge", false, &expiredTime)
-		defer deleteToken(t, ctx, db, tokenID)
+		tokenID := insertToken(ctx, t, db, token, "edge", false, &expiredTime)
+		defer deleteToken(ctx, t, db, tokenID)
 
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -159,14 +160,14 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 	t.Run("RejectWrongTokenType", func(t *testing.T) {
 		// Create token with wrong type
 		token := generateTestToken("registration")
-		tokenID := insertToken(t, ctx, db, token, "registration", false, nil)
-		defer deleteToken(t, ctx, db, tokenID)
+		tokenID := insertToken(ctx, t, db, token, "registration", false, nil)
+		defer deleteToken(ctx, t, db, tokenID)
 
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -179,17 +180,17 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 	t.Run("AcceptValidEdgeToken", func(t *testing.T) {
 		// Create valid edge token
 		token := generateTestToken("edge")
-		tokenID := insertToken(t, ctx, db, token, "edge", false, nil)
-		defer deleteToken(t, ctx, db, tokenID)
+		tokenID := insertToken(ctx, t, db, token, "edge", false, nil)
+		defer deleteToken(ctx, t, db, tokenID)
 
 		called := false
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			called = true
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("success"))
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -203,16 +204,16 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 	t.Run("AcceptValidAPIToken", func(t *testing.T) {
 		// Create valid api token (also accepted for edge sync)
 		token := generateTestToken("api")
-		tokenID := insertToken(t, ctx, db, token, "api", false, nil)
-		defer deleteToken(t, ctx, db, tokenID)
+		tokenID := insertToken(ctx, t, db, token, "api", false, nil)
+		defer deleteToken(ctx, t, db, tokenID)
 
 		called := false
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			called = true
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -226,16 +227,16 @@ func TestEdgeSyncAuthenticationMiddleware(t *testing.T) {
 		// Create token that expires in the future
 		token := generateTestToken("edge")
 		futureTime := time.Now().Add(24 * time.Hour)
-		tokenID := insertToken(t, ctx, db, token, "edge", false, &futureTime)
-		defer deleteToken(t, ctx, db, tokenID)
+		tokenID := insertToken(ctx, t, db, token, "edge", false, &futureTime)
+		defer deleteToken(ctx, t, db, tokenID)
 
 		called := false
-		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			called = true
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -263,8 +264,8 @@ func TestEdgeSyncEndpointsIntegration(t *testing.T) {
 
 	// Create valid token for all endpoint tests
 	token := generateTestToken("edge")
-	tokenID := insertToken(t, ctx, db, token, "edge", false, nil)
-	defer deleteToken(t, ctx, db, tokenID)
+	tokenID := insertToken(ctx, t, db, token, "edge", false, nil)
+	defer deleteToken(ctx, t, db, tokenID)
 
 	// Convert sql.DB to gorm.DB
 	gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{})
@@ -279,7 +280,7 @@ func TestEdgeSyncEndpointsIntegration(t *testing.T) {
 	t.Run("GetSyncStatus", func(t *testing.T) {
 		handler := apiv2.EdgeSyncAuthMiddleware(srv, apiv2.EdgeSyncHandler(srv))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge&limit=10", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge&limit=10", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -298,7 +299,7 @@ func TestEdgeSyncEndpointsIntegration(t *testing.T) {
 	t.Run("GetEdgeStats", func(t *testing.T) {
 		handler := apiv2.EdgeSyncAuthMiddleware(srv, apiv2.EdgeSyncHandler(srv))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/stats?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/stats?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -377,16 +378,16 @@ func TestTokenRevocationWorkflow(t *testing.T) {
 
 	// Create valid token
 	token := generateTestToken("edge")
-	tokenID := insertToken(t, ctx, db, token, "edge", false, nil)
-	defer deleteToken(t, ctx, db, tokenID)
+	tokenID := insertToken(ctx, t, db, token, "edge", false, nil)
+	defer deleteToken(ctx, t, db, tokenID)
 
-	handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := apiv2.EdgeSyncAuthMiddleware(srv, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("success"))
 	}))
 
 	t.Run("TokenWorksBeforeRevocation", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -407,7 +408,7 @@ func TestTokenRevocationWorkflow(t *testing.T) {
 	})
 
 	t.Run("TokenFailsAfterRevocation", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -429,7 +430,7 @@ func hashToken(token string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func insertToken(t *testing.T, ctx context.Context, db *sql.DB, token, tokenType string, revoked bool, expiresAt *time.Time) uuid.UUID {
+func insertToken(ctx context.Context, t *testing.T, db *sql.DB, token, tokenType string, revoked bool, expiresAt *time.Time) uuid.UUID {
 	t.Helper()
 
 	tokenHash := hashToken(token)
@@ -446,7 +447,7 @@ func insertToken(t *testing.T, ctx context.Context, db *sql.DB, token, tokenType
 	return tokenID
 }
 
-func deleteToken(t *testing.T, ctx context.Context, db *sql.DB, tokenID uuid.UUID) {
+func deleteToken(ctx context.Context, t *testing.T, db *sql.DB, tokenID uuid.UUID) {
 	t.Helper()
 
 	_, err := db.ExecContext(ctx, "DELETE FROM service_tokens WHERE id = $1", tokenID)

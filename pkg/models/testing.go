@@ -4,9 +4,10 @@ import (
 	"log"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/internal/test"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/internal/test"
 )
 
 func setupTest(t *testing.T, dsn string) (

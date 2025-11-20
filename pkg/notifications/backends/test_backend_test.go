@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/notifications"
-	"github.com/hashicorp-forge/hermes/pkg/notifications/backends"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/notifications"
+	"github.com/hashicorp-forge/hermes/pkg/notifications/backends"
 )
 
 func TestTestBackend_FailureModeNone(t *testing.T) {

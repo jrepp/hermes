@@ -7,9 +7,10 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/google/uuid"
-	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 )
 
 // Document is a model for a document.

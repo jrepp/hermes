@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"gorm.io/gorm"
 )
 
 // DocumentSyncService handles document synchronization from edge to central

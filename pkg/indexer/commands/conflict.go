@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/indexer"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer"
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // DetectConflictsCommand detects conflicts between different versions of a document

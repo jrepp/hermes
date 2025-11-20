@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+	"google.golang.org/api/drive/v3"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/email"
 	"github.com/hashicorp-forge/hermes/internal/helpers"
@@ -18,19 +21,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/links"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"github.com/hashicorp/go-multierror"
-	"google.golang.org/api/drive/v3"
-	"gorm.io/gorm"
-)
-
-var (
-	getProductWithSubscribers = func(db *gorm.DB, productName string) (*models.Product, error) {
-		p := &models.Product{Name: productName}
-		if err := p.Get(db); err != nil {
-			return nil, err
-		}
-		return p, nil
-	}
 )
 
 func ReviewsHandler(srv server.Server) http.Handler {

@@ -10,12 +10,13 @@ import (
 	"strings"
 	"testing"
 
-	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
-	"github.com/hashicorp-forge/hermes/internal/config"
-	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
+	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/internal/server"
 )
 
 // TestAPI_DocumentTypesHandler tests the GET /api/v1/document-types endpoint

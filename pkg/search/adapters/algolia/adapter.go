@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/algolia/algoliasearch-client-go/v3/algolia/search"
+
 	hermessearch "github.com/hashicorp-forge/hermes/pkg/search"
 )
 

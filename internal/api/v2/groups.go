@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"strings"
 
+	admin "google.golang.org/api/admin/directory/v1"
+
 	"github.com/hashicorp-forge/hermes/internal/server"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
-	admin "google.golang.org/api/admin/directory/v1"
 )
 
 const (

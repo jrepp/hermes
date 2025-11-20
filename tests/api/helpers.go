@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/tests/api/fixtures"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/tests/api/fixtures"
 )
 
 // WithTransaction runs a test function within a database transaction.

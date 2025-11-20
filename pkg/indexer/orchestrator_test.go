@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/indexer"
-	"github.com/hashicorp-forge/hermes/pkg/indexer/commands"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer"
+	"github.com/hashicorp-forge/hermes/pkg/indexer/commands"
 )
 
 // TestOrchestratorExample demonstrates how to use the indexer orchestrator.

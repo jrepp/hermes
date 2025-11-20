@@ -3,13 +3,15 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"net/http"
+
+	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
+
+	"gorm.io/gorm"
 
 	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"gorm.io/gorm"
 )
 
 type ProjectRelatedResourcesGetResponse struct {

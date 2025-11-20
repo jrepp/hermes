@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/pkg/ai"
 	"github.com/hashicorp-forge/hermes/pkg/indexer"
-	"github.com/hashicorp/go-hclog"
 )
 
 // GenerateEmbeddingCommand generates vector embeddings for document content.

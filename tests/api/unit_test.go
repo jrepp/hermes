@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/tests/api/fixtures"
-	"github.com/stretchr/testify/assert"
 )
 
 // Unit tests do not require external dependencies (PostgreSQL, Meilisearch).

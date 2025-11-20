@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
-	"github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
+	"github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
 )
 
 func TestFilesystemAdapter(t *testing.T) {

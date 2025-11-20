@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline/steps"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline/steps"
 )
 
 // OpenAIClient implements the LLMClient interface for OpenAI's API.

@@ -8,6 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/hcl/v2/hclsimple"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/pkg/indexer/consumer"
 	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline"
@@ -18,8 +21,6 @@ import (
 	algoliaadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/algolia"
 	bleveadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/bleve"
 	meilisearchadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
-	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 
 func main() {

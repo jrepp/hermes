@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/pkg/docid"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 func TestConvertToDocumentMetadata(t *testing.T) {

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
 	"github.com/hashicorp/hcl/v2/hclsimple"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
 )
 
 // IndexerConfig represents the indexer configuration from HCL.

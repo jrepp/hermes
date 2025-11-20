@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp-forge/hermes/tests/api/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
+	"github.com/hashicorp-forge/hermes/tests/api/fixtures"
 )
 
 // TestDocuments_Get tests the GET /api/v2/documents/:id endpoint.

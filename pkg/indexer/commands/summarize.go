@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/pkg/ai"
 	"github.com/hashicorp-forge/hermes/pkg/indexer"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp/go-hclog"
-	"gorm.io/gorm"
 )
 
 // SummarizeCommand uses AI to generate document summaries and analysis.

@@ -9,9 +9,10 @@ import (
 	"fmt"
 	"testing"
 
-	s3adapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/s3"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/require"
+
+	s3adapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/s3"
 )
 
 // ValidationResult represents the result of a validation check.

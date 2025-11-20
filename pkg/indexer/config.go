@@ -1,10 +1,11 @@
 package indexer
 
 import (
-	"github.com/hashicorp-forge/hermes/pkg/search"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/search"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // Config holds the configuration for the indexer.

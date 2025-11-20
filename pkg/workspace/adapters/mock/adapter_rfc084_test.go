@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/pkg/docid"
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/docid"
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 func TestFakeAdapter_DocumentLifecycle(t *testing.T) {

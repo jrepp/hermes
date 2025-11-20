@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 // createTestAdapterForPeople creates an adapter with in-memory filesystem for testing.

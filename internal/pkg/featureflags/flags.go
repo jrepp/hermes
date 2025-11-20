@@ -4,9 +4,10 @@ import (
 	"hash/fnv"
 	"strings"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
-	"github.com/hashicorp/go-hclog"
 )
 
 // FeatureFlagsObj is a record in Algolia

@@ -7,13 +7,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hashicorp/go-hclog"
+	"google.golang.org/api/docs/v1"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
-	"github.com/hashicorp/go-hclog"
-	"google.golang.org/api/docs/v1"
 )
 
 // mockProviderWithCapabilities wraps a fake provider and adds capabilities interface

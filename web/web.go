@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hashicorp/go-hclog"
+
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/pkg/featureflags"
 	"github.com/hashicorp-forge/hermes/internal/version"
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
-	"github.com/hashicorp/go-hclog"
 )
 
 //go:embed dist

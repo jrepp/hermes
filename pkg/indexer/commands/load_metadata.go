@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp-forge/hermes/pkg/indexer"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/indexer"
 )
 
 // LoadMetadataCommand loads document metadata from the database.

@@ -3,8 +3,9 @@ package api
 import (
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/pkg/document"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hashicorp-forge/hermes/pkg/document"
 )
 
 func TestParseDocumentIDFromURLPath(t *testing.T) {

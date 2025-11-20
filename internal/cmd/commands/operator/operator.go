@@ -1,8 +1,9 @@
 package operator
 
 import (
-	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/mitchellh/cli"
+
+	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 )
 
 type Command struct {
