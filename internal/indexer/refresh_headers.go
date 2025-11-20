@@ -63,12 +63,16 @@ func refreshDocumentHeaders(
 	lockedDocs := models.Documents{}
 	switch ft {
 	case draftsFolderType:
-		lockedDocs.Find(idx.Database,
-			"locked = ? AND status = ?", true, models.WIPDocumentStatus)
+		if err := lockedDocs.Find(idx.Database,
+			"locked = ? AND status = ?", true, models.WIPDocumentStatus); err != nil {
+			return fmt.Errorf("error finding locked drafts: %w", err)
+		}
 	case documentsFolderType:
-		lockedDocs.Find(idx.Database,
+		if err := lockedDocs.Find(idx.Database,
 			// All document statuses > WIPDocumentStatus are for published documents.
-			"locked = ? AND status > ?", true, models.WIPDocumentStatus)
+			"locked = ? AND status > ?", true, models.WIPDocumentStatus); err != nil {
+			return fmt.Errorf("error finding locked documents: %w", err)
+		}
 	}
 	var lockedDocIDs []string
 	for _, d := range lockedDocs {
