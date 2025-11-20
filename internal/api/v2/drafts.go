@@ -1365,7 +1365,23 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 							return
 						}
 						cfVal := []string{}
-						for _, v := range cf.Value.([]any) {
+						values, ok := cf.Value.([]any)
+						if !ok {
+							srv.Logger.Error("invalid value type for people custom field",
+								"error", err,
+								"method", r.Method,
+								"path", r.URL.Path,
+								"custom_field", cf.Name,
+								"doc_id", docID)
+							http.Error(w,
+								fmt.Sprintf(
+									"Bad request: invalid value type for custom field %q",
+									cf.Name,
+								),
+								http.StatusBadRequest)
+							return
+						}
+						for _, v := range values {
 							if v, ok := v.(string); ok {
 								cfVal = append(cfVal, v)
 							} else {
@@ -1612,8 +1628,12 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 
 			// Rename document with new title.
 			providerID = getWorkspaceProviderID(srv.Config, docID)
-			srv.WorkspaceProvider.RenameDocument(r.Context(), providerID,
-				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
+			if err := srv.WorkspaceProvider.RenameDocument(r.Context(), providerID,
+				fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title)); err != nil {
+				srv.Logger.Warn("failed to rename document in workspace provider",
+					"error", err,
+					"doc_id", docID)
+			}
 
 			w.WriteHeader(http.StatusOK)
 

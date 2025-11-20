@@ -597,7 +597,10 @@ func NewConfig(filename string, profile string) (*Config, error) {
 	}
 
 	// Check if file has any profile blocks
-	body := file.Body.(*hclsyntax.Body)
+	body, ok := file.Body.(*hclsyntax.Body)
+	if !ok {
+		return nil, fmt.Errorf("unexpected HCL body type")
+	}
 	hasProfiles := false
 	for _, block := range body.Blocks {
 		if block.Type == "profile" {
