@@ -245,17 +245,18 @@ func TestMailBackendIntegration(t *testing.T) {
 	// Find our test email
 	found := false
 	for _, item := range mailhogResp.Items {
-		if len(item.Raw.To) > 0 && item.Raw.To[0] == testEmail {
-			found = true
-
-			// Verify email content
-			assert.Contains(t, item.Content.Headers.Subject[0], "RFC-087")
-			assert.Contains(t, item.Content.Headers.Subject[0], "Alice")
-			assert.Contains(t, item.Content.Body, "RFC-087")
-			assert.Contains(t, item.Content.Body, "Alice Integrationtest")
-			assert.Contains(t, item.Content.Body, "https://hermes.example.com/document/test-doc-123")
-			break
+		if len(item.Raw.To) == 0 || item.Raw.To[0] != testEmail {
+			continue
 		}
+		found = true
+
+		// Verify email content
+		assert.Contains(t, item.Content.Headers.Subject[0], "RFC-087")
+		assert.Contains(t, item.Content.Headers.Subject[0], "Alice")
+		assert.Contains(t, item.Content.Body, "RFC-087")
+		assert.Contains(t, item.Content.Body, "Alice Integrationtest")
+		assert.Contains(t, item.Content.Body, "https://hermes.example.com/document/test-doc-123")
+		break
 	}
 
 	assert.True(t, found, "Expected to find email to %s in Mailhog", testEmail)
