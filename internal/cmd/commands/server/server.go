@@ -12,7 +12,12 @@ import (
 	"strings"
 	"time"
 
-	addin "github.com/hashicorp-forge/hermes/hermes-plugin"
+	"github.com/hashicorp/go-hclog"
+	_ "github.com/lib/pq" // PostgreSQL driver for migrations
+	httptrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+	"gorm.io/gorm"
+
 	"github.com/hashicorp-forge/hermes/internal/api"
 	apiv2 "github.com/hashicorp-forge/hermes/internal/api/v2"
 	"github.com/hashicorp-forge/hermes/internal/auth"
@@ -44,11 +49,6 @@ import (
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	localadapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
 	"github.com/hashicorp-forge/hermes/web"
-	"github.com/hashicorp/go-hclog"
-	_ "github.com/lib/pq" // PostgreSQL driver for migrations
-	httptrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
-	"gorm.io/gorm"
 )
 
 type Command struct {
@@ -705,10 +705,12 @@ func (c *Command) Run(args []string) int {
 
 			// Log migration status
 			if proj.IsInMigration() {
-				sourceProvider, _ := proj.GetSourceProvider()
-				targetProvider, _ := proj.GetTargetProvider()
-				c.UI.Info(fmt.Sprintf("    Migration: %s -> %s",
-					sourceProvider.Type, targetProvider.Type))
+				sourceProvider, srcErr := proj.GetSourceProvider()
+				targetProvider, tgtErr := proj.GetTargetProvider()
+				if srcErr == nil && tgtErr == nil {
+					c.UI.Info(fmt.Sprintf("    Migration: %s -> %s",
+						sourceProvider.Type, targetProvider.Type))
+				}
 			}
 		}
 	} else {
@@ -868,8 +870,9 @@ func (c *Command) Run(args []string) int {
 	corsHandler := middleware.CorsMiddlewareWithConfig(c.Log, mux, isDevelopment)
 
 	server := &http.Server{
-		Addr:    cfg.Server.Addr,
-		Handler: corsHandler,
+		Addr:              cfg.Server.Addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 30 * time.Second, // Prevent Slowloris attacks
 	}
 	go func() {
 		if cfg.Server.TLSEnabled {
@@ -1006,7 +1009,7 @@ func (c *Command) Run(args []string) int {
 func healthHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	})
 }
 
@@ -1153,7 +1156,7 @@ func generateIndexerToken(db *gorm.DB, tokenPath string, logger hclog.Logger) er
 	}
 
 	// Write token to file
-	if err := os.WriteFile(tokenPath, []byte(token), 0644); err != nil {
+	if err := os.WriteFile(tokenPath, []byte(token), 0o600); err != nil {
 		return fmt.Errorf("error writing token file: %w", err)
 	}
 

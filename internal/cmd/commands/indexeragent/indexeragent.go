@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 )
 
 type Command struct {
@@ -126,7 +127,11 @@ func (c *Command) Run(args []string) int {
 	// Register with central Hermes
 	c.UI.Info(fmt.Sprintf("Registering with central Hermes at: %s", centralURL))
 
-	hostname, _ := os.Hostname()
+	hostname, err := os.Hostname()
+	if err != nil {
+		c.UI.Warn(fmt.Sprintf("failed to get hostname: %v", err))
+		hostname = "unknown"
+	}
 	registerReq := map[string]interface{}{
 		"token":          registrationToken,
 		"indexer_type":   indexerType,
@@ -143,8 +148,16 @@ func (c *Command) Run(args []string) int {
 		return 1
 	}
 
-	indexerID := registerResp["indexer_id"].(string)
-	apiToken := registerResp["api_token"].(string)
+	indexerID, ok := registerResp["indexer_id"].(string)
+	if !ok {
+		c.UI.Error("invalid response: missing or invalid indexer_id")
+		return 1
+	}
+	apiToken, ok := registerResp["api_token"].(string)
+	if !ok {
+		c.UI.Error("invalid response: missing or invalid api_token")
+		return 1
+	}
 
 	c.UI.Info(fmt.Sprintf("✓ Registered as indexer: %s", indexerID))
 	c.UI.Info(fmt.Sprintf("✓ API token: %s...", apiToken[:30]))

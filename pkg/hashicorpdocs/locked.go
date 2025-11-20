@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp/go-hclog"
 	"google.golang.org/api/docs/v1"
 	"gorm.io/gorm"
+
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
 // GoogleDocsProvider is a minimal interface for Google Docs operations.

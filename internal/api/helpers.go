@@ -3,62 +3,17 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp-forge/hermes/internal/config"
-	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp-forge/hermes/pkg/search"
-	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-multierror"
 	"github.com/iancoleman/strcase"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/pkg/models"
 )
-
-// mapToSearchDocument converts a map[string]any to a search.Document via JSON round-trip.
-// This is used to convert Algolia-style document objects to the search provider interface.
-func mapToSearchDocument(m map[string]any) (*search.Document, error) {
-	data, err := json.Marshal(m)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal map: %w", err)
-	}
-
-	var doc search.Document
-	if err := json.Unmarshal(data, &doc); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to search.Document: %w", err)
-	}
-
-	return &doc, nil
-}
-
-// searchDocumentToMap converts a search.Document to a map[string]any via JSON round-trip.
-// This is used to convert search provider documents to Algolia-style objects for compatibility.
-func searchDocumentToMap(doc *search.Document) (map[string]any, error) {
-	data, err := json.Marshal(doc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal search document: %w", err)
-	}
-
-	var m map[string]any
-	if err := json.Unmarshal(data, &m); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to map: %w", err)
-	}
-
-	return m, nil
-}
-
-// contains returns true if a string is present in a slice of strings.
-func contains(values []string, s string) bool {
-	for _, v := range values {
-		if s == v {
-			return true
-		}
-	}
-	return false
-}
 
 // compareSlices compares the first slice with the second
 // and returns the elements that exist in the second slice
@@ -81,23 +36,6 @@ func compareSlices(a, b []string) []string {
 	}
 
 	return diffElems
-}
-
-// decodeRequest decodes the JSON contents of a HTTP request body to a request
-// struct. An error is returned if the request contains fields that do not exist
-// in the request struct.
-func decodeRequest(r *http.Request, reqStruct interface{}) error {
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	for {
-		if err := dec.Decode(&reqStruct); err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // parseResourceIDFromURL parses a URL path with the format
@@ -131,22 +69,6 @@ func parseResourceIDFromURL(url, apiPath string) (string, error) {
 
 	// Return resource ID.
 	return resultPath[0], nil
-}
-
-// respondError responds to an HTTP request and logs an error.
-func respondError(
-	w http.ResponseWriter, r *http.Request, l hclog.Logger,
-	httpCode int, userErrMsg, logErrMsg string, err error,
-	extraArgs ...interface{},
-) {
-	l.Error(logErrMsg,
-		append([]interface{}{
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-		}, extraArgs...)...,
-	)
-	http.Error(w, userErrMsg, httpCode)
 }
 
 // fakeT fulfills the assert.TestingT interface so we can use
@@ -360,81 +282,8 @@ func compareAlgoliaAndDatabaseDocument(
 	}
 
 	// Compare custom fields.
-	foundDocType := false
-	for _, dt := range docTypes {
-		if dt.Name == algoDocType {
-			foundDocType = true
-			for _, cf := range dt.CustomFields {
-				algoCFName := strcase.ToLowerCamel(cf.Name)
-
-				switch cf.Type {
-				case "string":
-					algoCFVal, err := getStringValue(algoDoc, algoCFName)
-					if err != nil {
-						result = multierror.Append(
-							result, fmt.Errorf(
-								"error getting custom field (%s) value: %w", algoCFName, err))
-					} else {
-						var dbCFVal string
-						for _, c := range dbDoc.CustomFields {
-							if c.DocumentTypeCustomField.Name == cf.Name {
-								dbCFVal = c.Value
-								break
-							}
-						}
-						if algoCFVal != dbCFVal {
-							result = multierror.Append(result,
-								fmt.Errorf(
-									"custom field %s not equal, algolia=%v, db=%v",
-									algoCFName, algoCFVal, dbCFVal),
-							)
-						}
-					}
-				case "people":
-					algoCFVal, err := getStringSliceValue(algoDoc, algoCFName)
-					if err != nil {
-						result = multierror.Append(
-							result, fmt.Errorf(
-								"error getting custom field (%s) value: %w", algoCFName, err))
-					} else {
-						var dbCFVal []string
-						for _, c := range dbDoc.CustomFields {
-							if c.DocumentTypeCustomField.Name == cf.Name {
-								// Unmarshal person custom field value to string slice.
-								if err := json.Unmarshal(
-									[]byte(c.Value), &dbCFVal,
-								); err != nil {
-									result = multierror.Append(result,
-										fmt.Errorf(
-											"error unmarshaling custom field %s to string slice",
-											algoCFName),
-									)
-								}
-
-								break
-							}
-						}
-						if !assert.ElementsMatch(fakeT{}, algoCFVal, dbCFVal) {
-							result = multierror.Append(result,
-								fmt.Errorf(
-									"custom field %s not equal, algolia=%v, db=%v",
-									algoCFName, algoCFVal, dbCFVal),
-							)
-						}
-					}
-				default:
-					result = multierror.Append(result,
-						fmt.Errorf(
-							"unknown type for custom field key %q: %s", dt.Name, cf.Type))
-				}
-			}
-			break
-		}
-	}
-	if !foundDocType {
-		result = multierror.Append(result,
-			fmt.Errorf(
-				"doc type %q not found", algoDocType))
+	if err := compareCustomFields(docTypes, algoDoc, algoDocType, dbDoc, "algolia"); err != nil {
+		result = multierror.Append(result, err)
 	}
 
 	// Compare fileRevisions.
@@ -602,7 +451,11 @@ func getMapStringStringValue(in map[string]any, key string) (
 
 	if v, ok := in[key]; ok {
 		if reflect.TypeOf(v).Kind() == reflect.Map {
-			for vk, vv := range v.(map[string]any) {
+			mapVal, ok := v.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("invalid type: cannot convert to map[string]any")
+			}
+			for vk, vv := range mapVal {
 				if vv, ok := vv.(string); ok {
 					result[vk] = vv
 				} else {
@@ -638,7 +491,11 @@ func getStringSliceValue(in map[string]any, key string) ([]string, error) {
 
 	if v, ok := in[key]; ok && v != nil {
 		if reflect.TypeOf(v).Kind() == reflect.Slice {
-			for _, vv := range v.([]any) {
+			sliceVal, ok := v.([]any)
+			if !ok {
+				return nil, fmt.Errorf("invalid type: cannot convert to []any")
+			}
+			for _, vv := range sliceVal {
 				if vv, ok := vv.(string); ok {
 					result = append(result, vv)
 				} else {
@@ -652,4 +509,95 @@ func getStringSliceValue(in map[string]any, key string) ([]string, error) {
 	}
 
 	return result, nil
+}
+
+// compareCustomFields compares custom fields between a source document (search/algolia) and database document.
+// sourcePrefix is used for error messages (e.g., "search" or "algolia").
+func compareCustomFields(
+	docTypes []*config.DocumentType,
+	sourceDoc map[string]any,
+	sourceDocType string,
+	dbDoc models.Document,
+	sourcePrefix string,
+) error {
+	var result error
+	foundDocType := false
+
+	for _, dt := range docTypes {
+		if dt.Name == sourceDocType {
+			foundDocType = true
+			for _, cf := range dt.CustomFields {
+				sourceCFName := strcase.ToLowerCamel(cf.Name)
+
+				switch cf.Type {
+				case "string":
+					sourceCFVal, err := getStringValue(sourceDoc, sourceCFName)
+					if err != nil {
+						result = multierror.Append(
+							result, fmt.Errorf(
+								"error getting custom field (%s) value: %w", sourceCFName, err))
+					} else {
+						var dbCFVal string
+						for _, c := range dbDoc.CustomFields {
+							if c.DocumentTypeCustomField.Name == cf.Name {
+								dbCFVal = c.Value
+								break
+							}
+						}
+						if sourceCFVal != dbCFVal {
+							result = multierror.Append(result,
+								fmt.Errorf(
+									"custom field %s not equal, %s=%v, db=%v",
+									sourceCFName, sourcePrefix, sourceCFVal, dbCFVal),
+							)
+						}
+					}
+				case "people":
+					sourceCFVal, err := getStringSliceValue(sourceDoc, sourceCFName)
+					if err != nil {
+						result = multierror.Append(
+							result, fmt.Errorf(
+								"error getting custom field (%s) value: %w", sourceCFName, err))
+					} else {
+						var dbCFVal []string
+						for _, c := range dbDoc.CustomFields {
+							if c.DocumentTypeCustomField.Name == cf.Name {
+								// Unmarshal person custom field value to string slice.
+								if err := json.Unmarshal(
+									[]byte(c.Value), &dbCFVal,
+								); err != nil {
+									result = multierror.Append(result,
+										fmt.Errorf(
+											"error unmarshaling custom field %s to string slice",
+											sourceCFName),
+									)
+								}
+								break
+							}
+						}
+						if !assert.ElementsMatch(fakeT{}, sourceCFVal, dbCFVal) {
+							result = multierror.Append(result,
+								fmt.Errorf(
+									"custom field %s not equal, %s=%v, db=%v",
+									sourceCFName, sourcePrefix, sourceCFVal, dbCFVal),
+							)
+						}
+					}
+				default:
+					result = multierror.Append(result,
+						fmt.Errorf(
+							"unknown type for custom field key %q: %s", dt.Name, cf.Type))
+				}
+			}
+			break
+		}
+	}
+
+	if !foundDocType {
+		result = multierror.Append(result,
+			fmt.Errorf(
+				"doc type %q not found", sourceDocType))
+	}
+
+	return result
 }
