@@ -239,11 +239,3 @@ func getEnv(key, defaultValue string) string {
 	}
 	return defaultValue
 }
-
-// skipIfOllamaUnavailable skips the test if Ollama is not available
-func skipIfOllamaUnavailable(t *testing.T) {
-	t.Helper()
-	if !ollamaAvailable {
-		t.Skipf("Ollama not available at %s (start with 'ollama serve')", ollamaBaseURL)
-	}
-}
