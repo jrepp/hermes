@@ -16,18 +16,8 @@ import (
 // set of user emails that should have
 // access to the flag
 type FeatureFlagsObj struct {
-	// ObjectID is "featureFlags"
-	ObjectID string `json:"objectID,omitempty"`
-	// FeatureFlagUserEmails is the map of each feature flag
-	// with a set of user emails that should have
-	// access to the flag. The map looks as follows:
-	// {
-	//   "createWorkflow": [
-	//      "username1@example.com",
-	//      "username2@example.com"
-	//   ]
-	// }
 	FeatureFlagUserEmails map[string][]string `json:"featureFlagUserEmails"`
+	ObjectID              string              `json:"objectID,omitempty"`
 }
 
 // SetAndToggle sets and toggle feature flags.

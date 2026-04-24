@@ -128,17 +128,17 @@ func testV1Products(t *testing.T) {
 		}
 	})
 
-	t.Run("POST method not allowed", func(t *testing.T) {
+	t.Run("POST method not allowed", func(_ *testing.T) {
 		resp := suite.Client.Post("/api/v1/products", nil)
 		resp.AssertStatus(http.StatusMethodNotAllowed)
 	})
 
-	t.Run("PUT method not allowed", func(t *testing.T) {
+	t.Run("PUT method not allowed", func(_ *testing.T) {
 		resp := suite.Client.Put("/api/v1/products", nil)
 		resp.AssertStatus(http.StatusMethodNotAllowed)
 	})
 
-	t.Run("DELETE method not allowed", func(t *testing.T) {
+	t.Run("DELETE method not allowed", func(_ *testing.T) {
 		resp := suite.Client.Delete("/api/v1/products")
 		resp.AssertStatus(http.StatusMethodNotAllowed)
 	})

@@ -4,14 +4,15 @@ import (
 	"testing"
 )
 
+//nolint:gocognit // Table assertions are explicit and test-only.
 func TestProfileBasedConfig(t *testing.T) {
 	tests := []struct {
+		checkFunc   func(*Config) bool
 		name        string
 		filename    string
 		profile     string
 		wantProfile string
 		wantErr     bool
-		checkFunc   func(*Config) bool
 	}{
 		{
 			name:        "Testing profile",

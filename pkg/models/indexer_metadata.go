@@ -11,10 +11,8 @@ import (
 
 // Indexer is a model for indexer metadata.
 type IndexerMetadata struct {
-	gorm.Model
-
-	// LastFullIndexAt is the time that the indexer last completed a full index.
 	LastFullIndexAt time.Time
+	gorm.Model
 }
 
 // Get gets the indexer metadata and assigns it to the receiver.

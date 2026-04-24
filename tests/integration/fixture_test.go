@@ -69,7 +69,7 @@ func Test_00_Canary(t *testing.T) {
 		assert.True(t, state.Running, "Meilisearch container should be running")
 
 		// Try to connect to Meilisearch
-		req, err := http.NewRequestWithContext(ctx, "GET", fixture.MeilisearchHost+"/health", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", fixture.MeilisearchHost+"/health", http.NoBody)
 		require.NoError(t, err, "Should be able to create request")
 
 		resp, err := http.DefaultClient.Do(req)

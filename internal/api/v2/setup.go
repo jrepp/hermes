@@ -16,9 +16,9 @@ import (
 
 // SetupStatusResponse indicates whether Hermes is configured
 type SetupStatusResponse struct {
-	IsConfigured bool   `json:"is_configured"`
 	ConfigPath   string `json:"config_path,omitempty"`
 	WorkingDir   string `json:"working_dir"`
+	IsConfigured bool   `json:"is_configured"`
 }
 
 // SetupConfigRequest contains the setup wizard configuration
@@ -37,17 +37,17 @@ type OllamaValidationRequest struct {
 
 // OllamaValidationResponse indicates if Ollama is accessible
 type OllamaValidationResponse struct {
-	Valid   bool   `json:"valid"`
 	Message string `json:"message"`
 	Version string `json:"version,omitempty"`
+	Valid   bool   `json:"valid"`
 }
 
 // SetupConfigResponse is returned after successful configuration
 type SetupConfigResponse struct {
-	Success      bool   `json:"success"`
 	ConfigPath   string `json:"config_path"`
 	WorkspaceDir string `json:"workspace_dir"`
 	Message      string `json:"message"`
+	Success      bool   `json:"success"`
 }
 
 // SetupStatusHandler checks if Hermes is configured
@@ -189,7 +189,7 @@ func ensureWorkspaceExists(workspacePath string) error {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return fmt.Errorf("error creating directory %s: %w", dir, err)
 		}
 	}
@@ -233,17 +233,14 @@ func generateConfigFile(configPath, workspacePath, upstreamURL, ollamaURL, ollam
 		}
 	}
 
-	// If upstream URL is provided, add it to the config
-	// (This would be for syncing with a central Hermes server - future feature)
-	if upstreamURL != "" {
-		// For now, just add it as a comment in the config
-		// Future: implement sync functionality
-	}
+	_ = upstreamURL
 
 	return config.WriteConfig(cfg, configPath)
 }
 
 // OllamaValidateHandler validates that Ollama is accessible and has the requested model
+//
+//nolint:gocognit,gocyclo // Validation handler is intentionally linear and explicit for user-facing errors.
 func OllamaValidateHandler(log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {

@@ -43,16 +43,16 @@ type SummarizeResponse struct {
 // DocumentSummary represents AI-generated analysis of a document.
 // This is stored independently and can be referenced by DocumentContext.
 type DocumentSummary struct {
-	DocumentID       string    // Reference to source document
-	ExecutiveSummary string    // Brief overview (2-3 sentences)
-	KeyPoints        []string  // Main takeaways
-	Topics           []string  // Extracted topics
-	Tags             []string  // Generated tags for categorization
-	SuggestedStatus  string    // e.g., "In Review", "Approved"
-	Confidence       float64   // AI confidence in analysis (0.0-1.0)
-	GeneratedAt      time.Time // When this was generated
-	Model            string    // e.g., "claude-3-7-sonnet"
-	TokensUsed       int       // Tokens consumed for generation
+	GeneratedAt      time.Time
+	DocumentID       string
+	ExecutiveSummary string
+	SuggestedStatus  string
+	Model            string
+	KeyPoints        []string
+	Topics           []string
+	Tags             []string
+	Confidence       float64
+	TokensUsed       int
 }
 
 // EmbeddingRequest contains text to embed.
@@ -73,20 +73,20 @@ type EmbeddingResponse struct {
 // DocumentEmbeddings represents vector embeddings for a document.
 // This is stored independently and can be referenced by DocumentContext.
 type DocumentEmbeddings struct {
-	DocumentID       string           // Reference to source document
-	ContentEmbedding []float32        // Full document embedding
-	Chunks           []ChunkEmbedding // Individual chunk embeddings
-	Model            string           // e.g., "amazon.titan-embed-text-v2"
-	Dimensions       int              // Embedding dimensions (e.g., 1024)
-	GeneratedAt      time.Time        // When embeddings were generated
-	TokensUsed       int              // Tokens consumed for generation
+	GeneratedAt      time.Time
+	DocumentID       string
+	Model            string
+	ContentEmbedding []float32
+	Chunks           []ChunkEmbedding
+	Dimensions       int
+	TokensUsed       int
 }
 
 // ChunkEmbedding represents an embedding for a text chunk.
 type ChunkEmbedding struct {
-	ChunkIndex int       // Sequential chunk number
-	StartPos   int       // Character position in original text
-	EndPos     int       // End character position
-	Text       string    // Actual text content of chunk
-	Embedding  []float32 // Vector embedding for this chunk
+	Text       string
+	Embedding  []float32
+	ChunkIndex int
+	StartPos   int
+	EndPos     int
 }

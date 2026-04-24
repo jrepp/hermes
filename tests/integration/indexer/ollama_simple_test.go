@@ -69,7 +69,7 @@ func TestOllamaProvider_Simple(t *testing.T) {
 		t.Logf("✓ Summary generated successfully")
 		t.Logf("  Model: %s", resp.Model)
 		t.Logf("  Tokens: %d", resp.TokensUsed)
-		t.Logf("  Executive Summary: %s", summary.ExecutiveSummary[:min(100, len(summary.ExecutiveSummary))])
+		t.Logf("  Executive Summary: %s", summary.ExecutiveSummary[:minInt(100, len(summary.ExecutiveSummary))])
 		t.Logf("  Key Points (%d): %v", len(summary.KeyPoints), summary.KeyPoints)
 		t.Logf("  Topics (%d): %v", len(summary.Topics), summary.Topics)
 		t.Logf("  Tags (%d): %v", len(summary.Tags), summary.Tags)
@@ -162,7 +162,7 @@ Phase 4: Vector search integration
 `
 
 // Helper functions
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

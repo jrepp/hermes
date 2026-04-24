@@ -3,6 +3,7 @@ package s3
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -10,6 +11,18 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
+
+// safeIntToInt32 converts int to int32, checking for overflow.
+// Returns math.MaxInt32 if the value would overflow.
+func safeIntToInt32(i int) int32 {
+	if i > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if i < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(i)
+}
 
 // RevisionTrackingProvider interface implementation
 
@@ -25,7 +38,7 @@ func (a *Adapter) GetRevisionHistory(ctx context.Context, providerID string, lim
 	input := &s3.ListObjectVersionsInput{
 		Bucket:  aws.String(a.cfg.Bucket),
 		Prefix:  aws.String(objectKey),
-		MaxKeys: aws.Int32(int32(limit)),
+		MaxKeys: aws.Int32(safeIntToInt32(limit)),
 	}
 
 	result, err := a.client.ListObjectVersions(ctx, input)

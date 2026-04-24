@@ -12,9 +12,9 @@ import (
 
 // NtfyBackend sends push notifications via ntfy.sh
 type NtfyBackend struct {
+	client    *http.Client
 	serverURL string
 	topic     string
-	client    *http.Client
 }
 
 // NtfyBackendConfig holds configuration for the ntfy backend

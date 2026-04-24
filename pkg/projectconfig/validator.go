@@ -157,7 +157,7 @@ func (v *Validator) validateProvider(provider *Provider, project *Project, confi
 }
 
 // validateLocalProvider validates a local provider
-func (v *Validator) validateLocalProvider(provider *Provider, prefix string, config *Config) {
+func (v *Validator) validateLocalProvider(provider *Provider, prefix string, _ *Config) {
 	if provider.WorkspacePath == "" {
 		v.addError(prefix+".workspace_path", "workspace_path is required for local provider")
 	}

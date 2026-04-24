@@ -44,7 +44,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		handler := EdgeSyncAuthMiddleware(srv, EdgeSyncHandler(srv))
 
 		// Create request without Authorization header
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -58,7 +58,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		handler := EdgeSyncAuthMiddleware(srv, EdgeSyncHandler(srv))
 
 		// Test with invalid format (not "Bearer ")
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "InvalidFormat token123")
 		w := httptest.NewRecorder()
 
@@ -72,7 +72,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		srv := createTestServer(t, db)
 		handler := EdgeSyncAuthMiddleware(srv, EdgeSyncHandler(srv))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer ")
 		w := httptest.NewRecorder()
 
@@ -88,7 +88,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 
 		// Use a token that doesn't exist in database
 		fakeToken := "hermes-edge-token-" + uuid.New().String() + "-abcd1234"
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+fakeToken)
 		w := httptest.NewRecorder()
 
@@ -117,7 +117,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		require.NoError(t, db.Create(&tokenModel).Error)
 		defer db.Delete(&tokenModel)
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -148,7 +148,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		require.NoError(t, db.Create(&tokenModel).Error)
 		defer db.Delete(&tokenModel)
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -177,7 +177,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		require.NoError(t, db.Create(&tokenModel).Error)
 		defer db.Delete(&tokenModel)
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -207,7 +207,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		require.NoError(t, db.Create(&tokenModel).Error)
 		defer db.Delete(&tokenModel)
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -239,7 +239,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		require.NoError(t, db.Create(&tokenModel).Error)
 		defer db.Delete(&tokenModel)
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -270,7 +270,7 @@ func TestEdgeSyncAuthenticationFlow(t *testing.T) {
 		require.NoError(t, db.Create(&tokenModel).Error)
 		defer db.Delete(&tokenModel)
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -312,7 +312,7 @@ func TestEdgeSyncEndpointsWithAuth(t *testing.T) {
 		srv := createTestServer(t, db)
 		handler := EdgeSyncAuthMiddleware(srv, EdgeSyncHandler(srv))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge&limit=10", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/documents/sync-status?edge_instance=test-edge&limit=10", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -371,7 +371,7 @@ func TestEdgeSyncEndpointsWithAuth(t *testing.T) {
 		srv := createTestServer(t, db)
 		handler := EdgeSyncAuthMiddleware(srv, EdgeSyncHandler(srv))
 
-		req := httptest.NewRequest("GET", "/api/v2/edge/stats?edge_instance=test-edge", nil)
+		req := httptest.NewRequest("GET", "/api/v2/edge/stats?edge_instance=test-edge", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 
@@ -399,7 +399,7 @@ func hashToken(token string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func createTestServer(t *testing.T, db *gorm.DB) server.Server {
+func createTestServer(_ *testing.T, db *gorm.DB) server.Server {
 	// Create a test logger
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "test",

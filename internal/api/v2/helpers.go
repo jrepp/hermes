@@ -253,6 +253,8 @@ func (t fakeT) Errorf(string, ...interface{}) {}
 // CompareAlgoliaAndDatabaseDocument compares data for a document stored in
 // Algolia and the database to determine any inconsistencies, which are returned
 // back as a (multierror) error.
+//
+//nolint:gocognit,gocyclo // Exhaustive field-by-field comparison is intentionally explicit for diagnostics.
 func CompareAlgoliaAndDatabaseDocument(
 	algoDoc map[string]any,
 	dbDoc models.Document,
@@ -281,14 +283,12 @@ func CompareAlgoliaAndDatabaseDocument(
 	if err != nil {
 		result = multierror.Append(
 			result, fmt.Errorf("error getting title value: %w", err))
-	} else {
-		if algoTitle != dbDoc.Title {
-			result = multierror.Append(result,
-				fmt.Errorf(
-					"title not equal, algolia=%v, db=%v",
-					algoTitle, dbDoc.Title),
-			)
-		}
+	} else if algoTitle != dbDoc.Title {
+		result = multierror.Append(result,
+			fmt.Errorf(
+				"title not equal, algolia=%v, db=%v",
+				algoTitle, dbDoc.Title),
+		)
 	}
 
 	// Compare docType.
@@ -315,7 +315,7 @@ func CompareAlgoliaAndDatabaseDocument(
 	} else {
 		// Replace "-???" (how draft doc numbers are defined in Algolia) with a
 		// zero.
-		re := regexp.MustCompile(`-\?\?\?$`)
+		re := regexp.MustCompile(`-\?{3}$`)
 		algoDocNumber = re.ReplaceAllString(algoDocNumber, "-000")
 
 		var dbDocNumber string
@@ -366,9 +366,9 @@ func CompareAlgoliaAndDatabaseDocument(
 			result, fmt.Errorf("error getting approvedBy value: %w", err))
 	}
 	dbApprovedBy := []string{}
-	for _, r := range dbDocReviews {
-		if r.Status == models.ApprovedDocumentReviewStatus {
-			dbApprovedBy = append(dbApprovedBy, r.User.EmailAddress)
+	for i := range dbDocReviews {
+		if dbDocReviews[i].Status == models.ApprovedDocumentReviewStatus {
+			dbApprovedBy = append(dbApprovedBy, dbDocReviews[i].User.EmailAddress)
 		}
 	}
 	if !assert.ElementsMatch(fakeT{}, algoApprovedBy, dbApprovedBy) {
@@ -405,9 +405,9 @@ func CompareAlgoliaAndDatabaseDocument(
 			result, fmt.Errorf("error getting changesRequestedBy value: %w", err))
 	}
 	dbChangesRequestedBy := []string{}
-	for _, r := range dbDocReviews {
-		if r.Status == models.ChangesRequestedDocumentReviewStatus {
-			dbChangesRequestedBy = append(dbChangesRequestedBy, r.User.EmailAddress)
+	for i := range dbDocReviews {
+		if dbDocReviews[i].Status == models.ChangesRequestedDocumentReviewStatus {
+			dbChangesRequestedBy = append(dbChangesRequestedBy, dbDocReviews[i].User.EmailAddress)
 		}
 	}
 	if !assert.ElementsMatch(
@@ -539,8 +539,8 @@ func CompareAlgoliaAndDatabaseDocument(
 			result, fmt.Errorf("error getting fileRevisions value: %w", err))
 	} else {
 		dbFileRevisions := make(map[string]string)
-		for _, fr := range dbDoc.FileRevisions {
-			dbFileRevisions[fr.FileRevisionID] = fr.Name
+		for i := range dbDoc.FileRevisions {
+			dbFileRevisions[dbDoc.FileRevisions[i].GoogleDriveFileRevisionID] = dbDoc.FileRevisions[i].Name
 		}
 		if !reflect.DeepEqual(algoFileRevisions, dbFileRevisions) {
 			result = multierror.Append(result,
@@ -616,9 +616,9 @@ func CompareAlgoliaAndDatabaseDocument(
 		var dbStatus string
 		switch dbDoc.Status {
 		case models.WIPDocumentStatus:
-			dbStatus = "WIP"
+			dbStatus = docStatusWIP
 		case models.InReviewDocumentStatus:
-			dbStatus = "In-Review"
+			dbStatus = docStatusInReview
 		case models.ApprovedDocumentStatus:
 			dbStatus = "Approved"
 		case models.ObsoleteDocumentStatus:
@@ -627,7 +627,7 @@ func CompareAlgoliaAndDatabaseDocument(
 
 		// Standardize on "In-Review" Algolia status for the sake of comparison.
 		if algoStatus == "In Review" {
-			algoStatus = "In-Review"
+			algoStatus = docStatusInReview
 		}
 
 		if algoStatus != dbStatus {
@@ -676,10 +676,10 @@ func getBooleanValue(in map[string]any, key string) (bool, error) {
 	if v, ok := in[key]; ok {
 		if vv, ok := v.(bool); ok {
 			return vv, nil
-		} else {
-			return false, fmt.Errorf(
-				"invalid type: value is not a boolean, type: %T", v)
 		}
+
+		return false, fmt.Errorf(
+			"invalid type: value is not a boolean, type: %T", v)
 	}
 
 	return result, nil
@@ -693,10 +693,10 @@ func getInt64Value(in map[string]any, key string) (int64, error) {
 		// to int64.
 		if vv, ok := v.(float64); ok {
 			return int64(vv), nil
-		} else {
-			return 0, fmt.Errorf(
-				"invalid type: value is not an float64 (expected), type: %T", v)
 		}
+
+		return 0, fmt.Errorf(
+			"invalid type: value is not an float64 (expected), type: %T", v)
 	}
 
 	return result, nil
@@ -722,9 +722,9 @@ func getMapStringStringValue(in map[string]any, key string) (
 				}
 			}
 			return result, nil
-		} else {
-			return nil, fmt.Errorf("invalid type: value is not a map")
 		}
+
+		return nil, fmt.Errorf("invalid type: value is not a map")
 	}
 
 	return result, nil
@@ -736,9 +736,9 @@ func getStringValue(in map[string]any, key string) (string, error) {
 	if v, ok := in[key]; ok {
 		if vv, ok := v.(string); ok {
 			return vv, nil
-		} else {
-			return "", fmt.Errorf("invalid type: value is not a string, type: %T", v)
 		}
+
+		return "", fmt.Errorf("invalid type: value is not a string, type: %T", v)
 	}
 
 	return result, nil
@@ -765,9 +765,9 @@ func getStringSliceValue(in map[string]any, key string) ([]string, error) {
 				}
 			}
 			return result, nil
-		} else {
-			return nil, fmt.Errorf("invalid type: value is not a slice")
 		}
+
+		return nil, fmt.Errorf("invalid type: value is not a slice")
 	}
 
 	return result, nil
@@ -790,6 +790,7 @@ func getGoogleDocsProvider(provider workspace.WorkspaceProvider) hashicorpdocs.G
 // getCompatProvider converts WorkspaceProvider to the old Provider interface.
 // This is a temporary helper during migration to support legacy code expecting workspace.Provider.
 func getCompatProvider(provider workspace.WorkspaceProvider) workspace.Provider {
+	//nolint:staticcheck // Temporary bridge while callers still require workspace.Provider.
 	if googleAdapter, ok := provider.(*gw.Adapter); ok {
 		// Return a compat adapter that implements the full Provider interface
 		return gw.NewCompatAdapter(googleAdapter.GetService())

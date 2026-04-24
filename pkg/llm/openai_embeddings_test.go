@@ -121,7 +121,7 @@ func TestOpenAIClient_GenerateEmbeddings(t *testing.T) {
 	})
 
 	t.Run("API error handling", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusTooManyRequests)
 			json.NewEncoder(w).Encode(OpenAIErrorResponse{
@@ -153,7 +153,7 @@ func TestOpenAIClient_GenerateEmbeddings(t *testing.T) {
 	})
 
 	t.Run("empty response handling", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			resp := OpenAIEmbeddingsResponse{
 				Object: "list",
 				Data:   []OpenAIEmbeddingData{},
@@ -179,7 +179,7 @@ func TestOpenAIClient_GenerateEmbeddings(t *testing.T) {
 	})
 
 	t.Run("context timeout", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 			time.Sleep(2 * time.Second) // Delay longer than client timeout
 		}))
 		defer server.Close()
@@ -263,7 +263,7 @@ func TestOpenAIClient_GenerateEmbeddingsBatch(t *testing.T) {
 	})
 
 	t.Run("batch with single item", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			resp := OpenAIEmbeddingsResponse{
 				Object: "list",
 				Data: []OpenAIEmbeddingData{
@@ -301,7 +301,7 @@ func TestOpenAIClient_GenerateEmbeddingsBatch(t *testing.T) {
 	})
 
 	t.Run("batch error handling", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(OpenAIErrorResponse{
@@ -332,7 +332,7 @@ func TestOpenAIClient_GenerateEmbeddingsBatch(t *testing.T) {
 	})
 
 	t.Run("batch ordering preserved", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			// Return embeddings in non-sequential order to test sorting
 			resp := OpenAIEmbeddingsResponse{
 				Object: "list",

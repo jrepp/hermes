@@ -47,7 +47,7 @@ func (m *MockStep) Name() string {
 	return m.name
 }
 
-func (m *MockStep) Execute(ctx context.Context, revision *models.DocumentRevision, config map[string]interface{}) error {
+func (m *MockStep) Execute(_ context.Context, _ *models.DocumentRevision, _ map[string]interface{}) error {
 	m.executed = true
 	if m.shouldFail {
 		return assert.AnError
@@ -55,7 +55,7 @@ func (m *MockStep) Execute(ctx context.Context, revision *models.DocumentRevisio
 	return nil
 }
 
-func (m *MockStep) IsRetryable(err error) bool {
+func (m *MockStep) IsRetryable(_ error) bool {
 	return m.isRetryable
 }
 

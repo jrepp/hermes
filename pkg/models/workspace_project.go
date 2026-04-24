@@ -90,7 +90,7 @@ const (
 )
 
 // BeforeCreate hook to generate project UUID and calculate config hash
-func (wp *WorkspaceProject) BeforeCreate(tx *gorm.DB) error {
+func (wp *WorkspaceProject) BeforeCreate(_ *gorm.DB) error {
 	// Generate ProjectUUID if not set
 	if wp.ProjectUUID == nil {
 		newUUID := uuid.New()
@@ -280,9 +280,9 @@ type ProvidersData struct {
 
 // ProviderData represents a single provider configuration.
 type ProviderData struct {
+	Config          map[string]interface{} `json:"config"`
 	Type            string                 `json:"type"`
 	MigrationStatus string                 `json:"migration_status,omitempty"`
-	Config          map[string]interface{} `json:"config"`
 }
 
 // GetProviders deserializes the ProvidersJSON field.
@@ -312,8 +312,8 @@ func (wp *WorkspaceProject) SetProviders(data *ProvidersData) error {
 type MetadataData struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	Owner     string     `json:"owner,omitempty"`
-	Tags      []string   `json:"tags,omitempty"`
 	Notes     string     `json:"notes,omitempty"`
+	Tags      []string   `json:"tags,omitempty"`
 }
 
 // GetMetadata deserializes the MetadataJSON field.

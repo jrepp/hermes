@@ -177,7 +177,8 @@ func LoadFromDatabase(db *gorm.DB) (*Config, error) {
 		Projects: make(map[string]*Project),
 	}
 
-	for _, wp := range projects {
+	for i := range projects {
+		wp := &projects[i]
 		project := &Project{
 			Name:         wp.Name,
 			Title:        wp.Title,

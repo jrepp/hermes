@@ -77,12 +77,11 @@ func TestParseSearchIndexFromURLPath(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			assert := assert.New(t)
-			indexName, err := parseSearchIndexFromURLPath(c.path)
+			indexName := parseSearchIndexFromURLPath(c.path)
 
 			if c.shouldErr {
-				assert.Error(err)
+				assert.Empty(indexName)
 			} else {
-				assert.NoError(err)
 				assert.Equal(c.wantIndex, indexName)
 			}
 		})

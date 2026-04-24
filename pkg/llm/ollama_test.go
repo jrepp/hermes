@@ -82,7 +82,7 @@ func TestOllamaClient_GenerateSummary(t *testing.T) {
 
 func TestOllamaClient_GenerateSummary_APIError(t *testing.T) {
 	// Create a mock HTTP server that returns an error
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(OllamaErrorResponse{
@@ -113,7 +113,7 @@ func TestOllamaClient_GenerateSummary_APIError(t *testing.T) {
 
 func TestOllamaClient_GenerateSummary_Timeout(t *testing.T) {
 	// Create a mock HTTP server that delays response
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(2 * time.Second)
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -141,7 +141,7 @@ func TestOllamaClient_GenerateSummary_Timeout(t *testing.T) {
 
 func TestOllamaClient_GenerateSummary_EmptyResponse(t *testing.T) {
 	// Create a mock HTTP server that returns empty content
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		resp := OllamaChatResponse{
 			Model:     "llama2",
 			CreatedAt: time.Now().Format(time.RFC3339),
@@ -183,10 +183,10 @@ func TestOllamaClient_ParseSummaryResponse(t *testing.T) {
 	}
 
 	tests := []struct {
+		validate func(t *testing.T, summary *steps.Summary)
 		name     string
 		content  string
 		wantErr  bool
-		validate func(t *testing.T, summary *steps.Summary)
 	}{
 		{
 			name: "valid response",

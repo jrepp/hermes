@@ -49,86 +49,25 @@ func TestMigrationE2E(t *testing.T) {
 	}
 
 	// Create S3 destination provider
-	s3Config := &s3adapter.Config{
-		Endpoint:          "http://localhost:9000",
-		Region:            "us-east-1",
-		Bucket:            "hermes-documents",
-		Prefix:            "migration-test",
-		AccessKey:         "minioadmin",
-		SecretKey:         "minioadmin",
-		VersioningEnabled: true,
-		MetadataStore:     "manifest",
-		UseSSL:            false,
-	}
+	s3Config := testS3Config()
 	destProvider, err := s3adapter.NewAdapter(s3Config, logger.Named("s3-dest"))
 	require.NoError(t, err, "Failed to create S3 adapter")
 
 	// Setup provider registry in database
 	t.Run("SetupProviders", func(t *testing.T) {
-		// Clean up any existing test providers
-		_, _ = db.Exec("DELETE FROM migration_outbox WHERE migration_job_id IN (SELECT id FROM migration_jobs WHERE job_name LIKE 'test-%')")
-		_, _ = db.Exec("DELETE FROM migration_items WHERE migration_job_id IN (SELECT id FROM migration_jobs WHERE job_name LIKE 'test-%')")
-		_, _ = db.Exec("DELETE FROM migration_jobs WHERE job_name LIKE 'test-%'")
-		_, _ = db.Exec("DELETE FROM provider_storage WHERE provider_name IN ('test-mock-source', 'test-s3-dest')")
-
-		// Insert source provider
-		_, err = db.Exec(`
-			INSERT INTO provider_storage (provider_name, provider_type, config, status, is_primary, is_writable)
-			VALUES ($1, $2, $3, $4, $5, $6)
-		`, "test-mock-source", "mock", "{}", "active", true, true)
-		require.NoError(t, err, "Failed to insert source provider")
-
-		// Insert dest provider
-		_, err = db.Exec(`
-			INSERT INTO provider_storage (provider_name, provider_type, config, status, is_primary, is_writable)
-			VALUES ($1, $2, $3, $4, $5, $6)
-		`, "test-s3-dest", "s3", "{}", "active", false, true)
-		require.NoError(t, err, "Failed to insert dest provider")
+		setupTestProviders(t, db)
 	})
 
 	// Create test documents in source
 	var testDocs []struct {
-		uuid       docid.UUID
 		providerID string
 		name       string
 		content    string
+		uuid       docid.UUID
 	}
 
 	t.Run("CreateSourceDocuments", func(t *testing.T) {
-		for i := 1; i <= 5; i++ {
-			uuid := docid.NewUUID()
-			providerID := uuid.String() // Mock uses UUID as provider ID
-			name := fmt.Sprintf("Test Migration Document %d", i)
-			content := fmt.Sprintf("# Document %d\n\nThis is test document %d for migration.", i, i)
-
-			// Add to mock provider
-			sourceProvider.documents[providerID] = &workspace.DocumentMetadata{
-				UUID:         uuid,
-				ProviderType: "mock",
-				ProviderID:   providerID,
-				Name:         name,
-				MimeType:     "text/markdown",
-				CreatedTime:  time.Now(),
-				ModifiedTime: time.Now(),
-				SyncStatus:   "canonical",
-				ContentHash:  fmt.Sprintf("mock-hash-%d", i),
-			}
-			sourceProvider.content[providerID] = &workspace.DocumentContent{
-				UUID:        uuid,
-				ProviderID:  providerID,
-				Title:       name,
-				Body:        content,
-				Format:      "markdown",
-				ContentHash: fmt.Sprintf("mock-hash-%d", i),
-			}
-
-			testDocs = append(testDocs, struct {
-				uuid       docid.UUID
-				providerID string
-				name       string
-				content    string
-			}{uuid, providerID, name, content})
-		}
+		testDocs = createTestDocuments(sourceProvider, 5)
 
 		t.Logf("Created %d test documents in source", len(testDocs))
 	})
@@ -189,42 +128,7 @@ func TestMigrationE2E(t *testing.T) {
 	})
 
 	t.Run("ProcessMigration", func(t *testing.T) {
-		// Create worker with provider map
-		providerMap := map[string]workspace.WorkspaceProvider{
-			"test-mock-source": sourceProvider,
-			"test-s3-dest":     destProvider,
-		}
-
-		workerCfg := &WorkerConfig{
-			PollInterval:   1 * time.Second,
-			MaxConcurrency: 2,
-		}
-		worker := NewWorker(db, providerMap, logger, workerCfg)
-
-		// Process tasks (run worker for a short time)
-		workerCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-
-		// Process tasks manually instead of starting worker loop
-		for i := 0; i < 5; i++ {
-			err := worker.processPendingTasks(workerCtx)
-			if err != nil {
-				t.Logf("Process iteration %d: %v", i, err)
-			}
-			time.Sleep(500 * time.Millisecond)
-
-			// Check progress
-			progress, err := manager.GetProgress(ctx, jobID)
-			if err == nil {
-				t.Logf("Progress: %d/%d (%.1f%%), Failed: %d",
-					progress.Migrated, progress.Total, progress.Percent, progress.Failed)
-
-				if progress.Migrated+progress.Failed >= progress.Total {
-					t.Log("All documents processed")
-					break
-				}
-			}
-		}
+		processMigrationTasks(ctx, t, db, logger, manager, jobID, sourceProvider, destProvider)
 
 		// Check final progress
 		progress, err := manager.GetProgress(ctx, jobID)
@@ -254,11 +158,135 @@ func TestMigrationE2E(t *testing.T) {
 			// Verify content
 			content, err := destProvider.GetContent(ctx, migratedDoc.ProviderID)
 			if err == nil {
-				assert.Contains(t, content.Body, fmt.Sprintf("# Document"))
+				assert.Contains(t, content.Body, "# Document")
 				t.Logf("Content verified for %s", doc.uuid)
 			}
 		}
 	})
+}
+
+func testS3Config() *s3adapter.Config {
+	return &s3adapter.Config{
+		Endpoint:          "http://localhost:9000",
+		Region:            "us-east-1",
+		Bucket:            "hermes-documents",
+		Prefix:            "migration-test",
+		AccessKey:         "minioadmin",
+		SecretKey:         "minioadmin",
+		VersioningEnabled: true,
+		MetadataStore:     "manifest",
+		UseSSL:            false,
+	}
+}
+
+func setupTestProviders(t *testing.T, db *sql.DB) {
+	t.Helper()
+
+	_, _ = db.Exec("DELETE FROM migration_outbox WHERE migration_job_id IN (SELECT id FROM migration_jobs WHERE job_name LIKE 'test-%')")
+	_, _ = db.Exec("DELETE FROM migration_items WHERE migration_job_id IN (SELECT id FROM migration_jobs WHERE job_name LIKE 'test-%')")
+	_, _ = db.Exec("DELETE FROM migration_jobs WHERE job_name LIKE 'test-%'")
+	_, _ = db.Exec("DELETE FROM provider_storage WHERE provider_name IN ('test-mock-source', 'test-s3-dest')")
+
+	_, err := db.Exec(`
+		INSERT INTO provider_storage (provider_name, provider_type, config, status, is_primary, is_writable)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, "test-mock-source", "mock", "{}", "active", true, true)
+	require.NoError(t, err, "Failed to insert source provider")
+
+	_, err = db.Exec(`
+		INSERT INTO provider_storage (provider_name, provider_type, config, status, is_primary, is_writable)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, "test-s3-dest", "s3", "{}", "active", false, true)
+	require.NoError(t, err, "Failed to insert dest provider")
+}
+
+func createTestDocuments(sourceProvider *mockProvider, count int) []struct {
+	providerID string
+	name       string
+	content    string
+	uuid       docid.UUID
+} {
+	testDocs := make([]struct {
+		providerID string
+		name       string
+		content    string
+		uuid       docid.UUID
+	}, 0, count)
+
+	for i := 1; i <= count; i++ {
+		uuid := docid.NewUUID()
+		providerID := uuid.String()
+		name := fmt.Sprintf("Test Migration Document %d", i)
+		content := fmt.Sprintf("# Document %d\n\nThis is test document %d for migration.", i, i)
+		contentHash := fmt.Sprintf("mock-hash-%d", i)
+
+		sourceProvider.documents[providerID] = &workspace.DocumentMetadata{
+			UUID:         uuid,
+			ProviderType: "mock",
+			ProviderID:   providerID,
+			Name:         name,
+			MimeType:     "text/markdown",
+			CreatedTime:  time.Now(),
+			ModifiedTime: time.Now(),
+			SyncStatus:   "canonical",
+			ContentHash:  contentHash,
+		}
+		sourceProvider.content[providerID] = &workspace.DocumentContent{
+			UUID:        uuid,
+			ProviderID:  providerID,
+			Title:       name,
+			Body:        content,
+			Format:      "markdown",
+			ContentHash: contentHash,
+		}
+
+		testDocs = append(testDocs, struct {
+			providerID string
+			name       string
+			content    string
+			uuid       docid.UUID
+		}{providerID, name, content, uuid})
+	}
+
+	return testDocs
+}
+
+func processMigrationTasks(ctx context.Context, t *testing.T, db *sql.DB, logger hclog.Logger, manager *Manager, jobID int64, sourceProvider, destProvider workspace.WorkspaceProvider) {
+	t.Helper()
+
+	providerMap := map[string]workspace.WorkspaceProvider{
+		"test-mock-source": sourceProvider,
+		"test-s3-dest":     destProvider,
+	}
+
+	worker := NewWorker(db, providerMap, logger, &WorkerConfig{
+		PollInterval:   time.Second,
+		MaxConcurrency: 2,
+	})
+
+	workerCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	for i := 0; i < 5; i++ {
+		err := worker.processPendingTasks(workerCtx)
+		if err != nil {
+			t.Logf("Process iteration %d: %v", i, err)
+		}
+		time.Sleep(500 * time.Millisecond)
+
+		progress, err := manager.GetProgress(ctx, jobID)
+		if err != nil {
+			continue
+		}
+
+		t.Logf("Progress: %d/%d (%.1f%%), Failed: %d",
+			progress.Migrated, progress.Total, progress.Percent, progress.Failed)
+
+		if progress.Migrated+progress.Failed >= progress.Total {
+			t.Log("All documents processed")
+			break
+		}
+	}
 }
 
 // mockProvider is a simple mock provider for testing
@@ -268,7 +296,7 @@ type mockProvider struct {
 	logger    hclog.Logger
 }
 
-func (m *mockProvider) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) GetDocument(_ context.Context, providerID string) (*workspace.DocumentMetadata, error) {
 	doc, ok := m.documents[providerID]
 	if !ok {
 		return nil, fmt.Errorf("document not found")
@@ -276,7 +304,7 @@ func (m *mockProvider) GetDocument(ctx context.Context, providerID string) (*wor
 	return doc, nil
 }
 
-func (m *mockProvider) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) GetDocumentByUUID(_ context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
 	for _, doc := range m.documents {
 		if doc.UUID == uuid {
 			return doc, nil
@@ -285,7 +313,7 @@ func (m *mockProvider) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (
 	return nil, fmt.Errorf("document not found")
 }
 
-func (m *mockProvider) GetContent(ctx context.Context, providerID string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContent(_ context.Context, providerID string) (*workspace.DocumentContent, error) {
 	content, ok := m.content[providerID]
 	if !ok {
 		return nil, fmt.Errorf("content not found")
@@ -293,137 +321,137 @@ func (m *mockProvider) GetContent(ctx context.Context, providerID string) (*work
 	return content, nil
 }
 
-func (m *mockProvider) DeleteDocument(ctx context.Context, providerID string) error {
+func (m *mockProvider) DeleteDocument(_ context.Context, providerID string) error {
 	delete(m.documents, providerID)
 	delete(m.content, providerID)
 	return nil
 }
 
 // Stub implementations for required interfaces
-func (m *mockProvider) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateDocumentWithUUID(_ context.Context, _ docid.UUID, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) RegisterDocument(_ context.Context, _ *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CopyDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) MoveDocument(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RenameDocument(ctx context.Context, providerID, newName string) error {
+func (m *mockProvider) RenameDocument(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CreateFolder(ctx context.Context, name, parentID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateFolder(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetSubfolder(ctx context.Context, parentID, name string) (string, error) {
+func (m *mockProvider) GetSubfolder(_ context.Context, _, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContentByUUID(_ context.Context, _ docid.UUID) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) UpdateContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetContentBatch(ctx context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContentBatch(_ context.Context, _ []string) ([]*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CompareContent(ctx context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
+func (m *mockProvider) CompareContent(_ context.Context, _, _ string) (*workspace.ContentComparison, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetRevisionHistory(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+func (m *mockProvider) GetRevisionHistory(_ context.Context, _ string, _ int) ([]*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+func (m *mockProvider) GetRevision(_ context.Context, _, _ string) (*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetRevisionContent(ctx context.Context, providerID, revisionID string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetRevisionContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) KeepRevisionForever(ctx context.Context, providerID, revisionID string) error {
+func (m *mockProvider) KeepRevisionForever(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*workspace.RevisionInfo, error) {
+func (m *mockProvider) GetAllDocumentRevisions(_ context.Context, _ docid.UUID) ([]*workspace.RevisionInfo, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ShareDocument(ctx context.Context, providerID, email, role string) error {
+func (m *mockProvider) ShareDocument(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+func (m *mockProvider) ShareDocumentWithDomain(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+func (m *mockProvider) ListPermissions(_ context.Context, _ string) ([]*workspace.FilePermission, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+func (m *mockProvider) RemovePermission(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+func (m *mockProvider) UpdatePermission(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
+func (m *mockProvider) SearchPeople(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) GetPerson(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) GetPersonByUnifiedID(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ResolveIdentity(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) ResolveIdentity(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+func (m *mockProvider) ListTeams(_ context.Context, _, _ string, _ int64) ([]*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+func (m *mockProvider) GetTeam(_ context.Context, _ string) (*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+func (m *mockProvider) GetUserTeams(_ context.Context, _ string) ([]*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+func (m *mockProvider) GetTeamMembers(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+func (m *mockProvider) SendEmail(_ context.Context, _ []string, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+func (m *mockProvider) SendEmailWithTemplate(_ context.Context, _ []string, _ string, _ map[string]any) error {
 	return fmt.Errorf("not implemented")
 }

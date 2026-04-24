@@ -10,28 +10,18 @@ import (
 // HermesInstance represents this Hermes deployment's identity.
 // This is a singleton table - only one instance per database.
 type HermesInstance struct {
-	ID uint `gorm:"primaryKey" json:"id"`
-
-	// Instance identifiers
-	InstanceUUID uuid.UUID `gorm:"type:uuid;uniqueIndex;not null" json:"instanceUuid"`
-	InstanceID   string    `gorm:"uniqueIndex;not null;size:255" json:"instanceId"`
-
-	// Instance metadata
-	InstanceName  string `gorm:"not null;size:255" json:"instanceName"`
-	BaseURL       string `gorm:"size:255" json:"baseUrl,omitempty"`
-	DeploymentEnv string `gorm:"not null;default:development;size:50" json:"deploymentEnv"`
-
-	// Tracking
-	InitializedAt time.Time `gorm:"not null" json:"initializedAt"`
-	LastHeartbeat time.Time `gorm:"not null" json:"lastHeartbeat"`
-
-	// Metadata
-	Metadata JSON `gorm:"type:jsonb" json:"metadata,omitempty"`
-
-	// Timestamps
-	CreatedAt time.Time      `json:"createdAt"`
-	UpdatedAt time.Time      `json:"updatedAt"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt,omitempty"`
+	InitializedAt time.Time      `gorm:"not null" json:"initializedAt"`
+	LastHeartbeat time.Time      `gorm:"not null" json:"lastHeartbeat"`
+	CreatedAt     time.Time      `json:"createdAt"`
+	UpdatedAt     time.Time      `json:"updatedAt"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deletedAt,omitempty"`
+	InstanceID    string         `gorm:"uniqueIndex;not null;size:255" json:"instanceId"`
+	InstanceName  string         `gorm:"not null;size:255" json:"instanceName"`
+	BaseURL       string         `gorm:"size:255" json:"baseUrl,omitempty"`
+	DeploymentEnv string         `gorm:"not null;default:development;size:50" json:"deploymentEnv"`
+	Metadata      JSON           `gorm:"type:jsonb" json:"metadata,omitempty"`
+	ID            uint           `gorm:"primaryKey" json:"id"`
+	InstanceUUID  uuid.UUID      `gorm:"type:uuid;uniqueIndex;not null" json:"instanceUuid"`
 }
 
 // TableName returns the table name for GORM
@@ -40,7 +30,7 @@ func (HermesInstance) TableName() string {
 }
 
 // BeforeCreate hook to generate instance UUID if not set
-func (h *HermesInstance) BeforeCreate(tx *gorm.DB) error {
+func (h *HermesInstance) BeforeCreate(_ *gorm.DB) error {
 	if h.InstanceUUID == uuid.Nil {
 		h.InstanceUUID = uuid.New()
 	}

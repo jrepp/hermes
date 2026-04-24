@@ -10,18 +10,18 @@ import (
 
 // ClientFactory creates LLM clients based on provider name or model.
 type ClientFactory struct {
+	logger        hclog.Logger
 	openaiAPIKey  string
 	ollamaURL     string
 	bedrockRegion string
-	logger        hclog.Logger
 }
 
 // ClientFactoryConfig holds configuration for the client factory.
 type ClientFactoryConfig struct {
-	OpenAIAPIKey  string       // OpenAI API key
-	OllamaURL     string       // Ollama server URL (default: http://localhost:11434)
-	BedrockRegion string       // AWS Bedrock region (default: us-east-1)
-	Logger        hclog.Logger // Logger (optional)
+	Logger        hclog.Logger
+	OpenAIAPIKey  string
+	OllamaURL     string
+	BedrockRegion string
 }
 
 // NewClientFactory creates a new LLM client factory.
@@ -52,11 +52,11 @@ func (f *ClientFactory) GetClient(ctx context.Context, model string) (interface{
 	)
 
 	switch provider {
-	case "openai":
+	case providerOpenAI:
 		return f.GetOpenAIClient()
-	case "bedrock":
+	case providerBedrock:
 		return f.GetBedrockClient(ctx)
-	case "ollama":
+	case providerOllama:
 		return f.GetOllamaClient()
 	default:
 		return nil, fmt.Errorf("unsupported model: %s (unknown provider)", model)
@@ -105,54 +105,29 @@ func (f *ClientFactory) GetBedrockClient(ctx context.Context) (*BedrockClient, e
 func (f *ClientFactory) detectProvider(model string) string {
 	modelLower := strings.ToLower(model)
 
-	// OpenAI models
-	if strings.HasPrefix(modelLower, "gpt-") {
-		return "openai"
-	}
-	if strings.HasPrefix(modelLower, "o1-") || strings.HasPrefix(modelLower, "o3-") {
-		return "openai"
-	}
-
-	// AWS Bedrock models (Claude, Titan, Llama via Bedrock)
-	if strings.Contains(modelLower, "claude") {
-		// Check if it's the full Bedrock ARN format
-		if strings.Contains(modelLower, "anthropic") || strings.Contains(modelLower, "bedrock") {
-			return "bedrock"
+	for _, prefix := range []string{"gpt-", "o1-", "o3-"} {
+		if strings.HasPrefix(modelLower, prefix) {
+			return providerOpenAI
 		}
-		return "bedrock" // Default Claude to Bedrock
-	}
-	if strings.Contains(modelLower, "titan") {
-		return "bedrock"
-	}
-	if strings.Contains(modelLower, "us.") || strings.Contains(modelLower, "anthropic.") {
-		return "bedrock" // Bedrock ARN format
 	}
 
-	// Ollama models (local)
-	if strings.HasPrefix(modelLower, "llama") {
-		return "ollama"
+	for _, needle := range []string{"claude", "titan", "us.", "anthropic."} {
+		if strings.Contains(modelLower, needle) {
+			return providerBedrock
+		}
 	}
-	if strings.HasPrefix(modelLower, "mistral") {
-		return "ollama"
-	}
-	if strings.HasPrefix(modelLower, "codellama") {
-		return "ollama"
-	}
-	if strings.HasPrefix(modelLower, "phi") {
-		return "ollama"
-	}
-	if strings.HasPrefix(modelLower, "qwen") {
-		return "ollama"
-	}
-	if strings.HasPrefix(modelLower, "gemma") {
-		return "ollama"
+
+	for _, prefix := range []string{"llama", "mistral", "codellama", "phi", "qwen", "gemma"} {
+		if strings.HasPrefix(modelLower, prefix) {
+			return providerOllama
+		}
 	}
 
 	// Default to OpenAI for unknown models
 	f.logger.Warn("unknown model, defaulting to OpenAI",
 		"model", model,
 	)
-	return "openai"
+	return providerOpenAI
 }
 
 // SupportedModels returns a list of example supported models.

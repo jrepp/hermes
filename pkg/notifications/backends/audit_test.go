@@ -50,8 +50,8 @@ func TestAuditBackendHandle(t *testing.T) {
 func TestFormatRecipients(t *testing.T) {
 	tests := []struct {
 		name       string
-		recipients []notifications.Recipient
 		expected   string
+		recipients []notifications.Recipient
 	}{
 		{
 			name: "single recipient with name",

@@ -25,7 +25,7 @@ func (c *TrackCommand) Name() string {
 }
 
 // Execute updates tracking for a single document.
-func (c *TrackCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *TrackCommand) Execute(_ context.Context, doc *indexer.DocumentContext) error {
 	if c.UpdateDocumentTime && doc.Metadata != nil {
 		// Update document modified time
 		doc.Metadata.DocumentModifiedAt = doc.Document.ModifiedTime

@@ -80,7 +80,6 @@ func (c *Command) WaitForInterrupt(shutdownFunc func()) int {
 
 		// Add a force-shutdown goroutine to consume another interrupt.
 		abortForceShutdownCh := make(chan struct{})
-		defer close(abortForceShutdownCh)
 		go func() {
 			shutdownCh := make(chan os.Signal, 1)
 			signal.Notify(shutdownCh, os.Interrupt, syscall.SIGTERM)
@@ -97,6 +96,7 @@ func (c *Command) WaitForInterrupt(shutdownFunc func()) int {
 		shutdownFunc()
 		c.Log.Info("shutdown complete")
 
+		close(abortForceShutdownCh)
 		shutdownTriggered = true
 	}
 

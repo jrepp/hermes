@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -20,6 +21,25 @@ import (
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
+
+// safeUintToInt converts uint to int, checking for overflow.
+// Returns 0 if the value would overflow (though in practice database IDs
+// should never be large enough to overflow).
+func safeUintToInt(u uint) int {
+	if u > math.MaxInt {
+		return 0
+	}
+	return int(u)
+}
+
+// safeIntToUint converts int to uint, checking for negative values.
+// Returns 0 if the value is negative.
+func safeIntToUint(i int) uint {
+	if i < 0 {
+		return 0
+	}
+	return uint(i)
+}
 
 // DocumentPatchRequest contains a subset of documents fields that are allowed
 // to be updated with a PATCH request.
@@ -45,10 +65,7 @@ const (
 	archivedDocumentSubcollectionRequestType
 )
 
-var publishReaderGroups = []string{}
-
-var publishGroupDisplayNames = map[string]string{}
-
+//nolint:gocognit,gocyclo // Legacy HTTP entrypoint; large patch/get flows are kept together to avoid behavior drift.
 func DocumentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if this is a document content request (/content suffix)
@@ -86,17 +103,17 @@ func DocumentHandler(srv server.Server) http.Handler {
 				)
 				http.Error(w, "Document not found", http.StatusNotFound)
 				return
-			} else {
-				srv.Logger.Error("error getting document from database",
-					"error", err,
-					"path", r.URL.Path,
-					"method", r.Method,
-					"doc_id", docID,
-				)
-				http.Error(w, "Error requesting document",
-					http.StatusInternalServerError)
-				return
 			}
+
+			srv.Logger.Error("error getting document from database",
+				"error", err,
+				"path", r.URL.Path,
+				"method", r.Method,
+				"doc_id", docID,
+			)
+			http.Error(w, "Error requesting document",
+				http.StatusInternalServerError)
+			return
 		}
 
 		// Get reviews for the document.
@@ -155,7 +172,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 		// is a document draft and should be instead accessed through the drafts
 		// API. We return a 404 to be consistent with v1 of the API, and will
 		// improve this UX in the future when these APIs are combined.
-		if doc.AppCreated && doc.Status == "WIP" {
+		if doc.AppCreated && doc.Status == docStatusWIP {
 			srv.Logger.Warn("attempted to access document draft via documents API",
 				"method", r.Method,
 				"path", r.URL.Path,
@@ -183,51 +200,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "HEAD":
-			// HEAD: respond with 200, and for SharePoint documents expose
-			// the direct edit URL header so the frontend can redirect.
-			// For Google documents, return 200 without the header so the
-			// frontend falls through to normal in-app document viewing.
-			now := time.Now()
-
-			// Drafts are not accessible via documents API (mirror GET behavior)
-			if doc.AppCreated && doc.Status == "WIP" {
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-
-			if srv.SharePoint != nil {
-				fileDetails, err := srv.SharePoint.GetFileDetails(docID)
-				if err != nil {
-					srv.Logger.Error("error getting document file (HEAD)",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", docID,
-					)
-					http.Error(w, "Error requesting document", http.StatusInternalServerError)
-					return
-				}
-				w.Header().Set("X-Direct-Edit-URL", fileDetails.WebURL)
-			}
-
-			w.Header().Set("Cache-Control", "private, no-store")
-			w.WriteHeader(http.StatusOK)
-			if r.Header.Get("Add-To-Recently-Viewed") != "" {
-				go func() {
-					email := r.Context().Value("userEmail").(string)
-					if err := updateRecentlyViewedDocs(email, docID, srv.DB, now, srv.IsSharePoint()); err != nil {
-						srv.Logger.Error("error updating recently viewed docs (HEAD)",
-							"error", err,
-							"doc_id", docID,
-							"method", r.Method,
-							"path", r.URL.Path,
-						)
-					}
-				}()
-			}
-			return
-		case "GET":
+		case httpMethodGet:
 			now := time.Now()
 
 			// Get document metadata from workspace provider so we can return the latest modified time.
@@ -281,8 +254,8 @@ func DocumentHandler(srv server.Server) http.Handler {
 				return
 			}
 			projIDs := make([]int, len(projs))
-			for i, p := range projs {
-				projIDs[i] = int(p.ID)
+			for i := range projs {
+				projIDs[i] = safeUintToInt(projs[i].ID)
 			}
 			docObj["projects"] = projIDs
 
@@ -332,7 +305,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 				}
 			}()
 
-		case "PATCH":
+		case httpMethodPatch:
 			// Decode request. The request struct validates that the request only
 			// contains fields that are allowed to be patched.
 			var req DocumentPatchRequest
@@ -464,52 +437,19 @@ func DocumentHandler(srv server.Server) http.Handler {
 
 			// Validate custom fields.
 			if req.CustomFields != nil {
-				for _, cf := range *req.CustomFields {
-					cef, ok := doc.CustomEditableFields[cf.Name]
-					if !ok {
-						srv.Logger.Error("custom field not found",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"custom_field", cf.Name,
-							"doc_id", docID)
-						http.Error(w, "Bad request: invalid custom field",
-							http.StatusBadRequest)
-						return
-					}
-					if cf.DisplayName != cef.DisplayName {
-						srv.Logger.Error("invalid custom field display name",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"custom_field", cf.Name,
-							"custom_field_display_name", cf.DisplayName,
-							"doc_id", docID)
-						http.Error(w, "Bad request: invalid custom field display name",
-							http.StatusBadRequest)
-						return
-					}
-					if cf.Type != cef.Type {
-						srv.Logger.Error("invalid custom field type",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"custom_field", cf.Name,
-							"custom_field_type", cf.Type,
-							"doc_id", docID)
-						http.Error(w, "Bad request: invalid custom field type",
-							http.StatusBadRequest)
-						return
-					}
+				if err := validateEditableCustomFields(*req.CustomFields, *doc); err != nil {
+					logCustomFieldValidationError(srv.Logger, err, r, docID)
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
 				}
 			}
 
 			// Validate document Status.
 			if req.Status != nil {
 				switch *req.Status {
-				case "Approved":
-				case "In-Review":
-				case "Obsolete":
+				case docStatusApproved:
+				case docStatusInReview:
+				case docStatusObsolete:
 				default:
 					srv.Logger.Warn("invalid status",
 						"method", r.Method,
@@ -616,7 +556,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 			if req.CustomFields != nil {
 				for _, cf := range *req.CustomFields {
 					switch cf.Type {
-					case "STRING":
+					case fieldTypeString:
 						if _, ok := cf.Value.(string); ok {
 							if err := doc.UpsertCustomField(cf); err != nil {
 								srv.Logger.Error("error upserting custom string field",
@@ -632,7 +572,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 								return
 							}
 						}
-					case "PEOPLE":
+					case fieldTypePeople:
 						if reflect.TypeOf(cf.Value).Kind() != reflect.Slice {
 							srv.Logger.Error("invalid value type for people custom field",
 								"error", err,
@@ -932,183 +872,90 @@ func DocumentHandler(srv server.Server) http.Handler {
 				http.Error(w, "Error patching document",
 					http.StatusInternalServerError)
 				return
-			} else {
-				// Approvers.
-				if req.Approvers != nil {
-					var approvers []*models.User
-					for _, a := range doc.Approvers {
-						u := models.User{
-							EmailAddress: a,
-						}
-						approvers = append(approvers, &u)
-					}
-					model.Approvers = approvers
+			}
+			// Approvers.
+			if req.Approvers != nil {
+				model.Approvers = usersFromEmails(doc.Approvers)
+			}
+
+			// Approver groups.
+			if req.ApproverGroups != nil {
+				model.ApproverGroups = groupsFromEmails(doc.ApproverGroups)
+			}
+
+			// Contributors.
+			if req.Contributors != nil {
+				model.Contributors = usersFromEmails(doc.Contributors)
+			}
+
+			// Custom fields.
+			if req.CustomFields != nil {
+				updatedFields, err := updateModelCustomFields(
+					model.CustomFields,
+					doc.DocType,
+					*req.CustomFields,
+				)
+				if err != nil {
+					logCustomFieldValidationError(srv.Logger, err, r, docID)
+					http.Error(w, "Error patching document",
+						http.StatusInternalServerError)
+					return
 				}
+				model.CustomFields = updatedFields
+			}
+			setModelCustomFieldDocumentIDs(model.CustomFields, model.ID)
 
-				// Approver groups.
-				if req.ApproverGroups != nil {
-					approverGroups := make([]*models.Group, len(doc.ApproverGroups))
-					for i, a := range doc.ApproverGroups {
-						g := models.Group{
-							EmailAddress: a,
-						}
-						approverGroups[i] = &g
-					}
-					model.ApproverGroups = approverGroups
+			// Document modified time.
+			model.DocumentModifiedAt = time.Unix(doc.ModifiedTime, 0)
+
+			// Owner.
+			if req.Owners != nil {
+				model.Owner = &models.User{
+					EmailAddress: doc.Owners[0],
 				}
+			}
 
-				// Contributors.
-				if req.Contributors != nil {
-					var contributors []*models.User
-					for _, a := range doc.Contributors {
-						u := &models.User{
-							EmailAddress: a,
-						}
-						contributors = append(contributors, u)
-					}
-					model.Contributors = contributors
+			// Status.
+			if req.Status != nil {
+				switch *req.Status {
+				case docStatusApproved:
+					model.Status = models.ApprovedDocumentStatus
+				case docStatusInReview:
+					model.Status = models.InReviewDocumentStatus
+				case docStatusObsolete:
+					model.Status = models.ObsoleteDocumentStatus
 				}
+			}
 
-				// Custom fields.
-				if req.CustomFields != nil {
-					for _, cf := range *req.CustomFields {
-						switch cf.Type {
-						case "STRING":
-							if v, ok := cf.Value.(string); ok {
-								model.CustomFields = models.UpsertStringDocumentCustomField(
-									model.CustomFields,
-									doc.DocType,
-									cf.DisplayName,
-									v,
-								)
-							} else {
-								srv.Logger.Error("invalid value type for string custom field",
-									"error", err,
-									"method", r.Method,
-									"path", r.URL.Path,
-									"custom_field", cf.Name,
-									"doc_id", docID)
-								http.Error(w, "Error patching document",
-									http.StatusInternalServerError)
-								return
-							}
-						case "PEOPLE":
-							if reflect.TypeOf(cf.Value).Kind() != reflect.Slice {
-								srv.Logger.Error("invalid value type for people custom field",
-									"error", err,
-									"method", r.Method,
-									"path", r.URL.Path,
-									"custom_field", cf.Name,
-									"doc_id", docID)
-								http.Error(w, "Error patching document",
-									http.StatusInternalServerError)
-								return
-							}
-							cfVal := []string{}
-							values, ok := cf.Value.([]any)
-							if !ok {
-								srv.Logger.Error("invalid value type for people custom field",
-									"error", err,
-									"method", r.Method,
-									"path", r.URL.Path,
-									"custom_field", cf.Name,
-									"doc_id", docID)
-								http.Error(w, "Error patching document",
-									http.StatusInternalServerError)
-								return
-							}
-							for _, v := range values {
-								if v, ok := v.(string); ok {
-									cfVal = append(cfVal, v)
-								} else {
-									srv.Logger.Error("invalid value type for people custom field",
-										"error", err,
-										"method", r.Method,
-										"path", r.URL.Path,
-										"custom_field", cf.Name,
-										"doc_id", docID)
-									http.Error(w, "Error patching document",
-										http.StatusInternalServerError)
-									return
-								}
-							}
+			// Summary.
+			if req.Summary != nil {
+				model.Summary = req.Summary
+			}
 
-							model.CustomFields, err = models.
-								UpsertStringSliceDocumentCustomField(
-									model.CustomFields,
-									doc.DocType,
-									cf.DisplayName,
-									cfVal,
-								)
-							if err != nil {
-								srv.Logger.Error("invalid value type for people custom field",
-									"error", err,
-									"method", r.Method,
-									"path", r.URL.Path,
-									"custom_field", cf.Name,
-									"doc_id", docID)
-								http.Error(w, "Error patching document",
-									http.StatusInternalServerError)
-								return
-							}
-						default:
-							srv.Logger.Error("invalid custom field type",
-								"error", err,
-								"method", r.Method,
-								"path", r.URL.Path,
-								"custom_field", cf.Name,
-								"custom_field_type", cf.Type,
-								"doc_id", docID)
-							http.Error(w,
-								fmt.Sprintf(
-									"Bad request: invalid type for custom field %q",
-									cf.Name,
-								),
-								http.StatusBadRequest)
-							return
-						}
-					}
+			// Title.
+			if req.Title != nil {
+				model.Title = *req.Title
+			}
+
+			// Send email to new owner.
+			if srv.Config.Email != nil && srv.Config.Email.Enabled &&
+				req.Owners != nil {
+				if err := sendNewOwnerNotification(r, srv, docID, userEmail, *doc); err != nil {
+					srv.Logger.Error("error notifying new owner",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID,
+					)
+					http.Error(w, "Error patching document",
+						http.StatusInternalServerError)
+					return
 				}
-				// Make sure all custom fields have the document ID.
-				for _, cf := range model.CustomFields {
-					cf.DocumentID = model.ID
-				}
+			}
 
-				// Document modified time.
-				model.DocumentModifiedAt = time.Unix(doc.ModifiedTime, 0)
-
-				// Owner.
-				if req.Owners != nil {
-					model.Owner = &models.User{
-						EmailAddress: doc.Owners[0],
-					}
-				}
-
-				// Status.
-				if req.Status != nil {
-					switch *req.Status {
-					case "Approved":
-						model.Status = models.ApprovedDocumentStatus
-					case "In-Review":
-						model.Status = models.InReviewDocumentStatus
-					case "Obsolete":
-						model.Status = models.ObsoleteDocumentStatus
-					}
-				}
-
-				// Summary.
-				if req.Summary != nil {
-					model.Summary = req.Summary
-				}
-
-				// Title.
-				if req.Title != nil {
-					model.Title = *req.Title
-				}
-
-				// Send email to new owner.
-				if srv.Config.Email != nil && srv.Config.Email.Enabled &&
-					req.Owners != nil {
+			// Send emails to new approvers.
+			if srv.Config.Email != nil && srv.Config.Email.Enabled {
+				if len(approversToEmail) > 0 {
 					// Get document URL.
 					docURL, err := getDocumentURL(srv.Config.BaseURL, docID)
 					if err != nil {
@@ -1152,223 +999,57 @@ func DocumentHandler(srv server.Server) http.Handler {
 							}
 						}
 
-					// Get name of new document owner.
-					newOwner := email.User{
-						EmailAddress: doc.Owners[0],
-					}
-					ppl, err := srv.WorkspaceProvider.SearchPeople(
-						r.Context(), doc.Owners[0])
-					if err != nil {
-						srv.Logger.Warn("error searching directory for new owner",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-							"person", doc.Owners[0],
+					// TODO: use an asynchronous method for sending emails because we
+					// can't currently recover gracefully on a failure here.
+					for _, approverEmail := range approversToEmail {
+						err := email.SendReviewRequestedEmail(
+							email.ReviewRequestedEmailData{
+								BaseURL:           srv.Config.BaseURL,
+								DocumentOwner:     doc.Owners[0],
+								DocumentShortName: doc.DocNumber,
+								DocumentTitle:     doc.Title,
+								DocumentURL:       docURL,
+								Product:           doc.Product,
+								DocumentType:      doc.DocType,
+								DocumentStatus:    doc.Status,
+							},
+							[]string{approverEmail},
+							srv.Config.Email.FromAddress,
+							getCompatProvider(srv.WorkspaceProvider),
 						)
-					}
-					if len(ppl) == 1 {
-						newOwner.Name = ppl[0].DisplayName
-					}
-
-					// Get name of old document owner.
-					oldOwner := email.User{
-						EmailAddress: userEmail,
-					}
-					ppl, err = srv.WorkspaceProvider.SearchPeople(
-						r.Context(), userEmail)
-					if err != nil {
-						srv.Logger.Warn("error searching directory for old owner",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-							"person", doc.Owners[0],
-						)
-					}
-					if len(ppl) == 1 {
-						oldOwner.Name = ppl[0].DisplayName
-					}
-
-					if err := email.SendNewOwnerEmail(
-						email.NewOwnerEmailData{
-							BaseURL:           srv.Config.BaseURL,
-							DocumentShortName: doc.DocNumber,
-							DocumentStatus:    doc.Status,
-							DocumentTitle:     doc.Title,
-							DocumentType:      doc.DocType,
-							DocumentURL:       docURL,
-							NewDocumentOwner:  newOwner,
-							OldDocumentOwner:  oldOwner,
-							Product:           doc.Product,
-						},
-						[]string{doc.Owners[0]},
-						srv.Config.Email.FromAddress,
-						getCompatProvider(srv.WorkspaceProvider),
-					); err != nil {
-						srv.Logger.Error("error sending new owner email",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-						)
-						http.Error(w, "Error patching document",
-							http.StatusInternalServerError)
-						return
-					}
-				}
-
-				// Send emails to new approvers.
-				if srv.Config.Email != nil && srv.Config.Email.Enabled {
-					// Collect new approvers (individuals and groups)
-					newApproverRecipients := []string{}
-
-					// Add new individual approvers
-					newApproverRecipients = append(newApproverRecipients, newUserApprovers...)
-
-					// Add new group approvers directly (send to group mailbox)
-					newApproverRecipients = append(newApproverRecipients, newGroupApprovers...)
-
-					if len(newApproverRecipients) > 0 {
-						// Get document URL.
-						docURL, err := getDocumentURL(srv.Config.BaseURL, docID)
 						if err != nil {
-							srv.Logger.Error("error getting document URL",
+							srv.Logger.Error("error sending approver email",
 								"error", err,
 								"doc_id", docID,
 								"method", r.Method,
 								"path", r.URL.Path,
 							)
-							// Log error but don't fail the request.
-						} else {
-							srv.Logger.Info("review request email queued",
-								"doc_id", docID,
-								"approver_count", len(newApproverRecipients),
-								"method", r.Method,
-								"path", r.URL.Path,
-							)
-
-							go helpers.SendEmailWithRetry(
-								&srv,
-								func() error {
-									return email.SendReviewRequestedEmail(
-										email.ReviewRequestedEmailData{
-											BaseURL:           srv.Config.BaseURL,
-											DocumentOwner:     doc.Owners[0],
-											DocumentShortName: doc.DocNumber,
-											DocumentTitle:     doc.Title,
-											DocumentURL:       docURL,
-											Product:           doc.Product,
-											DocumentType:      doc.DocType,
-											DocumentStatus:    doc.Status,
-										},
-										newApproverRecipients,
-										srv.Config.Email.FromAddress,
-										srv.GetEmailSender(),
-									)
-								},
-								docID,
-								"review_requested",
-								r,
-							)
-						}
-					}
-				}
-
-				if len(newContributors) > 0 {
-					docURL := fmt.Sprintf("%s/document/%s", srv.Config.BaseURL, docID)
-					if doc.Status != "Approved" {
-						docURL += "?draft=true"
-					}
-
-					srv.Logger.Info("contributor email queued",
-						"doc_id", docID,
-						"contributor_count", len(newContributors),
-						"method", r.Method,
-						"path", r.URL.Path,
-					)
-
-					go helpers.SendEmailWithRetry(
-						&srv,
-						func() error {
-							return email.SendContributorAddedEmail(
-								email.ContributorAddedEmailData{
-									BaseURL:           srv.Config.BaseURL,
-									DocumentOwner:     doc.Owners[0],
-									DocumentShortName: doc.DocNumber,
-									DocumentTitle:     doc.Title,
-									DocumentURL:       docURL,
-									Product:           doc.Product,
-									DocumentType:      doc.DocType,
-									DocumentStatus:    doc.Status,
-								},
-								newContributors,
-								srv.Config.Email.FromAddress,
-								getCompatProvider(srv.WorkspaceProvider),
-							)
-						},
-						docID,
-						"contributor_added",
-						r,
-					)
-				}
-
-				isPublishTransition := strings.EqualFold(previousStatus, "WIP") &&
-					strings.EqualFold(doc.Status, "In-Review")
-
-				if isPublishTransition {
-					if srv.SharePoint != nil {
-						grantedGroups, err := srv.SharePoint.GrantGroupsReadAccess(docID, "reader", publishReaderGroups, publishGroupDisplayNames)
-						if err != nil {
-							srv.Logger.Error("error granting reader access to publish groups",
-								"error", err,
-								"doc_id", docID,
-							)
-							http.Error(w, "Error patching document", http.StatusInternalServerError)
+							http.Error(w, "Error patching document",
+								http.StatusInternalServerError)
 							return
 						}
-						if len(grantedGroups) > 0 {
-							srv.Logger.Info("granted group access on publish",
-								"doc_id", docID,
-								"groups", strings.Join(grantedGroups, ", "),
-							)
-						}
-					} else {
-						var grantedGroups []string
-						for _, group := range publishReaderGroups {
-							if err := srv.GWService.ShareFile(docID, group, "reader"); err != nil {
-								srv.Logger.Error("error granting reader access to publish group",
-									"error", err,
-									"doc_id", docID,
-									"group", group,
-								)
-								http.Error(w, "Error patching document", http.StatusInternalServerError)
-								return
-							}
-							grantedGroups = append(grantedGroups, group)
-						}
-						if len(grantedGroups) > 0 {
-							srv.Logger.Info("granted group access on publish",
-								"doc_id", docID,
-								"groups", strings.Join(grantedGroups, ", "),
-							)
-						}
 					}
-				}
-
-				// Update document in the database.
-				if err := model.Upsert(srv.DB); err != nil {
-					srv.Logger.Error("error updating document",
-						"error", err,
+					srv.Logger.Info("approver emails sent",
+						"doc_id", docID,
 						"method", r.Method,
 						"path", r.URL.Path,
-						"doc_id", docID,
 					)
-					http.Error(w, "Error patching document",
-						http.StatusInternalServerError)
-					return
 				}
 			}
+
+			// Update document in the database.
+			if err := model.Upsert(srv.DB); err != nil {
+				srv.Logger.Error("error updating document",
+					"error", err,
+					"method", r.Method,
+					"path", r.URL.Path,
+					"doc_id", docID,
+				)
+				http.Error(w, "Error patching document",
+					http.StatusInternalServerError)
+				return
+			}
+
 			w.WriteHeader(http.StatusOK)
 			srv.Logger.Info("patched document",
 				"doc_id", docID,
@@ -1453,7 +1134,7 @@ func updateRecentlyViewedDocs(
 
 	// Find recently viewed documents (excluding the current viewed document).
 	var rvd []models.RecentlyViewedDoc
-	if err := db.Where(&models.RecentlyViewedDoc{UserID: int(u.ID)}).
+	if err := db.Where(&models.RecentlyViewedDoc{UserID: safeUintToInt(u.ID)}).
 		Not("document_id = ?", doc.ID).
 		Limit(9).
 		Order("viewed_at desc").
@@ -1464,8 +1145,8 @@ func updateRecentlyViewedDocs(
 	// Prepend viewed document to recently viewed documents.
 	rvd = append(
 		[]models.RecentlyViewedDoc{{
-			DocumentID: int(doc.ID),
-			UserID:     int(u.ID),
+			DocumentID: safeUintToInt(doc.ID),
+			UserID:     safeUintToInt(u.ID),
 		}},
 		rvd...)
 
@@ -1489,8 +1170,8 @@ func updateRecentlyViewedDocs(
 
 	// Update ViewedAt time for the viewed document.
 	viewedDoc := models.RecentlyViewedDoc{
-		UserID:     int(u.ID),
-		DocumentID: int(doc.ID),
+		UserID:     safeUintToInt(u.ID),
+		DocumentID: safeUintToInt(doc.ID),
 		ViewedAt:   viewedAt,
 	}
 	if err := db.Updates(&viewedDoc).Error; err != nil {

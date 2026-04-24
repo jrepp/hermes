@@ -27,21 +27,20 @@ type TestContainersContext struct {
 	MeilisearchContainer testcontainers.Container
 	PostgresDSN          string
 	MeilisearchHost      string
-	ctx                  context.Context
 }
 
 // SetupTestContainers is DEPRECATED - containers are now started once in TestMain.
 // This function is no longer needed and will be removed in a future version.
 //
 // Deprecated: Use NewIntegrationSuite() which automatically uses shared containers.
-func SetupTestContainers(t *testing.T) *TestContainersContext {
+func SetupTestContainers(_ *testing.T) *TestContainersContext {
 	panic("SetupTestContainers is deprecated - containers are now managed by TestMain. Use NewIntegrationSuite() instead.")
 }
 
 // Cleanup is DEPRECATED - containers are cleaned up by TestMain, not per-test.
 //
 // Deprecated: No longer needed as containers are shared and cleaned up by TestMain.
-func (tc *TestContainersContext) Cleanup(t *testing.T) {
+func (tc *TestContainersContext) Cleanup(_ *testing.T) {
 	// No-op: containers are managed by TestMain
 }
 

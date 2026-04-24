@@ -22,7 +22,7 @@ func (c *TransformCommand) Name() string {
 }
 
 // Execute transforms the document for search indexing.
-func (c *TransformCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *TransformCommand) Execute(_ context.Context, doc *indexer.DocumentContext) error {
 	if doc.Metadata == nil {
 		return fmt.Errorf("metadata not loaded, run load-metadata command first")
 	}

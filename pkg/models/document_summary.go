@@ -13,38 +13,26 @@ import (
 // DocumentSummary stores AI-generated summaries and analysis of documents.
 // This enables caching AI results and avoiding redundant API calls.
 type DocumentSummary struct {
-	ID uint `gorm:"primaryKey" json:"id"`
-
-	// Document identification
-	DocumentID   string     `gorm:"type:varchar(500);not null;index:idx_doc_summaries_doc_id" json:"documentId"`
-	DocumentUUID *uuid.UUID `gorm:"type:uuid;index:idx_doc_summaries_uuid" json:"documentUuid,omitempty"`
-
-	// Summary content
+	UpdatedAt        time.Time   `gorm:"autoUpdateTime" json:"updatedAt"`
+	CreatedAt        time.Time   `gorm:"autoCreateTime" json:"createdAt"`
+	GeneratedAt      time.Time   `gorm:"not null;index:idx_doc_summaries_generated,sort:desc" json:"generatedAt"`
+	Confidence       *float64    `gorm:"type:double precision" json:"confidence,omitempty"`
+	DocumentUUID     *uuid.UUID  `gorm:"type:uuid;index:idx_doc_summaries_uuid" json:"documentUuid,omitempty"`
+	ContentLength    *int        `gorm:"type:integer" json:"contentLength,omitempty"`
+	GenerationTimeMs *int        `gorm:"type:integer" json:"generationTimeMs,omitempty"`
+	TokensUsed       *int        `gorm:"type:integer" json:"tokensUsed,omitempty"`
+	ContentHash      string      `gorm:"type:varchar(64);index:idx_doc_summaries_content_hash" json:"contentHash,omitempty"`
+	Model            string      `gorm:"type:varchar(100);not null;index:idx_doc_summaries_model" json:"model"`
+	Provider         string      `gorm:"type:varchar(50);not null" json:"provider"`
+	SuggestedStatus  string      `gorm:"type:varchar(50)" json:"suggestedStatus,omitempty"`
+	DocumentTitle    string      `gorm:"type:varchar(500)" json:"documentTitle,omitempty"`
+	DocumentType     string      `gorm:"type:varchar(50);index:idx_doc_summaries_doc_type" json:"documentType,omitempty"`
 	ExecutiveSummary string      `gorm:"type:text;not null" json:"executiveSummary"`
-	KeyPoints        StringArray `gorm:"type:jsonb" json:"keyPoints"`
-	Topics           StringArray `gorm:"type:jsonb" json:"topics"`
+	DocumentID       string      `gorm:"type:varchar(500);not null;index:idx_doc_summaries_doc_id" json:"documentId"`
 	Tags             StringArray `gorm:"type:jsonb" json:"tags"`
-
-	// AI analysis
-	SuggestedStatus string   `gorm:"type:varchar(50)" json:"suggestedStatus,omitempty"`
-	Confidence      *float64 `gorm:"type:double precision" json:"confidence,omitempty"`
-
-	// Metadata
-	Model            string `gorm:"type:varchar(100);not null;index:idx_doc_summaries_model" json:"model"`
-	Provider         string `gorm:"type:varchar(50);not null" json:"provider"`
-	TokensUsed       *int   `gorm:"type:integer" json:"tokensUsed,omitempty"`
-	GenerationTimeMs *int   `gorm:"type:integer" json:"generationTimeMs,omitempty"`
-
-	// Document context at time of generation
-	DocumentTitle string `gorm:"type:varchar(500)" json:"documentTitle,omitempty"`
-	DocumentType  string `gorm:"type:varchar(50);index:idx_doc_summaries_doc_type" json:"documentType,omitempty"`
-	ContentHash   string `gorm:"type:varchar(64);index:idx_doc_summaries_content_hash" json:"contentHash,omitempty"`
-	ContentLength *int   `gorm:"type:integer" json:"contentLength,omitempty"`
-
-	// Timestamps
-	GeneratedAt time.Time `gorm:"not null;index:idx_doc_summaries_generated,sort:desc" json:"generatedAt"`
-	CreatedAt   time.Time `gorm:"autoCreateTime" json:"createdAt"`
-	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
+	Topics           StringArray `gorm:"type:jsonb" json:"topics"`
+	KeyPoints        StringArray `gorm:"type:jsonb" json:"keyPoints"`
+	ID               uint        `gorm:"primaryKey" json:"id"`
 }
 
 // TableName specifies the table name.
@@ -85,7 +73,7 @@ func (s StringArray) Value() (driver.Value, error) {
 }
 
 // BeforeCreate hook to ensure required fields.
-func (ds *DocumentSummary) BeforeCreate(tx *gorm.DB) error {
+func (ds *DocumentSummary) BeforeCreate(_ *gorm.DB) error {
 	if ds.GeneratedAt.IsZero() {
 		ds.GeneratedAt = time.Now()
 	}

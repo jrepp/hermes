@@ -20,28 +20,11 @@ import (
 //	  tls_verify = true
 //	}
 type Config struct {
-	// BaseURL is the base URL of the remote Hermes instance
-	// Example: "https://hermes.example.com"
-	BaseURL string `hcl:"base_url" json:"baseUrl"`
-
-	// AuthToken is the API token for authentication (Bearer token)
-	// Should be kept in environment variable for security
-	AuthToken string `hcl:"auth_token" json:"-"` // Don't marshal auth token to JSON
-
-	// TLSVerify controls TLS certificate verification
-	// Set to false only for development/testing with self-signed certs
-	TLSVerify *bool `hcl:"tls_verify,optional" json:"tlsVerify,omitempty"`
-
-	// Timeout for API requests
-	// Default: 30 seconds
-	Timeout time.Duration `hcl:"timeout,optional" json:"timeout,omitempty"`
-
-	// MaxRetries for failed requests
-	// Default: 3
-	MaxRetries int `hcl:"max_retries,optional" json:"maxRetries,omitempty"`
-
-	// RetryDelay between retries
-	// Default: 1 second
+	TLSVerify  *bool         `hcl:"tls_verify,optional" json:"tlsVerify,omitempty"`
+	BaseURL    string        `hcl:"base_url" json:"baseUrl"`
+	AuthToken  string        `hcl:"auth_token" json:"-"`
+	Timeout    time.Duration `hcl:"timeout,optional" json:"timeout,omitempty"`
+	MaxRetries int           `hcl:"max_retries,optional" json:"maxRetries,omitempty"`
 	RetryDelay time.Duration `hcl:"retry_delay,optional" json:"retryDelay,omitempty"`
 }
 

@@ -16,6 +16,10 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	// Command-line flags
 	driver := flag.String("driver", "postgres", "Database driver (postgres|sqlite)")
 	dsn := flag.String("dsn", "", "Database connection string")
@@ -39,7 +43,7 @@ func main() {
 
 	if *help {
 		flag.Usage()
-		os.Exit(0)
+		return 0
 	}
 
 	// Validate required flags
@@ -61,16 +65,18 @@ func main() {
 
 	// Verify connection
 	if err := sqlDB.Ping(); err != nil {
-		sqlDB.Close() // Ensure connection is closed before exit
-		log.Fatalf("Failed to ping database: %v\n", err)
+		log.Printf("Failed to ping database: %v\n", err)
+		return 1
 	}
 	log.Printf("✓ Connected to database\n")
 
 	// Run migrations
 	log.Printf("Running migrations...\n")
 	if err := migrate.RunMigrations(sqlDB, *driver); err != nil {
-		log.Fatalf("Migration failed: %v\n", err)
+		log.Printf("Migration failed: %v\n", err)
+		return 1
 	}
 
 	log.Printf("✅ All migrations completed successfully!\n")
+	return 0
 }

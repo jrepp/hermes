@@ -153,7 +153,7 @@ func (p *Provider) generateMockSummary(content, title string) string {
 }
 
 // generateMockKeyPoints creates mock key points.
-func (p *Provider) generateMockKeyPoints(content string) []string {
+func (p *Provider) generateMockKeyPoints(_ string) []string {
 	return []string{
 		"Mock key point 1: Document overview",
 		"Mock key point 2: Main findings",
@@ -162,7 +162,7 @@ func (p *Provider) generateMockKeyPoints(content string) []string {
 }
 
 // generateMockTopics creates mock topics based on document type.
-func (p *Provider) generateMockTopics(content, docType string) []string {
+func (p *Provider) generateMockTopics(_, docType string) []string {
 	topics := []string{"documentation", "analysis"}
 	if docType != "" {
 		topics = append(topics, strings.ToLower(docType))

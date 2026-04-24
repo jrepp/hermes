@@ -104,12 +104,12 @@ func TestMigrationE2E(t *testing.T) {
 
 	// Phase 6: Start Migration Job
 	t.Run("Phase6_StartMigrationJob", func(t *testing.T) {
-		testStartMigrationJob(t, ctx, db, logger, jobID, sourceProviderID, destProviderID, testDocuments)
+		testStartMigrationJob(ctx, t, db, logger, jobID, sourceProviderID, destProviderID, testDocuments)
 	})
 
 	// Phase 7: Worker Processing
 	t.Run("Phase7_WorkerProcessing", func(t *testing.T) {
-		testWorkerProcessing(t, ctx, db, logger, jobID, sourceProviderID, destProviderID, testDocuments)
+		testWorkerProcessing(ctx, t, db, logger, jobID, sourceProviderID, destProviderID, testDocuments)
 	})
 
 	// Phase 8: Verify Migration Results
@@ -124,7 +124,7 @@ func TestMigrationE2E(t *testing.T) {
 
 	// Phase 9b: Strong Signal Validation (NEW)
 	t.Run("Phase9b_StrongSignalValidation", func(t *testing.T) {
-		testStrongSignalValidation(t, ctx, db, logger, jobID, testDocuments, destProviderID)
+		testStrongSignalValidation(ctx, t, db, logger, jobID, testDocuments, destProviderID)
 	})
 
 	// Phase 10: Cleanup
@@ -238,11 +238,11 @@ func testProviderRegistration(t *testing.T, ctx context.Context, db *sql.DB) (so
 
 // testDocument represents a test document for migration.
 type testDocument struct {
-	UUID       docid.UUID
 	ProviderID string
 	Name       string
 	Content    string
 	Hash       string
+	UUID       docid.UUID
 }
 
 // createTestDocuments creates test documents in memory (mock source).
@@ -359,7 +359,7 @@ func testQueueDocuments(t *testing.T, ctx context.Context, db *sql.DB, jobID int
 }
 
 // testStartMigrationJob updates the job status to 'running'.
-func testStartMigrationJob(t *testing.T, ctx context.Context, db *sql.DB, logger hclog.Logger, jobID, sourceID, destID int64, docs []testDocument) {
+func testStartMigrationJob(ctx context.Context, t *testing.T, db *sql.DB, _ hclog.Logger, jobID, _, _ int64, _ []testDocument) {
 	t.Log("=== Phase 6: Start Migration Job ===")
 
 	// Update job status to running
@@ -379,7 +379,7 @@ func testStartMigrationJob(t *testing.T, ctx context.Context, db *sql.DB, logger
 }
 
 // testWorkerProcessing runs the migration worker to process queued tasks.
-func testWorkerProcessing(t *testing.T, ctx context.Context, db *sql.DB, logger hclog.Logger, jobID, sourceID, destID int64, docs []testDocument) {
+func testWorkerProcessing(ctx context.Context, t *testing.T, db *sql.DB, logger hclog.Logger, jobID, _, _ int64, docs []testDocument) {
 	t.Log("=== Phase 7: Worker Processing ===")
 
 	// Create mock source provider
@@ -613,7 +613,7 @@ func testProgressTracking(t *testing.T, ctx context.Context, db *sql.DB, jobID i
 }
 
 // testStrongSignalValidation runs comprehensive validation checks with strong signals.
-func testStrongSignalValidation(t *testing.T, ctx context.Context, db *sql.DB, logger hclog.Logger, jobID int64, docs []testDocument, destProviderID int64) {
+func testStrongSignalValidation(ctx context.Context, t *testing.T, db *sql.DB, logger hclog.Logger, jobID int64, docs []testDocument, _ int64) {
 	t.Log("=== Phase 9b: Strong Signal Validation ===")
 
 	// Create validator
@@ -741,47 +741,47 @@ type mockProvider struct {
 }
 
 // DocumentProvider interface
-func (m *mockProvider) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) GetDocument(_ context.Context, providerID string) (*workspace.DocumentMetadata, error) {
 	if doc, ok := m.documents[providerID]; ok {
 		return doc, nil
 	}
 	return nil, fmt.Errorf("document not found: %s", providerID)
 }
 
-func (m *mockProvider) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) GetDocumentByUUID(_ context.Context, docUUID docid.UUID) (*workspace.DocumentMetadata, error) {
 	for _, doc := range m.documents {
-		if doc.UUID == uuid {
+		if doc.UUID == docUUID {
 			return doc, nil
 		}
 	}
-	return nil, fmt.Errorf("document not found: %s", uuid.String())
+	return nil, fmt.Errorf("document not found: %s", docUUID.String())
 }
 
-func (m *mockProvider) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateDocumentWithUUID(_ context.Context, _ docid.UUID, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) RegisterDocument(_ context.Context, _ *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CopyDocument(ctx context.Context, sourceProviderID, destFolderID, newName string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CopyDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) MoveDocument(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) DeleteDocument(ctx context.Context, providerID string) error {
+func (m *mockProvider) DeleteDocument(_ context.Context, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RenameDocument(ctx context.Context, providerID, newName string) error {
+func (m *mockProvider) RenameDocument(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 

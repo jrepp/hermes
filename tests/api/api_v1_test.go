@@ -53,7 +53,7 @@ func TestAPI_DocumentTypesHandler(t *testing.T) {
 	handler := apiv2.DocumentTypesHandler(srv)
 
 	t.Run("GET returns document types", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/v1/document-types", nil)
+		req := httptest.NewRequest("GET", "/api/v1/document-types", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -73,7 +73,7 @@ func TestAPI_DocumentTypesHandler(t *testing.T) {
 	})
 
 	t.Run("POST returns method not allowed", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/api/v1/document-types", nil)
+		req := httptest.NewRequest("POST", "/api/v1/document-types", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -82,7 +82,7 @@ func TestAPI_DocumentTypesHandler(t *testing.T) {
 	})
 
 	t.Run("PUT returns method not allowed", func(t *testing.T) {
-		req := httptest.NewRequest("PUT", "/api/v1/document-types", nil)
+		req := httptest.NewRequest("PUT", "/api/v1/document-types", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -91,7 +91,7 @@ func TestAPI_DocumentTypesHandler(t *testing.T) {
 	})
 
 	t.Run("DELETE returns method not allowed", func(t *testing.T) {
-		req := httptest.NewRequest("DELETE", "/api/v1/document-types", nil)
+		req := httptest.NewRequest("DELETE", "/api/v1/document-types", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -112,7 +112,7 @@ func TestAPI_DocumentTypesHandler(t *testing.T) {
 		}
 		emptyHandler := apiv2.DocumentTypesHandler(emptySrv)
 
-		req := httptest.NewRequest("GET", "/api/v1/document-types", nil)
+		req := httptest.NewRequest("GET", "/api/v1/document-types", http.NoBody)
 		w := httptest.NewRecorder()
 
 		emptyHandler.ServeHTTP(w, req)
@@ -195,7 +195,7 @@ func TestAPI_AnalyticsHandler(t *testing.T) {
 
 	t.Run("POST empty body returns bad request", func(t *testing.T) {
 		// Empty body should return 400
-		req := httptest.NewRequest("POST", "/api/v1/analytics", nil)
+		req := httptest.NewRequest("POST", "/api/v1/analytics", http.NoBody)
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -217,7 +217,7 @@ func TestAPI_AnalyticsHandler(t *testing.T) {
 	})
 
 	t.Run("GET returns method not allowed", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/v1/analytics", nil)
+		req := httptest.NewRequest("GET", "/api/v1/analytics", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -226,7 +226,7 @@ func TestAPI_AnalyticsHandler(t *testing.T) {
 	})
 
 	t.Run("PUT returns method not allowed", func(t *testing.T) {
-		req := httptest.NewRequest("PUT", "/api/v1/analytics", nil)
+		req := httptest.NewRequest("PUT", "/api/v1/analytics", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -235,7 +235,7 @@ func TestAPI_AnalyticsHandler(t *testing.T) {
 	})
 
 	t.Run("DELETE returns method not allowed", func(t *testing.T) {
-		req := httptest.NewRequest("DELETE", "/api/v1/analytics", nil)
+		req := httptest.NewRequest("DELETE", "/api/v1/analytics", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)

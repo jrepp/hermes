@@ -93,6 +93,6 @@ func (as *authService) GetUserInfo(ctx context.Context, token string) (*workspac
 
 // tokenInfo stores token information.
 type tokenInfo struct {
-	Email     string    `json:"email"`
 	ExpiresAt time.Time `json:"expiresAt"`
+	Email     string    `json:"email"`
 }

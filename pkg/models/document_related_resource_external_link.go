@@ -9,12 +9,9 @@ import (
 
 type DocumentRelatedResourceExternalLink struct {
 	gorm.Model
-
+	Name            string                  `gorm:"default:null;not null"`
+	URL             string                  `gorm:"default:null;not null"`
 	RelatedResource DocumentRelatedResource `gorm:"polymorphic:RelatedResource"`
-
-	Name string `gorm:"default:null;not null"`
-
-	URL string `gorm:"default:null;not null"`
 }
 
 type DocumentRelatedResourceExternalLinks []DocumentRelatedResourceExternalLink

@@ -29,11 +29,12 @@ func ProvidersHandler(srv server.Server) http.Handler {
 
 		if path == "" {
 			// /api/v2/providers
-			if r.Method == http.MethodGet {
+			switch r.Method {
+			case http.MethodGet:
 				listProviders(w, r, srv)
-			} else if r.Method == http.MethodPost {
+			case http.MethodPost:
 				registerProvider(w, r, srv)
-			} else {
+			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
 			return
@@ -51,7 +52,8 @@ func ProvidersHandler(srv server.Server) http.Handler {
 			return
 		}
 
-		if len(parts) == 1 {
+		switch {
+		case len(parts) == 1:
 			// /providers/:id
 			switch r.Method {
 			case http.MethodGet:
@@ -63,14 +65,15 @@ func ProvidersHandler(srv server.Server) http.Handler {
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
-		} else if len(parts) == 2 && parts[1] == "health" {
+		case len(parts) == 2 && parts[1] == "health":
 			// /providers/:id/health
 			if r.Method == http.MethodGet {
 				getProviderHealth(w, r, srv, providerID)
-			} else {
-				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				return
 			}
-		} else {
+
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		default:
 			http.Error(w, "Invalid path", http.StatusBadRequest)
 		}
 	})
@@ -78,13 +81,13 @@ func ProvidersHandler(srv server.Server) http.Handler {
 
 // RegisterProviderRequest represents a request to register a new provider
 type RegisterProviderRequest struct {
-	ProviderName string                 `json:"providerName"`
-	ProviderType string                 `json:"providerType"` // "local", "s3", "google", "azure"
 	Config       map[string]interface{} `json:"config"`
 	Capabilities map[string]interface{} `json:"capabilities"`
+	ProviderName string                 `json:"providerName"`
+	ProviderType string                 `json:"providerType"`
+	Status       string                 `json:"status"`
 	IsPrimary    bool                   `json:"isPrimary"`
 	IsWritable   bool                   `json:"isWritable"`
-	Status       string                 `json:"status"` // "active", "readonly", "disabled"
 }
 
 // UpdateProviderRequest represents a request to update a provider

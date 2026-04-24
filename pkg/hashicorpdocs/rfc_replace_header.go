@@ -48,6 +48,7 @@ const (
 	tableRows = 12 // Number of rows in the header table.
 )
 
+//nolint:gocognit,gocyclo,gocritic,dupl // Header builder is verbose and intentionally explicit for Docs API requests.
 func (doc *RFC) ReplaceHeader(fileID, baseURL string, isDraft bool, provider workspace.Provider) error {
 	// Get doc.
 	d, err := provider.GetDoc(fileID)
@@ -581,7 +582,7 @@ func (doc *RFC) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 
 	// Contributors cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Contributors", strings.Join(doc.Contributors[:], ", "), int64(pos))
+		"Contributors", strings.Join(doc.Contributors, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 3
 
@@ -593,7 +594,7 @@ func (doc *RFC) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 
 	// Other Stakeholders cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Other Stakeholders", strings.Join(doc.Stakeholders[:], ", "), int64(pos))
+		"Other Stakeholders", strings.Join(doc.Stakeholders, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 3
 
@@ -642,13 +643,13 @@ func (doc *RFC) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 		}
 	}
 	cellReqs, cellLength = createTextCellRequests(
-		"Approvers", strings.Join(approvers[:], ", "), int64(pos))
+		"Approvers", strings.Join(approvers, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 3
 
 	// Tags cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Tags", strings.Join(doc.Tags[:], ", "), int64(pos))
+		"Tags", strings.Join(doc.Tags, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 5
 

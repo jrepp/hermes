@@ -76,7 +76,7 @@ func (c *Command) Run(args []string) int {
 
 	// Check if explicit config file provided
 	configPath := ""
-	if configFlag := f.FlagSet.Lookup("config"); configFlag != nil {
+	if configFlag := f.Lookup("config"); configFlag != nil {
 		configPath = configFlag.Value.String()
 	}
 
@@ -112,7 +112,7 @@ func (c *Command) Run(args []string) int {
 		c.UI.Error(fmt.Sprintf("error writing setup config: %v", err))
 		return 1
 	}
-	defer os.Remove(tmpConfigPath)
+	defer func() { _ = os.Remove(tmpConfigPath) }()
 
 	// Launch browser to setup page if enabled
 	if c.FlagBrowser {

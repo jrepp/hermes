@@ -80,6 +80,8 @@ func (t fakeT) Errorf(string, ...interface{}) {}
 // compareAlgoliaAndDatabaseDocument compares data for a document stored in
 // Algolia and the database to determine any inconsistencies, which are returned
 // back as a (multierror) error.
+//
+//nolint:gocognit,gocyclo // Detailed field-by-field comparison is intentionally explicit for diagnostics.
 func compareAlgoliaAndDatabaseDocument(
 	algoDoc map[string]any,
 	dbDoc models.Document,
@@ -108,14 +110,12 @@ func compareAlgoliaAndDatabaseDocument(
 	if err != nil {
 		result = multierror.Append(
 			result, fmt.Errorf("error getting title value: %w", err))
-	} else {
-		if algoTitle != dbDoc.Title {
-			result = multierror.Append(result,
-				fmt.Errorf(
-					"title not equal, algolia=%v, db=%v",
-					algoTitle, dbDoc.Title),
-			)
-		}
+	} else if algoTitle != dbDoc.Title {
+		result = multierror.Append(result,
+			fmt.Errorf(
+				"title not equal, algolia=%v, db=%v",
+				algoTitle, dbDoc.Title),
+		)
 	}
 
 	// Compare docType.
@@ -142,7 +142,7 @@ func compareAlgoliaAndDatabaseDocument(
 	} else {
 		// Replace "-xxx.docx" (how draft doc numbers are defined in Algolia) with a
 		// zero.
-		re := regexp.MustCompile(`-xxx\.docx$`)
+		re := regexp.MustCompile(`-\?{3}$`)
 		algoDocNumber = re.ReplaceAllString(algoDocNumber, "-000")
 
 		var dbDocNumber string
@@ -193,7 +193,8 @@ func compareAlgoliaAndDatabaseDocument(
 			result, fmt.Errorf("error getting approvedBy value: %w", err))
 	}
 	dbApprovedBy := []string{}
-	for _, r := range dbDocReviews {
+	for i := range dbDocReviews {
+		r := &dbDocReviews[i]
 		if r.Status == models.ApprovedDocumentReviewStatus {
 			dbApprovedBy = append(dbApprovedBy, r.User.EmailAddress)
 		}
@@ -232,7 +233,8 @@ func compareAlgoliaAndDatabaseDocument(
 			result, fmt.Errorf("error getting changesRequestedBy value: %w", err))
 	}
 	dbChangesRequestedBy := []string{}
-	for _, r := range dbDocReviews {
+	for i := range dbDocReviews {
+		r := &dbDocReviews[i]
 		if r.Status == models.ChangesRequestedDocumentReviewStatus {
 			dbChangesRequestedBy = append(dbChangesRequestedBy, r.User.EmailAddress)
 		}
@@ -293,8 +295,9 @@ func compareAlgoliaAndDatabaseDocument(
 			result, fmt.Errorf("error getting fileRevisions value: %w", err))
 	} else {
 		dbFileRevisions := make(map[string]string)
-		for _, fr := range dbDoc.FileRevisions {
-			dbFileRevisions[fr.FileRevisionID] = fr.Name
+		for i := range dbDoc.FileRevisions {
+			fr := &dbDoc.FileRevisions[i]
+			dbFileRevisions[fr.GoogleDriveFileRevisionID] = fr.Name
 		}
 		if !reflect.DeepEqual(algoFileRevisions, dbFileRevisions) {
 			result = multierror.Append(result,
@@ -418,10 +421,9 @@ func getBooleanValue(in map[string]any, key string) (bool, error) {
 	if v, ok := in[key]; ok {
 		if vv, ok := v.(bool); ok {
 			return vv, nil
-		} else {
-			return false, fmt.Errorf(
-				"invalid type: value is not a boolean, type: %T", v)
 		}
+		return false, fmt.Errorf(
+			"invalid type: value is not a boolean, type: %T", v)
 	}
 
 	return result, nil
@@ -435,10 +437,9 @@ func getInt64Value(in map[string]any, key string) (int64, error) {
 		// to int64.
 		if vv, ok := v.(float64); ok {
 			return int64(vv), nil
-		} else {
-			return 0, fmt.Errorf(
-				"invalid type: value is not an float64 (expected), type: %T", v)
 		}
+		return 0, fmt.Errorf(
+			"invalid type: value is not an float64 (expected), type: %T", v)
 	}
 
 	return result, nil
@@ -464,9 +465,8 @@ func getMapStringStringValue(in map[string]any, key string) (
 				}
 			}
 			return result, nil
-		} else {
-			return nil, fmt.Errorf("invalid type: value is not a map")
 		}
+		return nil, fmt.Errorf("invalid type: value is not a map")
 	}
 
 	return result, nil
@@ -478,9 +478,8 @@ func getStringValue(in map[string]any, key string) (string, error) {
 	if v, ok := in[key]; ok {
 		if vv, ok := v.(string); ok {
 			return vv, nil
-		} else {
-			return "", fmt.Errorf("invalid type: value is not a string, type: %T", v)
 		}
+		return "", fmt.Errorf("invalid type: value is not a string, type: %T", v)
 	}
 
 	return result, nil
@@ -503,9 +502,8 @@ func getStringSliceValue(in map[string]any, key string) ([]string, error) {
 				}
 			}
 			return result, nil
-		} else {
-			return nil, fmt.Errorf("invalid type: value is not a slice")
 		}
+		return nil, fmt.Errorf("invalid type: value is not a slice")
 	}
 
 	return result, nil
@@ -513,6 +511,8 @@ func getStringSliceValue(in map[string]any, key string) ([]string, error) {
 
 // compareCustomFields compares custom fields between a source document (search/algolia) and database document.
 // sourcePrefix is used for error messages (e.g., "search" or "algolia").
+//
+//nolint:gocognit,gocyclo // Custom field comparison is intentionally explicit for mismatch reporting.
 func compareCustomFields(
 	docTypes []*config.DocumentType,
 	sourceDoc map[string]any,

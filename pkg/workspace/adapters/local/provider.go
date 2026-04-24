@@ -273,7 +273,7 @@ func (p *ProviderAdapter) SearchPeople(ctx context.Context, query string) ([]*wo
 
 // SearchPeopleLegacy searches for people with old Provider interface signature.
 // Deprecated: Use SearchPeople with context parameter instead.
-func (p *ProviderAdapter) SearchPeopleLegacy(email string, fields string) ([]*people.Person, error) {
+func (p *ProviderAdapter) SearchPeopleLegacy(email, _ string) ([]*people.Person, error) {
 	// SearchUsers expects a query and fields slice
 	users, err := p.adapter.PeopleService().SearchUsers(p.ctx, email, []string{"names", "emailAddresses", "photos"})
 	if err != nil {
@@ -509,7 +509,7 @@ func (p *ProviderAdapter) loadPermissionsFromMetadata(doc *workspace.Document) {
 
 // ShareFileWithDomain shares a file with all users in a domain.
 // In the local adapter, this is a no-op since domain sharing doesn't apply.
-func (p *ProviderAdapter) ShareFileWithDomain(fileID, domain, role string) error {
+func (p *ProviderAdapter) ShareFileWithDomain(_, _, _ string) error {
 	// Local adapter doesn't support domain-wide sharing
 	// This is primarily used in Google Workspace
 	return nil
@@ -645,7 +645,7 @@ func (p *ProviderAdapter) GetDoc(fileID string) (*docs.Document, error) {
 // The local adapter stores markdown files, not Google Docs, so document header
 // replacement operations are skipped. Documents are created with template content
 // and headers can be manually updated or handled by the indexer.
-func (p *ProviderAdapter) UpdateDoc(fileID string, requests []*docs.Request) (*docs.BatchUpdateDocumentResponse, error) {
+func (p *ProviderAdapter) UpdateDoc(fileID string, _ []*docs.Request) (*docs.BatchUpdateDocumentResponse, error) {
 	// For local adapter, we skip Google Docs API operations
 	// Headers in markdown files are managed differently than Google Docs tables
 	// Return success response so document creation can proceed
@@ -695,7 +695,7 @@ func (p *ProviderAdapter) KeepRevisionForeverLegacy(fileID, revisionID string) (
 
 // UpdateKeepRevisionForever updates the KeepForever flag on a revision.
 // The local adapter doesn't support revisions, so this is a no-op.
-func (p *ProviderAdapter) UpdateKeepRevisionForever(fileID, revisionID string, keepForever bool) error {
+func (p *ProviderAdapter) UpdateKeepRevisionForever(_, _ string, _ bool) error {
 	return nil
 }
 
@@ -713,14 +713,14 @@ func (p *ProviderAdapter) SendEmailLegacy(to []string, from, subject, body strin
 
 // ListGroups lists groups matching a query in a domain.
 // The local adapter doesn't support groups, so this returns an empty list.
-func (p *ProviderAdapter) ListGroups(domain, query string, maxResults int64) ([]*admin.Group, error) {
+func (p *ProviderAdapter) ListGroups(_, _ string, _ int64) ([]*admin.Group, error) {
 	// Local adapter doesn't support group management
 	return []*admin.Group{}, nil
 }
 
 // ListUserGroups lists all groups a user is a member of.
 // The local adapter doesn't support groups, so this returns an empty list.
-func (p *ProviderAdapter) ListUserGroups(userEmail string) ([]*admin.Group, error) {
+func (p *ProviderAdapter) ListUserGroups(_ string) ([]*admin.Group, error) {
 	// Local adapter doesn't support group management
 	return []*admin.Group{}, nil
 }
@@ -855,7 +855,7 @@ func (p *ProviderAdapter) GetContentByUUID(ctx context.Context, uuid docid.UUID)
 }
 
 // UpdateContent updates document content.
-func (p *ProviderAdapter) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (p *ProviderAdapter) UpdateContent(ctx context.Context, providerID, content string) (*workspace.DocumentContent, error) {
 	// Extract document ID from providerID (format: "local:doc-id")
 	docID := strings.TrimPrefix(providerID, "local:")
 

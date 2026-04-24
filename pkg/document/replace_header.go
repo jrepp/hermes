@@ -570,7 +570,7 @@ func (doc *Document) ReplaceHeader(
 
 	// Contributors cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Contributors", strings.Join(doc.Contributors[:], ", "), int64(pos))
+		"Contributors", strings.Join(doc.Contributors, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 2
 
@@ -588,7 +588,7 @@ func (doc *Document) ReplaceHeader(
 		}
 	}
 	cellReqs, cellLength = createTextCellRequests(
-		"Approvers", strings.Join(approvers[:], ", "), int64(pos))
+		"Approvers", strings.Join(approvers, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 3
 
@@ -633,7 +633,7 @@ func (doc *Document) ReplaceHeader(
 
 			// Change string slice to comma-separated value.
 			cellReqs, cellLength = createTextCellRequests(
-				cf.DisplayName, strings.Join(cfVal[:], ", "), int64(pos))
+				cf.DisplayName, strings.Join(cfVal, ", "), int64(pos))
 			reqs = append(reqs, cellReqs...)
 
 		case "STRING":

@@ -11,20 +11,20 @@ import (
 // Pipeline executes a sequence of commands on documents.
 // It handles filtering, parallel processing, and error collection.
 type Pipeline struct {
+	Logger      hclog.Logger
+	Filter      DocumentFilter
 	Name        string
 	Description string
 	Commands    []Command
-	Filter      DocumentFilter
-	Logger      hclog.Logger
-
-	// Configuration
-	MaxParallel int // Maximum number of documents to process in parallel
+	MaxParallel int
 }
 
 // Execute runs the pipeline on a set of documents.
 // Documents are filtered first, then processed through each command
 // in sequence. Commands that implement BatchCommand can process
 // multiple documents at once for efficiency.
+//
+//nolint:gocognit // Pipeline command orchestration is clearer inline than split across many tiny helpers.
 func (p *Pipeline) Execute(ctx context.Context, docs []*DocumentContext) error {
 	p.Logger.Info("starting pipeline",
 		"name", p.Name,
@@ -121,6 +121,8 @@ func (p *Pipeline) executeParallel(ctx context.Context, cmd Command, docs []*Doc
 
 // ParallelProcess processes items in parallel using a worker pool.
 // This is a generic helper that can be used by any command.
+//
+//nolint:gocognit // Worker-pool control flow is intentionally explicit.
 func ParallelProcess[T any](ctx context.Context, items []T, fn func(context.Context, T) error, maxWorkers int) error {
 	if len(items) == 0 {
 		return nil

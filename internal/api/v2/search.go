@@ -30,8 +30,8 @@ func SearchHandler(srv server.Server) http.Handler {
 
 		// Extract index name from URL path
 		// Expected format: /api/v2/search/{index}
-		indexName, parseErr := parseSearchIndexFromURLPath(r.URL.Path)
-		if parseErr != nil || indexName == "" {
+		indexName := parseSearchIndexFromURLPath(r.URL.Path)
+		if indexName == "" {
 			srv.Logger.Error("invalid search path",
 				"path", r.URL.Path,
 				"method", r.Method,
@@ -136,16 +136,15 @@ func SearchHandler(srv server.Server) http.Handler {
 
 // SearchRequest represents the JSON search request from the frontend
 type SearchRequest struct {
-	Query       string      `json:"query"`
-	Page        int         `json:"page"`
-	HitsPerPage int         `json:"hitsPerPage"`
-	Filters     interface{} `json:"filters"` // Can be string or array
-	Facets      []string    `json:"facets"`
-	SortBy      string      `json:"sortBy"`
-	SortOrder   string      `json:"sortOrder"`
-	// Optional Algolia-specific fields for compatibility
-	AttributesToRetrieve  []string `json:"attributesToRetrieve,omitempty"`
-	AttributesToHighlight []string `json:"attributesToHighlight,omitempty"`
+	Filters               interface{} `json:"filters"`
+	Query                 string      `json:"query"`
+	SortBy                string      `json:"sortBy"`
+	SortOrder             string      `json:"sortOrder"`
+	Facets                []string    `json:"facets"`
+	AttributesToRetrieve  []string    `json:"attributesToRetrieve,omitempty"`
+	AttributesToHighlight []string    `json:"attributesToHighlight,omitempty"`
+	Page                  int         `json:"page"`
+	HitsPerPage           int         `json:"hitsPerPage"`
 }
 
 // convertFiltersToMap converts Algolia-style filter strings or arrays to a map
@@ -205,10 +204,10 @@ func convertFiltersToMap(filters interface{}) map[string][]string {
 // Expected format: /api/v2/search/{index}
 // Supports Algolia-style sorting suffixes (e.g., docs_createdTime_desc)
 // and strips them to return the base index name.
-func parseSearchIndexFromURLPath(path string) (string, error) {
+func parseSearchIndexFromURLPath(path string) string {
 	pathParts := strings.Split(strings.Trim(path, "/"), "/")
 	if len(pathParts) < 4 {
-		return "", nil
+		return ""
 	}
 	indexName := pathParts[3]
 
@@ -223,9 +222,9 @@ func parseSearchIndexFromURLPath(path string) (string, error) {
 
 	for _, suffix := range sortingSuffixes {
 		if strings.HasSuffix(indexName, suffix) {
-			return strings.TrimSuffix(indexName, suffix), nil
+			return strings.TrimSuffix(indexName, suffix)
 		}
 	}
 
-	return indexName, nil
+	return indexName
 }

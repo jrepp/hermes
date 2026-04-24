@@ -70,8 +70,6 @@ func AlgoliaProxyHandler(
 		for k, v := range resp.Header {
 			w.Header().Add(k, v[0])
 		}
-		log.Debug("AlgoliaProxyHandler: Copied response headers")
-
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Error("AlgoliaProxyHandler: Error reading response body",

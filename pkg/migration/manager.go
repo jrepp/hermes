@@ -133,7 +133,7 @@ func (m *Manager) QueueDocuments(ctx context.Context, jobID int64, documentUUIDs
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() {
-		_ = tx.Rollback() // Ignore error - will fail if already committed
+		_ = tx.Rollback() //nolint:errcheck // Ignore error - will fail if already committed
 	}()
 
 	// Insert migration items
@@ -334,7 +334,7 @@ func (m *Manager) UpdateItemStatus(ctx context.Context, itemID int64, status Ite
 		return err
 	}
 	defer func() {
-		_ = tx.Rollback() // Ignore error - will fail if already committed
+		_ = tx.Rollback() //nolint:errcheck // Ignore error - will fail if already committed
 	}()
 
 	now := time.Now()

@@ -1,6 +1,7 @@
 package models
 
-func ModelsToAutoMigrate() []interface{} {
+// ToAutoMigrate returns all model types for GORM auto-migration.
+func ToAutoMigrate() []interface{} {
 	// TEMPORARY: Re-enabling AutoMigrate for models with incomplete migrations
 	// TODO: Complete the SQL migrations for all models and remove this entirely
 	//

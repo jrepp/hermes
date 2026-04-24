@@ -229,7 +229,7 @@ func GetPostgresURL() string {
 
 // GetMeilisearchConfig returns the Meilisearch host and API key from the global fixture.
 // Panics if fixture is not initialized.
-func GetMeilisearchConfig() (host string, apiKey string) {
+func GetMeilisearchConfig() (host, apiKey string) {
 	fixture := GetFixture()
 	return fixture.MeilisearchHost, fixture.MeilisearchAPIKey
 }

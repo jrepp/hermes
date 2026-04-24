@@ -12,16 +12,9 @@ import (
 
 // IndexerFolder is a model for a  indexer folder.
 type IndexerFolder struct {
-	gorm.Model
-
-	// GoogleDriveID is the Google Drive ID of the folder (optional for SharePoint).
-	GoogleDriveID string `gorm:"default:null;uniqueIndex"`
-
-	// SharePointFolderID is the SharePoint folder ID (optional for Google Workspace).
-	SharePointFolderID string `gorm:"default:null;uniqueIndex"`
-
-	// LastIndexedAt is the time that the folder was last indexed.
 	LastIndexedAt time.Time
+	gorm.Model
+	GoogleDriveID string `gorm:"default:null;not null;uniqueIndex"`
 }
 
 // Get gets the indexer folder and assigns it to the receiver.
@@ -47,22 +40,17 @@ func (f *IndexerFolder) Get(db *gorm.DB) error {
 }
 
 // Upsert updates or inserts the receiver indexer folder into database db.
-func (l *IndexerFolder) Upsert(db *gorm.DB) error {
-	if err := validation.ValidateStruct(l,
-		validation.Field(&l.GoogleDriveID, validation.When(l.SharePointFolderID == "", validation.Required)),
-		validation.Field(&l.SharePointFolderID, validation.When(l.GoogleDriveID == "", validation.Required)),
+func (f *IndexerFolder) Upsert(db *gorm.DB) error {
+	if err := validation.ValidateStruct(f,
+		validation.Field(&f.GoogleDriveID, validation.Required),
 	); err != nil {
 		return err
 	}
 
-	tx := db
-	if l.GoogleDriveID != "" {
-		tx = tx.Where(IndexerFolder{GoogleDriveID: l.GoogleDriveID})
-	} else {
-		tx = tx.Where(IndexerFolder{SharePointFolderID: l.SharePointFolderID})
-	}
-
-	tx = tx.Assign(*l).FirstOrCreate(&l)
+	tx := db.
+		Where(IndexerFolder{GoogleDriveID: f.GoogleDriveID}).
+		Assign(*f).
+		FirstOrCreate(&f)
 	if err := tx.Error; err != nil {
 		return err
 	}

@@ -13,18 +13,16 @@ import (
 
 // Config holds configuration for database connection.
 type Config struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
-
-	// Connection pool settings (RFC-088 optimization)
-	MaxIdleConns    int           // Maximum idle connections in pool (default: 10)
-	MaxOpenConns    int           // Maximum open connections (default: 25)
-	ConnMaxLifetime time.Duration // Maximum connection lifetime (default: 5 minutes)
-	ConnMaxIdleTime time.Duration // Maximum connection idle time (default: 10 minutes)
+	Host            string
+	User            string
+	Password        string
+	DBName          string
+	SSLMode         string
+	Port            int
+	MaxIdleConns    int
+	MaxOpenConns    int
+	ConnMaxLifetime time.Duration
+	ConnMaxIdleTime time.Duration
 }
 
 // Connect establishes a database connection using the provided configuration.

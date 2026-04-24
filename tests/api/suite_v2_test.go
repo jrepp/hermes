@@ -164,7 +164,7 @@ func testV2Drafts(t *testing.T) {
 		assert.Equal(t, "Updated summary", updated.Summary)
 	})
 
-	t.Run("Unauthorized access", func(t *testing.T) {
+	t.Run("Unauthorized access", func(_ *testing.T) {
 		// Try to access without authentication
 		suite.Client.
 			Get("/api/v2/drafts").
@@ -281,28 +281,28 @@ func testV2Products(t *testing.T) {
 		_ = user
 	})
 
-	t.Run("POST returns method not allowed", func(t *testing.T) {
+	t.Run("POST returns method not allowed", func(_ *testing.T) {
 		suite.Client.
 			WithAuth(userEmail).
 			Post("/api/v2/products", map[string]string{}).
 			ExpectStatus(405)
 	})
 
-	t.Run("PUT returns method not allowed", func(t *testing.T) {
+	t.Run("PUT returns method not allowed", func(_ *testing.T) {
 		suite.Client.
 			WithAuth(userEmail).
 			Put("/api/v2/products/TEST", map[string]string{}).
 			ExpectStatus(405)
 	})
 
-	t.Run("DELETE returns method not allowed", func(t *testing.T) {
+	t.Run("DELETE returns method not allowed", func(_ *testing.T) {
 		suite.Client.
 			WithAuth(userEmail).
 			Delete("/api/v2/products/TEST").
 			ExpectStatus(405)
 	})
 
-	t.Run("Unauthorized access", func(t *testing.T) {
+	t.Run("Unauthorized access", func(_ *testing.T) {
 		suite.Client.
 			Get("/api/v2/products").
 			ExpectStatus(401)
@@ -340,7 +340,7 @@ func testV2Me(t *testing.T) {
 		_ = user
 	})
 
-	t.Run("Unauthorized access", func(t *testing.T) {
+	t.Run("Unauthorized access", func(_ *testing.T) {
 		suite.Client.
 			Get("/api/v2/me").
 			ExpectStatus(401)

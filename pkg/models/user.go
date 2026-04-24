@@ -28,15 +28,15 @@ type User struct {
 }
 
 type RecentlyViewedDoc struct {
+	ViewedAt   time.Time
 	UserID     int `gorm:"primaryKey"`
 	DocumentID int `gorm:"primaryKey"`
-	ViewedAt   time.Time
 }
 
 type RecentlyViewedProject struct {
+	ViewedAt  time.Time
 	UserID    int `gorm:"primaryKey"`
 	ProjectID int `gorm:"primaryKey"`
-	ViewedAt  time.Time
 }
 
 // BeforeSave is a hook to find or create associations before saving.
@@ -130,32 +130,32 @@ func (u *User) Upsert(db *gorm.DB) error {
 // getAssociations gets required associations, creating them where appropriate.
 func (u *User) getAssociations(tx *gorm.DB) error {
 	// Get product subscriptions.
-	var ps []Product
-	for _, p := range u.ProductSubscriptions {
-		if err := p.Get(tx); err != nil {
+	ps := make([]Product, 0, len(u.ProductSubscriptions))
+	for i := range u.ProductSubscriptions {
+		if err := u.ProductSubscriptions[i].Get(tx); err != nil {
 			return fmt.Errorf("error getting product: %w", err)
 		}
-		ps = append(ps, p)
+		ps = append(ps, u.ProductSubscriptions[i])
 	}
 	u.ProductSubscriptions = ps
 
 	// Get recently viewed documents.
-	var rvd []Document
-	for _, d := range u.RecentlyViewedDocs {
-		if err := d.Get(tx); err != nil {
+	rvd := make([]Document, 0, len(u.RecentlyViewedDocs))
+	for i := range u.RecentlyViewedDocs {
+		if err := u.RecentlyViewedDocs[i].Get(tx); err != nil {
 			return fmt.Errorf("error getting document: %w", err)
 		}
-		rvd = append(rvd, d)
+		rvd = append(rvd, u.RecentlyViewedDocs[i])
 	}
 	u.RecentlyViewedDocs = rvd
 
 	// Get recently viewed projects.
-	var rvp []Project
-	for _, p := range u.RecentlyViewedProjects {
-		if err := p.Get(tx, p.ID); err != nil {
+	rvp := make([]Project, 0, len(u.RecentlyViewedProjects))
+	for i := range u.RecentlyViewedProjects {
+		if err := u.RecentlyViewedProjects[i].Get(tx, u.RecentlyViewedProjects[i].ID); err != nil {
 			return fmt.Errorf("error getting project: %w", err)
 		}
-		rvp = append(rvp, p)
+		rvp = append(rvp, u.RecentlyViewedProjects[i])
 	}
 	u.RecentlyViewedProjects = rvp
 

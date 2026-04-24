@@ -14,36 +14,36 @@ import (
 
 // IndexerRegisterRequest is the request body for indexer registration.
 type IndexerRegisterRequest struct {
+	Metadata      map[string]interface{} `json:"metadata,omitempty"`
 	Token         string                 `json:"token"`
 	IndexerType   string                 `json:"indexer_type"`
 	WorkspacePath string                 `json:"workspace_path,omitempty"`
-	Metadata      map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // IndexerRegisterResponse is the response for successful registration.
 type IndexerRegisterResponse struct {
-	IndexerID uuid.UUID `json:"indexer_id"`
-	APIToken  string    `json:"api_token"`
 	ExpiresAt time.Time `json:"expires_at"`
+	APIToken  string    `json:"api_token"`
 	Config    struct {
 		HeartbeatInterval string `json:"heartbeat_interval"`
 		BatchSize         int    `json:"batch_size"`
 	} `json:"config"`
+	IndexerID uuid.UUID `json:"indexer_id"`
 }
 
 // IndexerHeartbeatRequest is the request body for heartbeat updates.
 type IndexerHeartbeatRequest struct {
-	IndexerID     uuid.UUID              `json:"indexer_id"`
-	Status        string                 `json:"status"`
-	DocumentCount int                    `json:"document_count"`
 	LastScanAt    *time.Time             `json:"last_scan_at,omitempty"`
 	Metrics       map[string]interface{} `json:"metrics,omitempty"`
+	Status        string                 `json:"status"`
+	DocumentCount int                    `json:"document_count"`
+	IndexerID     uuid.UUID              `json:"indexer_id"`
 }
 
 // IndexerHeartbeatResponse is the response for heartbeat.
 type IndexerHeartbeatResponse struct {
-	Acknowledged bool      `json:"acknowledged"`
 	ServerTime   time.Time `json:"server_time"`
+	Acknowledged bool      `json:"acknowledged"`
 }
 
 // IndexerHandler handles indexer-related API endpoints.

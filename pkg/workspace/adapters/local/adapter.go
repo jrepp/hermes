@@ -13,15 +13,15 @@ import (
 
 // Adapter provides local workspace document storage.
 type Adapter struct {
+	fs            FileSystem
+	smtpConfig    *SMTPConfig
+	metadataStore *MetadataStore
 	basePath      string
 	docsPath      string
 	draftsPath    string
 	foldersPath   string
 	usersPath     string
 	tokensPath    string
-	fs            FileSystem
-	smtpConfig    *SMTPConfig
-	metadataStore *MetadataStore
 }
 
 // NewAdapter creates a new filesystem adapter.
@@ -34,7 +34,7 @@ func NewAdapter(cfg *Config) (*Adapter, error) {
 	// Create directories if they don't exist
 	dirs := []string{cfg.DocsPath, cfg.DraftsPath, cfg.FoldersPath}
 	for _, dir := range dirs {
-		if err := cfg.FileSystem.MkdirAll(dir, 0755); err != nil {
+		if err := cfg.FileSystem.MkdirAll(dir, 0o755); err != nil {
 			return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}

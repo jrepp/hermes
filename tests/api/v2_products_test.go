@@ -45,7 +45,7 @@ func TestV2Products_Get(t *testing.T) {
 	handler := pkgauth.Middleware(mockAuth, log)(apiv2.ProductsHandler(*srv))
 
 	// Create test request
-	req := httptest.NewRequest("GET", "/api/v2/products", nil)
+	req := httptest.NewRequest("GET", "/api/v2/products", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	// Execute request
@@ -96,7 +96,7 @@ func TestV2Products_MethodNotAllowed(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
-			req := httptest.NewRequest(tc.method, "/api/v2/products", nil)
+			req := httptest.NewRequest(tc.method, "/api/v2/products", http.NoBody)
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)
 			assert.Equal(t, http.StatusMethodNotAllowed, rr.Code, "Expected 405 Method Not Allowed")
@@ -126,7 +126,7 @@ func TestV2Products_Unauthorized(t *testing.T) {
 
 	handler := pkgauth.Middleware(mockAuth, log)(apiv2.ProductsHandler(*srv))
 
-	req := httptest.NewRequest("GET", "/api/v2/products", nil)
+	req := httptest.NewRequest("GET", "/api/v2/products", http.NoBody)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 

@@ -23,24 +23,26 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
+//nolint:govet // Keep flag fields grouped for CLI readability.
 type MigrateAlgoliaToPostgreSQLCommand struct {
 	*base.Command
-
-	flagAutoApprove bool
 	flagConfig      string
+	flagAutoApprove bool
 	flagDryRun      bool
 	flagVerbose     bool
 }
 
 // migrator contains the migrator configuration.
+//
+//nolint:govet // Keep migration bookkeeping fields grouped for readability.
 type migrator struct {
+	Logger         hclog.Logger
 	Config         *config.Config
 	Database       *gorm.DB
 	DocsCreated    *int
 	DocsUpdated    *int
 	DocsWithErrors *[]string
 	DryRun         bool
-	Logger         hclog.Logger
 	Verbose        bool
 }
 
@@ -78,6 +80,7 @@ func (c *MigrateAlgoliaToPostgreSQLCommand) Flags() *base.FlagSet {
 	return f
 }
 
+//nolint:gocyclo // Command setup is linear but touches several required subsystems.
 func (c *MigrateAlgoliaToPostgreSQLCommand) Run(args []string) int {
 	logger, ui := c.Log, c.UI
 
@@ -141,7 +144,7 @@ func (c *MigrateAlgoliaToPostgreSQLCommand) Run(args []string) int {
 	if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
 		cfg.Postgres.Password = val
 	}
-	db, err := db.NewDB(*cfg.Postgres)
+	database, err := db.NewDB(*cfg.Postgres)
 	if err != nil {
 		ui.Error(fmt.Sprintf("error initializing database: %v", err))
 		return 1
@@ -151,7 +154,7 @@ func (c *MigrateAlgoliaToPostgreSQLCommand) Run(args []string) int {
 		InferLevels: true,
 	})
 	// Ignore "record not found" errors.
-	db = db.Session(&gorm.Session{Logger: gormlogger.New(
+	database = database.Session(&gorm.Session{Logger: gormlogger.New(
 		stdLogger,
 		gormlogger.Config{IgnoreRecordNotFoundError: true},
 	)})
@@ -176,7 +179,7 @@ func (c *MigrateAlgoliaToPostgreSQLCommand) Run(args []string) int {
 	// Create migrator.
 	migrator := &migrator{
 		Config:         cfg,
-		Database:       db,
+		Database:       database,
 		DocsCreated:    docsCreated,
 		DocsUpdated:    docsUpdated,
 		DocsWithErrors: docsWithErrors,
@@ -224,6 +227,8 @@ func (c *MigrateAlgoliaToPostgreSQLCommand) Run(args []string) int {
 }
 
 // migrateIndex migrates all documents in an Algolia docs or drafts index.
+//
+//nolint:gocognit,gocyclo // Legacy migration flow is intentionally explicit to preserve behavior.
 func migrateIndex(
 	m *migrator,
 	it *search.ObjectIterator,
@@ -235,12 +240,12 @@ func migrateIndex(
 		if err != nil {
 			if err == io.EOF {
 				break
-			} else {
-				m.Logger.Error("error decoding next object",
-					"error", err,
-				)
-				os.Exit(1)
 			}
+
+			m.Logger.Error("error decoding next object",
+				"error", err,
+			)
+			os.Exit(1)
 		}
 
 		// Convert Algolia object to a document.
@@ -284,7 +289,8 @@ func migrateIndex(
 						}
 
 						// Create reviews.
-						for _, dr := range reviews {
+						for i := range reviews {
+							dr := &reviews[i]
 							if err := dr.Update(tx); err != nil {
 								return fmt.Errorf("error upserting document review: %w", err)
 							}
@@ -299,12 +305,12 @@ func migrateIndex(
 						continue
 					}
 
-					*m.DocsCreated += 1
+					(*m.DocsCreated)++
 					m.Logger.Info("document created",
 						"document_id", doc.ObjectID,
 					)
 				} else {
-					*m.DocsCreated += 1
+					(*m.DocsCreated)++
 
 					logArgs := []any{"document_id", dbDoc.GetFileIdentifier()}
 					// Log additional document information if the verbose flag is true.
@@ -387,8 +393,9 @@ func migrateIndex(
 						// Create file revisions for any that don't exist.
 						for revID, revName := range doc.FileRevisions {
 							frExists := false
-							for _, fr := range dbFileRevs {
-								if fr.FileRevisionID == revID && fr.Name == revName {
+							for i := range dbFileRevs {
+								fr := &dbFileRevs[i]
+								if fr.GoogleDriveFileRevisionID == revID && fr.Name == revName {
 									frExists = true
 									break
 								}
@@ -408,7 +415,8 @@ func migrateIndex(
 						}
 
 						// Upsert document reviews.
-						for _, dr := range reviews {
+						for i := range reviews {
+							dr := &reviews[i]
 							if err := dr.Update(tx); err != nil {
 								return fmt.Errorf("error upserting document review: %w", err)
 							}
@@ -424,13 +432,13 @@ func migrateIndex(
 						continue
 					}
 
-					*m.DocsUpdated += 1
+					(*m.DocsUpdated)++
 					m.Logger.Info("document updated",
 						"document_id", doc.ObjectID,
 						"differences", docsDiffErr,
 					)
 				} else {
-					*m.DocsUpdated += 1
+					(*m.DocsUpdated)++
 					m.Logger.Info("would have updated document",
 						"document_id", doc.ObjectID,
 						"differences", docsDiffErr,

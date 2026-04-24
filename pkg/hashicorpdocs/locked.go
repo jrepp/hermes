@@ -110,6 +110,8 @@ func IsLocked(
 
 // containsSuggestionInHeader returns true if a Google Doc contains one or more
 // suggestions in the document header.
+//
+//nolint:gocognit,gocyclo // Header suggestion scanning mirrors Docs API structure and is clearer inline.
 func containsSuggestionInHeader(doc *docs.Document) bool {
 	// Find the first table in the document (hopefully it's the doc header).
 	var (

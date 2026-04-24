@@ -28,24 +28,14 @@ type Consumer struct {
 
 // Config holds configuration for the consumer.
 type Config struct {
-	// Database connection
-	DB *gorm.DB
-
-	// Kafka/Redpanda configuration
-	Brokers       []string
-	Topic         string
-	ConsumerGroup string
-
-	// Consumer offset configuration (optional, defaults to AtEnd for new consumers)
-	// Use AtStart for testing to ensure messages are consumed even if published before consumer joins
+	Logger           hclog.Logger
+	DB               *gorm.DB
+	Executor         *pipeline.Executor
+	Topic            string
+	ConsumerGroup    string
+	Brokers          []string
+	Rulesets         ruleset.Rulesets
 	ConsumeFromStart bool
-
-	// Pipeline configuration
-	Rulesets ruleset.Rulesets
-	Executor *pipeline.Executor
-
-	// Logger
-	Logger hclog.Logger
 }
 
 // New creates a new indexer consumer.
@@ -114,6 +104,8 @@ func New(cfg Config) (*Consumer, error) {
 }
 
 // Start starts the consumer polling loop.
+//
+//nolint:gocognit // Consumer loop intentionally keeps poll, retry, and shutdown branches together.
 func (c *Consumer) Start(ctx context.Context) error {
 	group, _ := c.kafkaClient.GroupMetadata()
 	c.logger.Info("starting indexer consumer",
@@ -203,7 +195,7 @@ func (c *Consumer) processRecord(ctx context.Context, record *kgo.Record) error 
 
 	// Check for idempotency (only if database is available)
 	if c.db != nil {
-		executions, err := models.GetExecutionsByOutbox(c.db, uint(event.ID))
+		executions, err := models.GetExecutionsByOutbox(c.db, event.ID)
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return fmt.Errorf("failed to check for existing executions: %w", err)
 		}
@@ -248,7 +240,7 @@ func (c *Consumer) processRecord(ctx context.Context, record *kgo.Record) error 
 	)
 
 	// Execute pipelines for each matched ruleset
-	errs := c.executor.ExecuteMultiple(ctx, revision, uint(event.ID), matched)
+	errs := c.executor.ExecuteMultiple(ctx, revision, event.ID, matched)
 
 	if len(errs) > 0 {
 		// Log errors but don't fail the entire processing
@@ -272,14 +264,14 @@ func (c *Consumer) processRecord(ctx context.Context, record *kgo.Record) error 
 // DocumentRevisionEvent represents the event structure from Redpanda.
 // This should match the structure published by the relay service.
 type DocumentRevisionEvent struct {
-	ID           uint                   `json:"id"`
+	Timestamp    time.Time              `json:"timestamp"`
+	Payload      map[string]interface{} `json:"payload"`
 	DocumentUUID string                 `json:"documentUuid"`
 	DocumentID   string                 `json:"documentId"`
 	EventType    string                 `json:"eventType"`
 	ProviderType string                 `json:"providerType"`
 	ContentHash  string                 `json:"contentHash"`
-	Payload      map[string]interface{} `json:"payload"`
-	Timestamp    time.Time              `json:"timestamp"`
+	ID           uint                   `json:"id"`
 }
 
 // reconstructRevisionFromPayload reconstructs a DocumentRevision from the event payload.

@@ -239,7 +239,7 @@ func TestCompleteIntegration_DocumentLifecycle(t *testing.T) {
 			apiv2.DocumentHandler(srv),
 		)
 
-		req := httptest.NewRequest("GET", "/api/v2/documents/"+doc.GoogleFileID, nil)
+		req := httptest.NewRequest("GET", "/api/v2/documents/"+doc.GoogleFileID, http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -279,7 +279,7 @@ func TestCompleteIntegration_DocumentLifecycle(t *testing.T) {
 			apiv2.DocumentHandler(srv),
 		)
 
-		req := httptest.NewRequest("GET", "/api/v2/documents/"+doc.GoogleFileID, nil)
+		req := httptest.NewRequest("GET", "/api/v2/documents/"+doc.GoogleFileID, http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -378,7 +378,7 @@ func TestCompleteIntegration_DocumentTypesV1(t *testing.T) {
 	handler := apiv2.DocumentTypesHandler(srv)
 
 	t.Run("GET returns configured document types", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/v1/document-types", nil)
+		req := httptest.NewRequest("GET", "/api/v1/document-types", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -426,7 +426,7 @@ func TestCompleteIntegration_DocumentTypesV2(t *testing.T) {
 	)
 
 	t.Run("GET returns document types with metadata", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/api/v2/document-types", nil)
+		req := httptest.NewRequest("GET", "/api/v2/document-types", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)

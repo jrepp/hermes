@@ -19,9 +19,9 @@ import (
 //
 // A CompositeID can be partial (UUID-only) or complete (with provider and project).
 type CompositeID struct {
-	uuid       UUID
 	providerID ProviderID
-	project    string // Optional project ID
+	project    string
+	uuid       UUID
 }
 
 // NewCompositeID creates a new composite ID.
@@ -99,8 +99,10 @@ func (c CompositeID) String() string {
 	}
 
 	if !c.providerID.IsZero() {
-		parts = append(parts, fmt.Sprintf("provider:%s", c.providerID.Provider()))
-		parts = append(parts, fmt.Sprintf("id:%s", c.providerID.ID()))
+		parts = append(parts,
+			fmt.Sprintf("provider:%s", c.providerID.Provider()),
+			fmt.Sprintf("id:%s", c.providerID.ID()),
+		)
 	}
 
 	if c.project != "" {

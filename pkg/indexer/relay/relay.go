@@ -16,30 +16,23 @@ import (
 // Relay polls the document_revision_outbox table and publishes events to Redpanda.
 // Implements the outbox pattern relay component.
 type Relay struct {
+	logger       hclog.Logger
 	db           *gorm.DB
 	kafkaClient  *kgo.Client
+	stopCh       chan struct{}
 	topic        string
-	logger       hclog.Logger
 	pollInterval time.Duration
 	batchSize    int
-	stopCh       chan struct{}
 }
 
 // Config holds configuration for the relay service.
 type Config struct {
-	// Database connection
-	DB *gorm.DB
-
-	// Kafka/Redpanda configuration
-	Brokers []string
-	Topic   string
-
-	// Polling configuration
-	PollInterval time.Duration // How often to poll the outbox (default: 1s)
-	BatchSize    int           // How many outbox entries to process per batch (default: 100)
-
-	// Logger
-	Logger hclog.Logger
+	Logger       hclog.Logger
+	DB           *gorm.DB
+	Topic        string
+	Brokers      []string
+	PollInterval time.Duration
+	BatchSize    int
 }
 
 // New creates a new outbox relay service.
@@ -103,7 +96,7 @@ func New(cfg Config) (*Relay, error) {
 }
 
 // Start starts the relay service polling loop.
-// Blocks until Stop() is called or context is cancelled.
+// Blocks until Stop() is called or context is canceled.
 func (r *Relay) Start(ctx context.Context) error {
 	r.logger.Info("starting outbox relay service",
 		"poll_interval", r.pollInterval,
@@ -158,18 +151,18 @@ func (r *Relay) processBatch(ctx context.Context) error {
 	successCount := 0
 	failCount := 0
 
-	for _, entry := range entries {
-		if err := r.publishEntry(ctx, &entry); err != nil {
+	for i := range entries {
+		if err := r.publishEntry(ctx, &entries[i]); err != nil {
 			r.logger.Error("failed to publish outbox entry",
-				"outbox_id", entry.ID,
-				"document_uuid", entry.DocumentUUID,
+				"outbox_id", entries[i].ID,
+				"document_uuid", entries[i].DocumentUUID,
 				"error", err,
 			)
 
 			// Mark as failed
-			if markErr := entry.MarkAsFailed(r.db, err); markErr != nil {
+			if markErr := entries[i].MarkAsFailed(r.db, err); markErr != nil {
 				r.logger.Error("failed to mark outbox entry as failed",
-					"outbox_id", entry.ID,
+					"outbox_id", entries[i].ID,
 					"error", markErr,
 				)
 			}
@@ -179,9 +172,9 @@ func (r *Relay) processBatch(ctx context.Context) error {
 		}
 
 		// Mark as published
-		if err := entry.MarkAsPublished(r.db); err != nil {
+		if err := entries[i].MarkAsPublished(r.db); err != nil {
 			r.logger.Error("failed to mark outbox entry as published",
-				"outbox_id", entry.ID,
+				"outbox_id", entries[i].ID,
 				"error", err,
 			)
 			failCount++
@@ -280,34 +273,34 @@ func (r *Relay) RetryFailed(ctx context.Context, limit int) error {
 	r.logger.Info("retrying failed outbox entries", "count", len(failed))
 
 	successCount := 0
-	for _, entry := range failed {
+	for i := range failed {
 		// Reset to pending
-		if err := entry.Retry(r.db); err != nil {
+		if err := failed[i].Retry(r.db); err != nil {
 			r.logger.Error("failed to reset outbox entry to pending",
-				"outbox_id", entry.ID,
+				"outbox_id", failed[i].ID,
 				"error", err,
 			)
 			continue
 		}
 
 		// Try to publish
-		if err := r.publishEntry(ctx, &entry); err != nil {
+		if err := r.publishEntry(ctx, &failed[i]); err != nil {
 			r.logger.Error("failed to republish entry",
-				"outbox_id", entry.ID,
+				"outbox_id", failed[i].ID,
 				"error", err,
 			)
 
 			// Mark as failed again
-			if markErr := entry.MarkAsFailed(r.db, err); markErr != nil {
-				r.logger.Warn("failed to mark entry as failed", "outbox_id", entry.ID, "error", markErr)
+			if markErr := failed[i].MarkAsFailed(r.db, err); markErr != nil {
+				r.logger.Warn("failed to mark entry as failed", "outbox_id", failed[i].ID, "error", markErr)
 			}
 			continue
 		}
 
 		// Mark as published
-		if err := entry.MarkAsPublished(r.db); err != nil {
+		if err := failed[i].MarkAsPublished(r.db); err != nil {
 			r.logger.Error("failed to mark entry as published",
-				"outbox_id", entry.ID,
+				"outbox_id", failed[i].ID,
 				"error", err,
 			)
 			continue
@@ -352,14 +345,14 @@ func (r *Relay) GetStats() (OutboxStats, error) {
 
 // DocumentRevisionEvent represents a document revision event published to Kafka.
 type DocumentRevisionEvent struct {
-	ID           uint                   `json:"id"`
+	Timestamp    time.Time              `json:"timestamp"`
+	Payload      map[string]interface{} `json:"payload"`
 	DocumentUUID string                 `json:"documentUuid"`
 	DocumentID   string                 `json:"documentId"`
 	EventType    string                 `json:"eventType"`
 	ProviderType string                 `json:"providerType"`
 	ContentHash  string                 `json:"contentHash"`
-	Payload      map[string]interface{} `json:"payload"`
-	Timestamp    time.Time              `json:"timestamp"`
+	ID           uint                   `json:"id"`
 }
 
 // OutboxStats contains statistics about the outbox state.

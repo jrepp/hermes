@@ -12,32 +12,16 @@ import (
 
 // Project is a model for a project.
 type Project struct {
-	gorm.Model
-
-	// Creator is the user that created the project.
-	Creator   User
-	CreatorID uint `gorm:"default:null;not null"`
-
-	// Description is a description of the project.
-	Description *string
-
-	// JiraIssueID is the ID of the Jira issue associated with the project.
-	JiraIssueID *string
-
-	// ProjectCreatedAt is the time of project creation.
-	ProjectCreatedAt time.Time `gorm:"default:null;not null"`
-
-	// ProjectModifiedAt is the time the project was last modified.
+	ProjectCreatedAt  time.Time `gorm:"default:null;not null"`
 	ProjectModifiedAt time.Time `gorm:"default:null;not null"`
-
-	// RelatedResources are the related resources for the project.
+	Description       *string
+	JiraIssueID       *string
+	gorm.Model
+	Title            string `gorm:"default:null;not null"`
+	Creator          User
 	RelatedResources []*ProjectRelatedResource
-
-	// Status is the status of the document.
-	Status ProjectStatus `gorm:"default:null;not null"`
-
-	// Title is the title of the project.
-	Title string `gorm:"default:null;not null"`
+	CreatorID        uint          `gorm:"default:null;not null"`
+	Status           ProjectStatus `gorm:"default:null;not null"`
 }
 
 // ProjectStatus is the status of the project.
@@ -184,50 +168,29 @@ func (p *Project) ReplaceRelatedResources(
 		return err
 	}
 
-	if err := db.Transaction(func(tx *gorm.DB) error {
-		// Delete assocations of RelatedResources.
-		rrs := []ProjectRelatedResource{}
-		if err := tx.
-			Where("project_id = ?", p.ID).
-			Find(&rrs).Error; err != nil {
-			return fmt.Errorf("error finding existing related resources: %w", err)
-		}
-		for _, rr := range rrs {
-			if err := tx.
-				Exec(
-					fmt.Sprintf("DELETE FROM %q WHERE id = ?", rr.RelatedResourceType),
-					rr.RelatedResourceID,
-				).
-				Error; err != nil {
-				return fmt.Errorf(
-					"error deleting existing typed related resources: %w", err)
-			}
-		}
-
-		// Delete RelatedResources.
-		if err := tx.
-			Unscoped(). // Hard delete instead of soft delete.
-			Where("project_id = ?", p.ID).
-			Delete(&ProjectRelatedResource{}).Error; err != nil {
-			return fmt.Errorf("error deleting existing related resources: %w", err)
-		}
-
-		// Create all related resources.
-		for _, elrr := range elrrs {
-			if err := elrr.Create(tx); err != nil {
+	if err := replaceScopedRelatedResources[ProjectRelatedResource, ProjectRelatedResource](
+		db,
+		"project_id",
+		p.ID,
+		len(elrrs),
+		func(tx *gorm.DB, i int) error {
+			if err := elrrs[i].Create(tx); err != nil {
 				return fmt.Errorf(
 					"error creating external link related resource: %w", err)
 			}
-		}
-		for _, hdrr := range hdrrs {
-			if err := hdrr.Create(tx); err != nil {
+
+			return nil
+		},
+		len(hdrrs),
+		func(tx *gorm.DB, i int) error {
+			if err := hdrrs[i].Create(tx); err != nil {
 				return fmt.Errorf(
 					"error creating Hermes document related resource: %w", err)
 			}
-		}
 
-		return nil
-	}); err != nil {
+			return nil
+		},
+	); err != nil {
 		return fmt.Errorf("error replacing related resources: %w", err)
 	}
 

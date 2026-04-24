@@ -46,13 +46,17 @@ func waitForServer(url string, timeout time.Duration) error {
 			return fmt.Errorf("timeout waiting for server to start")
 
 		case <-ticker.C:
-			resp, err := http.Get(healthURL)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthURL, http.NoBody)
+			if err != nil {
+				return fmt.Errorf("error creating health check request: %w", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err == nil && resp.StatusCode == http.StatusOK {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				return nil
 			}
 			if resp != nil {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 			}
 		}
 	}

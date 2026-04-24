@@ -23,12 +23,12 @@ import (
 
 // SharedTestContainers holds the shared Docker containers for all API tests.
 type SharedTestContainers struct {
-	PostgresContainer    *postgres.PostgresContainer
 	MeilisearchContainer testcontainers.Container
+	ctx                  context.Context
+	PostgresContainer    *postgres.PostgresContainer
 	PostgresDSN          string
 	MeilisearchHost      string
 	MeilisearchAPIKey    string
-	ctx                  context.Context
 }
 
 var (
@@ -218,7 +218,7 @@ func CreateTestDatabaseForTest(t *testing.T) (*gorm.DB, string) {
 	require.NoError(t, err, "Failed to set search path")
 
 	// Auto-migrate models in this schema
-	err = db.AutoMigrate(models.ModelsToAutoMigrate()...)
+	err = db.AutoMigrate(models.ToAutoMigrate()...)
 	require.NoError(t, err, "Failed to auto-migrate models")
 
 	// Register cleanup to drop schema after test

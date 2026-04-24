@@ -15,54 +15,30 @@ import (
 // It stores all data in memory and implements all 7 required interfaces.
 // Suitable for docker compose and local testing scenarios.
 type FakeAdapter struct {
-	mu sync.RWMutex
-
-	// Documents stores document metadata by providerID
-	Documents map[string]*workspace.DocumentMetadata
-
-	// DocumentsByUUID provides UUID-based lookup
+	People          map[string]*workspace.UserIdentity
+	Documents       map[string]*workspace.DocumentMetadata
 	DocumentsByUUID map[docid.UUID]*workspace.DocumentMetadata
-
-	// Contents stores document content by providerID
-	Contents map[string]*workspace.DocumentContent
-
-	// Revisions stores revision history by providerID
-	Revisions map[string][]*workspace.BackendRevision
-
-	// Permissions stores permissions by providerID
-	Permissions map[string][]*workspace.FilePermission
-
-	// People stores user identities by email
-	People map[string]*workspace.UserIdentity
-
-	// Teams stores teams by ID
-	Teams map[string]*workspace.Team
-
-	// UserTeams maps user emails to their team memberships
-	UserTeams map[string][]string // email -> []teamID
-
-	// TeamMembers maps team IDs to member emails
-	TeamMembers map[string][]string // teamID -> []email
-
-	// EmailsSent tracks sent emails for testing verification
-	EmailsSent []EmailRecord
-
-	// Folders stores subfolder mappings
-	Folders map[string]map[string]string // parentID -> name -> folderID
-
-	// nextID is used for generating unique IDs
-	nextID int
+	Contents        map[string]*workspace.DocumentContent
+	Revisions       map[string][]*workspace.BackendRevision
+	Permissions     map[string][]*workspace.FilePermission
+	Teams           map[string]*workspace.Team
+	UserTeams       map[string][]string
+	TeamMembers     map[string][]string
+	Folders         map[string]map[string]string
+	EmailsSent      []EmailRecord
+	nextID          int
+	mu              sync.RWMutex
 }
 
 // EmailRecord tracks emails sent through the fake adapter.
 type EmailRecord struct {
-	To       []string
+	SentAt   time.Time
+	Data     map[string]any
 	From     string
 	Subject  string
 	Body     string
 	Template string
-	Data     map[string]any
-	SentAt   time.Time
+	To       []string
 }
 
 // Compile-time interface checks - ensures FakeAdapter implements all RFC-084 interfaces
@@ -93,15 +69,6 @@ func NewFakeAdapter() *FakeAdapter {
 		Folders:         make(map[string]map[string]string),
 		nextID:          1,
 	}
-}
-
-// generateID generates a unique ID for documents/folders
-func (f *FakeAdapter) generateID() string {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	id := fmt.Sprintf("fake-%d", f.nextID)
-	f.nextID++
-	return id
 }
 
 // ===================================================================
@@ -555,7 +522,7 @@ func (f *FakeAdapter) GetRevision(ctx context.Context, providerID, revisionID st
 }
 
 // GetRevisionContent retrieves content at a specific revision.
-func (f *FakeAdapter) GetRevisionContent(ctx context.Context, providerID, revisionID string) (*workspace.DocumentContent, error) {
+func (f *FakeAdapter) GetRevisionContent(ctx context.Context, providerID, _ string) (*workspace.DocumentContent, error) {
 	// For fake adapter, just return current content
 	// In a real implementation, would retrieve historical content
 	return f.GetContent(ctx, providerID)

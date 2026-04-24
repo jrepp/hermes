@@ -2,16 +2,27 @@ package meilisearch
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	hermessearch "github.com/hashicorp-forge/hermes/pkg/search"
 )
 
+// isMeilisearchAvailable checks if Meilisearch is running at the given host
+func isMeilisearchAvailable(host string) bool {
+	resp, err := http.Get(host + "/health")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
+
 // TestNewAdapter tests adapter creation.
 func TestNewAdapter(t *testing.T) {
 	tests := []struct {
-		name    string
 		cfg     *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -41,6 +52,11 @@ func TestNewAdapter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Skip tests that require Meilisearch if it's not available
+			if tt.cfg != nil && tt.cfg.Host != "" && !isMeilisearchAvailable(tt.cfg.Host) {
+				t.Skipf("Meilisearch not available at %s (use docker-compose in ./testing directory)", tt.cfg.Host)
+			}
+
 			adapter, err := NewAdapter(tt.cfg)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewAdapter() error = %v, wantErr %v", err, tt.wantErr)
@@ -123,9 +139,9 @@ func TestBuildMeilisearchFilters(t *testing.T) {
 // TestConvertMeilisearchFacets tests facet conversion.
 func TestConvertMeilisearchFacets(t *testing.T) {
 	tests := []struct {
-		name      string
 		facetDist map[string]map[string]int64
 		want      *hermessearch.Facets
+		name      string
 		wantErr   bool
 	}{
 		{
@@ -214,7 +230,7 @@ func TestConvertMeilisearchFacets(t *testing.T) {
 }
 
 // TestAdapterInterfaces verifies the adapter implements required interfaces.
-func TestAdapterInterfaces(t *testing.T) {
+func TestAdapterInterfaces(_ *testing.T) {
 	var _ hermessearch.Provider = (*Adapter)(nil)
 	var _ hermessearch.DocumentIndex = (*documentIndex)(nil)
 	var _ hermessearch.DraftIndex = (*draftIndex)(nil)

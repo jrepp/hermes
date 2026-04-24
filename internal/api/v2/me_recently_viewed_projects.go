@@ -36,7 +36,7 @@ func MeRecentlyViewedProjectsHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			// Find or create user.
 			u := models.User{
 				EmailAddress: userEmail,
@@ -53,7 +53,7 @@ func MeRecentlyViewedProjectsHandler(srv server.Server) http.Handler {
 
 			// Get recently viewed projects for the user.
 			var rvps []models.RecentlyViewedProject
-			if err := srv.DB.Where(&models.RecentlyViewedProject{UserID: int(u.ID)}).
+			if err := srv.DB.Where(&models.RecentlyViewedProject{UserID: safeUintToInt(u.ID)}).
 				Order("viewed_at desc").
 				Find(&rvps).Error; err != nil {
 

@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
+//nolint:gocognit,gocyclo // Legacy review workflow handler with many coordinated side effects.
 func ReviewsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -504,7 +505,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			}
 
 			// Create slice of all approvers consisting of individuals and groups.
-			allApprovers := append(doc.Approvers, doc.ApproverGroups...)
+			allApprovers := append(append([]string{}, doc.Approvers...), doc.ApproverGroups...)
 
 			// Give document approvers and approver groups edit access to the
 			// document.
@@ -700,7 +701,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 					if len(p.UserSubscribers) > 0 {
 						// TODO: use an asynchronous method for sending emails because we
 						// can't currently recover gracefully from a failure here.
-						for _, subscriber := range p.UserSubscribers {
+						for i := range p.UserSubscribers {
 							err := email.SendSubscriberDocumentPublishedEmail(
 								email.SubscriberDocumentPublishedEmailData{
 									BaseURL:           srv.Config.BaseURL,
@@ -711,7 +712,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 									DocumentURL:       docURL,
 									Product:           doc.Product,
 								},
-								[]string{subscriber.EmailAddress},
+								[]string{p.UserSubscribers[i].EmailAddress},
 								srv.Config.Email.FromAddress,
 								getCompatProvider(srv.WorkspaceProvider),
 							)

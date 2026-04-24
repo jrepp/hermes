@@ -13,6 +13,7 @@ type MeSubscriptionsPostRequest struct {
 	Subscriptions []string `json:"subscriptions"`
 }
 
+//nolint:gocognit,gocyclo // Small subscription endpoint with centralized branching.
 func MeSubscriptionsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errResp := func(httpCode int, userErrMsg, logErrMsg string, err error) {
@@ -37,7 +38,7 @@ func MeSubscriptionsHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			// Find or create user.
 			u := models.User{
 				EmailAddress: userEmail,
@@ -54,8 +55,8 @@ func MeSubscriptionsHandler(srv server.Server) http.Handler {
 
 			// Build response of product subscriptions.
 			var products []string
-			for _, p := range u.ProductSubscriptions {
-				products = append(products, p.Name)
+			for i := range u.ProductSubscriptions {
+				products = append(products, u.ProductSubscriptions[i].Name)
 			}
 
 			// Write response.
@@ -72,7 +73,7 @@ func MeSubscriptionsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-		case "POST":
+		case httpMethodPost:
 			// Decode request.
 			var req MeSubscriptionsPostRequest
 			if err := decodeRequest(r, &req); err != nil {

@@ -28,11 +28,13 @@ const (
 // refreshDocumentHeaders updates the header of any documents in a specified
 // folder that been modified since the last indexer run but inactive in the last
 // 30 minutes (to not disrupt users' editing).
+//
+//nolint:gocognit,gocyclo // Header refresh coordinates DB, Drive, and concurrency in one place.
 func refreshDocumentHeaders(
 	idx Indexer,
 	folderID string,
 	ft folderType,
-	LastIndexedAt *safeTime,
+	lastIndexedAt *safeTime,
 	currentTime time.Time,
 ) error {
 	log := idx.Logger
@@ -42,7 +44,7 @@ func refreshDocumentHeaders(
 	}
 
 	// Create from time string to use with Google Workspace APIs.
-	fromTimeStr := LastIndexedAt.time.UTC().Format(time.RFC3339Nano)
+	fromTimeStr := lastIndexedAt.time.UTC().Format(time.RFC3339Nano)
 
 	// untilTimeStr is 30 minutes ago in RFC 3339(Nano) format. We use this
 	// because we don't want to update the doc headers for files that are
@@ -74,8 +76,9 @@ func refreshDocumentHeaders(
 			return fmt.Errorf("error finding locked documents: %w", err)
 		}
 	}
-	var lockedDocIDs []string
-	for _, d := range lockedDocs {
+	lockedDocIDs := make([]string, 0, len(lockedDocs))
+	for i := range lockedDocs {
+		d := &lockedDocs[i]
 		f, err := idx.GoogleWorkspaceService.GetFile(d.GoogleFileID)
 		if err != nil {
 			return fmt.Errorf("error getting file (%s): %w", d.GoogleFileID, err)
@@ -138,7 +141,7 @@ func refreshDocumentHeaders(
 					idx,
 					file,
 					ft,
-					LastIndexedAt,
+					lastIndexedAt,
 				)
 			}
 		}()
@@ -155,6 +158,8 @@ func refreshDocumentHeaders(
 
 // refreshDocumentHeader refreshes the header for a published document.
 // TODO: improve error handling.
+//
+//nolint:gocognit,gocyclo // Header refresh mixes provider/database branches and is clearer inline.
 func refreshDocumentHeader(
 	idx Indexer,
 	file *drive.File,
@@ -165,6 +170,7 @@ func refreshDocumentHeader(
 	log := idx.Logger
 
 	// Check if document is locked.
+	//nolint:staticcheck // Compat adapter still matches the GoogleDocsProvider used by lock checks.
 	provider := gw.NewCompatAdapter(idx.GoogleWorkspaceService)
 	locked, err := hcd.IsLocked(
 		file.Id, idx.Database, provider, log)

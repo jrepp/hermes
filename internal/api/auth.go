@@ -71,6 +71,8 @@ func LoginHandler(cfg config.Config, log hclog.Logger) http.Handler {
 // CallbackHandler handles the OAuth2 callback from Dex.
 // It exchanges the authorization code for an ID token, validates it,
 // and establishes a session for the authenticated user.
+//
+//nolint:gocognit // Callback flow is linear but includes several explicit auth failure branches.
 func CallbackHandler(cfg config.Config, log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Only support Dex authentication

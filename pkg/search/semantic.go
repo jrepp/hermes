@@ -18,35 +18,33 @@ type EmbeddingsGenerator interface {
 
 // SemanticSearch provides semantic/vector search capabilities.
 type SemanticSearch struct {
-	db         *gorm.DB
 	embedGen   EmbeddingsGenerator
+	logger     hclog.Logger
+	db         *gorm.DB
 	model      string
 	dimensions int
-	logger     hclog.Logger
 }
 
 // SemanticSearchConfig holds configuration for semantic search.
 type SemanticSearchConfig struct {
-	DB         *gorm.DB
 	EmbedGen   EmbeddingsGenerator
-	Model      string // e.g., "text-embedding-3-small"
-	Dimensions int    // e.g., 1536
 	Logger     hclog.Logger
+	DB         *gorm.DB
+	Model      string
+	Dimensions int
 }
 
 // SemanticSearchResult represents a search result with similarity score.
 type SemanticSearchResult struct {
-	DocumentID   string
-	DocumentUUID string
 	RevisionID   *int
 	ChunkIndex   *int
+	DocumentID   string
+	DocumentUUID string
 	ChunkText    string
-	Similarity   float64 // Cosine similarity score (0-1, higher is better)
-
-	// Optional metadata
-	ContentHash string
-	Model       string
-	Provider    string
+	ContentHash  string
+	Model        string
+	Provider     string
+	Similarity   float64
 }
 
 // NewSemanticSearch creates a new semantic search instance.

@@ -15,10 +15,10 @@ import (
 func TestParseFrontmatter(t *testing.T) {
 	tests := []struct {
 		name        string
-		input       []byte
 		wantID      string
 		wantName    string
 		wantContent string
+		input       []byte
 		wantErr     bool
 	}{
 		{

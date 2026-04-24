@@ -23,10 +23,10 @@ type Backend interface {
 // BackendError represents an error from a specific backend
 // RFC-087-ADDENDUM Section 9: Backend Error Handling
 type BackendError struct {
-	Backend   string // Backend name (e.g., "mail", "slack")
-	Operation string // Operation that failed (e.g., "send", "connect")
-	Retryable bool   // Whether the error is retryable
-	Err       error  // Underlying error
+	Err       error
+	Backend   string
+	Operation string
+	Retryable bool
 }
 
 func (e *BackendError) Error() string {

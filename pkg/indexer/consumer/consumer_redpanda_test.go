@@ -23,17 +23,19 @@ import (
 
 // MockStep is a test implementation of pipeline.Step
 type MockStep struct {
+	failError  error
 	name       string
 	executed   bool
 	shouldFail bool
-	failError  error
 }
+
+const redpandaTestTopic = "test.document-revisions"
 
 func (m *MockStep) Name() string {
 	return m.name
 }
 
-func (m *MockStep) Execute(ctx context.Context, revision *models.DocumentRevision, config map[string]interface{}) error {
+func (m *MockStep) Execute(_ context.Context, _ *models.DocumentRevision, _ map[string]interface{}) error {
 	m.executed = true
 	if m.shouldFail {
 		return m.failError
@@ -41,7 +43,7 @@ func (m *MockStep) Execute(ctx context.Context, revision *models.DocumentRevisio
 	return nil
 }
 
-func (m *MockStep) IsRetryable(err error) bool {
+func (m *MockStep) IsRetryable(_ error) bool {
 	return false
 }
 
@@ -62,7 +64,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 }
 
 // createKafkaTopic creates a Kafka topic for testing
-func createKafkaTopic(t *testing.T, ctx context.Context, brokers string, topicName string) {
+func createKafkaTopic(ctx context.Context, t *testing.T, brokers string) {
 	adminClient, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers),
 	)
@@ -72,7 +74,7 @@ func createKafkaTopic(t *testing.T, ctx context.Context, brokers string, topicNa
 	createTopicsReq := kmsg.NewCreateTopicsRequest()
 	createTopicsReq.Topics = []kmsg.CreateTopicsRequestTopic{
 		{
-			Topic:             topicName,
+			Topic:             redpandaTestTopic,
 			NumPartitions:     1,
 			ReplicationFactor: 1,
 		},
@@ -85,7 +87,7 @@ func createKafkaTopic(t *testing.T, ctx context.Context, brokers string, topicNa
 }
 
 // publishTestEvent publishes a test event to Redpanda
-func publishTestEvent(t *testing.T, ctx context.Context, brokers string, topic string, event DocumentRevisionEvent) {
+func publishTestEvent(ctx context.Context, t *testing.T, brokers string, event DocumentRevisionEvent) {
 	producer, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers),
 	)
@@ -96,7 +98,7 @@ func publishTestEvent(t *testing.T, ctx context.Context, brokers string, topic s
 	require.NoError(t, err)
 
 	record := &kgo.Record{
-		Topic: topic,
+		Topic: redpandaTestTopic,
 		Key:   []byte(event.DocumentUUID),
 		Value: eventJSON,
 	}
@@ -133,7 +135,7 @@ func TestConsumer_ConsumeFromRedpanda(t *testing.T) {
 
 	// Create topic
 	topic := "test.document-revisions"
-	createKafkaTopic(t, ctx, brokers, topic)
+	createKafkaTopic(ctx, t, brokers)
 
 	// Setup test database
 	db := setupTestDB(t)
@@ -207,7 +209,7 @@ func TestConsumer_ConsumeFromRedpanda(t *testing.T) {
 		},
 		Timestamp: time.Now(),
 	}
-	publishTestEvent(t, ctx, brokers, topic, event)
+	publishTestEvent(ctx, t, brokers, event)
 
 	// Start consumer in goroutine with timeout
 	consumerCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -267,7 +269,7 @@ func TestConsumer_RulesetMatching(t *testing.T) {
 
 	// Create topic
 	topic := "test.document-revisions"
-	createKafkaTopic(t, ctx, brokers, topic)
+	createKafkaTopic(ctx, t, brokers)
 
 	// Setup test database
 	db := setupTestDB(t)
@@ -353,7 +355,7 @@ func TestConsumer_RulesetMatching(t *testing.T) {
 		},
 		Timestamp: time.Now(),
 	}
-	publishTestEvent(t, ctx, brokers, topic, event)
+	publishTestEvent(ctx, t, brokers, event)
 
 	// Wait for processing
 	time.Sleep(3 * time.Second)
@@ -390,7 +392,7 @@ func TestConsumer_NoMatchingRuleset(t *testing.T) {
 
 	// Create topic
 	topic := "test.document-revisions"
-	createKafkaTopic(t, ctx, brokers, topic)
+	createKafkaTopic(ctx, t, brokers)
 
 	// Setup test database
 	db := setupTestDB(t)
@@ -472,7 +474,7 @@ func TestConsumer_NoMatchingRuleset(t *testing.T) {
 		},
 		Timestamp: time.Now(),
 	}
-	publishTestEvent(t, ctx, brokers, topic, event)
+	publishTestEvent(ctx, t, brokers, event)
 
 	// Wait for processing
 	time.Sleep(3 * time.Second)
@@ -514,7 +516,7 @@ func TestConsumer_Idempotency(t *testing.T) {
 
 	// Create topic
 	topic := "test.document-revisions"
-	createKafkaTopic(t, ctx, brokers, topic)
+	createKafkaTopic(ctx, t, brokers)
 
 	// Setup test database
 	db := setupTestDB(t)
@@ -599,7 +601,7 @@ func TestConsumer_Idempotency(t *testing.T) {
 		},
 		Timestamp: time.Now(),
 	}
-	publishTestEvent(t, ctx, brokers, topic, event)
+	publishTestEvent(ctx, t, brokers, event)
 
 	// Wait for processing
 	time.Sleep(3 * time.Second)

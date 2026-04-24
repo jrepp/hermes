@@ -26,7 +26,7 @@ func (c *DetectConflictsCommand) Name() string {
 }
 
 // Execute detects conflicts for a document.
-func (c *DetectConflictsCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *DetectConflictsCommand) Execute(_ context.Context, doc *indexer.DocumentContext) error {
 	if c.Logger == nil {
 		c.Logger = hclog.NewNullLogger()
 	}
@@ -65,15 +65,15 @@ func (c *DetectConflictsCommand) Execute(ctx context.Context, doc *indexer.Docum
 
 	// Check for content divergence
 	conflicts := make([]models.DocumentRevision, 0)
-	for _, rev := range allRevisions {
+	for i := range allRevisions {
 		// Skip the current revision
-		if rev.ID == doc.Revision.ID {
+		if allRevisions[i].ID == doc.Revision.ID {
 			continue
 		}
 
 		// Different content hash indicates conflict
-		if rev.ContentHash != doc.Revision.ContentHash {
-			conflicts = append(conflicts, rev)
+		if allRevisions[i].ContentHash != doc.Revision.ContentHash {
+			conflicts = append(conflicts, allRevisions[i])
 		}
 	}
 
@@ -115,10 +115,10 @@ func (c *DetectConflictsCommand) Execute(ctx context.Context, doc *indexer.Docum
 	)
 
 	// Mark revisions as conflicted
-	for _, conflict := range conflicts {
-		if err := c.DB.Model(&conflict).Update("status", "conflict").Error; err != nil {
+	for i := range conflicts {
+		if err := c.DB.Model(&conflicts[i]).Update("status", "conflict").Error; err != nil {
 			c.Logger.Error("failed to mark revision as conflicted",
-				"revision_id", conflict.ID,
+				"revision_id", conflicts[i].ID,
 				"error", err,
 			)
 		}
@@ -141,8 +141,8 @@ func determineConflictType(current *models.DocumentRevision, conflicts []models.
 	providers := make(map[string]bool)
 	providers[current.ProviderType] = true
 
-	for _, c := range conflicts {
-		providers[c.ProviderType] = true
+	for i := range conflicts {
+		providers[conflicts[i].ProviderType] = true
 	}
 
 	if len(providers) > 1 {
@@ -150,8 +150,8 @@ func determineConflictType(current *models.DocumentRevision, conflicts []models.
 	}
 
 	// If same provider, check modification times
-	for _, c := range conflicts {
-		timeDiff := current.ModifiedTime.Sub(c.ModifiedTime)
+	for i := range conflicts {
+		timeDiff := current.ModifiedTime.Sub(conflicts[i].ModifiedTime)
 		if timeDiff < 5*time.Minute && timeDiff > -5*time.Minute {
 			return "concurrent-edit"
 		}

@@ -47,10 +47,10 @@ type Adapter struct {
 
 	// EmailsSent tracks emails that were sent (for testing)
 	EmailsSent []struct {
-		To      []string
 		From    string
 		Subject string
 		Body    string
+		To      []string
 	}
 }
 
@@ -67,10 +67,10 @@ func NewAdapter() *Adapter {
 		Groups:       make(map[string]*admin.Group),
 		UserGroups:   make(map[string][]*admin.Group),
 		EmailsSent: make([]struct {
-			To      []string
 			From    string
 			Subject string
 			Body    string
+			To      []string
 		}, 0),
 	}
 }
@@ -163,7 +163,7 @@ func (a *Adapter) CopyFile(srcID, destFolderID, name string) (*drive.File, error
 // CreateFileAsUser creates a file by copying a template, simulating user impersonation.
 // In the mock implementation, this behaves the same as CopyFile but is provided
 // for interface completeness.
-func (a *Adapter) CreateFileAsUser(templateID, destFolderID, name, userEmail string) (*drive.File, error) {
+func (a *Adapter) CreateFileAsUser(templateID, destFolderID, name, _ string) (*drive.File, error) {
 	// For mock purposes, we just call CopyFile
 	// In a real implementation, this would track that the file was created as the user
 	file, err := a.CopyFile(templateID, destFolderID, name)
@@ -304,7 +304,7 @@ func (a *Adapter) DeletePermission(fileID, permissionID string) error {
 }
 
 // SearchPeople searches for people by email.
-func (a *Adapter) SearchPeople(email string, fields string) ([]*people.Person, error) {
+func (a *Adapter) SearchPeople(email, _ string) ([]*people.Person, error) {
 	person, ok := a.People[email]
 	if !ok {
 		// Return empty list if not found
@@ -534,10 +534,10 @@ func (a *Adapter) WithRevision(fileID, revisionID string, keepForever bool) *Ada
 // SendEmail sends an email (mocked - just records it).
 func (a *Adapter) SendEmail(to []string, from, subject, body string) error {
 	a.EmailsSent = append(a.EmailsSent, struct {
-		To      []string
 		From    string
 		Subject string
 		Body    string
+		To      []string
 	}{
 		To:      to,
 		From:    from,
@@ -550,7 +550,7 @@ func (a *Adapter) SendEmail(to []string, from, subject, body string) error {
 // Group operations
 
 // ListGroups lists groups matching a query in a domain.
-func (a *Adapter) ListGroups(domain, query string, maxResults int64) ([]*admin.Group, error) {
+func (a *Adapter) ListGroups(_, query string, maxResults int64) ([]*admin.Group, error) {
 	groups := make([]*admin.Group, 0)
 	for _, group := range a.Groups {
 		// Simple matching - in real implementation would filter by query

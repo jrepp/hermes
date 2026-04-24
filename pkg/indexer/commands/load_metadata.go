@@ -21,7 +21,7 @@ func (c *LoadMetadataCommand) Name() string {
 }
 
 // Execute loads metadata for the document.
-func (c *LoadMetadataCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *LoadMetadataCommand) Execute(_ context.Context, doc *indexer.DocumentContext) error {
 	if err := doc.LoadMetadata(c.DB); err != nil {
 		return fmt.Errorf("failed to load metadata: %w", err)
 	}

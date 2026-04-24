@@ -187,7 +187,7 @@ func checkOllamaAvailable(baseURL string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/api/version", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/api/version", http.NoBody)
 	if err != nil {
 		return false
 	}
@@ -209,7 +209,7 @@ func checkOllamaModels(baseURL string, models []string) error {
 
 	for _, model := range models {
 		// Try to get model info (Ollama /api/show endpoint)
-		reqBody := fmt.Sprintf(`{"name":"%s"}`, model)
+		reqBody := fmt.Sprintf(`{"name":%q}`, model)
 		req, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/api/show",
 			bytes.NewBufferString(reqBody))
 		if err != nil {

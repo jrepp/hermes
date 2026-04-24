@@ -17,11 +17,11 @@ import (
 
 // ValidationResult represents the result of a validation check.
 type ValidationResult struct {
-	Name        string
-	Passed      bool
-	Message     string
 	ExpectedVal interface{}
 	ActualVal   interface{}
+	Name        string
+	Message     string
+	Passed      bool
 }
 
 // MigrationValidator provides strong signal validation for migration correctness.
@@ -249,29 +249,29 @@ func (v *MigrationValidator) ValidateContentIntegrity(ctx context.Context, jobID
 	}
 
 	// Overall content integrity results
-	results = append(results, ValidationResult{
-		Name:        "AllContentMatchFlagsTrue",
-		Passed:      contentMatchCount == itemCount,
-		Message:     "All migration items should have content_match = true",
-		ExpectedVal: itemCount,
-		ActualVal:   contentMatchCount,
-	})
-
-	results = append(results, ValidationResult{
-		Name:        "AllHashesMatch",
-		Passed:      hashMatchCount == itemCount,
-		Message:     "All source and destination hashes should match",
-		ExpectedVal: itemCount,
-		ActualVal:   hashMatchCount,
-	})
-
-	results = append(results, ValidationResult{
-		Name:        "AllDocumentsRetrievable",
-		Passed:      retrievableCount == itemCount,
-		Message:     "All migrated documents should be retrievable from S3",
-		ExpectedVal: itemCount,
-		ActualVal:   retrievableCount,
-	})
+	results = append(results,
+		ValidationResult{
+			Name:        "AllContentMatchFlagsTrue",
+			Passed:      contentMatchCount == itemCount,
+			Message:     "All migration items should have content_match = true",
+			ExpectedVal: itemCount,
+			ActualVal:   contentMatchCount,
+		},
+		ValidationResult{
+			Name:        "AllHashesMatch",
+			Passed:      hashMatchCount == itemCount,
+			Message:     "All source and destination hashes should match",
+			ExpectedVal: itemCount,
+			ActualVal:   hashMatchCount,
+		},
+		ValidationResult{
+			Name:        "AllDocumentsRetrievable",
+			Passed:      retrievableCount == itemCount,
+			Message:     "All migrated documents should be retrievable from S3",
+			ExpectedVal: itemCount,
+			ActualVal:   retrievableCount,
+		},
+	)
 
 	return results
 }

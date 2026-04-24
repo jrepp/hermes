@@ -41,6 +41,7 @@ import (
 //   |-----------------------------------------------------------------------------------|
 //
 
+//nolint:gocognit,gocyclo,gocritic,goconst,dupl // Header builder is verbose and intentionally explicit for Docs API requests.
 func (doc *FRD) ReplaceHeader(fileID, baseURL string, isDraft bool, provider workspace.Provider) error {
 	const (
 		tableRows = 11 // Number of rows in the header table.
@@ -572,7 +573,7 @@ func (doc *FRD) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 
 	// Contributors cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Contributors", strings.Join(doc.Contributors[:], ", "), int64(pos))
+		"Contributors", strings.Join(doc.Contributors, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 2
 
@@ -589,7 +590,7 @@ func (doc *FRD) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 		}
 	}
 	cellReqs, cellLength = createTextCellRequests(
-		"Approvers", strings.Join(approvers[:], ", "), int64(pos))
+		"Approvers", strings.Join(approvers, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 3
 
@@ -659,7 +660,7 @@ func (doc *FRD) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 
 	// Tags cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Tags", strings.Join(doc.Tags[:], ", "), int64(pos))
+		"Tags", strings.Join(doc.Tags, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 5
 

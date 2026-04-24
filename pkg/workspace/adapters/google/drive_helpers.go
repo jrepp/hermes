@@ -383,7 +383,7 @@ func (s *Service) MoveFile(fileID, destFolder string) (*drive.File, error) {
 
 	resp, err := s.Drive.Files.Update(fileID, &drive.File{}).
 		AddParents(destFolder).
-		RemoveParents(strings.Join(f.Parents[:], ",")).
+		RemoveParents(strings.Join(f.Parents, ",")).
 		Fields("parents").
 		SupportsAllDrives(true).
 		Do()

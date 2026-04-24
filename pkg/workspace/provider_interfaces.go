@@ -257,11 +257,11 @@ type DocumentMergeProvider interface {
 // MergeRecord represents a historical UUID merge operation
 type MergeRecord struct {
 	MergeID       string     `json:"mergeId"`
-	SourceUUID    docid.UUID `json:"sourceUuid"`
-	TargetUUID    docid.UUID `json:"targetUuid"`
 	MergedAt      string     `json:"mergedAt"`
 	InitiatedBy   string     `json:"initiatedBy"`
 	RevisionCount int        `json:"revisionCount"`
+	SourceUUID    docid.UUID `json:"sourceUuid"`
+	TargetUUID    docid.UUID `json:"targetUuid"`
 }
 
 // ===================================================================

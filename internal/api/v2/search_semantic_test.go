@@ -83,7 +83,7 @@ func TestSemanticSearchHandler(t *testing.T) {
 			Logger:         logger,
 		}
 
-		req := httptest.NewRequest(http.MethodGet, "/api/v2/search/semantic", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v2/search/semantic", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler := SemanticSearchHandler(srv)
@@ -153,7 +153,7 @@ func TestHybridSearchHandler(t *testing.T) {
 			Logger:       logger,
 		}
 
-		req := httptest.NewRequest(http.MethodGet, "/api/v2/search/hybrid", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v2/search/hybrid", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler := HybridSearchHandler(srv)
@@ -175,7 +175,7 @@ func TestSimilarDocumentsHandler(t *testing.T) {
 			Logger:         logger,
 		}
 
-		req := httptest.NewRequest(http.MethodPost, "/api/v2/documents/doc1/similar", nil)
+		req := httptest.NewRequest(http.MethodPost, "/api/v2/documents/doc1/similar", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler := SimilarDocumentsHandler(srv)
@@ -190,7 +190,7 @@ func TestSimilarDocumentsHandler(t *testing.T) {
 			Logger:         logger,
 		}
 
-		req := httptest.NewRequest(http.MethodGet, "/api/v2/documents/doc1/similar", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v2/documents/doc1/similar", http.NoBody)
 		ctx := context.WithValue(req.Context(), pkgauth.UserEmailKey, "test@example.com")
 		req = req.WithContext(ctx)
 
@@ -208,7 +208,7 @@ func TestSimilarDocumentsHandler(t *testing.T) {
 			Logger:         logger,
 		}
 
-		req := httptest.NewRequest(http.MethodGet, "/api/v2/documents/doc1/similar", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v2/documents/doc1/similar", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler := SimilarDocumentsHandler(srv)

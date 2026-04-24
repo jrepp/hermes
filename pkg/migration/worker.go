@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
 
+	"github.com/hashicorp-forge/hermes/pkg/docid"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
@@ -89,18 +91,18 @@ func (w *Worker) processPendingTasks(ctx context.Context) error {
 	defer rows.Close()
 
 	var tasks []struct {
+		payload  string
 		outboxID int64
 		jobID    int64
 		itemID   int64
-		payload  string
 	}
 
 	for rows.Next() {
 		var task struct {
+			payload  string
 			outboxID int64
 			jobID    int64
 			itemID   int64
-			payload  string
 		}
 		if err := rows.Scan(&task.outboxID, &task.jobID, &task.itemID, &task.payload); err != nil {
 			w.logger.Error("failed to scan task", "error", err)
@@ -241,88 +243,120 @@ func (w *Worker) processTask(ctx context.Context, itemID int64, payloadJSON stri
 
 // migrateDocument performs the actual document migration
 func (w *Worker) migrateDocument(ctx context.Context, source, dest workspace.WorkspaceProvider, payload *TaskPayload) (string, *ValidationResult, error) {
-	// Get source content
-	sourceContent, err := source.GetContent(ctx, payload.SourceProviderID)
+	sourceContent, sourceDoc, err := w.loadSourceDocument(ctx, source, payload)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to get source content: %w", err)
+		return "", nil, err
 	}
 
-	// Get source metadata
-	sourceDoc, err := source.GetDocument(ctx, payload.SourceProviderID)
+	destDoc, err := w.createDestinationDocument(ctx, dest, payload.DocumentUUID, sourceDoc.Name)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to get source metadata: %w", err)
+		return "", nil, err
 	}
 
-	// Create document in destination with same UUID
-	destDoc, err := dest.CreateDocumentWithUUID(ctx, payload.DocumentUUID, "", "", sourceDoc.Name)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to create dest document: %w", err)
+	if err := w.writeDestinationContent(ctx, dest, destDoc.ProviderID, sourceContent.Body); err != nil {
+		w.cleanupDestinationDocument(ctx, dest, destDoc.ProviderID)
+		return "", nil, err
 	}
 
-	// Write content to destination
-	_, err = dest.UpdateContent(ctx, destDoc.ProviderID, sourceContent.Body)
-	if err != nil {
-		// Try to clean up
-		if delErr := dest.DeleteDocument(ctx, destDoc.ProviderID); delErr != nil {
-			w.logger.Warn("failed to clean up destination document after update error",
-				"error", delErr, "dest_provider_id", destDoc.ProviderID)
-		}
-		return "", nil, fmt.Errorf("failed to write dest content: %w", err)
-	}
-
-	var validationResult *ValidationResult
-
-	// Validate if requested
-	if payload.Validate {
-		destContent, err := dest.GetContent(ctx, destDoc.ProviderID)
-		if err != nil {
-			w.logger.Warn("validation failed - could not read dest content", "error", err)
-		} else {
-			validationStart := time.Now()
-
-			// Normalize hashes by stripping "sha256:" prefix if present
-			sourceHash := sourceContent.ContentHash
-			destHash := destContent.ContentHash
-			if len(sourceHash) > 7 && sourceHash[:7] == "sha256:" {
-				sourceHash = sourceHash[7:]
-			}
-			if len(destHash) > 7 && destHash[:7] == "sha256:" {
-				destHash = destHash[7:]
-			}
-
-			match := sourceHash == destHash
-			bytesDiff := len(sourceContent.Body) - len(destContent.Body)
-			if bytesDiff < 0 {
-				bytesDiff = -bytesDiff
-			}
-
-			validationResult = &ValidationResult{
-				Match:          match,
-				SourceHash:     sourceContent.ContentHash,
-				DestHash:       destContent.ContentHash,
-				BytesDiff:      bytesDiff,
-				ValidationTime: time.Since(validationStart).Milliseconds(),
-			}
-
-			if !match {
-				w.logger.Warn("content validation failed - hashes don't match",
-					"source_hash", sourceContent.ContentHash,
-					"dest_hash", destContent.ContentHash,
-					"normalized_source", sourceHash,
-					"normalized_dest", destHash)
-			}
-		}
-	}
-
-	// Handle move strategy - delete from source
-	if payload.Strategy == StrategyMove {
-		if err := source.DeleteDocument(ctx, payload.SourceProviderID); err != nil {
-			w.logger.Error("failed to delete source document after move", "error", err)
-			// Don't fail the migration - document is already in dest
-		}
-	}
+	validationResult := w.validateMigration(ctx, dest, destDoc.ProviderID, sourceContent, payload.Validate)
+	w.finalizeMoveStrategy(ctx, source, payload)
 
 	return destDoc.ProviderID, validationResult, nil
+}
+
+func (w *Worker) loadSourceDocument(ctx context.Context, source workspace.WorkspaceProvider, payload *TaskPayload) (*workspace.DocumentContent, *workspace.DocumentMetadata, error) {
+	sourceContent, err := source.GetContent(ctx, payload.SourceProviderID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get source content: %w", err)
+	}
+
+	sourceDoc, err := source.GetDocument(ctx, payload.SourceProviderID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get source metadata: %w", err)
+	}
+
+	return sourceContent, sourceDoc, nil
+}
+
+func (w *Worker) createDestinationDocument(ctx context.Context, dest workspace.WorkspaceProvider, documentUUID docid.UUID, name string) (*workspace.DocumentMetadata, error) {
+	destDoc, err := dest.CreateDocumentWithUUID(ctx, documentUUID, "", "", name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dest document: %w", err)
+	}
+
+	return destDoc, nil
+}
+
+func (w *Worker) writeDestinationContent(ctx context.Context, dest workspace.WorkspaceProvider, destProviderID, body string) error {
+	if _, err := dest.UpdateContent(ctx, destProviderID, body); err != nil {
+		return fmt.Errorf("failed to write dest content: %w", err)
+	}
+
+	return nil
+}
+
+func (w *Worker) cleanupDestinationDocument(ctx context.Context, dest workspace.WorkspaceProvider, destProviderID string) {
+	if delErr := dest.DeleteDocument(ctx, destProviderID); delErr != nil {
+		w.logger.Warn("failed to clean up destination document after update error",
+			"error", delErr, "dest_provider_id", destProviderID)
+	}
+}
+
+func (w *Worker) validateMigration(ctx context.Context, dest workspace.WorkspaceProvider, destProviderID string, sourceContent *workspace.DocumentContent, shouldValidate bool) *ValidationResult {
+	if !shouldValidate {
+		return nil
+	}
+
+	destContent, err := dest.GetContent(ctx, destProviderID)
+	if err != nil {
+		w.logger.Warn("validation failed - could not read dest content", "error", err)
+		return nil
+	}
+
+	validationStart := time.Now()
+	sourceHash := normalizeHash(sourceContent.ContentHash)
+	destHash := normalizeHash(destContent.ContentHash)
+	match := sourceHash == destHash
+
+	validationResult := &ValidationResult{
+		Match:          match,
+		SourceHash:     sourceContent.ContentHash,
+		DestHash:       destContent.ContentHash,
+		BytesDiff:      absInt(len(sourceContent.Body) - len(destContent.Body)),
+		ValidationTime: time.Since(validationStart).Milliseconds(),
+	}
+
+	if !match {
+		w.logger.Warn("content validation failed - hashes don't match",
+			"source_hash", sourceContent.ContentHash,
+			"dest_hash", destContent.ContentHash,
+			"normalized_source", sourceHash,
+			"normalized_dest", destHash)
+	}
+
+	return validationResult
+}
+
+func (w *Worker) finalizeMoveStrategy(ctx context.Context, source workspace.WorkspaceProvider, payload *TaskPayload) {
+	if payload.Strategy != StrategyMove {
+		return
+	}
+
+	if err := source.DeleteDocument(ctx, payload.SourceProviderID); err != nil {
+		w.logger.Error("failed to delete source document after move", "error", err)
+	}
+}
+
+func normalizeHash(hash string) string {
+	return strings.TrimPrefix(hash, "sha256:")
+}
+
+func absInt(v int) int {
+	if v < 0 {
+		return -v
+	}
+
+	return v
 }
 
 // failItem marks an item as failed

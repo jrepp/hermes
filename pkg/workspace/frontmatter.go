@@ -35,12 +35,8 @@ import (
 //	document_type: rfc
 //	---
 type FrontmatterParser struct {
-	// ProviderType is the provider type for documents parsed (e.g., "local", "github")
+	CoreFields   map[string]bool
 	ProviderType string
-
-	// CoreFields defines which frontmatter fields map to core DocumentMetadata attributes
-	// vs ExtendedMetadata. If not specified, uses default mapping.
-	CoreFields map[string]bool
 }
 
 // NewFrontmatterParser creates a parser with default core field mapping.
@@ -318,7 +314,7 @@ func (p *FrontmatterParser) parseValue(value string) any {
 }
 
 // applyDefaults applies smart defaults to metadata fields.
-func (p *FrontmatterParser) applyDefaults(meta *DocumentMetadata, hasTitle, hasCreated, hasModified bool) {
+func (p *FrontmatterParser) applyDefaults(meta *DocumentMetadata, _, hasCreated, hasModified bool) {
 	// Default UUID if not present
 	if meta.UUID.IsZero() {
 		meta.UUID = docid.NewUUID()

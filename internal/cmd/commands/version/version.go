@@ -19,7 +19,8 @@ func (c *Command) Help() string {
   This command prints the version of the binary.`
 }
 
-func (c *Command) Run(args []string) int {
+// Run prints the Hermes version.
+func (c *Command) Run(_ []string) int {
 	c.UI.Output(version.Version)
 
 	return 0

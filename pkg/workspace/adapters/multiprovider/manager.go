@@ -36,17 +36,16 @@ type Manager struct {
 
 	// Sync management
 	syncQueue chan *SyncOperation
-	syncMutex sync.Mutex
 	stopChan  chan struct{}
 	wg        sync.WaitGroup
 }
 
 // SyncOperation represents a pending sync operation
 type SyncOperation struct {
-	Type         string // "register", "update", "delete"
-	Document     *workspace.DocumentMetadata
-	AttemptCount int
 	LastError    error
+	Document     *workspace.DocumentMetadata
+	Type         string
+	AttemptCount int
 }
 
 // Compile-time interface checks - ensures Manager implements all RFC-084 interfaces
@@ -353,7 +352,7 @@ func (m *Manager) DeleteDocument(ctx context.Context, providerID string) error {
 	}
 
 	// Get document metadata before deletion for sync (best effort - ignore errors)
-	doc, _ := docProvider.GetDocument(ctx, providerID)
+	doc, _ := docProvider.GetDocument(ctx, providerID) //nolint:errcheck // intentional best-effort
 
 	err := docProvider.DeleteDocument(ctx, providerID)
 	if err != nil {
@@ -384,7 +383,7 @@ func (m *Manager) RenameDocument(ctx context.Context, providerID, newName string
 	}
 
 	// Get updated metadata and queue sync (best effort - ignore errors)
-	doc, _ := docProvider.GetDocument(ctx, providerID)
+	doc, _ := docProvider.GetDocument(ctx, providerID) //nolint:errcheck // document existence check is best-effort
 	if doc != nil {
 		m.queueSync(&SyncOperation{
 			Type:     "update",
@@ -436,7 +435,7 @@ func (m *Manager) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*works
 }
 
 // UpdateContent updates document content
-func (m *Manager) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (m *Manager) UpdateContent(ctx context.Context, providerID, content string) (*workspace.DocumentContent, error) {
 	contentProvider, ok := m.config.Primary.(workspace.ContentProvider)
 	if !ok {
 		return nil, fmt.Errorf("primary provider does not implement ContentProvider")
@@ -450,7 +449,7 @@ func (m *Manager) UpdateContent(ctx context.Context, providerID string, content 
 	// Get document metadata and queue sync (best effort - ignore errors)
 	docProvider, ok := m.config.Primary.(workspace.DocumentProvider)
 	if ok {
-		doc, _ := docProvider.GetDocument(ctx, providerID)
+		doc, _ := docProvider.GetDocument(ctx, providerID) //nolint:errcheck // intentional best-effort
 		if doc != nil {
 			m.queueSync(&SyncOperation{
 				Type:     "update",

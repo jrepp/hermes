@@ -19,11 +19,11 @@ import (
 
 // LocalWorkspaceFixture provides a temporary local workspace for testing
 type LocalWorkspaceFixture struct {
-	t         *testing.T
-	tempDir   string
-	adapter   *local.Adapter
 	provider  workspace.WorkspaceProvider
-	documents map[string]*workspace.Document // document name -> document
+	t         *testing.T
+	adapter   *local.Adapter
+	documents map[string]*workspace.Document
+	tempDir   string
 }
 
 // NewLocalWorkspaceFixture creates a new local workspace fixture
@@ -242,15 +242,15 @@ Required metadata fields shall not be null after migration
 
 // createDocument creates a document in the local workspace
 func (f *LocalWorkspaceFixture) createDocument(
-	ctx context.Context,
-	storage workspace.DocumentStorage,
+	_ context.Context,
+	_ workspace.DocumentStorage,
 	id, title, content string,
 ) *workspace.Document {
 	f.t.Helper()
 
 	// Create document file
 	docPath := filepath.Join(f.tempDir, id+".md")
-	err := os.WriteFile(docPath, []byte(content), 0600)
+	err := os.WriteFile(docPath, []byte(content), 0o600)
 	require.NoError(f.t, err, "failed to write document file")
 
 	// Create document metadata
@@ -295,7 +295,7 @@ func (f *LocalWorkspaceFixture) UpdateDocument(doc *workspace.Document, newConte
 
 	// Update file
 	docPath := filepath.Join(f.tempDir, doc.ID+".md")
-	err := os.WriteFile(docPath, []byte(newContent), 0600)
+	err := os.WriteFile(docPath, []byte(newContent), 0o600)
 	require.NoError(f.t, err, "failed to update document file")
 }
 

@@ -84,7 +84,7 @@ func (a *Adapter) Name() string {
 }
 
 // Healthy checks if Algolia is accessible.
-func (a *Adapter) Healthy(ctx context.Context) error {
+func (a *Adapter) Healthy(_ context.Context) error {
 	// Try to get index settings as health check
 	_, err := a.docsIndex.GetSettings()
 	if err != nil {
@@ -102,7 +102,7 @@ type documentIndex struct {
 	index *search.Index
 }
 
-func (di *documentIndex) Index(ctx context.Context, doc *hermessearch.Document) error {
+func (di *documentIndex) Index(_ context.Context, doc *hermessearch.Document) error {
 	_, err := di.index.SaveObject(doc)
 	if err != nil {
 		return &hermessearch.Error{
@@ -114,7 +114,7 @@ func (di *documentIndex) Index(ctx context.Context, doc *hermessearch.Document) 
 	return nil
 }
 
-func (di *documentIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Document) error {
+func (di *documentIndex) IndexBatch(_ context.Context, docs []*hermessearch.Document) error {
 	objects := make([]interface{}, len(docs))
 	for i, doc := range docs {
 		objects[i] = doc
@@ -131,7 +131,7 @@ func (di *documentIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Do
 	return nil
 }
 
-func (di *documentIndex) Delete(ctx context.Context, docID string) error {
+func (di *documentIndex) Delete(_ context.Context, docID string) error {
 	_, err := di.index.DeleteObject(docID)
 	if err != nil {
 		return &hermessearch.Error{
@@ -143,7 +143,7 @@ func (di *documentIndex) Delete(ctx context.Context, docID string) error {
 	return nil
 }
 
-func (di *documentIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
+func (di *documentIndex) DeleteBatch(_ context.Context, docIDs []string) error {
 	_, err := di.index.DeleteObjects(docIDs)
 	if err != nil {
 		return &hermessearch.Error{
@@ -155,7 +155,7 @@ func (di *documentIndex) DeleteBatch(ctx context.Context, docIDs []string) error
 	return nil
 }
 
-func (di *documentIndex) Search(ctx context.Context, query *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
+func (di *documentIndex) Search(_ context.Context, _ *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
 	// TODO: Implement full search with query parameters
 	// This is a placeholder that needs to be expanded to handle:
 	// - Pagination
@@ -166,7 +166,7 @@ func (di *documentIndex) Search(ctx context.Context, query *hermessearch.SearchQ
 	return nil, fmt.Errorf("Search not yet implemented")
 }
 
-func (di *documentIndex) GetObject(ctx context.Context, docID string) (*hermessearch.Document, error) {
+func (di *documentIndex) GetObject(_ context.Context, docID string) (*hermessearch.Document, error) {
 	var doc hermessearch.Document
 	err := di.index.GetObject(docID, &doc)
 	if err != nil {
@@ -179,12 +179,12 @@ func (di *documentIndex) GetObject(ctx context.Context, docID string) (*hermesse
 	return &doc, nil
 }
 
-func (di *documentIndex) GetFacets(ctx context.Context, facetNames []string) (*hermessearch.Facets, error) {
+func (di *documentIndex) GetFacets(_ context.Context, _ []string) (*hermessearch.Facets, error) {
 	// TODO: Implement facet retrieval
 	return nil, fmt.Errorf("GetFacets not yet implemented")
 }
 
-func (di *documentIndex) Clear(ctx context.Context) error {
+func (di *documentIndex) Clear(_ context.Context) error {
 	_, err := di.index.ClearObjects()
 	if err != nil {
 		return &hermessearch.Error{
@@ -201,7 +201,7 @@ type draftIndex struct {
 	index *search.Index
 }
 
-func (dri *draftIndex) Index(ctx context.Context, doc *hermessearch.Document) error {
+func (dri *draftIndex) Index(_ context.Context, doc *hermessearch.Document) error {
 	_, err := dri.index.SaveObject(doc)
 	if err != nil {
 		return &hermessearch.Error{

@@ -340,8 +340,8 @@ func TestProject_StatusCheckers(t *testing.T) {
 
 func TestProject_IsInMigration(t *testing.T) {
 	tests := []struct {
-		name            string
 		project         *Project
+		name            string
 		expectMigration bool
 	}{
 		{

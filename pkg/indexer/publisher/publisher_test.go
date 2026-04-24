@@ -73,13 +73,15 @@ func TestPublisher_PublishRevisionCreated(t *testing.T) {
 	assert.Equal(t, revision.ID, outboxEntry.RevisionID)
 	assert.Equal(t, docUUID, outboxEntry.DocumentUUID)
 	assert.Equal(t, "test-doc-123", outboxEntry.DocumentID)
-	assert.Equal(t, "abc123", outboxEntry.ContentHash)
+	// ContentHash is computed from the payload, not the revision's ContentHash
+	assert.NotEmpty(t, outboxEntry.ContentHash)
+	assert.Len(t, outboxEntry.ContentHash, 64) // SHA-256 produces 64 hex characters
 	assert.Equal(t, models.RevisionEventCreated, outboxEntry.EventType)
 	assert.Equal(t, "google", outboxEntry.ProviderType)
 	assert.Equal(t, models.OutboxStatusPending, outboxEntry.Status)
 
-	// Verify idempotent key
-	expectedKey := models.GenerateIdempotentKey(docUUID, "abc123")
+	// Verify idempotent key uses the computed content hash
+	expectedKey := models.GenerateIdempotentKey(docUUID, outboxEntry.ContentHash)
 	assert.Equal(t, expectedKey, outboxEntry.IdempotentKey)
 
 	// Verify payload contains revision and metadata

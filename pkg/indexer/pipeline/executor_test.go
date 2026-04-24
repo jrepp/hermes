@@ -19,19 +19,19 @@ import (
 
 // MockStep is a test implementation of the Step interface
 type MockStep struct {
+	failError    error
 	name         string
+	execDuration time.Duration
 	executed     bool
 	shouldFail   bool
-	failError    error
 	isRetryable  bool
-	execDuration time.Duration
 }
 
 func (m *MockStep) Name() string {
 	return m.name
 }
 
-func (m *MockStep) Execute(ctx context.Context, revision *models.DocumentRevision, config map[string]interface{}) error {
+func (m *MockStep) Execute(_ context.Context, _ *models.DocumentRevision, _ map[string]interface{}) error {
 	if m.execDuration > 0 {
 		time.Sleep(m.execDuration)
 	}
@@ -42,7 +42,7 @@ func (m *MockStep) Execute(ctx context.Context, revision *models.DocumentRevisio
 	return nil
 }
 
-func (m *MockStep) IsRetryable(err error) bool {
+func (m *MockStep) IsRetryable(_ error) bool {
 	return m.isRetryable
 }
 
@@ -103,9 +103,11 @@ func TestNewExecutor_MissingDB(t *testing.T) {
 		Steps: []Step{step},
 	})
 
-	require.Error(t, err)
-	assert.Nil(t, executor)
-	assert.Contains(t, err.Error(), "database is required")
+	// DB is optional for stateless mode - no error expected
+	require.NoError(t, err)
+	assert.NotNil(t, executor)
+	assert.Nil(t, executor.db)
+	assert.NotNil(t, executor.steps)
 }
 
 func TestNewExecutor_NoLogger(t *testing.T) {
@@ -270,20 +272,20 @@ func TestExecutor_Execute_UnknownStep(t *testing.T) {
 
 // ConfigCapturingStep is a test step that captures the config it receives
 type ConfigCapturingStep struct {
-	name           string
 	receivedConfig map[string]interface{}
+	name           string
 }
 
 func (c *ConfigCapturingStep) Name() string {
 	return c.name
 }
 
-func (c *ConfigCapturingStep) Execute(ctx context.Context, revision *models.DocumentRevision, config map[string]interface{}) error {
+func (c *ConfigCapturingStep) Execute(_ context.Context, _ *models.DocumentRevision, config map[string]interface{}) error {
 	c.receivedConfig = config
 	return nil
 }
 
-func (c *ConfigCapturingStep) IsRetryable(err error) bool {
+func (c *ConfigCapturingStep) IsRetryable(_ error) bool {
 	return false
 }
 

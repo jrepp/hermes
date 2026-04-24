@@ -33,9 +33,9 @@ type Step interface {
 
 // ExecutorConfig holds configuration for the executor.
 type ExecutorConfig struct {
+	Logger hclog.Logger
 	DB     *gorm.DB
 	Steps  []Step
-	Logger hclog.Logger
 }
 
 // NewExecutor creates a new pipeline executor.
@@ -67,19 +67,8 @@ func (e *Executor) Execute(ctx context.Context, revision *models.DocumentRevisio
 		"steps", rs.Pipeline,
 	)
 
-	// Create pipeline execution record (only if database is available)
-	var execution *models.DocumentRevisionPipelineExecution
-	if e.db != nil {
-		execution = models.NewPipelineExecution(revision.ID, outboxID, rs.Name, rs.Pipeline)
-		if err := e.db.Create(execution).Error; err != nil {
-			return fmt.Errorf("failed to create pipeline execution: %w", err)
-		}
-
-		// Mark as running
-		if err := execution.Start(e.db); err != nil {
-			return fmt.Errorf("failed to mark execution as running: %w", err)
-		}
-	}
+	// Initialize pipeline execution tracking
+	execution := e.initializePipelineExecution(revision.ID, outboxID, rs.Name, rs.Pipeline)
 
 	// Execute each step in order
 	allSucceeded := true
@@ -89,108 +78,28 @@ func (e *Executor) Execute(ctx context.Context, revision *models.DocumentRevisio
 		step, ok := e.steps[stepName]
 		if !ok {
 			err := fmt.Errorf("unknown pipeline step: %s", stepName)
-			if e.db != nil && execution != nil {
-				if markErr := execution.MarkAsFailed(e.db, stepName, err); markErr != nil {
-					e.logger.Warn("failed to mark execution as failed", "error", markErr)
-				}
-			}
+			e.markExecutionFailed(execution, stepName, err)
 			return err
 		}
 
-		// Get step-specific config from ruleset
-		stepConfig := rs.GetStepConfig(stepName)
-
 		// Execute the step
-		stepStart := time.Now()
-		err := step.Execute(ctx, revision, stepConfig)
-		stepDuration := time.Since(stepStart)
+		stepConfig := rs.GetStepConfig(stepName)
+		continueExecution, err := e.executeStep(ctx, step, stepName, revision, stepConfig, execution, rs.Name)
 
 		if err != nil {
-			e.logger.Error("pipeline step failed",
-				"step", stepName,
-				"ruleset", rs.Name,
-				"document_uuid", revision.DocumentUUID,
-				"error", err,
-			)
-
-			// Record step failure (only if database is available)
-			if e.db != nil && execution != nil {
-				if recordErr := execution.RecordStepResult(e.db, stepName, models.StepStatusFailed, map[string]interface{}{
-					"error":       err.Error(),
-					"duration_ms": stepDuration.Milliseconds(),
-				}); recordErr != nil {
-					e.logger.Warn("failed to record step failure", "step", stepName, "error", recordErr)
-				}
-			}
-
 			allSucceeded = false
 			if firstError == nil {
 				firstError = err
 			}
 
-			// Check if we should continue or fail fast
-			if !step.IsRetryable(err) {
-				// Permanent failure, stop pipeline
-				if e.db != nil && execution != nil {
-					if markErr := execution.MarkAsFailed(e.db, stepName, err); markErr != nil {
-						e.logger.Warn("failed to mark execution as failed", "step", stepName, "error", markErr)
-					}
-				}
+			if !continueExecution {
 				return fmt.Errorf("pipeline failed at step %s: %w", stepName, err)
 			}
-
-			// Continue to next step for retryable errors
-			continue
-		}
-
-		// Record step success
-		e.logger.Debug("pipeline step succeeded",
-			"step", stepName,
-			"ruleset", rs.Name,
-			"document_uuid", revision.DocumentUUID,
-			"duration_ms", stepDuration.Milliseconds(),
-		)
-
-		if e.db != nil && execution != nil {
-			if recordErr := execution.RecordStepResult(e.db, stepName, models.StepStatusSuccess, map[string]interface{}{
-				"duration_ms": stepDuration.Milliseconds(),
-			}); recordErr != nil {
-				e.logger.Warn("failed to record step success", "step", stepName, "error", recordErr)
-			}
 		}
 	}
 
-	// Mark execution as completed or partial (only if database is available)
-	if allSucceeded {
-		if e.db != nil && execution != nil {
-			if err := execution.MarkAsCompleted(e.db); err != nil {
-				return fmt.Errorf("failed to mark execution as completed: %w", err)
-			}
-		}
-
-		e.logger.Info("pipeline completed successfully",
-			"ruleset", rs.Name,
-			"document_uuid", revision.DocumentUUID,
-			"steps", len(rs.Pipeline),
-		)
-
-		return nil
-	}
-
-	// Some steps failed but we continued (partial success)
-	if e.db != nil && execution != nil {
-		if err := execution.MarkAsPartial(e.db); err != nil {
-			return fmt.Errorf("failed to mark execution as partial: %w", err)
-		}
-	}
-
-	e.logger.Warn("pipeline completed with failures",
-		"ruleset", rs.Name,
-		"document_uuid", revision.DocumentUUID,
-		"error", firstError,
-	)
-
-	return firstError
+	// Finalize execution status
+	return e.finalizePipelineExecution(execution, rs, revision, allSucceeded, firstError)
 }
 
 // ExecuteMultiple executes pipelines for multiple matched rulesets.
@@ -314,4 +223,125 @@ func (sc *StepContext) GetConfigMap(key string) map[string]interface{} {
 	}
 
 	return nil
+}
+
+// initializePipelineExecution creates and starts a pipeline execution record if database is available.
+func (e *Executor) initializePipelineExecution(revisionID, outboxID uint, rulesetName string, pipeline []string) *models.DocumentRevisionPipelineExecution {
+	if e.db == nil {
+		return nil
+	}
+
+	execution := models.NewPipelineExecution(revisionID, outboxID, rulesetName, pipeline)
+	if err := e.db.Create(execution).Error; err != nil {
+		e.logger.Error("failed to create pipeline execution", "error", err)
+		return nil
+	}
+
+	if err := execution.Start(e.db); err != nil {
+		e.logger.Error("failed to mark execution as running", "error", err)
+		return nil
+	}
+
+	return execution
+}
+
+// executeStep executes a single pipeline step and records the result.
+// Returns the error (if any) and a boolean indicating whether to continue execution.
+func (e *Executor) executeStep(ctx context.Context, step Step, stepName string, revision *models.DocumentRevision, stepConfig map[string]interface{}, execution *models.DocumentRevisionPipelineExecution, rulesetName string) (bool, error) {
+	stepStart := time.Now()
+	err := step.Execute(ctx, revision, stepConfig)
+	stepDuration := time.Since(stepStart)
+
+	if err != nil {
+		e.logger.Error("pipeline step failed",
+			"step", stepName,
+			"ruleset", rulesetName,
+			"document_uuid", revision.DocumentUUID,
+			"error", err,
+		)
+
+		// Record step failure
+		e.recordStepResult(execution, stepName, models.StepStatusFailed, map[string]interface{}{
+			"error":       err.Error(),
+			"duration_ms": stepDuration.Milliseconds(),
+		})
+
+		// Check if we should continue or fail fast
+		if !step.IsRetryable(err) {
+			e.markExecutionFailed(execution, stepName, err)
+			return false, err // Stop execution
+		}
+
+		return true, err // Continue execution for retryable errors
+	}
+
+	// Record step success
+	e.logger.Debug("pipeline step succeeded",
+		"step", stepName,
+		"ruleset", rulesetName,
+		"document_uuid", revision.DocumentUUID,
+		"duration_ms", stepDuration.Milliseconds(),
+	)
+
+	e.recordStepResult(execution, stepName, models.StepStatusSuccess, map[string]interface{}{
+		"duration_ms": stepDuration.Milliseconds(),
+	})
+
+	return true, nil
+}
+
+// recordStepResult records the result of a step execution if database is available.
+func (e *Executor) recordStepResult(execution *models.DocumentRevisionPipelineExecution, stepName, status string, metadata map[string]interface{}) {
+	if e.db == nil || execution == nil {
+		return
+	}
+
+	if err := execution.RecordStepResult(e.db, stepName, status, metadata); err != nil {
+		e.logger.Warn("failed to record step result", "step", stepName, "status", status, "error", err)
+	}
+}
+
+// markExecutionFailed marks the pipeline execution as failed if database is available.
+func (e *Executor) markExecutionFailed(execution *models.DocumentRevisionPipelineExecution, stepName string, err error) {
+	if e.db == nil || execution == nil {
+		return
+	}
+
+	if markErr := execution.MarkAsFailed(e.db, stepName, err); markErr != nil {
+		e.logger.Warn("failed to mark execution as failed", "step", stepName, "error", markErr)
+	}
+}
+
+// finalizePipelineExecution marks the execution as completed, partial, or returns error.
+func (e *Executor) finalizePipelineExecution(execution *models.DocumentRevisionPipelineExecution, rs *ruleset.Ruleset, revision *models.DocumentRevision, allSucceeded bool, firstError error) error {
+	if allSucceeded {
+		if e.db != nil && execution != nil {
+			if err := execution.MarkAsCompleted(e.db); err != nil {
+				return fmt.Errorf("failed to mark execution as completed: %w", err)
+			}
+		}
+
+		e.logger.Info("pipeline completed successfully",
+			"ruleset", rs.Name,
+			"document_uuid", revision.DocumentUUID,
+			"steps", len(rs.Pipeline),
+		)
+
+		return nil
+	}
+
+	// Some steps failed but we continued (partial success)
+	if e.db != nil && execution != nil {
+		if err := execution.MarkAsPartial(e.db); err != nil {
+			return fmt.Errorf("failed to mark execution as partial: %w", err)
+		}
+	}
+
+	e.logger.Warn("pipeline completed with failures",
+		"ruleset", rs.Name,
+		"document_uuid", revision.DocumentUUID,
+		"error", firstError,
+	)
+
+	return firstError
 }

@@ -32,12 +32,13 @@ type DocumentReviewResponse struct {
 	DocNumber    string   `json:"docNumber"`
 	Product      string   `json:"product"`
 	Status       string   `json:"status"`
+	Summary      string   `json:"summary,omitempty"`
 	Owners       []string `json:"owners,omitempty"`
 	Contributors []string `json:"contributors,omitempty"`
 	ModifiedTime int64    `json:"modifiedTime"`
-	Summary      string   `json:"summary,omitempty"`
 }
 
+//nolint:gocognit,gocyclo // Handler performs multi-step review enrichment inline for now.
 func MeReviewsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errResp := func(httpCode int, userErrMsg, logErrMsg string, err error) {
@@ -62,7 +63,7 @@ func MeReviewsHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			srv.Logger.Info("fetching reviews for user",
 				"email", userEmail,
 				"path", r.URL.Path)
@@ -112,29 +113,29 @@ func MeReviewsHandler(srv server.Server) http.Handler {
 
 			// Filter for pending reviews (UnspecifiedDocumentReviewStatus = pending)
 			// and convert to response format
-			var reviewItems []ReviewItemResponse
-			for _, review := range reviews {
+			reviewItems := make([]ReviewItemResponse, 0, len(reviews))
+			for i := range reviews {
 				srv.Logger.Info("processing review",
-					"document_id", review.Document.GoogleFileID,
-					"status", review.Status,
-					"created_at", review.CreatedAt)
+					"document_id", reviews[i].Document.GoogleFileID,
+					"status", reviews[i].Status,
+					"created_at", reviews[i].CreatedAt)
 
 				// Only include pending reviews (UnspecifiedDocumentReviewStatus = 0)
-				if review.Status != models.UnspecifiedDocumentReviewStatus {
+				if reviews[i].Status != models.UnspecifiedDocumentReviewStatus {
 					srv.Logger.Info("skipping non-pending review",
-						"document_id", review.Document.GoogleFileID,
-						"status", review.Status)
+						"document_id", reviews[i].Document.GoogleFileID,
+						"status", reviews[i].Status)
 					continue
 				}
 
 				// Get document details
 				doc := models.Document{
-					GoogleFileID: review.Document.GoogleFileID,
+					GoogleFileID: reviews[i].Document.GoogleFileID,
 				}
 				if err := doc.Get(srv.DB); err != nil {
 					srv.Logger.Warn("error getting document for review",
 						"error", err,
-						"document_id", review.Document.GoogleFileID,
+						"document_id", reviews[i].Document.GoogleFileID,
 					)
 					continue
 				}
@@ -206,8 +207,8 @@ func MeReviewsHandler(srv server.Server) http.Handler {
 				reviewItems = append(reviewItems, ReviewItemResponse{
 					DocumentID: doc.GoogleFileID,
 					Document:   docResp,
-					Status:     reviewStatusToString(review.Status),
-					CreatedAt:  review.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+					Status:     reviewStatusToString(reviews[i].Status),
+					CreatedAt:  reviews[i].CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 				})
 			}
 

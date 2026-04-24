@@ -153,9 +153,9 @@ func TestProject_GetProvider(t *testing.T) {
 func TestProject_GetActiveProvider(t *testing.T) {
 	tests := []struct {
 		name      string
+		wantType  string
 		providers []*Provider
 		wantErr   bool
-		wantType  string
 	}{
 		{
 			name: "single active provider",
@@ -371,10 +371,8 @@ func TestLoadConfig(t *testing.T) {
 	docsProject, err := config.GetProject("docs")
 	if err != nil {
 		t.Errorf("Failed to get docs project: %v", err)
-	} else {
-		if docsProject.ShortName != "DOCS" {
-			t.Errorf("docs project ShortName = %s, want DOCS", docsProject.ShortName)
-		}
+	} else if docsProject.ShortName != "DOCS" {
+		t.Errorf("docs project ShortName = %s, want DOCS", docsProject.ShortName)
 	}
 }
 

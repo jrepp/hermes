@@ -33,11 +33,11 @@ const (
 
 // Config represents the top-level projects configuration
 type Config struct {
-	Version           string    `hcl:"version"`
-	ConfigDir         string    `hcl:"config_dir"`
-	WorkspaceBasePath string    `hcl:"workspace_base_path"`
 	Defaults          *Defaults `hcl:"defaults,block"`
 	Projects          map[string]*Project
+	Version           string `hcl:"version"`
+	ConfigDir         string `hcl:"config_dir"`
+	WorkspaceBasePath string `hcl:"workspace_base_path"`
 }
 
 // Defaults contains default settings for providers
@@ -47,12 +47,13 @@ type Defaults struct {
 
 // LocalDefaults contains default settings for local providers
 type LocalDefaults struct {
-	IndexingEnabled bool   `hcl:"indexing_enabled,optional"`
 	GitBranch       string `hcl:"git_branch,optional"`
+	IndexingEnabled bool   `hcl:"indexing_enabled,optional"`
 }
 
 // Project represents a single project configuration
 type Project struct {
+	Metadata     *Metadata   `hcl:"metadata,block"`
 	Name         string      `hcl:"name,label"`
 	Title        string      `hcl:"title"`
 	FriendlyName string      `hcl:"friendly_name"`
@@ -60,32 +61,25 @@ type Project struct {
 	Description  string      `hcl:"description,optional"`
 	Status       string      `hcl:"status"`
 	Providers    []*Provider `hcl:"provider,block"`
-	Metadata     *Metadata   `hcl:"metadata,block"`
 }
 
 // Provider represents a workspace provider configuration
 type Provider struct {
-	Type            string `hcl:"type,label"`
-	MigrationStatus string `hcl:"migration_status,optional"`
-
-	// Local provider config
-	WorkspacePath string          `hcl:"workspace_path,optional"`
-	Git           *GitConfig      `hcl:"git,block"`
-	Indexing      *IndexingConfig `hcl:"indexing,block"`
-
-	// Google provider config
-	WorkspaceID         string   `hcl:"workspace_id,optional"`
-	ServiceAccountEmail string   `hcl:"service_account_email,optional"`
-	CredentialsPath     string   `hcl:"credentials_path,optional"`
-	SharedDriveIDs      []string `hcl:"shared_drive_ids,optional"`
-
-	// Remote Hermes provider config
-	HermesURL      string          `hcl:"hermes_url,optional"`
-	APIVersion     string          `hcl:"api_version,optional"`
-	Authentication *Authentication `hcl:"authentication,block"`
-	SyncMode       string          `hcl:"sync_mode,optional"`
-	CacheTTL       int             `hcl:"cache_ttl,optional"`
-	ProjectFilter  []string        `hcl:"project_filter,optional"`
+	Git                 *GitConfig      `hcl:"git,block"`
+	Authentication      *Authentication `hcl:"authentication,block"`
+	Indexing            *IndexingConfig `hcl:"indexing,block"`
+	ServiceAccountEmail string          `hcl:"service_account_email,optional"`
+	WorkspacePath       string          `hcl:"workspace_path,optional"`
+	WorkspaceID         string          `hcl:"workspace_id,optional"`
+	Type                string          `hcl:"type,label"`
+	CredentialsPath     string          `hcl:"credentials_path,optional"`
+	HermesURL           string          `hcl:"hermes_url,optional"`
+	APIVersion          string          `hcl:"api_version,optional"`
+	MigrationStatus     string          `hcl:"migration_status,optional"`
+	SyncMode            string          `hcl:"sync_mode,optional"`
+	SharedDriveIDs      []string        `hcl:"shared_drive_ids,optional"`
+	ProjectFilter       []string        `hcl:"project_filter,optional"`
+	CacheTTL            int             `hcl:"cache_ttl,optional"`
 }
 
 // GitConfig represents Git repository configuration
@@ -96,8 +90,8 @@ type GitConfig struct {
 
 // IndexingConfig represents indexing configuration
 type IndexingConfig struct {
-	Enabled           bool     `hcl:"enabled,optional"`
 	AllowedExtensions []string `hcl:"allowed_extensions,optional"`
+	Enabled           bool     `hcl:"enabled,optional"`
 	PublicReadAccess  bool     `hcl:"public_read_access,optional"`
 }
 
@@ -113,8 +107,8 @@ type Authentication struct {
 type Metadata struct {
 	CreatedAt time.Time `hcl:"created_at,optional"`
 	Owner     string    `hcl:"owner,optional"`
-	Tags      []string  `hcl:"tags,optional"`
 	Notes     string    `hcl:"notes,optional"`
+	Tags      []string  `hcl:"tags,optional"`
 }
 
 // GetProject returns a project by name
@@ -249,34 +243,34 @@ func (p *Project) IsInMigration() bool {
 
 // ProjectSummary represents a sanitized project for API responses
 type ProjectSummary struct {
+	Metadata     *Metadata          `json:"metadata,omitempty"`
 	Name         string             `json:"name"`
 	Title        string             `json:"title"`
 	FriendlyName string             `json:"friendly_name"`
 	ShortName    string             `json:"short_name"`
 	Description  string             `json:"description"`
 	Status       string             `json:"status"`
+	Providers    []*ProviderSummary `json:"providers"`
 	IsActive     bool               `json:"is_active"`
 	IsArchived   bool               `json:"is_archived"`
 	IsCompleted  bool               `json:"is_completed"`
 	InMigration  bool               `json:"in_migration"`
-	Providers    []*ProviderSummary `json:"providers"`
-	Metadata     *Metadata          `json:"metadata,omitempty"`
 }
 
 // ProviderSummary represents a sanitized provider for API responses
 type ProviderSummary struct {
 	Type              string   `json:"type"`
-	State             string   `json:"state"` // active, source, target, archived
-	Role              string   `json:"role"`  // Human-readable role description
+	State             string   `json:"state"`
+	Role              string   `json:"role"`
 	WorkspacePath     string   `json:"workspace_path,omitempty"`
 	WorkspaceID       string   `json:"workspace_id,omitempty"`
 	HermesURL         string   `json:"hermes_url,omitempty"`
 	APIVersion        string   `json:"api_version,omitempty"`
 	GitRepository     string   `json:"git_repository,omitempty"`
 	GitBranch         string   `json:"git_branch,omitempty"`
+	SharedDriveIDs    []string `json:"shared_drive_ids,omitempty"`
 	IndexingEnabled   bool     `json:"indexing_enabled"`
 	HasAuthentication bool     `json:"has_authentication"`
-	SharedDriveIDs    []string `json:"shared_drive_ids,omitempty"`
 }
 
 // ToSummary returns a sanitized project summary safe for API responses

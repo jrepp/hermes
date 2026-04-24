@@ -17,57 +17,53 @@ import (
 )
 
 // RFC contains metadata for documents based off of the HashiCorp RFC template.
+//
+//nolint:govet // Keep document metadata fields grouped for readability.
 type RFC struct {
-	BaseDoc `mapstructure:",squash"`
-
-	// CurrentVersion is the current version of the product at the time of
-	// document authoring.
-	CurrentVersion string `json:"currentVersion,omitempty"`
-
-	// PRD is the associated PRD.
-	PRD string `json:"prd,omitempty"`
-
-	// Stakeholders is a slice of email address strings for document stakeholders.
-	Stakeholders []string `json:"stakeholders,omitempty"`
-
-	// TargetVersion is the target version of the product for the changes being
-	// proposed in the document.
-	TargetVersion string `json:"targetVersion,omitempty"`
+	BaseDoc        `mapstructure:",squash"`
+	CurrentVersion string   `json:"currentVersion,omitempty"`
+	PRD            string   `json:"prd,omitempty"`
+	TargetVersion  string   `json:"targetVersion,omitempty"`
+	Stakeholders   []string `json:"stakeholders,omitempty"`
 }
 
-func (d RFC) GetCustomEditableFields() map[string]CustomDocTypeField {
+// GetCustomEditableFields returns the custom editable fields for RFC documents.
+//
+//nolint:staticcheck // Receiver naming follows the rest of RFC methods.
+func (r RFC) GetCustomEditableFields() map[string]CustomDocTypeField {
 	return map[string]CustomDocTypeField{
 		"currentVersion": {
 			DisplayName: "Current Version",
-			Type:        "STRING",
+			Type:        fieldTypeStr,
 		},
 		"prd": {
-			DisplayName: "PRD",
-			Type:        "STRING",
+			DisplayName: docTypePRD,
+			Type:        fieldTypeStr,
 		},
 		"stakeholders": {
 			DisplayName: "Stakeholders",
-			Type:        "PEOPLE",
+			Type:        fieldTypePpl,
 		},
 		"targetVersion": {
 			DisplayName: "Target Version",
-			Type:        "STRING",
+			Type:        fieldTypeStr,
 		},
 	}
 }
 
-func (d *RFC) SetCustomEditableFields() {
-	d.CustomEditableFields = d.GetCustomEditableFields()
+// SetCustomEditableFields sets the custom editable fields for the RFC.
+func (r *RFC) SetCustomEditableFields() {
+	r.CustomEditableFields = r.GetCustomEditableFields()
 }
 
 // MissingFields returns the missing fields of the doc struct.
-func (d RFC) MissingFields() []string {
+func (r RFC) MissingFields() []string {
 	var missingFields []string
 
-	rfcType := reflect.TypeOf(d)
+	rfcType := reflect.TypeOf(r)
 	for i := 0; i < rfcType.NumField(); i++ {
 		f := rfcType.Field(i)
-		val := reflect.ValueOf(d).FieldByName(f.Name)
+		val := reflect.ValueOf(r).FieldByName(f.Name)
 		if val.IsZero() {
 			missingFields = append(missingFields, f.Name)
 		} else if f.Type.Kind() == reflect.Slice && val.Len() == 0 {
@@ -81,7 +77,7 @@ func (d RFC) MissingFields() []string {
 
 // NewRFC parses a Google Drive file based on the HashiCorp RFC template and
 // returns the resulting RFC struct.
-func NewRFC(f *drive.File, s *gw.Service, allFolders []string) (*RFC, error) {
+func NewRFC(f *drive.File, s *gw.Service, _ []string) (*RFC, error) {
 	r := &RFC{
 		BaseDoc: BaseDoc{
 			ObjectID:      f.Id,
@@ -166,6 +162,8 @@ func NewRFC(f *drive.File, s *gw.Service, allFolders []string) (*RFC, error) {
 }
 
 // parseRFCHeader parses a HashiCorp RFC header for metadata.
+//
+//nolint:gocyclo // RFC header parsing is table-driven but still clearer inline.
 func (r *RFC) parseRFCHeader(d *docs.Document) {
 	tables := gw.GetTables(d.Body)
 
@@ -188,7 +186,7 @@ func (r *RFC) parseRFCHeader(d *docs.Document) {
 
 					case strings.HasPrefix(label, "Created"):
 						// Best effort parsing - ignore errors
-						_ = r.parseRFCCreated(p)
+						_ = r.parseRFCCreated(p) //nolint:errcheck // Best-effort created date parsing.
 
 					case strings.HasPrefix(label, "Current Version"):
 						r.parseRFCCurrentVersion(p)
@@ -197,7 +195,7 @@ func (r *RFC) parseRFCHeader(d *docs.Document) {
 						strings.HasPrefix(label, "Owners:"):
 						r.parseRFCOwners(p)
 
-					case strings.HasPrefix(label, "PRD"):
+					case strings.HasPrefix(label, docTypePRD):
 						r.parseRFCPRD(p)
 
 					case strings.HasPrefix(label, "Stakeholder:") ||
@@ -266,7 +264,7 @@ func (r *RFC) parseRFCOwners(p *docs.Paragraph) {
 
 // parseRFCPRD parses the RFC PRD from a Google Docs paragraph.
 func (r *RFC) parseRFCPRD(p *docs.Paragraph) {
-	r.PRD = parseParagraphWithText("PRD", p)
+	r.PRD = parseParagraphWithText(docTypePRD, p)
 
 	// Text from the RFC template may be left in the doc.
 	if r.PRD == "Link to PRD if applicable" {
@@ -285,8 +283,8 @@ func (r *RFC) parseRFCStatus(p *docs.Paragraph) {
 	var status string
 
 	// Sometimes "Status: WIP" is collected together as one text element.
-	if label == "Status: WIP" && p.Elements[0].TextRun.TextStyle.Bold {
-		status = "WIP"
+	if label == statusWIP && p.Elements[0].TextRun.TextStyle.Bold {
+		status = wipStatus
 	} else {
 		for i, e := range p.Elements {
 			if i > 0 && e.TextRun != nil && e.TextRun.TextStyle != nil && e.TextRun.TextStyle.Bold {
@@ -300,6 +298,8 @@ func (r *RFC) parseRFCStatus(p *docs.Paragraph) {
 }
 
 // parseRFCSummary parses the RFC Summary from a Google Docs Body.
+//
+//nolint:gocognit // Summary extraction mirrors the document structure and is clearer inline.
 func (r *RFC) parseRFCSummary(b *docs.Body) {
 	elems := b.Content
 
@@ -308,7 +308,7 @@ func (r *RFC) parseRFCSummary(b *docs.Body) {
 			// Summary paragraph in the RFC template will have at least 2 elements.
 			if len(e.Paragraph.Elements) > 1 {
 				if e.Paragraph.Elements[0].TextRun != nil {
-					if e.Paragraph.Elements[0].TextRun.Content == "Summary:" {
+					if e.Paragraph.Elements[0].TextRun.Content == summaryLabel {
 						// We found the summary paragraph and the rest of the elements
 						// should be the summary value.
 						var s string
@@ -386,7 +386,7 @@ func parseEmails(s string) []string {
 
 	// Handle "{a, b, c}@hashicorp.com" case.
 	// Best effort parsing - ignore regex errors (won't happen with valid pattern)
-	t, _ := regexp.MatchString("^{.+}@.+$", s)
+	t, _ := regexp.MatchString("^{.+}@.+$", s) //nolint:errcheck // Best-effort regex match on a static pattern.
 	if t {
 		split := strings.SplitN(s, "@", 2)
 
@@ -427,7 +427,7 @@ func parseParagraphWithText(label string, p *docs.Paragraph) string {
 	s := buildLabelAndValueString(label, p)
 
 	// If string is "N/A", return an empty string.
-	if strings.ToLower(s) == "n/a" {
+	if strings.EqualFold(s, "n/a") {
 		return ""
 	}
 

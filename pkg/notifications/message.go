@@ -17,38 +17,25 @@ const (
 
 // NotificationMessage is the envelope for all notifications
 type NotificationMessage struct {
-	// Message metadata
-	ID        string           `json:"id"`        // Unique message ID (UUID)
-	Type      NotificationType `json:"type"`      // Notification type
-	Timestamp time.Time        `json:"timestamp"` // When published
-	Priority  int              `json:"priority"`  // 0=normal, 1=high, 2=urgent
-
-	// Context
-	UserID       string `json:"user_id,omitempty"`       // Triggering user
-	DocumentUUID string `json:"document_uuid,omitempty"` // Related document
-	ProjectID    string `json:"project_id,omitempty"`    // Related project
-
-	// Notification targets
-	Recipients []Recipient `json:"recipients"` // Who receives this
-
-	// Template-based rendering (for server-side resolution)
-	Template        string         `json:"template,omitempty"`         // Template name (e.g., "document_approved") - deprecated, use resolved fields
-	TemplateContext map[string]any `json:"template_context,omitempty"` // Template variables - kept for audit/debugging
-
-	// Resolved content (populated by server before publishing)
-	Subject  string `json:"subject"`   // Fully resolved subject line
-	Body     string `json:"body"`      // Fully resolved body (markdown)
-	BodyHTML string `json:"body_html"` // Fully resolved HTML body
-
-	// Backend routing (which backends should process this)
-	Backends []string `json:"backends"` // ["mail", "slack", "telegram", "discord", "audit"]
-
-	// Retry tracking (set by consumers)
-	RetryCount     int       `json:"retry_count,omitempty"`
-	LastError      string    `json:"last_error,omitempty"`
-	LastRetryAt    time.Time `json:"last_retry_at,omitempty"`
-	NextRetryAt    time.Time `json:"next_retry_at,omitempty"`
-	FailedBackends []string  `json:"failed_backends,omitempty"` // Track which backends failed
+	NextRetryAt     time.Time        `json:"next_retry_at,omitempty"`
+	Timestamp       time.Time        `json:"timestamp"`
+	LastRetryAt     time.Time        `json:"last_retry_at,omitempty"`
+	TemplateContext map[string]any   `json:"template_context,omitempty"`
+	Template        string           `json:"template,omitempty"`
+	Body            string           `json:"body"`
+	ProjectID       string           `json:"project_id,omitempty"`
+	Type            NotificationType `json:"type"`
+	ID              string           `json:"id"`
+	UserID          string           `json:"user_id,omitempty"`
+	Subject         string           `json:"subject"`
+	DocumentUUID    string           `json:"document_uuid,omitempty"`
+	BodyHTML        string           `json:"body_html"`
+	LastError       string           `json:"last_error,omitempty"`
+	Backends        []string         `json:"backends"`
+	Recipients      []Recipient      `json:"recipients"`
+	FailedBackends  []string         `json:"failed_backends,omitempty"`
+	RetryCount      int              `json:"retry_count,omitempty"`
+	Priority        int              `json:"priority"`
 }
 
 // Recipient defines a notification recipient

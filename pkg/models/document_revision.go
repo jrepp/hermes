@@ -11,39 +11,21 @@ import (
 // This enables migration tracking, conflict detection, and maintaining
 // document history when documents move between workspace providers.
 type DocumentRevision struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-
-	// Document identification
-	DocumentUUID     uuid.UUID `gorm:"type:uuid;not null;index:idx_doc_revisions_uuid" json:"documentUuid"`
-	DocumentID       string    `gorm:"type:varchar(500);not null" json:"documentId"` // Provider-specific ID
-	ProviderType     string    `gorm:"type:varchar(50);not null;index:idx_doc_revisions_provider" json:"providerType"`
-	ProviderFolderID string    `gorm:"type:varchar(500)" json:"providerFolderId,omitempty"`
-
-	// Document metadata
-	Title        string    `gorm:"type:varchar(500)" json:"title"`
-	ContentHash  string    `gorm:"type:varchar(64);index:idx_doc_revisions_hash" json:"contentHash"` // SHA-256
-	ModifiedTime time.Time `gorm:"index:idx_doc_revisions_modified" json:"modifiedTime"`
-
-	// Revision status
-	Status string `gorm:"type:varchar(20);not null;default:'active';index:idx_doc_revisions_status" json:"status"`
-	// Status values:
-	// - "active": Current version in this provider
-	// - "source": Original document being migrated from
-	// - "target": Document being migrated to
-	// - "archived": Old version, no longer active
-	// - "conflict": Conflicting version detected
-
-	// Project association - tracks which project owns this revision (supports migration tracking)
-	ProjectUUID *uuid.UUID `gorm:"type:uuid;index:idx_doc_revisions_project_uuid" json:"projectUuid,omitempty"`
-
-	// ProjectID is DEPRECATED - use ProjectUUID instead
-	ProjectID *uint `gorm:"index:idx_doc_revisions_project" json:"projectId,omitempty"`
-
-	// Migration tracking
-	MigratedFrom *uint      `gorm:"index:idx_doc_revisions_migrated_from" json:"migratedFrom,omitempty"` // Foreign key to another revision
-	MigratedAt   *time.Time `json:"migratedAt,omitempty"`
+	ModifiedTime     time.Time  `gorm:"index:idx_doc_revisions_modified" json:"modifiedTime"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+	MigratedAt       *time.Time `json:"migratedAt,omitempty"`
+	MigratedFrom     *uint      `gorm:"index:idx_doc_revisions_migrated_from" json:"migratedFrom,omitempty"`
+	ProjectID        *uint      `gorm:"index:idx_doc_revisions_project" json:"projectId,omitempty"`
+	ProjectUUID      *uuid.UUID `gorm:"type:uuid;index:idx_doc_revisions_project_uuid" json:"projectUuid,omitempty"`
+	ProviderFolderID string     `gorm:"type:varchar(500)" json:"providerFolderId,omitempty"`
+	ContentHash      string     `gorm:"type:varchar(64);index:idx_doc_revisions_hash" json:"contentHash"`
+	Title            string     `gorm:"type:varchar(500)" json:"title"`
+	Status           string     `gorm:"type:varchar(20);not null;default:'active';index:idx_doc_revisions_status" json:"status"`
+	ProviderType     string     `gorm:"type:varchar(50);not null;index:idx_doc_revisions_provider" json:"providerType"`
+	DocumentID       string     `gorm:"type:varchar(500);not null" json:"documentId"`
+	ID               uint       `gorm:"primaryKey" json:"id"`
+	DocumentUUID     uuid.UUID  `gorm:"type:uuid;not null;index:idx_doc_revisions_uuid" json:"documentUuid"`
 }
 
 // TableName specifies the table name.
@@ -52,7 +34,7 @@ func (DocumentRevision) TableName() string {
 }
 
 // BeforeCreate hook to ensure DocumentUUID is set.
-func (dr *DocumentRevision) BeforeCreate(tx *gorm.DB) error {
+func (dr *DocumentRevision) BeforeCreate(_ *gorm.DB) error {
 	// Generate UUID if not provided
 	if dr.DocumentUUID == uuid.Nil {
 		dr.DocumentUUID = uuid.New()

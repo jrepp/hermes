@@ -24,7 +24,7 @@ type LinkData struct {
 }
 
 // RedirectHandler handles redirects from Hashilinks
-func RedirectHandler(algo *algolia.Client, algoCfg *algolia.Config, log hclog.Logger) http.Handler {
+func RedirectHandler(algo *algolia.Client, _ *algolia.Config, log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Only allow GET requests.
 		if r.Method != http.MethodGet {

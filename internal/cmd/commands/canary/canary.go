@@ -70,6 +70,7 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+//nolint:gocognit,gocyclo // 10-step smoke test is easier to follow inline.
 func (c *Command) Run(args []string) int {
 	f := c.Flags()
 	if err := f.Parse(args); err != nil {

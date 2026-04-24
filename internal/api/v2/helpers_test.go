@@ -105,15 +105,14 @@ func TestCompareSlices(t *testing.T) {
 }
 
 func TestCompareAlgoliaAndDatabaseDocument(t *testing.T) {
+	//nolint:govet // Test case readability matters more than field packing here.
 	cases := map[string]struct {
-		algoDoc      map[string]any
-		dbDoc        models.Document
-		dbDocReviews models.DocumentReviews
-
-		shouldErr   bool
-		errContains string
-		// Use multiErrContains if there are multiple errors expected.
+		algoDoc          map[string]any
+		dbDoc            models.Document
+		errContains      string
+		dbDocReviews     models.DocumentReviews
 		multiErrContains []string
+		shouldErr        bool
 	}{
 		"good": {
 			algoDoc: map[string]any{
@@ -1274,18 +1273,20 @@ func TestCompareAlgoliaAndDatabaseDocument(t *testing.T) {
 			err := CompareAlgoliaAndDatabaseDocument(
 				c.algoDoc, c.dbDoc, c.dbDocReviews, docTypes,
 			)
-			if c.shouldErr {
-				if len(c.multiErrContains) > 0 {
-					for _, m := range c.multiErrContains {
-						assert.ErrorContains(err, m)
-					}
-				} else if c.errContains != "" {
-					assert.ErrorContains(err, c.errContains)
-				} else {
-					require.Error(err)
-				}
-			} else {
+			if !c.shouldErr {
 				require.NoError(err)
+				return
+			}
+
+			switch {
+			case len(c.multiErrContains) > 0:
+				for _, m := range c.multiErrContains {
+					assert.ErrorContains(err, m)
+				}
+			case c.errContains != "":
+				assert.ErrorContains(err, c.errContains)
+			default:
+				require.Error(err)
 			}
 		})
 	}

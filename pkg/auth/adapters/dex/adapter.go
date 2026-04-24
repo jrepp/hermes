@@ -34,10 +34,10 @@ type Config struct {
 
 // Adapter implements the auth.Provider interface using Dex OIDC.
 type Adapter struct {
-	cfg      Config
 	log      hclog.Logger
 	verifier *oidc.IDTokenVerifier
 	provider *oidc.Provider
+	cfg      Config
 }
 
 // NewAdapter creates a new Dex OIDC authentication adapter.
@@ -128,12 +128,12 @@ func (a *Adapter) GetClaims(r *http.Request) (*auth.UserClaims, error) {
 	// Extract all available claims
 	var oidcClaims struct {
 		Email             string   `json:"email"`
-		EmailVerified     bool     `json:"email_verified"`
 		Name              string   `json:"name"`
 		GivenName         string   `json:"given_name"`
 		FamilyName        string   `json:"family_name"`
 		PreferredUsername string   `json:"preferred_username"`
 		Groups            []string `json:"groups"`
+		EmailVerified     bool     `json:"email_verified"`
 	}
 
 	if err := idToken.Claims(&oidcClaims); err != nil {

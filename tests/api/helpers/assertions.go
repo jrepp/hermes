@@ -46,10 +46,10 @@ func AssertDocument(t *testing.T, doc *models.Document, opts DocumentAssertions)
 type DocumentAssertions struct {
 	GoogleFileID     string
 	Title            string
-	Status           models.DocumentStatus
 	DocumentType     string
 	Product          string
 	Owner            string
+	Status           models.DocumentStatus
 	ApproverCount    int
 	ContributorCount int
 }
@@ -76,9 +76,9 @@ func AssertProject(t *testing.T, project *models.Project, opts ProjectAssertions
 // ProjectAssertions contains optional fields for project assertions.
 type ProjectAssertions struct {
 	Title       string
-	Status      models.ProjectStatus
 	Creator     string
 	Description string
+	Status      models.ProjectStatus
 }
 
 // AssertJSONField checks that a JSON object contains a field with the expected value.

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -117,7 +116,7 @@ func (p *Provider) ProviderType() string {
 func (p *Provider) discoverCapabilities(ctx context.Context) error {
 	endpoint := fmt.Sprintf("%s/api/v2/capabilities", p.config.BaseURL)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -202,10 +201,10 @@ func (p *Provider) doRequest(ctx context.Context, method, path string, body inte
 			lastErr = fmt.Errorf("request failed: %w", err)
 			continue
 		}
-		defer resp.Body.Close()
 
 		// Read response body
 		respBody, err := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
 		if err != nil {
 			lastErr = fmt.Errorf("failed to read response: %w", err)
 			continue
@@ -242,25 +241,6 @@ func (p *Provider) doRequest(ctx context.Context, method, path string, body inte
 	}
 
 	return fmt.Errorf("request failed after %d attempts: %w", p.config.MaxRetries+1, lastErr)
-}
-
-// buildURL constructs a URL with query parameters
-func (p *Provider) buildURL(path string, params map[string]string) string {
-	u, err := url.Parse(p.config.BaseURL + path)
-	if err != nil {
-		// BaseURL should be validated during config, this shouldn't fail
-		panic(fmt.Sprintf("invalid base URL: %v", err))
-	}
-
-	if len(params) > 0 {
-		q := u.Query()
-		for k, v := range params {
-			q.Set(k, v)
-		}
-		u.RawQuery = q.Encode()
-	}
-
-	return u.String()
 }
 
 // checkCapability returns an error if the capability is not supported

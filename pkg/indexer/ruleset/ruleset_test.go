@@ -221,17 +221,17 @@ func TestRuleset_CompareGreaterThan(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
 		length      interface{}
+		name        string
 		shouldMatch bool
 	}{
-		{"larger int", 10000, true},
-		{"larger int64", int64(6000), true},
-		{"larger float", 5001.0, true},
-		{"larger string", "7000", true},
-		{"equal", 5000, false},
-		{"smaller", 4000, false},
-		{"invalid string", "not-a-number", false},
+		{10000, "larger int", true},
+		{int64(6000), "larger int64", true},
+		{5001.0, "larger float", true},
+		{"7000", "larger string", true},
+		{5000, "equal", false},
+		{4000, "smaller", false},
+		{"not-a-number", "invalid string", false},
 	}
 
 	for _, tt := range tests {
@@ -257,17 +257,17 @@ func TestRuleset_CompareLessThan(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
 		length      interface{}
+		name        string
 		shouldMatch bool
 	}{
-		{"smaller int", 500, true},
-		{"smaller int64", int64(800), true},
-		{"smaller float", 999.5, true},
-		{"smaller string", "100", true},
-		{"equal", 1000, false},
-		{"larger", 2000, false},
-		{"invalid string", "not-a-number", false},
+		{500, "smaller int", true},
+		{int64(800), "smaller int64", true},
+		{999.5, "smaller float", true},
+		{"100", "smaller string", true},
+		{1000, "equal", false},
+		{2000, "larger", false},
+		{"not-a-number", "invalid string", false},
 	}
 
 	for _, tt := range tests {
@@ -293,16 +293,16 @@ func TestRuleset_GetValue_RevisionFields(t *testing.T) {
 	revision.ContentHash = "hash456"
 
 	tests := []struct {
-		key      string
 		expected interface{}
+		key      string
 	}{
-		{"provider_type", "google"},
-		{"status", "active"},
-		{"document_id", "doc-123"},
-		{"document_uuid", revision.DocumentUUID.String()},
-		{"title", "Test Doc"},
-		{"content_hash", "hash456"},
-		{"nonexistent", nil},
+		{"google", "provider_type"},
+		{"active", "status"},
+		{"doc-123", "document_id"},
+		{revision.DocumentUUID.String(), "document_uuid"},
+		{"Test Doc", "title"},
+		{"hash456", "content_hash"},
+		{nil, "nonexistent"},
 	}
 
 	for _, tt := range tests {
@@ -323,13 +323,13 @@ func TestRuleset_GetValue_MetadataFields(t *testing.T) {
 	}
 
 	tests := []struct {
-		key      string
 		expected interface{}
+		key      string
 	}{
-		{"document_type", "RFC"},
-		{"author", "john@example.com"},
-		{"content_length", 5000},
-		{"nonexistent", nil},
+		{"RFC", "document_type"},
+		{"john@example.com", "author"},
+		{5000, "content_length"},
+		{nil, "nonexistent"},
 	}
 
 	for _, tt := range tests {
@@ -394,18 +394,18 @@ func TestRuleset_ToNumber_DifferentTypes(t *testing.T) {
 	ruleset := Ruleset{Name: "test"}
 
 	tests := []struct {
-		name      string
 		input     interface{}
+		name      string
 		expected  float64
 		shouldErr bool
 	}{
-		{"int", 42, 42.0, false},
-		{"int64", int64(1000), 1000.0, false},
-		{"float64", 3.14, 3.14, false},
-		{"string valid", "123.45", 123.45, false},
-		{"string invalid", "not-a-number", 0, true},
-		{"bool", true, 0, true},
-		{"struct", struct{}{}, 0, true},
+		{42, "int", 42.0, false},
+		{int64(1000), "int64", 1000.0, false},
+		{3.14, "float64", 3.14, false},
+		{"123.45", "string valid", 123.45, false},
+		{"not-a-number", "string invalid", 0, true},
+		{true, "bool", 0, true},
+		{struct{}{}, "struct", 0, true},
 	}
 
 	for _, tt := range tests {

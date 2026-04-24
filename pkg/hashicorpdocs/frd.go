@@ -16,6 +16,8 @@ import (
 )
 
 // FRD contains metadata for documents based off of the HashiCorp FRD template.
+//
+//nolint:govet // Keep document metadata fields grouped for readability.
 type FRD struct {
 	BaseDoc `mapstructure:",squash"`
 
@@ -26,31 +28,35 @@ type FRD struct {
 	PRFAQ string `json:"prfaq,omitempty"`
 }
 
-func (d FRD) GetCustomEditableFields() map[string]CustomDocTypeField {
+// GetCustomEditableFields returns the custom editable fields for FRD documents.
+//
+//nolint:staticcheck // Receiver naming follows the rest of FRD methods.
+func (r FRD) GetCustomEditableFields() map[string]CustomDocTypeField {
 	return map[string]CustomDocTypeField{
 		"prd": {
-			DisplayName: "PRD",
-			Type:        "STRING",
+			DisplayName: docTypePRD,
+			Type:        fieldTypeStr,
 		},
 		"prfaq": {
 			DisplayName: "PRDFAQ",
-			Type:        "STRING",
+			Type:        fieldTypeStr,
 		},
 	}
 }
 
-func (d *FRD) SetCustomEditableFields() {
-	d.CustomEditableFields = d.GetCustomEditableFields()
+// SetCustomEditableFields sets the custom editable fields for the FRD.
+func (r *FRD) SetCustomEditableFields() {
+	r.CustomEditableFields = r.GetCustomEditableFields()
 }
 
 // MissingFields returns the missing fields of the doc struct.
-func (d FRD) MissingFields() []string {
+func (r FRD) MissingFields() []string {
 	var missingFields []string
 
-	rfcType := reflect.TypeOf(d)
+	rfcType := reflect.TypeOf(r)
 	for i := 0; i < rfcType.NumField(); i++ {
 		f := rfcType.Field(i)
-		val := reflect.ValueOf(d).FieldByName(f.Name)
+		val := reflect.ValueOf(r).FieldByName(f.Name)
 		if val.IsZero() {
 			missingFields = append(missingFields, f.Name)
 		} else if f.Type.Kind() == reflect.Slice && val.Len() == 0 {
@@ -64,7 +70,7 @@ func (d FRD) MissingFields() []string {
 
 // NewFRD parses a Google Drive file based on the HashiCorp FRD template and
 // returns the resulting FRD struct.
-func NewFRD(f *drive.File, s *gw.Service, allFolders []string) (*FRD, error) {
+func NewFRD(f *drive.File, s *gw.Service, _ []string) (*FRD, error) {
 	r := &FRD{
 		BaseDoc: BaseDoc{
 			ObjectID:      f.Id,
@@ -170,7 +176,7 @@ func (r *FRD) parseFRDHeader(d *docs.Document) {
 
 					case strings.HasPrefix(label, "Created"):
 						// Best effort parsing - ignore errors
-						_ = r.parseFRDCreated(p)
+						_ = r.parseFRDCreated(p) //nolint:errcheck // Best-effort created date parsing.
 
 					case strings.HasPrefix(label, "Owner:") ||
 						strings.HasPrefix(label, "Owners:"):
@@ -257,8 +263,8 @@ func (r *FRD) parseFRDStatus(p *docs.Paragraph) {
 	var status string
 
 	// Sometimes "Status: WIP" is collected together as one text element.
-	if label == "Status: WIP" && p.Elements[0].TextRun.TextStyle.Bold {
-		status = "WIP"
+	if label == statusWIP && p.Elements[0].TextRun.TextStyle.Bold {
+		status = wipStatus
 	} else {
 		for i, e := range p.Elements {
 			if i > 0 && e.TextRun.TextStyle.Bold {
@@ -272,6 +278,8 @@ func (r *FRD) parseFRDStatus(p *docs.Paragraph) {
 }
 
 // parseFRDSummary parses the FRD Summary from a Google Docs Body.
+//
+//nolint:gocognit // Summary extraction mirrors the document structure and is clearer inline.
 func (r *FRD) parseFRDSummary(b *docs.Body) {
 	elems := b.Content
 
@@ -280,7 +288,7 @@ func (r *FRD) parseFRDSummary(b *docs.Body) {
 			// Summary paragraph in the FRD template will have at least 2 elements.
 			if len(e.Paragraph.Elements) > 1 {
 				if e.Paragraph.Elements[0].TextRun != nil {
-					if e.Paragraph.Elements[0].TextRun.Content == "Summary:" {
+					if e.Paragraph.Elements[0].TextRun.Content == summaryLabel {
 						// We found the summary paragraph and the rest of the elements
 						// should be the summary value.
 						var s string

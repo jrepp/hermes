@@ -14,13 +14,13 @@ import (
 // TestTimeout provides a watchdog for tests that may hang.
 // It ensures tests make progress or terminates them with a useful stack trace.
 type TestTimeout struct {
-	timeout       time.Duration
-	progressCheck time.Duration
 	lastProgress  time.Time
-	mu            sync.Mutex
 	ctx           context.Context
 	cancel        context.CancelFunc
 	t             *testing.T
+	timeout       time.Duration
+	progressCheck time.Duration
+	mu            sync.Mutex
 }
 
 // NewTestTimeout creates a new test timeout watchdog.

@@ -17,10 +17,10 @@ import (
 // TestAPIProvider_ConfigValidation tests configuration validation.
 func TestAPIProvider_ConfigValidation(t *testing.T) {
 	tests := []struct {
-		name      string
 		config    *api.Config
-		wantError bool
+		name      string
 		errorMsg  string
+		wantError bool
 	}{
 		{
 			name: "Valid config",

@@ -25,6 +25,8 @@ type JiraIssuePickerGetResponseIssue struct {
 }
 
 // JiraIssuePickerHandler proxies Jira issue picker API requests.
+//
+//nolint:gocognit,gocyclo // Handler aggregates picker-specific branching in one place.
 func JiraIssuePickerHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := srv.Logger
@@ -50,7 +52,7 @@ func JiraIssuePickerHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			logArgs = append(logArgs, "method", r.Method)
 
 			// Get "query" query parameter.
@@ -75,7 +77,7 @@ func JiraIssuePickerHandler(srv server.Server) http.Handler {
 			// If query starts with the Jira browse URL or looks like a Jira issue
 			// key, try to get the issue directly and return appropriate fields.
 			var issueKey string
-			issueRE := regexp.MustCompile(`^[A-Za-z]+\-[0-9]+$`)
+			issueRE := regexp.MustCompile(`^[A-Za-z]+\-\d+$`)
 			jiraBrowseURL := jiraURL.Scheme + "://" + jiraURL.Host + "/browse"
 			if strings.HasPrefix(query, jiraBrowseURL) {
 				query = strings.ReplaceAll(query, jiraBrowseURL+"/", "")
@@ -160,7 +162,7 @@ func JiraIssuePickerHandler(srv server.Server) http.Handler {
 					"rest/api/3/issue/picker",
 				)
 				q := jiraIssuePickerURL.Query()
-				q.Add("currentJQL", fmt.Sprintf(`text ~ "%s"`, query))
+				q.Add("currentJQL", fmt.Sprintf("text ~ %q", query))
 				q.Add("query", query)
 				jiraIssuePickerURL.RawQuery = q.Encode()
 

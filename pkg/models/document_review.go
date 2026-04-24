@@ -9,16 +9,16 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+//nolint:govet // Keep ORM field grouping readable; alignment churn is low value here.
 type DocumentReview struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-
 	DocumentID uint `gorm:"primaryKey"`
-	Document   Document
 	UserID     uint `gorm:"primaryKey"`
-	User       User
 	Status     DocumentReviewStatus
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
+	Document   Document
+	User       User
 }
 
 type DocumentReviewStatus int
@@ -55,45 +55,23 @@ func (d *DocumentReview) BeforeSave(tx *gorm.DB) error {
 // Find finds all document reviews with the provided query, and assigns them to
 // the receiver.
 func (d *DocumentReviews) Find(db *gorm.DB, dr DocumentReview) error {
-	// Validate required fields.
-	if dr.Document.hasNoFileID() && dr.User.EmailAddress == "" {
-		return fmt.Errorf("at least a Document's file ID or User's EmailAddress is required")
-	}
-	if err := validation.ValidateStruct(&dr.User,
-		validation.Field(
-			&dr.User.EmailAddress,
-			validation.When(dr.Document.hasNoFileID(),
-				validation.Required.Error("at least a Document's FileID or User's EmailAddress is required"),
-			),
-		),
-	); err != nil {
-		return err
-	}
+	return findAssociatedReviews(
+		db,
+		&dr.Document,
+		dr.User.EmailAddress,
+		"at least a Document's GoogleFileID or User's EmailAddress is required",
+		func(db *gorm.DB) (uint, error) {
+			if err := dr.User.Get(db); err != nil {
+				return 0, fmt.Errorf("error getting user: %w", err)
+			}
 
-	// Get document.
-	if !dr.Document.hasNoFileID() {
-		if err := dr.Document.Get(db); err != nil {
-			return fmt.Errorf("error getting document: %w", err)
-		}
-		dr.DocumentID = dr.Document.ID
-	}
-
-	// Get user.
-	if dr.User.EmailAddress != "" {
-		if err := dr.User.Get(db); err != nil {
-			return fmt.Errorf("error getting user: %w", err)
-		}
-		dr.UserID = dr.User.ID
-	}
-
-	return db.
-		Where(DocumentReview{
-			DocumentID: dr.DocumentID,
-			UserID:     dr.UserID,
-		}).
-		Preload(clause.Associations).
-		Find(&d).
-		Error
+			return dr.User.ID, nil
+		},
+		func(documentID uint, associatedID uint) interface{} {
+			return DocumentReview{DocumentID: documentID, UserID: associatedID}
+		},
+		d,
+	)
 }
 
 // Get gets the document review from database db, and assigns it to the

@@ -411,8 +411,8 @@ func TestPipelineWithSingleDocument(t *testing.T) {
 // and creates document contexts by reading markdown files directly
 // and parsing YAML frontmatter.
 type LocalFilesystemDiscoverCommand struct {
-	basePath string
 	logger   hclog.Logger
+	basePath string
 }
 
 // Name returns the command name.
@@ -421,7 +421,7 @@ func (c *LocalFilesystemDiscoverCommand) Name() string {
 }
 
 // Execute is not used for DiscoverCommand.
-func (c *LocalFilesystemDiscoverCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *LocalFilesystemDiscoverCommand) Execute(_ context.Context, _ *indexer.DocumentContext) error {
 	return fmt.Errorf("LocalFilesystemDiscoverCommand should use Discover() method")
 }
 
@@ -458,7 +458,7 @@ func parseFrontmatter(content []byte) (map[string]any, string) {
 }
 
 // Discover walks the filesystem and loads documents.
-func (c *LocalFilesystemDiscoverCommand) Discover(ctx context.Context) ([]*indexer.DocumentContext, error) {
+func (c *LocalFilesystemDiscoverCommand) Discover(_ context.Context) ([]*indexer.DocumentContext, error) {
 	var docContexts []*indexer.DocumentContext
 
 	err := filepath.Walk(c.basePath, func(path string, info os.FileInfo, err error) error {
@@ -530,15 +530,15 @@ func (c *LocalFilesystemDiscoverCommand) Discover(ctx context.Context) ([]*index
 // for testing purposes. It doesn't actually persist any changes.
 type noOpDocumentStorage struct{}
 
-func (n *noOpDocumentStorage) GetDocument(ctx context.Context, id string) (*workspace.Document, error) {
+func (n *noOpDocumentStorage) GetDocument(_ context.Context, id string) (*workspace.Document, error) {
 	return nil, workspace.NotFoundError("document", id)
 }
 
-func (n *noOpDocumentStorage) CreateDocument(ctx context.Context, doc *workspace.DocumentCreate) (*workspace.Document, error) {
+func (n *noOpDocumentStorage) CreateDocument(_ context.Context, _ *workspace.DocumentCreate) (*workspace.Document, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (n *noOpDocumentStorage) UpdateDocument(ctx context.Context, id string, updates *workspace.DocumentUpdate) (*workspace.Document, error) {
+func (n *noOpDocumentStorage) UpdateDocument(_ context.Context, id string, _ *workspace.DocumentUpdate) (*workspace.Document, error) {
 	// No-op: pretend the update succeeded
 	return &workspace.Document{ID: id}, nil
 }

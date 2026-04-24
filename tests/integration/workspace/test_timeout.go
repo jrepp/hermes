@@ -9,7 +9,7 @@ import (
 )
 
 // WithTimeout wraps a test with timeout protection.
-func WithTimeout(t *testing.T, timeout, progressCheck time.Duration, testFunc func(ctx context.Context, progress func(string))) {
+func WithTimeout(t *testing.T, timeout, _ time.Duration, testFunc func(ctx context.Context, progress func(string))) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

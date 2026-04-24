@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -111,7 +110,7 @@ func NewFromConfig(cfg *Config) *Service {
 // New reads Google API credentials and returns a service with the required
 // access for Hermes.
 func New() *Service {
-	b, err := ioutil.ReadFile("credentials.json")
+	b, err := os.ReadFile("credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}

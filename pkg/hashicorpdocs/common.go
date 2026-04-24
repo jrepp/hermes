@@ -14,7 +14,13 @@ const (
 	// MaxDocSize is the maximum size of a doc's content in bytes. If the doc is
 	// larger than this, its content will be trimmed to this length.
 	// Algolia has a hard limit of 100000 bytes total per record.
-	MaxDocSize = 85000
+	MaxDocSize   = 85000
+	docTypePRD   = "PRD"
+	fieldTypeStr = "STRING"
+	fieldTypePpl = "PEOPLE"
+	summaryLabel = "Summary:"
+	statusWIP    = "Status: WIP"
+	wipStatus    = "WIP"
 )
 
 type Doc interface {
@@ -81,7 +87,7 @@ func NewEmptyDoc(docType string) (Doc, error) {
 		return &FRD{}, nil
 	case "RFC":
 		return &RFC{}, nil
-	case "PRD":
+	case docTypePRD:
 		return &PRD{}, nil
 	case "PATH":
 		return &PATH{}, nil

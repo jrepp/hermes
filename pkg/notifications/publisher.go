@@ -18,8 +18,8 @@ type Publisher struct {
 
 // PublisherConfig holds configuration for the publisher
 type PublisherConfig struct {
-	Brokers []string
 	Topic   string
+	Brokers []string
 }
 
 // NewPublisher creates a new notification publisher

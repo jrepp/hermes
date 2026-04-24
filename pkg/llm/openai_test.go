@@ -98,7 +98,7 @@ func TestOpenAIClient_GenerateSummary(t *testing.T) {
 
 func TestOpenAIClient_GenerateSummary_APIError(t *testing.T) {
 	// Create a mock HTTP server that returns an error
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusTooManyRequests)
 		json.NewEncoder(w).Encode(OpenAIErrorResponse{
@@ -138,7 +138,7 @@ func TestOpenAIClient_GenerateSummary_APIError(t *testing.T) {
 
 func TestOpenAIClient_GenerateSummary_Timeout(t *testing.T) {
 	// Create a mock HTTP server that delays response
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(2 * time.Second)
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -167,7 +167,7 @@ func TestOpenAIClient_GenerateSummary_Timeout(t *testing.T) {
 
 func TestOpenAIClient_GenerateSummary_EmptyResponse(t *testing.T) {
 	// Create a mock HTTP server that returns empty choices
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		resp := OpenAIChatResponse{
 			ID:      "chatcmpl-123",
 			Object:  "chat.completion",
@@ -211,10 +211,10 @@ func TestOpenAIClient_ParseSummaryResponse(t *testing.T) {
 	}
 
 	tests := []struct {
+		validate func(t *testing.T, summary *steps.Summary)
 		name     string
 		content  string
 		wantErr  bool
-		validate func(t *testing.T, summary *steps.Summary)
 	}{
 		{
 			name: "valid response",
@@ -308,9 +308,9 @@ tag1, tag2`,
 func TestNewOpenAIClient_Validation(t *testing.T) {
 	tests := []struct {
 		name    string
+		errMsg  string
 		config  OpenAIConfig
 		wantErr bool
-		errMsg  string
 	}{
 		{
 			name: "valid config",

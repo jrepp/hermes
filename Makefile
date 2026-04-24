@@ -159,6 +159,55 @@ pre-commit: fmt vet build ## Run pre-commit checks
 validate: lint complexity ## Run full validation (lint + complexity)
 	@echo "✓ Full validation complete"
 
+.PHONY: ci
+ci: ## Run full CI checks locally (matches GitHub Actions)
+	@echo "========================================="
+	@echo "Running Local CI Pipeline"
+	@echo "========================================="
+	@echo ""
+	@echo "Step 1/5: Format check..."
+	@./scripts/validate-go-syntax.sh
+	@echo "✓ Format check complete"
+	@echo ""
+	@echo "Step 2/5: Linting (go vet + golangci-lint + complexity)..."
+	@go vet ./...
+	@if command -v golangci-lint > /dev/null 2>&1; then \
+		golangci-lint run --timeout=5m; \
+	else \
+		echo "⚠️  golangci-lint not found, skipping (install: make ci-install-tools)"; \
+	fi
+	@./scripts/check-complexity.sh
+	@echo "✓ Linting complete"
+	@echo ""
+	@echo "Step 3/5: Building binaries..."
+	@$(MAKE) build-binaries
+	@echo "✓ Build complete"
+	@echo ""
+	@echo "Step 4/5: Running Go tests..."
+	@go test -v -race -coverprofile=build/coverage/coverage.out -covermode=atomic ./...
+	@echo "✓ Go tests complete"
+	@echo ""
+	@echo "Step 5/5: Running integration tests..."
+	@echo "⚠️  Skipping integration tests (require test services)"
+	@echo "   To run: make test-services-up && make test-integration"
+	@echo ""
+	@echo "========================================="
+	@echo "✅ Local CI Pipeline Complete"
+	@echo "========================================="
+	@echo ""
+	@echo "Note: Web and Python tests not included in this target."
+	@echo "To run them separately:"
+	@echo "  - Web: make web/build && make web/test"
+	@echo "  - Python: cd python-client && pytest"
+
+.PHONY: ci-install-tools
+ci-install-tools: ## Install tools needed for local CI
+	@echo "Installing CI tools..."
+	@echo "Installing golangci-lint..."
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.55.2
+	@$(MAKE) complexity-install
+	@echo "✓ CI tools installed"
+
 .PHONY: clean
 clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."

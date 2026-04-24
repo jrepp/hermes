@@ -24,6 +24,7 @@ type draftsShareableGetResponse struct {
 	IsShareable bool `json:"isShareable"`
 }
 
+//nolint:gocognit,gocyclo // Method dispatch and permission checks are centralized here.
 func draftsShareableHandler(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -31,13 +32,13 @@ func draftsShareableHandler(
 	doc document.Document,
 	cfg config.Config,
 	l hclog.Logger,
-	searchProvider search.Provider,
+	_ search.Provider,
 	workspaceProvider workspace.Provider,
 	db *gorm.DB,
 	useSharePoint bool,
 ) {
 	switch r.Method {
-	case "GET":
+	case httpMethodGet:
 		// Get document from database.
 		d := models.NewDocumentByFileID(docID, useSharePoint)
 		if err := d.Get(db); err != nil {
@@ -69,7 +70,7 @@ func draftsShareableHandler(
 			return
 		}
 
-	case "PUT":
+	case httpMethodPut:
 		// Authorize request (only the document owner is authorized).
 		userEmail := pkgauth.MustGetUserEmail(r.Context())
 		if doc.Owners[0] != userEmail {

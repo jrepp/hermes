@@ -89,9 +89,9 @@ func DocumentContentHandler(srv server.Server) http.Handler {
 		userEmail := pkgauth.MustGetUserEmail(r.Context())
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			handleGetDocumentContent(w, r, srv, docID, userEmail, &model)
-		case "PUT":
+		case httpMethodPut:
 			handlePutDocumentContent(w, r, srv, docID, userEmail, &model)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -105,16 +105,15 @@ func handleGetDocumentContent(
 	r *http.Request,
 	srv server.Server,
 	docID string,
-	userEmail string,
-	model *models.Document,
+	_ string,
+	_ *models.Document,
 ) {
 	// Use RFC-084 GetContent method
 	providerID := fmt.Sprintf("google:%s", docID) // Assume Google for now, adjust as needed
 
 	// Check if this is a local workspace provider
-	if _, ok := srv.WorkspaceProvider.(*local.WorkspaceAdapter); ok {
-		providerID = fmt.Sprintf("local:%s", docID)
-	} else if _, ok := srv.WorkspaceProvider.(*local.ProviderAdapter); ok {
+	switch srv.WorkspaceProvider.(type) {
+	case *local.WorkspaceAdapter, *local.ProviderAdapter:
 		providerID = fmt.Sprintf("local:%s", docID)
 	}
 
@@ -196,9 +195,8 @@ func handlePutDocumentContent(
 	providerID := fmt.Sprintf("google:%s", docID)
 
 	// Check if this is a local workspace provider
-	if _, ok := srv.WorkspaceProvider.(*local.WorkspaceAdapter); ok {
-		providerID = fmt.Sprintf("local:%s", docID)
-	} else if _, ok := srv.WorkspaceProvider.(*local.ProviderAdapter); ok {
+	switch srv.WorkspaceProvider.(type) {
+	case *local.WorkspaceAdapter, *local.ProviderAdapter:
 		providerID = fmt.Sprintf("local:%s", docID)
 	}
 

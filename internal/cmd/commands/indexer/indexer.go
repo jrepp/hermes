@@ -51,6 +51,7 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+//nolint:gocognit,gocyclo // Indexer startup coordinates several required subsystems.
 func (c *Command) Run(args []string) int {
 	log, ui := c.Log, c.UI
 
@@ -117,7 +118,7 @@ func (c *Command) Run(args []string) int {
 	}
 
 	// Initialize database connection.
-	db, err := db.NewDB(*cfg.Postgres)
+	database, err := db.NewDB(*cfg.Postgres)
 	if err != nil {
 		ui.Error(fmt.Sprintf("error initializing database: %v", err))
 		return 1
@@ -170,7 +171,7 @@ func (c *Command) Run(args []string) int {
 	idxOpts := []indexer.IndexerOption{
 		indexer.WithAlgoliaClient(algo),
 		indexer.WithBaseURL(cfg.BaseURL),
-		indexer.WithDatabase(db),
+		indexer.WithDatabase(database),
 		indexer.WithDocumentTypes(cfg.DocumentTypes.DocumentType),
 		indexer.WithLogger(log),
 	}
@@ -216,13 +217,10 @@ func (c *Command) Run(args []string) int {
 	}
 
 	ui.Info("starting indexer...")
-	go func() int {
+	go func() {
 		if err := idx.Run(); err != nil {
 			ui.Error(err.Error())
-			// TODO: get this return value from indexer.Run().
-			return 1
 		}
-		return 0
 	}()
 	return c.WaitForInterrupt(func() {})
 }

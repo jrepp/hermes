@@ -359,7 +359,7 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    command: ["/app/hermes-notifier", "-config=/app/config/notifier-audit.hcl"]
+    command: ["/app/hermes-notify", "-config=/app/config/notifier-audit.hcl"]
     volumes:
       - ./notifier-audit.hcl:/app/config/notifier-audit.hcl:ro
     depends_on:
@@ -375,7 +375,7 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    command: ["/app/hermes-notifier", "-config=/app/config/notifier-mail.hcl"]
+    command: ["/app/hermes-notify", "-config=/app/config/notifier-mail.hcl"]
     volumes:
       - ./notifier-mail.hcl:/app/config/notifier-mail.hcl:ro
     depends_on:
@@ -393,7 +393,7 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    command: ["/app/hermes-notifier", "-config=/app/config/notifier-ntfy.hcl"]
+    command: ["/app/hermes-notify", "-config=/app/config/notifier-ntfy.hcl"]
     volumes:
       - ./notifier-ntfy.hcl:/app/config/notifier-ntfy.hcl:ro
     depends_on:

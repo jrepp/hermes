@@ -17,26 +17,17 @@ import (
 
 // Config is the configuration for Okta authentication via AWS ALB.
 type Config struct {
-	// AuthServerURL is the URL of the Okta authorization server.
 	AuthServerURL string `hcl:"auth_server_url,optional"`
-
-	// AWSRegion is the region of the AWS Application Load Balancer.
-	AWSRegion string `hcl:"aws_region,optional"`
-
-	// ClientID is the Okta client ID.
-	ClientID string `hcl:"client_id,optional"`
-
-	// Disabled disables Okta authorization.
-	Disabled bool `hcl:"disabled,optional"`
-
-	// JWTSigner is the trusted signer for the ALB JWT header.
-	JWTSigner string `hcl:"jwt_signer,optional"`
+	AWSRegion     string `hcl:"aws_region,optional"`
+	ClientID      string `hcl:"client_id,optional"`
+	JWTSigner     string `hcl:"jwt_signer,optional"`
+	Disabled      bool   `hcl:"disabled,optional"`
 }
 
 // Adapter implements the auth.Provider interface using Okta via AWS ALB JWT tokens.
 type Adapter struct {
-	cfg Config
 	log hclog.Logger
+	cfg Config
 }
 
 // NewAdapter creates a new Okta authentication adapter.

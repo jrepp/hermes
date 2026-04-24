@@ -12,23 +12,18 @@ import (
 // DLQMessage represents a message in the Dead Letter Queue
 // RFC-087-ADDENDUM Section 2: Dead Letter Queue (DLQ)
 type DLQMessage struct {
-	// Original message that failed
-	OriginalMessage *NotificationMessage `json:"original_message"`
-
-	// Failure metadata
-	FailureReason  string    `json:"failure_reason"`   // Last error message
-	FailedBackends []string  `json:"failed_backends"`  // Which backends failed
-	RetryCount     int       `json:"retry_count"`      // How many times we retried
-	FirstFailureAt time.Time `json:"first_failure_at"` // When it first failed
-	LastFailureAt  time.Time `json:"last_failure_at"`  // When it finally gave up
-	DLQTimestamp   time.Time `json:"dlq_timestamp"`    // When added to DLQ
-
-	// Original message metadata for tracking
-	MessageID        string           `json:"message_id"`        // Original message ID
-	NotificationType NotificationType `json:"notification_type"` // Original notification type
-	DocumentUUID     string           `json:"document_uuid,omitempty"`
-	ProjectID        string           `json:"project_id,omitempty"`
-	UserID           string           `json:"user_id,omitempty"`
+	FirstFailureAt   time.Time            `json:"first_failure_at"`
+	LastFailureAt    time.Time            `json:"last_failure_at"`
+	DLQTimestamp     time.Time            `json:"dlq_timestamp"`
+	OriginalMessage  *NotificationMessage `json:"original_message"`
+	FailureReason    string               `json:"failure_reason"`
+	MessageID        string               `json:"message_id"`
+	NotificationType NotificationType     `json:"notification_type"`
+	DocumentUUID     string               `json:"document_uuid,omitempty"`
+	ProjectID        string               `json:"project_id,omitempty"`
+	UserID           string               `json:"user_id,omitempty"`
+	FailedBackends   []string             `json:"failed_backends"`
+	RetryCount       int                  `json:"retry_count"`
 }
 
 // DLQPublisher publishes messages to the Dead Letter Queue
@@ -39,8 +34,8 @@ type DLQPublisher struct {
 
 // DLQPublisherConfig holds DLQ publisher configuration
 type DLQPublisherConfig struct {
+	Topic   string
 	Brokers []string
-	Topic   string // DLQ topic name (e.g., "hermes.notifications.dlq")
 }
 
 // NewDLQPublisher creates a new DLQ publisher

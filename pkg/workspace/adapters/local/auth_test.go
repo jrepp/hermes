@@ -13,11 +13,11 @@ import (
 
 func TestAuthService_ValidateToken(t *testing.T) {
 	tests := []struct {
-		name       string
 		tokensData map[string]*tokenInfo
+		name       string
 		token      string
-		wantValid  bool
 		wantEmail  string
+		wantValid  bool
 	}{
 		{
 			name: "valid token",
@@ -80,7 +80,7 @@ func TestAuthService_ValidateToken(t *testing.T) {
 			tokensPath := adapter.basePath + "/tokens.json"
 			tokensJSON, err := json.Marshal(tt.tokensData)
 			require.NoError(t, err)
-			require.NoError(t, afero.WriteFile(adapter.fs, tokensPath, tokensJSON, 0644))
+			require.NoError(t, afero.WriteFile(adapter.fs, tokensPath, tokensJSON, 0o644))
 
 			authSvc := &authService{
 				adapter: adapter,
@@ -202,7 +202,7 @@ func TestAuthService_GetUserInfo(t *testing.T) {
 			tokensPath := adapter.basePath + "/tokens.json"
 			tokensJSON, err := json.Marshal(tt.tokensData)
 			require.NoError(t, err)
-			require.NoError(t, afero.WriteFile(adapter.fs, tokensPath, tokensJSON, 0644))
+			require.NoError(t, afero.WriteFile(adapter.fs, tokensPath, tokensJSON, 0o644))
 
 			usersPath := adapter.basePath + "/users.json"
 			usersJSON, err := json.Marshal(tt.usersData)

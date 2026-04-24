@@ -13,48 +13,23 @@ import (
 
 // IndexerToken represents an authentication token for an indexer.
 type IndexerToken struct {
-	// ID is the unique token identifier (UUID).
-	ID uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-
-	// CreatedAt is when the token was created.
-	CreatedAt time.Time `json:"created_at"`
-
-	// UpdatedAt is when the token was last updated.
-	UpdatedAt time.Time `json:"updated_at"`
-
-	// DeletedAt implements soft deletes.
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-
-	// TokenHash is the SHA-256 hash of the token (for secure storage).
-	TokenHash string `gorm:"type:varchar(256);not null;uniqueIndex" json:"-"`
-
-	// TokenType identifies the purpose (registration, api).
-	TokenType string `gorm:"type:varchar(50);default:'api'" json:"token_type"`
-
-	// ExpiresAt is when the token expires (nil = no expiration).
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
-
-	// Revoked indicates if the token has been revoked.
-	Revoked bool `gorm:"default:false" json:"revoked"`
-
-	// RevokedAt is when the token was revoked.
-	RevokedAt *time.Time `json:"revoked_at,omitempty"`
-
-	// RevokedReason explains why the token was revoked.
-	RevokedReason string `gorm:"type:text" json:"revoked_reason,omitempty"`
-
-	// IndexerID is the foreign key to the indexer.
-	IndexerID *uuid.UUID `gorm:"type:uuid;index" json:"indexer_id,omitempty"`
-
-	// Indexer is the associated indexer.
-	Indexer *Indexer `gorm:"foreignKey:IndexerID" json:"-"`
-
-	// Metadata stores additional JSON data for extensibility.
-	Metadata string `gorm:"type:text" json:"metadata,omitempty"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	ExpiresAt     *time.Time     `json:"expires_at,omitempty"`
+	Indexer       *Indexer       `gorm:"foreignKey:IndexerID" json:"-"`
+	IndexerID     *uuid.UUID     `gorm:"type:uuid;index" json:"indexer_id,omitempty"`
+	RevokedAt     *time.Time     `json:"revoked_at,omitempty"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
+	TokenType     string         `gorm:"type:varchar(50);default:'api'" json:"token_type"`
+	RevokedReason string         `gorm:"type:text" json:"revoked_reason,omitempty"`
+	TokenHash     string         `gorm:"type:varchar(256);not null;uniqueIndex" json:"-"`
+	Metadata      string         `gorm:"type:text" json:"metadata,omitempty"`
+	ID            uuid.UUID      `gorm:"type:uuid;primaryKey" json:"id"`
+	Revoked       bool           `gorm:"default:false" json:"revoked"`
 }
 
 // BeforeCreate hook to generate UUID if not set.
-func (t *IndexerToken) BeforeCreate(tx *gorm.DB) error {
+func (t *IndexerToken) BeforeCreate(_ *gorm.DB) error {
 	if t.ID == uuid.Nil {
 		t.ID = uuid.New()
 	}

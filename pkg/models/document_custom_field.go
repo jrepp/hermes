@@ -10,11 +10,10 @@ import (
 )
 
 type DocumentCustomField struct {
+	Value                     string
+	DocumentTypeCustomField   DocumentTypeCustomField
 	DocumentID                uint `gorm:"primaryKey"`
 	DocumentTypeCustomFieldID uint `gorm:"primaryKey"`
-	DocumentTypeCustomField   DocumentTypeCustomField
-	// Value                     datatypes.JSON
-	Value string
 }
 
 // BeforeSave is a hook to find or create associations before saving.
@@ -77,40 +76,39 @@ func UpsertStringDocumentCustomField(
 			}
 		}
 		return newCFs
-	} else {
-		// Custom field value isn't empty so upsert it into existing custom
-		// fields.
-		newCFs := []*DocumentCustomField{}
-		foundCF := false
-		for _, cf := range documentCustomFields {
-			// If custom field is the target one, replace the value and append
-			// to replacement custom fields.
-			if cf.DocumentTypeCustomField.Name == documentTypeCustomFieldName {
-				cf.Value = customFieldValue
-				newCFs = append(newCFs, cf)
-				foundCF = true
-			} else {
-				// If custom field isn't the target one, just append it to
-				// replacement custom fields.
-				newCFs = append(newCFs, cf)
-			}
-		}
-		// If we didn't find and replace the custom field, insert it.
-		if !foundCF {
-			newCFs = append(newCFs,
-				&DocumentCustomField{
-					DocumentTypeCustomField: DocumentTypeCustomField{
-						Name: documentTypeCustomFieldName,
-						DocumentType: DocumentType{
-							Name: documentTypeName,
-						},
-					},
-					Value: customFieldValue,
-				},
-			)
-		}
-		return newCFs
 	}
+	// Custom field value isn't empty so upsert it into existing custom
+	// fields.
+	newCFs := []*DocumentCustomField{}
+	foundCF := false
+	for _, cf := range documentCustomFields {
+		// If custom field is the target one, replace the value and append
+		// to replacement custom fields.
+		if cf.DocumentTypeCustomField.Name == documentTypeCustomFieldName {
+			cf.Value = customFieldValue
+			newCFs = append(newCFs, cf)
+			foundCF = true
+		} else {
+			// If custom field isn't the target one, just append it to
+			// replacement custom fields.
+			newCFs = append(newCFs, cf)
+		}
+	}
+	// If we didn't find and replace the custom field, insert it.
+	if !foundCF {
+		newCFs = append(newCFs,
+			&DocumentCustomField{
+				DocumentTypeCustomField: DocumentTypeCustomField{
+					Name: documentTypeCustomFieldName,
+					DocumentType: DocumentType{
+						Name: documentTypeName,
+					},
+				},
+				Value: customFieldValue,
+			},
+		)
+	}
+	return newCFs
 }
 
 // UpsertStringSliceDocumentCustomField upserts a string slice document custom
@@ -164,17 +162,16 @@ func UpsertStringSliceDocumentCustomField(
 			)
 		}
 		return newCFs, nil
-	} else {
-		// Custom field value is empty, so remove it from the document.
-		newCFs := []*DocumentCustomField{}
-		for _, cf := range documentCustomFields {
-			// If custom field isn't the target one, append it to
-			// replacement custom fields.
-			if cf.DocumentTypeCustomField.Name != documentTypeCustomFieldName {
-				newCFs = append(newCFs, cf)
-			}
-		}
-
-		return newCFs, nil
 	}
+	// Custom field value is empty, so remove it from the document.
+	newCFs := []*DocumentCustomField{}
+	for _, cf := range documentCustomFields {
+		// If custom field isn't the target one, append it to
+		// replacement custom fields.
+		if cf.DocumentTypeCustomField.Name != documentTypeCustomFieldName {
+			newCFs = append(newCFs, cf)
+		}
+	}
+
+	return newCFs, nil
 }

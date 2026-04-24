@@ -10,7 +10,7 @@ import (
 func DocumentTypesHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			w.Header().Set("Content-Type", "application/json")
 
 			enc := json.NewEncoder(w)

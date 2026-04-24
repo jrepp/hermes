@@ -68,7 +68,7 @@ func BenchmarkChunkedEmbeddings(b *testing.B) {
 		mock.MatchedBy(func(texts []string) bool { return len(texts) >= 1 }),
 		"text-embedding-3-small",
 		1536,
-	).Return(func(ctx context.Context, texts []string, model string, dimensions int) [][]float64 {
+	).Return(func(_ context.Context, texts []string, _ string, _ int) [][]float64 {
 		embeddings := make([][]float64, len(texts))
 		for i := range embeddings {
 			embeddings[i] = generateTestEmbedding()
@@ -233,7 +233,7 @@ func TestMemoryUsage(t *testing.T) {
 		mock.MatchedBy(func(texts []string) bool { return len(texts) >= 1 }),
 		"text-embedding-3-small",
 		1536,
-	).Return(func(ctx context.Context, texts []string, model string, dimensions int) [][]float64 {
+	).Return(func(_ context.Context, texts []string, _ string, _ int) [][]float64 {
 		embeddings := make([][]float64, len(texts))
 		for i := range embeddings {
 			embeddings[i] = generateTestEmbedding()

@@ -34,9 +34,9 @@ func DefaultRetryConfig() RetryConfig {
 
 // RetryHandler handles retry logic for failed notifications
 type RetryHandler struct {
-	config       RetryConfig
 	publisher    *Publisher
 	dlqPublisher *DLQPublisher
+	config       RetryConfig
 }
 
 // NewRetryHandler creates a new retry handler

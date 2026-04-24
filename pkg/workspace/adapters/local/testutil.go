@@ -89,9 +89,9 @@ func CreateTestUser(t *testing.T, adapter *Adapter, email, name string) {
 
 // TestToken represents an authentication token for testing.
 type TestToken struct {
+	Expires time.Time `json:"expires"`
 	Token   string    `json:"token"`
 	Email   string    `json:"email"`
-	Expires time.Time `json:"expires"`
 }
 
 // CreateTestToken adds a test token to the adapter's token store.

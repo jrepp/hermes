@@ -294,8 +294,8 @@ func TestMeilisearchAdapter_ProjectsSearchIntegrationWithHeaderSearch(t *testing
 
 			// Simulate the 3 parallel searches from header component
 			type searchResult struct {
-				name string
 				err  error
+				name string
 			}
 
 			results := make(chan searchResult, 3)
@@ -307,7 +307,7 @@ func TestMeilisearchAdapter_ProjectsSearchIntegrationWithHeaderSearch(t *testing
 					Facets:  []string{"product"},
 					PerPage: 1,
 				})
-				results <- searchResult{"product_facets", err}
+				results <- searchResult{err, "product_facets"}
 			}()
 
 			// 2. Document search
@@ -316,7 +316,7 @@ func TestMeilisearchAdapter_ProjectsSearchIntegrationWithHeaderSearch(t *testing
 					Query:   "RFC",
 					PerPage: 5,
 				})
-				results <- searchResult{"documents", err}
+				results <- searchResult{err, "documents"}
 			}()
 
 			// 3. Project search (THIS IS THE FAILING ONE)
@@ -325,7 +325,7 @@ func TestMeilisearchAdapter_ProjectsSearchIntegrationWithHeaderSearch(t *testing
 					Query:   "RFC",
 					PerPage: 3,
 				})
-				results <- searchResult{"projects", err}
+				results <- searchResult{err, "projects"}
 			}()
 
 			// Collect results

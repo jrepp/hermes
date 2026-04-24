@@ -44,7 +44,7 @@ func (m *BenchmarkEmbeddingsGenerator) GenerateEmbeddings(ctx context.Context, t
 }
 
 // setupBenchmarkDB creates an in-memory SQLite database with test data
-func setupBenchmarkDB(b *testing.B, docCount int) (*gorm.DB, error) {
+func setupBenchmarkDB(_ *testing.B, docCount int) (*gorm.DB, error) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: nil, // Disable logging for benchmarks
 	})

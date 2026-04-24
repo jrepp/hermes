@@ -28,11 +28,9 @@ type User struct {
 }
 
 type DocumentApprovedEmailData struct {
-	BaseURL                  string
-	CurrentYear              int
 	DocumentApprover         User
+	BaseURL                  string
 	DocumentOwner            string
-	DocumentNonApproverCount int
 	DocumentShortName        string
 	DocumentTitle            string
 	DocumentStatus           string
@@ -40,25 +38,26 @@ type DocumentApprovedEmailData struct {
 	DocumentType             string
 	DocumentURL              string
 	Product                  string
+	CurrentYear              int
+	DocumentNonApproverCount int
 }
 
 type NewOwnerEmailData struct {
+	NewDocumentOwner    User
+	OldDocumentOwner    User
 	BaseURL             string
-	CurrentYear         int
 	DocumentShortName   string
 	DocumentStatus      string
 	DocumentStatusClass string
 	DocumentTitle       string
 	DocumentType        string
 	DocumentURL         string
-	NewDocumentOwner    User
-	OldDocumentOwner    User
 	Product             string
+	CurrentYear         int
 }
 
 type ReviewRequestedEmailData struct {
 	BaseURL             string
-	CurrentYear         int
 	DocumentOwner       string
 	DocumentShortName   string
 	DocumentTitle       string
@@ -67,17 +66,18 @@ type ReviewRequestedEmailData struct {
 	DocumentStatusClass string
 	DocumentURL         string
 	Product             string
+	CurrentYear         int
 }
 
 type SubscriberDocumentPublishedEmailData struct {
 	BaseURL           string
-	CurrentYear       int
 	DocumentOwner     string
 	DocumentShortName string
 	DocumentTitle     string
 	DocumentType      string
 	DocumentURL       string
 	Product           string
+	CurrentYear       int
 }
 
 type ContributorAddedEmailData struct {

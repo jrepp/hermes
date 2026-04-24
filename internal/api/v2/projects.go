@@ -43,9 +43,9 @@ type ProjectsPostRequest struct {
 }
 
 type ProjectsGetResponse struct {
+	Projects []project `json:"projects"`
 	NumPages int       `json:"numPages"`
 	Page     int       `json:"page"`
-	Projects []project `json:"projects"`
 }
 
 type ProjectsPostResponse struct {
@@ -53,17 +53,18 @@ type ProjectsPostResponse struct {
 }
 
 type project struct {
-	CreatedTime  int64    `json:"createdTime,omitempty"`
-	Creator      string   `json:"creator,omitempty"`
 	Description  *string  `json:"description,omitempty"`
-	ID           uint     `json:"id"`
 	JiraIssueID  *string  `json:"jiraIssueID,omitempty"`
-	ModifiedTime int64    `json:"modifiedTime,omitempty"`
-	Products     []string `json:"products,omitempty"`
+	Creator      string   `json:"creator,omitempty"`
 	Status       string   `json:"status"`
 	Title        string   `json:"title"`
+	Products     []string `json:"products,omitempty"`
+	CreatedTime  int64    `json:"createdTime,omitempty"`
+	ID           uint     `json:"id"`
+	ModifiedTime int64    `json:"modifiedTime,omitempty"`
 }
 
+//nolint:gocognit,gocyclo // Collection handler keeps paging/filtering branches together.
 func ProjectsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logArgs := []any{
@@ -80,7 +81,7 @@ func ProjectsHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			logArgs = append(logArgs, "method", r.Method)
 
 			// Get query parameters.
@@ -183,14 +184,14 @@ func ProjectsHandler(srv server.Server) http.Handler {
 
 			// Build response.
 			projResp := []project{}
-			for _, p := range projs {
+			for i := range projs {
 				// Get products for the project.
-				products, err := getProductsForProject(p, srv.DB)
+				products, err := getProductsForProject(projs[i], srv.DB)
 				if err != nil {
 					srv.Logger.Error("error getting products for project",
 						append([]interface{}{
 							"error", err,
-							"project_id", p.ID,
+							"project_id", projs[i].ID,
 						}, logArgs...)...)
 					http.Error(
 						w, "Error processing request", http.StatusInternalServerError)
@@ -198,15 +199,15 @@ func ProjectsHandler(srv server.Server) http.Handler {
 				}
 
 				projResp = append(projResp, project{
-					CreatedTime:  p.ProjectCreatedAt.Unix(),
-					Creator:      p.Creator.EmailAddress,
-					Description:  p.Description,
-					ID:           p.ID,
-					JiraIssueID:  p.JiraIssueID,
-					ModifiedTime: p.ProjectModifiedAt.Unix(),
+					CreatedTime:  projs[i].ProjectCreatedAt.Unix(),
+					Creator:      projs[i].Creator.EmailAddress,
+					Description:  projs[i].Description,
+					ID:           projs[i].ID,
+					JiraIssueID:  projs[i].JiraIssueID,
+					ModifiedTime: projs[i].ProjectModifiedAt.Unix(),
 					Products:     products,
-					Status:       p.Status.String(),
-					Title:        p.Title,
+					Status:       projs[i].Status.String(),
+					Title:        projs[i].Title,
 				})
 			}
 			resp := ProjectsGetResponse{
@@ -230,7 +231,7 @@ func ProjectsHandler(srv server.Server) http.Handler {
 				return
 			}
 
-		case "POST":
+		case httpMethodPost:
 			logArgs = append(logArgs, "method", r.Method)
 
 			// Decode request.
@@ -277,7 +278,7 @@ func ProjectsHandler(srv server.Server) http.Handler {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			resp := &ProjectsPostResponse{
-				ID: int(proj.ID),
+				ID: safeUintToInt(proj.ID),
 			}
 
 			enc := json.NewEncoder(w)
@@ -317,6 +318,7 @@ func ProjectsHandler(srv server.Server) http.Handler {
 	})
 }
 
+//nolint:gocognit,gocyclo // Legacy HTTP entrypoint; patch/get flows are centralized to limit churn.
 func ProjectHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logArgs := []any{
@@ -334,9 +336,9 @@ func ProjectHandler(srv server.Server) http.Handler {
 
 		// Parse project ID and subpath.
 		projectRegex := regexp.MustCompile(
-			`^\/api\/v\d+\/projects\/([0-9A-Za-z_\-]+)$`)
+			`^/api/v\d+/projects/([0-9A-Za-z_\-]+)$`)
 		projectRelatedResourcesRegex := regexp.MustCompile(
-			`^\/api\/v\d+\/projects\/([0-9A-Za-z_\-]+)\/related-resources$`)
+			`^/api/v\d+/projects/([0-9A-Za-z_\-]+)/related-resources$`)
 		switch {
 		case projectRelatedResourcesRegex.MatchString(r.URL.Path):
 			projectID, err := getProjectIDFromPath(
@@ -366,7 +368,7 @@ func ProjectHandler(srv server.Server) http.Handler {
 			logArgs = append(logArgs, "project_id", projectID)
 
 			switch r.Method {
-			case "GET":
+			case httpMethodGet:
 				logArgs = append(logArgs, "method", r.Method)
 				now := time.Now()
 
@@ -377,15 +379,15 @@ func ProjectHandler(srv server.Server) http.Handler {
 						srv.Logger.Warn("project not found", logArgs...)
 						http.Error(w, "Project not found", http.StatusNotFound)
 						return
-					} else {
-						srv.Logger.Error("error getting project from database",
-							append([]interface{}{
-								"error", err,
-							}, logArgs...)...)
-						http.Error(
-							w, "Error processing request", http.StatusInternalServerError)
-						return
 					}
+
+					srv.Logger.Error("error getting project from database",
+						append([]interface{}{
+							"error", err,
+						}, logArgs...)...)
+					http.Error(
+						w, "Error processing request", http.StatusInternalServerError)
+					return
 				}
 
 				// Get products for the project.
@@ -467,7 +469,7 @@ func ProjectHandler(srv server.Server) http.Handler {
 				// Validate request.
 				if req.Status != nil {
 					switch strings.ToLower(*req.Status) {
-					case "active":
+					case statusActive:
 					case "archived":
 					case "completed":
 					default:
@@ -496,28 +498,28 @@ func ProjectHandler(srv server.Server) http.Handler {
 						srv.Logger.Warn("project not found", logArgs...)
 						http.Error(w, "Project not found", http.StatusNotFound)
 						return
-					} else {
-						srv.Logger.Error("error getting project from database",
-							append([]interface{}{
-								"error", err,
-							}, logArgs...)...)
-						http.Error(
-							w, "Error processing request", http.StatusInternalServerError)
-						return
 					}
+
+					srv.Logger.Error("error getting project from database",
+						append([]interface{}{
+							"error", err,
+						}, logArgs...)...)
+					http.Error(
+						w, "Error processing request", http.StatusInternalServerError)
+					return
 				}
 
 				// Build project patch.
 				patch := models.Project{
 					Model: gorm.Model{
-						ID: uint(projectID),
+						ID: projectID,
 					},
 					Description: req.Description,
 					JiraIssueID: req.JiraIssueID,
 				}
 				if req.Status != nil {
 					switch strings.ToLower(*req.Status) {
-					case "active":
+					case statusActive:
 						patch.Status = models.ActiveProjectStatus
 					case "archived":
 						patch.Status = models.ArchivedProjectStatus
@@ -618,7 +620,7 @@ func getProjectIDFromPath(path string, re *regexp.Regexp) (uint, error) {
 			fmt.Errorf("error convering project ID to integer: %w", err)
 	}
 
-	return uint(projectID), nil
+	return safeIntToUint(projectID), nil
 }
 
 // saveProjectInAlgolia saves a project in Algolia.
@@ -675,8 +677,8 @@ func updateRecentlyViewedProjects(
 	// If recently viewed projects doesn't already contain this project, add it to
 	// recently viewed projects and update the user.
 	found := false
-	for _, p := range projs {
-		if p.ID == proj.ID {
+	for i := range projs {
+		if projs[i].ID == proj.ID {
 			found = true
 			break
 		}
@@ -699,8 +701,8 @@ func updateRecentlyViewedProjects(
 
 	// Update ViewedAt time for this project.
 	viewedProj := models.RecentlyViewedProject{
-		UserID:    int(u.ID),
-		ProjectID: int(proj.ID),
+		UserID:    safeUintToInt(u.ID),
+		ProjectID: safeUintToInt(proj.ID),
 		ViewedAt:  viewedAt,
 	}
 	if err := db.Updates(&viewedProj).Error; err != nil {

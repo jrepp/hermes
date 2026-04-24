@@ -24,6 +24,10 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	// Parse command-line flags
 	configPath := flag.String("config", "config.hcl", "Path to configuration file")
 	flag.Parse()
@@ -60,11 +64,12 @@ func main() {
 	// Run consumer mode
 	if err := runConsumer(ctx, cfg, logger); err != nil {
 		logger.Error("consumer failed", "error", err)
-		cancel() // Ensure context is canceled before exit
-		os.Exit(1)
+		cancel() // Ensure context is canceled
+		return 1
 	}
 
 	logger.Info("hermes-indexer stopped gracefully")
+	return 0
 }
 
 // runConsumer runs the indexer consumer (database-independent).

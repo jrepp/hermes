@@ -107,18 +107,9 @@ type StorageProvider interface {
 
 // ListOptions contains options for listing documents.
 type ListOptions struct {
-	// MimeType filters by MIME type (e.g., "application/vnd.google-apps.document").
-	MimeType string
-
-	// ModifiedAfter filters documents modified after this time.
-	ModifiedAfter *time.Time
-
-	// PageSize limits the number of results.
-	PageSize int
-
-	// PageToken is used for pagination.
-	PageToken string
-
-	// IncludeTrashed includes trashed/deleted documents if true.
+	ModifiedAfter  *time.Time
+	MimeType       string
+	PageToken      string
+	PageSize       int
 	IncludeTrashed bool
 }

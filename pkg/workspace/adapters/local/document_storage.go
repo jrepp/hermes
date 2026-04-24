@@ -13,6 +13,11 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
+const (
+	// Folder name for drafts
+	folderNameDrafts = "drafts"
+)
+
 // documentStorage implements workspace.DocumentStorage.
 type documentStorage struct {
 	adapter *Adapter
@@ -90,7 +95,7 @@ func (ds *documentStorage) CreateDocument(ctx context.Context, doc *workspace.Do
 	}
 
 	now := time.Now()
-	isDraft := doc.ParentFolderID == "drafts" || strings.Contains(doc.ParentFolderID, "draft")
+	isDraft := doc.ParentFolderID == folderNameDrafts || strings.Contains(doc.ParentFolderID, "draft")
 
 	// Write content to file (use single-file format for new documents)
 	docPath, _ := ds.adapter.getDocumentPath(id, isDraft)
@@ -111,7 +116,7 @@ func (ds *documentStorage) CreateDocument(ctx context.Context, doc *workspace.Do
 
 	if err := ds.adapter.metadataStore.Set(docPath, meta, content); err != nil {
 		// Clean up document file on metadata failure (best effort)
-		_ = ds.adapter.fs.Remove(docPath)
+		_ = ds.adapter.fs.Remove(docPath) //nolint:errcheck // intentional best-effort removal
 		return nil, fmt.Errorf("failed to store metadata: %w", err)
 	}
 
@@ -152,7 +157,7 @@ func (ds *documentStorage) UpdateDocument(ctx context.Context, id string, update
 	if updates.ParentFolderID != nil {
 		// Handle move between docs/drafts
 		oldPath, _ := ds.adapter.getDocumentPath(id, isDraft)
-		newIsDraft := *updates.ParentFolderID == "drafts" || strings.Contains(*updates.ParentFolderID, "draft")
+		newIsDraft := *updates.ParentFolderID == folderNameDrafts || strings.Contains(*updates.ParentFolderID, "draft")
 		newPath, _ := ds.adapter.getDocumentPath(id, newIsDraft)
 
 		if oldPath != newPath {
@@ -271,7 +276,7 @@ func (ds *documentStorage) GetDocumentContent(ctx context.Context, id string) (s
 }
 
 // UpdateDocumentContent updates the content of a document.
-func (ds *documentStorage) UpdateDocumentContent(ctx context.Context, id string, content string) error {
+func (ds *documentStorage) UpdateDocumentContent(ctx context.Context, id, content string) error {
 	_, err := ds.UpdateDocument(ctx, id, &workspace.DocumentUpdate{
 		Content: &content,
 	})

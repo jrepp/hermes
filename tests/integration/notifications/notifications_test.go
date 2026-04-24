@@ -25,7 +25,8 @@ const (
 func getRedpandaBroker() string {
 	broker := os.Getenv("REDPANDA_BROKER")
 	if broker == "" {
-		broker = "localhost:19092"
+		// Use port 19192 to match docker-compose setup in ./testing directory
+		broker = "localhost:19192"
 	}
 	return broker
 }

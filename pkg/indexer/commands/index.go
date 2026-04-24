@@ -37,10 +37,7 @@ func (c *IndexCommand) Execute(ctx context.Context, doc *indexer.DocumentContext
 	}
 
 	// Convert to search document format
-	searchDoc, err := c.toSearchDocument(doc.Transformed)
-	if err != nil {
-		return fmt.Errorf("failed to convert to search document: %w", err)
-	}
+	searchDoc := c.toSearchDocument(doc.Transformed)
 
 	// Index in appropriate index
 	var idx search.DocumentIndex
@@ -70,11 +67,7 @@ func (c *IndexCommand) ExecuteBatch(ctx context.Context, docs []*indexer.Documen
 			continue
 		}
 
-		searchDoc, err := c.toSearchDocument(doc.Transformed)
-		if err != nil {
-			doc.AddError(fmt.Errorf("failed to convert to search document: %w", err))
-			continue
-		}
+		searchDoc := c.toSearchDocument(doc.Transformed)
 		searchDocs = append(searchDocs, searchDoc)
 	}
 
@@ -96,7 +89,7 @@ func (c *IndexCommand) ExecuteBatch(ctx context.Context, docs []*indexer.Documen
 }
 
 // toSearchDocument converts a document.Document to search.Document
-func (c *IndexCommand) toSearchDocument(doc *document.Document) (*search.Document, error) {
+func (c *IndexCommand) toSearchDocument(doc *document.Document) *search.Document {
 	// Create search document from the Hermes document
 	searchDoc := &search.Document{
 		ObjectID:     doc.ObjectID,
@@ -121,5 +114,5 @@ func (c *IndexCommand) toSearchDocument(doc *document.Document) (*search.Documen
 		searchDoc.CustomFields[cf.Name] = cf.Value
 	}
 
-	return searchDoc, nil
+	return searchDoc
 }

@@ -57,7 +57,7 @@ func TestDocuments_Get(t *testing.T) {
 		assert.True(t, hasLocked, "Response should include locked field from database")
 	})
 
-	t.Run("Get non-existent document", func(t *testing.T) {
+	t.Run("Get non-existent document", func(_ *testing.T) {
 		// Make GET request for document that doesn't exist
 		resp := suite.Client.Get("/api/v2/documents/non-existent-id")
 
@@ -204,7 +204,7 @@ func TestDocuments_Delete(t *testing.T) {
 		assert.Error(t, err, "Document should be deleted")
 	})
 
-	t.Run("Delete non-existent document", func(t *testing.T) {
+	t.Run("Delete non-existent document", func(_ *testing.T) {
 		// Make DELETE request for document that doesn't exist
 		resp := suite.Client.Delete("/api/v2/documents/non-existent-delete")
 

@@ -16,10 +16,10 @@ import (
 // This enables tracking documents across multiple providers and detecting
 // when documents change or conflict during migration.
 type TrackRevisionCommand struct {
-	DB           *gorm.DB
-	ProviderType string // "google", "local", etc.
-	ProjectID    *uint  // Optional project association
 	Logger       hclog.Logger
+	DB           *gorm.DB
+	ProjectID    *uint
+	ProviderType string
 }
 
 // Name returns the command name.
@@ -28,7 +28,7 @@ func (c *TrackRevisionCommand) Name() string {
 }
 
 // Execute creates or updates a revision record for the document.
-func (c *TrackRevisionCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *TrackRevisionCommand) Execute(_ context.Context, doc *indexer.DocumentContext) error {
 	if c.Logger == nil {
 		c.Logger = hclog.NewNullLogger()
 	}

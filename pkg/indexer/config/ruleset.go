@@ -11,17 +11,10 @@ import (
 
 // IndexerConfig represents the indexer configuration from HCL.
 type IndexerConfig struct {
-	// Rulesets define document processing rules
-	Rulesets []RulesetConfig `hcl:"ruleset,block"`
-
-	// LLM configuration for summary generation
-	LLM *LLMConfig `hcl:"llm,block"`
-
-	// Embeddings configuration
+	LLM        *LLMConfig        `hcl:"llm,block"`
 	Embeddings *EmbeddingsConfig `hcl:"embeddings,block"`
-
-	// Kafka/Redpanda configuration
-	Kafka *KafkaConfig `hcl:"kafka,block"`
+	Kafka      *KafkaConfig      `hcl:"kafka,block"`
+	Rulesets   []RulesetConfig   `hcl:"ruleset,block"`
 }
 
 // RulesetConfig represents a single ruleset configuration.
@@ -41,22 +34,22 @@ type LLMConfig struct {
 
 // EmbeddingsConfig represents embeddings generation configuration.
 type EmbeddingsConfig struct {
-	Model      string `hcl:"model,optional"`      // e.g., "text-embedding-3-small"
-	Dimensions int    `hcl:"dimensions,optional"` // e.g., 1536
-	Provider   string `hcl:"provider,optional"`   // e.g., "openai"
-	ChunkSize  int    `hcl:"chunk_size,optional"` // e.g., 8000
+	Model      string `hcl:"model,optional"`
+	Provider   string `hcl:"provider,optional"`
+	Dimensions int    `hcl:"dimensions,optional"`
+	ChunkSize  int    `hcl:"chunk_size,optional"`
 }
 
 // KafkaConfig represents Kafka/Redpanda configuration.
 type KafkaConfig struct {
-	Brokers          []string `hcl:"brokers"`
 	Topic            string   `hcl:"topic,optional"`
 	ConsumerGroup    string   `hcl:"consumer_group,optional"`
-	EnableTLS        bool     `hcl:"enable_tls,optional"`
 	SASLUsername     string   `hcl:"sasl_username,optional"`
 	SASLPassword     string   `hcl:"sasl_password,optional"`
 	SASLMechanism    string   `hcl:"sasl_mechanism,optional"`
 	SecurityProtocol string   `hcl:"security_protocol,optional"`
+	Brokers          []string `hcl:"brokers"`
+	EnableTLS        bool     `hcl:"enable_tls,optional"`
 }
 
 // LoadRulesetsFromFile loads indexer rulesets from an HCL configuration file.

@@ -11,7 +11,7 @@ import (
 
 // DeleteDocumentRedirectDetails deletes document redirect details from search index.
 func DeleteDocumentRedirectDetails(
-	provider search.Provider, id string, docType string, docNumString string) error {
+	provider search.Provider, _ string, docType string, docNumString string) error {
 
 	if docNumString != "" && docType != "" {
 		objectID := getObjectID(docType, docNumString)

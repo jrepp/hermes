@@ -10,9 +10,9 @@ import (
 
 // MockKeywordSearcher simulates a keyword search with configurable delay
 type MockKeywordSearcher struct {
-	delay   time.Duration
-	results []KeywordSearchResult
 	err     error
+	results []KeywordSearchResult
+	delay   time.Duration
 }
 
 func (m *MockKeywordSearcher) Search(ctx context.Context, query string, limit int) ([]KeywordSearchResult, error) {
@@ -65,9 +65,9 @@ func TestHybridSearch_ParallelExecution(t *testing.T) {
 // TestHybridSearch_ErrorHandling verifies proper error handling when searches fail
 func TestHybridSearch_ErrorHandling(t *testing.T) {
 	tests := []struct {
-		name          string
 		keywordErr    error
 		semanticErr   error
+		name          string
 		expectError   bool
 		expectPartial bool
 	}{

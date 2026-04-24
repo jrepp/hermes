@@ -9,20 +9,15 @@ import (
 
 // Config contains configuration for working with Datadog.
 type Config struct {
-	// Enabled enables sending metrics to Datadog.
-	Enabled bool
-
-	// Env is the Datadog environment.
-	Env string
-
-	// Service is the Datadog service name.
-	Service string
-
-	// ServiceVersion is the Datadog service version.
+	Env            string
+	Service        string
 	ServiceVersion string
+	Enabled        bool
 }
 
 // New creates an instance of Datadog configuration.
+//
+//nolint:gocognit // Environment fallback and config override logic is clearer inline.
 func NewConfig(cfg config.Config) *Config {
 	d := &Config{}
 

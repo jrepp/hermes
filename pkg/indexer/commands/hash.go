@@ -25,7 +25,7 @@ func (c *CalculateHashCommand) Name() string {
 }
 
 // Execute calculates the content hash for a document.
-func (c *CalculateHashCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *CalculateHashCommand) Execute(_ context.Context, doc *indexer.DocumentContext) error {
 	if c.Logger == nil {
 		c.Logger = hclog.NewNullLogger()
 	}

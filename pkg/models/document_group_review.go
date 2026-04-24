@@ -9,14 +9,14 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+//nolint:govet // Keep ORM field grouping readable; alignment churn is low value here.
 type DocumentGroupReview struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-
 	DocumentID uint `gorm:"primaryKey"`
-	Document   Document
 	GroupID    uint `gorm:"primaryKey"`
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
+	Document   Document
 	Group      Group
 }
 
@@ -46,46 +46,23 @@ func (d *DocumentGroupReview) BeforeSave(tx *gorm.DB) error {
 // Find finds all document group reviews with the provided query, and assigns
 // them to the receiver.
 func (d *DocumentGroupReviews) Find(db *gorm.DB, dr DocumentGroupReview) error {
-	// Validate required fields.
-	if dr.Document.hasNoFileID() && dr.Group.EmailAddress == "" {
-		return fmt.Errorf("at least a Document's file ID or Group's EmailAddress is required")
-	}
-	if err := validation.ValidateStruct(&dr.Group,
-		validation.Field(
-			&dr.Group.EmailAddress,
-			validation.When(dr.Document.hasNoFileID(),
-				validation.Required.Error(
-					"at least a Document's FileID or Group's EmailAddress is required"),
-			),
-		),
-	); err != nil {
-		return err
-	}
+	return findAssociatedReviews(
+		db,
+		&dr.Document,
+		dr.Group.EmailAddress,
+		"at least a Document's GoogleFileID or Group's EmailAddress is required",
+		func(db *gorm.DB) (uint, error) {
+			if err := dr.Group.Get(db); err != nil {
+				return 0, fmt.Errorf("error getting group: %w", err)
+			}
 
-	// Get document.
-	if !dr.Document.hasNoFileID() {
-		if err := dr.Document.Get(db); err != nil {
-			return fmt.Errorf("error getting document: %w", err)
-		}
-		dr.DocumentID = dr.Document.ID
-	}
-
-	// Get group.
-	if dr.Group.EmailAddress != "" {
-		if err := dr.Group.Get(db); err != nil {
-			return fmt.Errorf("error getting group: %w", err)
-		}
-		dr.GroupID = dr.Group.ID
-	}
-
-	return db.
-		Where(DocumentGroupReview{
-			DocumentID: dr.DocumentID,
-			GroupID:    dr.GroupID,
-		}).
-		Preload(clause.Associations).
-		Find(&d).
-		Error
+			return dr.Group.ID, nil
+		},
+		func(documentID uint, associatedID uint) interface{} {
+			return DocumentGroupReview{DocumentID: documentID, GroupID: associatedID}
+		},
+		d,
+	)
 }
 
 // Get gets the document group review from database db, and assigns it to the

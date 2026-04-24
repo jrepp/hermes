@@ -3,6 +3,7 @@ package document
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestExpandTemplate(t *testing.T) {
@@ -71,9 +72,9 @@ func TestExpandTemplate(t *testing.T) {
 
 func TestNewTemplateDataFromDocument(t *testing.T) {
 	tests := []struct {
-		name     string
 		doc      *Document
 		validate func(t *testing.T, data TemplateData)
+		name     string
 	}{
 		{
 			name: "Basic document fields",
@@ -145,7 +146,7 @@ func TestNewTemplateDataFromDocument(t *testing.T) {
 					t.Error("CreatedDate should not be empty when not provided")
 				}
 				// Verify it's in the expected format (rough check)
-				if !strings.Contains(data.CreatedDate, "2025") && !strings.Contains(data.CreatedDate, "2024") {
+				if !strings.Contains(data.CreatedDate, time.Now().Format("2006")) {
 					t.Errorf("CreatedDate format unexpected: %q", data.CreatedDate)
 				}
 			},

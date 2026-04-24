@@ -688,7 +688,7 @@ func performSearch(ctx context.Context, index bleve.Index, searchQuery *hermesse
 
 	// Sorting
 	if searchQuery.SortBy != "" {
-		sortOrder := strings.ToLower(searchQuery.SortOrder) == "desc"
+		sortOrder := strings.EqualFold(searchQuery.SortOrder, "desc")
 		searchRequest.SortBy([]string{
 			fmt.Sprintf("%s%s", map[bool]string{true: "-", false: ""}[sortOrder], searchQuery.SortBy),
 		})

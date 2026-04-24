@@ -16,6 +16,8 @@ import (
 )
 
 // PRD contains metadata for documents based off of the HashiCorp PRD template.
+//
+//nolint:govet // Keep document metadata fields grouped for readability.
 type PRD struct {
 	BaseDoc `mapstructure:",squash"`
 
@@ -26,27 +28,31 @@ type PRD struct {
 	Stakeholders []string `json:"stakeholders,omitempty"`
 }
 
-func (d PRD) GetCustomEditableFields() map[string]CustomDocTypeField {
+// GetCustomEditableFields returns the custom editable fields for PRD documents.
+//
+//nolint:staticcheck // Receiver naming follows the rest of PRD methods.
+func (r PRD) GetCustomEditableFields() map[string]CustomDocTypeField {
 	return map[string]CustomDocTypeField{
 		"rfc": {
 			DisplayName: "RFC",
-			Type:        "STRING",
+			Type:        fieldTypeStr,
 		},
 	}
 }
 
-func (d *PRD) SetCustomEditableFields() {
-	d.CustomEditableFields = d.GetCustomEditableFields()
+// SetCustomEditableFields sets the custom editable fields for the PRD.
+func (r *PRD) SetCustomEditableFields() {
+	r.CustomEditableFields = r.GetCustomEditableFields()
 }
 
 // MissingFields returns the missing fields of the doc struct.
-func (d PRD) MissingFields() []string {
+func (r PRD) MissingFields() []string {
 	var missingFields []string
 
-	rfcType := reflect.TypeOf(d)
+	rfcType := reflect.TypeOf(r)
 	for i := 0; i < rfcType.NumField(); i++ {
 		f := rfcType.Field(i)
-		val := reflect.ValueOf(d).FieldByName(f.Name)
+		val := reflect.ValueOf(r).FieldByName(f.Name)
 		if val.IsZero() {
 			missingFields = append(missingFields, f.Name)
 		} else if f.Type.Kind() == reflect.Slice && val.Len() == 0 {
@@ -60,12 +66,12 @@ func (d PRD) MissingFields() []string {
 
 // NewPRD parses a Google Drive file based on the HashiCorp PRD template and
 // returns the resulting PRD struct.
-func NewPRD(f *drive.File, s *gw.Service, allFolders []string) (*PRD, error) {
+func NewPRD(f *drive.File, s *gw.Service, _ []string) (*PRD, error) {
 	r := &PRD{
 		BaseDoc: BaseDoc{
 			ObjectID:      f.Id,
 			Title:         f.Name,
-			DocType:       "PRD",
+			DocType:       docTypePRD,
 			ThumbnailLink: f.ThumbnailLink,
 		},
 	}
@@ -163,7 +169,7 @@ func (r *PRD) parsePRDHeader(d *docs.Document) {
 
 					case strings.HasPrefix(label, "Created"):
 						// Best effort parsing - ignore errors
-						_ = r.parsePRDCreated(p)
+						_ = r.parsePRDCreated(p) //nolint:errcheck // Best-effort created date parsing.
 
 					case strings.HasPrefix(label, "Owner:") ||
 						strings.HasPrefix(label, "Owners:"):
@@ -237,8 +243,8 @@ func (r *PRD) parsePRDStatus(p *docs.Paragraph) {
 	var status string
 
 	// Sometimes "Status: WIP" is collected together as one text element.
-	if label == "Status: WIP" && p.Elements[0].TextRun.TextStyle.Bold {
-		status = "WIP"
+	if label == statusWIP && p.Elements[0].TextRun.TextStyle.Bold {
+		status = wipStatus
 	} else {
 		for i, e := range p.Elements {
 			if i > 0 && e.TextRun.TextStyle.Bold {
@@ -252,6 +258,8 @@ func (r *PRD) parsePRDStatus(p *docs.Paragraph) {
 }
 
 // parsePRDSummary parses the PRD Summary from a Google Docs Body.
+//
+//nolint:gocognit // Summary extraction mirrors the document structure and is clearer inline.
 func (r *PRD) parsePRDSummary(b *docs.Body) {
 	elems := b.Content
 
@@ -260,7 +268,7 @@ func (r *PRD) parsePRDSummary(b *docs.Body) {
 			// Summary paragraph in the PRD template will have at least 2 elements.
 			if len(e.Paragraph.Elements) > 1 {
 				if e.Paragraph.Elements[0].TextRun != nil {
-					if e.Paragraph.Elements[0].TextRun.Content == "Summary:" {
+					if e.Paragraph.Elements[0].TextRun.Content == summaryLabel {
 						// We found the summary paragraph and the rest of the elements
 						// should be the summary value.
 						var s string

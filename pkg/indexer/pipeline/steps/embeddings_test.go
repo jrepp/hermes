@@ -21,7 +21,7 @@ type MockEmbeddingsClient struct {
 	mock.Mock
 }
 
-func (m *MockEmbeddingsClient) GenerateEmbeddings(ctx context.Context, text string, model string, dimensions int) ([]float64, error) {
+func (m *MockEmbeddingsClient) GenerateEmbeddings(ctx context.Context, text, model string, dimensions int) ([]float64, error) {
 	args := m.Called(ctx, text, model, dimensions)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -200,9 +200,9 @@ func TestEmbeddingsStep_Execute_WithChunking(t *testing.T) {
 		}),
 		"text-embedding-3-small",
 		1536,
-	).Run(func(args mock.Arguments) {
+	).Run(func(_ mock.Arguments) {
 		// This runs during the call, not when setting up the mock
-	}).Return(func(ctx context.Context, texts []string, model string, dimensions int) [][]float64 {
+	}).Return(func(_ context.Context, texts []string, _ string, _ int) [][]float64 {
 		// Dynamically create embeddings based on actual texts
 		embeddings := make([][]float64, len(texts))
 		for i := range embeddings {

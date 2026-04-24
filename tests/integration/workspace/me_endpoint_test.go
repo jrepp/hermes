@@ -35,7 +35,7 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 	WithTimeout(t, 2*time.Minute, 30*time.Second, func(ctx context.Context, progress func(string)) {
 		// Setup: Create temporary storage directory with users.json
 		storageDir := filepath.Join(os.TempDir(), fmt.Sprintf("hermes-me-test-%d", os.Getpid()))
-		err := os.MkdirAll(storageDir, 0755)
+		err := os.MkdirAll(storageDir, 0o755)
 		require.NoError(t, err, "Failed to create storage directory")
 		defer os.RemoveAll(storageDir)
 
@@ -73,7 +73,7 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 }`
 
 		usersPath := filepath.Join(storageDir, "users.json")
-		err = os.WriteFile(usersPath, []byte(usersJSON), 0644)
+		err = os.WriteFile(usersPath, []byte(usersJSON), 0o644)
 		require.NoError(t, err, "Failed to create users.json")
 
 		progress("Created users.json with test data")
@@ -144,7 +144,7 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 				handler := api.MeHandler(mockServer)
 
 				// Create request with user email in context (simulating authenticated user)
-				req := httptest.NewRequest(http.MethodGet, "/api/v2/me", nil)
+				req := httptest.NewRequest(http.MethodGet, "/api/v2/me", http.NoBody)
 				reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, tc.userEmail)
 				req = req.WithContext(reqCtx)
 
@@ -180,7 +180,7 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 			progress("Testing unauthenticated request")
 
 			handler := api.MeHandler(mockServer)
-			req := httptest.NewRequest(http.MethodGet, "/api/v2/me", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/me", http.NoBody)
 			// Don't set user email in context - simulates unauthenticated request
 			rr := httptest.NewRecorder()
 
@@ -195,7 +195,7 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 			progress("Testing HEAD method for auth check")
 
 			handler := api.MeHandler(mockServer)
-			req := httptest.NewRequest(http.MethodHead, "/api/v2/me", nil)
+			req := httptest.NewRequest(http.MethodHead, "/api/v2/me", http.NoBody)
 			reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, "test@hermes.local")
 			req = req.WithContext(reqCtx)
 			rr := httptest.NewRecorder()
@@ -212,7 +212,7 @@ func TestLocalWorkspace_MeEndpoint_UsesUsersJSON(t *testing.T) {
 			progress("Testing user not found in users.json")
 
 			handler := api.MeHandler(mockServer)
-			req := httptest.NewRequest(http.MethodGet, "/api/v2/me", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/me", http.NoBody)
 			reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, "nonexistent@hermes.local")
 			req = req.WithContext(reqCtx)
 			rr := httptest.NewRecorder()
@@ -260,7 +260,7 @@ func TestLocalWorkspace_MeEndpoint_WithAuthClaims(t *testing.T) {
 
 		// Create minimal local workspace adapter (users.json not needed for this test)
 		storageDir := filepath.Join(os.TempDir(), fmt.Sprintf("hermes-me-claims-test-%d", os.Getpid()))
-		err := os.MkdirAll(storageDir, 0755)
+		err := os.MkdirAll(storageDir, 0o755)
 		require.NoError(t, err)
 		defer os.RemoveAll(storageDir)
 
@@ -284,7 +284,7 @@ func TestLocalWorkspace_MeEndpoint_WithAuthClaims(t *testing.T) {
 		}
 
 		handler := api.MeHandler(mockServer)
-		req := httptest.NewRequest(http.MethodGet, "/api/v2/me", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v2/me", http.NoBody)
 
 		// Set both email and claims in context (simulating successful OIDC auth)
 		reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, claims.Email)

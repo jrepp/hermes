@@ -15,20 +15,20 @@ import (
 
 // RegisterDocumentRequest represents a document registration request from edge
 type RegisterDocumentRequest struct {
-	UUID         string         `json:"uuid"`
-	Title        string         `json:"title"`
+	Metadata     map[string]any `json:"metadata"`
+	ProviderID   string         `json:"provider_id"`
 	DocumentType string         `json:"document_type"`
 	Status       string         `json:"status"`
-	Owners       []string       `json:"owners"`
 	EdgeInstance string         `json:"edge_instance"`
-	ProviderID   string         `json:"provider_id"`
+	UUID         string         `json:"uuid"`
 	Product      string         `json:"product"`
-	Tags         []string       `json:"tags"`
-	Parents      []string       `json:"parents"`
-	Metadata     map[string]any `json:"metadata"`
+	Title        string         `json:"title"`
 	ContentHash  string         `json:"content_hash"`
 	CreatedAt    string         `json:"created_at"`
 	UpdatedAt    string         `json:"updated_at"`
+	Owners       []string       `json:"owners"`
+	Tags         []string       `json:"tags"`
+	Parents      []string       `json:"parents"`
 }
 
 // SyncMetadataRequest represents a metadata update request from edge
@@ -42,9 +42,9 @@ type SyncMetadataRequest struct {
 
 // SyncStatusResponse represents sync status for documents
 type SyncStatusResponse struct {
+	Stats        map[string]any                 `json:"stats,omitempty"`
 	EdgeInstance string                         `json:"edge_instance"`
 	Documents    []*services.EdgeDocumentRecord `json:"documents"`
-	Stats        map[string]any                 `json:"stats,omitempty"`
 }
 
 // EdgeSyncHandler handles edge-to-central document synchronization endpoints
@@ -56,6 +56,8 @@ type SyncStatusResponse struct {
 // GET    /api/v2/edge/documents/search            - Search documents
 // DELETE /api/v2/edge/documents/:uuid             - Delete document
 // GET    /api/v2/edge/stats                       - Get edge instance stats
+//
+//nolint:gocognit,gocyclo // Handler coordinates several edge-sync branches in one place.
 func EdgeSyncHandler(srv server.Server) http.Handler {
 	syncService := services.NewDocumentSyncService(srv.DB)
 
@@ -64,16 +66,16 @@ func EdgeSyncHandler(srv server.Server) http.Handler {
 		path := strings.TrimPrefix(r.URL.Path, "/api/v2/edge/")
 
 		switch {
-		case r.Method == "POST" && path == "documents/register":
+		case r.Method == httpMethodPost && path == "documents/register":
 			handleRegisterDocument(w, r, syncService, srv)
 
-		case r.Method == "GET" && path == "documents/sync-status":
+		case r.Method == httpMethodGet && path == "documents/sync-status":
 			handleGetSyncStatus(w, r, syncService, srv)
 
-		case r.Method == "GET" && path == "documents/search":
+		case r.Method == httpMethodGet && path == "documents/search":
 			handleSearchDocuments(w, r, syncService, srv)
 
-		case r.Method == "GET" && path == "stats":
+		case r.Method == httpMethodGet && path == "stats":
 			handleGetEdgeInstanceStats(w, r, syncService, srv)
 
 		case strings.HasPrefix(path, "documents/"):
@@ -94,7 +96,7 @@ func EdgeSyncHandler(srv server.Server) http.Handler {
 			} else if len(parts) == 2 {
 				// No suffix - document CRUD operations
 				switch r.Method {
-				case "GET":
+				case httpMethodGet:
 					handleGetDocumentByUUID(w, r, uuid, syncService, srv)
 				case "DELETE":
 					handleDeleteDocument(w, r, uuid, syncService, srv)

@@ -9,19 +9,9 @@ import (
 // Adapter implements the auth.Provider interface for testing purposes.
 // It can authenticate requests based on a fixed email or a custom header.
 type Adapter struct {
-	// MockEmail is the email to return for all authentication attempts.
-	// If empty and UseHeader is false, authentication will fail.
-	MockEmail string
-
-	// UseHeader, when true, reads the email from the HTTP header specified by HeaderName.
-	UseHeader bool
-
-	// HeaderName is the HTTP header to read the email from when UseHeader is true.
-	// Defaults to "X-Test-User-Email" if not specified.
-	HeaderName string
-
-	// FailAuthentication, when true, causes all authentication attempts to fail.
-	// This is useful for testing authentication failure scenarios.
+	MockEmail          string
+	HeaderName         string
+	UseHeader          bool
 	FailAuthentication bool
 }
 

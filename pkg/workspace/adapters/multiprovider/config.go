@@ -21,26 +21,12 @@ type Config struct {
 
 // SyncConfig configures document synchronization to central
 type SyncConfig struct {
-	// Enabled controls whether automatic sync is enabled
-	Enabled bool
-
-	// Mode controls sync timing
-	// "immediate" - sync on every document operation
-	// "batch" - batch sync operations periodically
-	// "manual" - only sync when explicitly requested
-	Mode SyncMode
-
-	// EdgeInstance identifier for this edge instance
-	EdgeInstance string
-
-	// BatchInterval for batch mode (default: 30s)
+	Mode          SyncMode
+	EdgeInstance  string
 	BatchInterval time.Duration
-
-	// RetryAttempts for failed sync operations (default: 3)
 	RetryAttempts int
-
-	// RetryDelay between retry attempts (default: 5s)
-	RetryDelay time.Duration
+	RetryDelay    time.Duration
+	Enabled       bool
 }
 
 // SyncMode represents sync timing strategy

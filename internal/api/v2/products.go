@@ -55,9 +55,9 @@ func getProductsData(db *gorm.DB) (
 
 	// Convert database products to API response format
 	result := make(map[string]structs.ProductData)
-	for _, p := range products {
-		result[p.Name] = structs.ProductData{
-			Abbreviation: p.Abbreviation,
+	for i := range products {
+		result[products[i].Name] = structs.ProductData{
+			Abbreviation: products[i].Abbreviation,
 			// PerDocTypeData is not currently stored in the database.
 			// For now, return an empty map. If needed, this can be populated
 			// from the database in a future enhancement.

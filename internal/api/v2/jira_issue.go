@@ -31,6 +31,8 @@ type JiraIssueGetResponse struct {
 }
 
 // JiraIssueHandler proxies Jira issue API requests.
+//
+//nolint:gocognit,gocyclo // Handler keeps request parsing and response shaping together.
 func JiraIssueHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := srv.Logger
@@ -57,7 +59,7 @@ func JiraIssueHandler(srv server.Server) http.Handler {
 
 		// Parse Jira issue ID.
 		jiraIssueRegex := regexp.MustCompile(
-			`^\/api\/v\d+\/jira\/issues\/([0-9A-Za-z_\-]+)$`)
+			`^/api/v\d+/jira/issues/([0-9A-Za-z_\-]+)$`)
 		if jiraIssueRegex.MatchString(r.URL.Path) {
 			issueID, err := getJiraIssueIDFromPath(r.URL.Path, jiraIssueRegex)
 			if err != nil {
@@ -71,7 +73,7 @@ func JiraIssueHandler(srv server.Server) http.Handler {
 			logArgs = append(logArgs, "jira_issue_id", issueID)
 
 			switch r.Method {
-			case "GET":
+			case httpMethodGet:
 				logArgs = append(logArgs, "method", r.Method)
 
 				// Parse Jira URL.
@@ -206,7 +208,7 @@ func executeJiraRequest(url string, srv server.Server) (*http.Response, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating HTTP request: %w", err)
 	}

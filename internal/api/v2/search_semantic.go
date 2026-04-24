@@ -13,11 +13,11 @@ import (
 
 // SemanticSearchRequest represents a semantic search query request.
 type SemanticSearchRequest struct {
-	Query         string   `json:"query"`                   // Search query text
-	Limit         int      `json:"limit,omitempty"`         // Maximum results (default: 10)
-	MinSimilarity float64  `json:"minSimilarity,omitempty"` // Minimum similarity threshold (0-1)
-	DocumentIDs   []string `json:"documentIds,omitempty"`   // Filter by specific document IDs
-	DocumentTypes []string `json:"documentTypes,omitempty"` // Filter by document types
+	Query         string   `json:"query"`
+	DocumentIDs   []string `json:"documentIds,omitempty"`
+	DocumentTypes []string `json:"documentTypes,omitempty"`
+	Limit         int      `json:"limit,omitempty"`
+	MinSimilarity float64  `json:"minSimilarity,omitempty"`
 }
 
 // HybridSearchRequest represents a hybrid (keyword + semantic) search request.
@@ -32,26 +32,26 @@ type HybridSearchRequest struct {
 
 // SemanticSearchResponse represents the response from semantic search.
 type SemanticSearchResponse struct {
-	Results []SemanticSearchResult `json:"results"`
 	Query   string                 `json:"query"`
+	Results []SemanticSearchResult `json:"results"`
 	Count   int                    `json:"count"`
 }
 
 // SemanticSearchResult represents a single semantic search result.
 type SemanticSearchResult struct {
+	ChunkIndex   *int    `json:"chunkIndex,omitempty"`
 	DocumentID   string  `json:"documentId"`
 	DocumentUUID string  `json:"documentUuid,omitempty"`
 	Title        string  `json:"title,omitempty"`
 	Excerpt      string  `json:"excerpt,omitempty"`
-	Similarity   float64 `json:"similarity"` // Cosine similarity score (0-1)
-	ChunkIndex   *int    `json:"chunkIndex,omitempty"`
 	ChunkText    string  `json:"chunkText,omitempty"`
+	Similarity   float64 `json:"similarity"`
 }
 
 // HybridSearchResponse represents the response from hybrid search.
 type HybridSearchResponse struct {
-	Results []HybridSearchResult `json:"results"`
 	Query   string               `json:"query"`
+	Results []HybridSearchResult `json:"results"`
 	Count   int                  `json:"count"`
 }
 
@@ -72,6 +72,8 @@ type HybridSearchResult struct {
 // Endpoint: POST /api/v2/search/semantic
 //
 // Uses OpenAI embeddings and pgvector to find semantically similar documents.
+//
+//nolint:gocognit,gocyclo // Search handler keeps validation and provider orchestration inline.
 func SemanticSearchHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -202,6 +204,8 @@ func SemanticSearchHandler(srv server.Server) http.Handler {
 //
 // Combines traditional keyword search (Meilisearch) with semantic search (pgvector)
 // using configurable weights.
+//
+//nolint:gocognit,gocyclo // Search handler keeps validation and provider orchestration inline.
 func HybridSearchHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -332,6 +336,8 @@ func HybridSearchHandler(srv server.Server) http.Handler {
 // Endpoint: GET /api/v2/documents/{documentID}/similar?limit=10
 //
 // Uses the document's existing embeddings to find similar documents via vector similarity.
+//
+//nolint:gocognit,gocyclo // Search handler keeps validation and provider orchestration inline.
 func SimilarDocumentsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {

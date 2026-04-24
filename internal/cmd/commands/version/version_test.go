@@ -23,7 +23,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	output := ui.OutputWriter.String()
-	if matched, _ := regexp.MatchString(`^\d\.\d\.\d\n$`, output); !matched {
-		t.Fatalf("output is not a valid version: %s", output)
+	if matched, err := regexp.MatchString(`^\d\.\d\.\d\n$`, output); !matched {
+		t.Fatalf("output is not a valid version: %s (match err: %v)", output, err)
 	}
 }

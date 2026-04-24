@@ -9,7 +9,7 @@ import (
 )
 
 // TestMockAdapter_ProviderInterface tests that mock adapter implements Provider interface.
-func TestMockAdapter_ProviderInterface(t *testing.T) {
+func TestMockAdapter_ProviderInterface(_ *testing.T) {
 	var _ workspace.Provider = (*Adapter)(nil)
 }
 

@@ -27,25 +27,25 @@ func NewDocumentSyncService(db *gorm.DB) *DocumentSyncService {
 
 // EdgeDocumentRecord represents a document registered from an edge instance
 type EdgeDocumentRecord struct {
-	UUID           docid.UUID     `json:"uuid"`
-	Title          string         `json:"title"`
-	DocumentType   string         `json:"document_type"`
-	Status         string         `json:"status"`
+	SyncedAt       time.Time      `json:"synced_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	CreatedAt      time.Time      `json:"created_at"`
+	Metadata       map[string]any `json:"metadata"`
 	Summary        string         `json:"summary"`
-	Owners         []string       `json:"owners"`
-	Contributors   []string       `json:"contributors"`
+	Status         string         `json:"status"`
+	SyncError      string         `json:"sync_error,omitempty"`
 	EdgeInstance   string         `json:"edge_instance"`
 	EdgeProviderID string         `json:"edge_provider_id"`
 	Product        string         `json:"product"`
-	Tags           []string       `json:"tags"`
-	ParentFolders  []string       `json:"parent_folders"`
-	Metadata       map[string]any `json:"metadata"`
-	ContentHash    string         `json:"content_hash"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	SyncedAt       time.Time      `json:"synced_at"`
 	LastSyncStatus string         `json:"last_sync_status"`
-	SyncError      string         `json:"sync_error,omitempty"`
+	Title          string         `json:"title"`
+	DocumentType   string         `json:"document_type"`
+	ContentHash    string         `json:"content_hash"`
+	Owners         []string       `json:"owners"`
+	ParentFolders  []string       `json:"parent_folders"`
+	Tags           []string       `json:"tags"`
+	Contributors   []string       `json:"contributors"`
+	UUID           docid.UUID     `json:"uuid"`
 }
 
 // RegisterDocument registers a document from an edge instance
@@ -68,7 +68,7 @@ func (s *DocumentSyncService) RegisterDocument(ctx context.Context, doc *workspa
 		owners = append(owners, doc.Owner.Email)
 	}
 
-	var contributors []string
+	contributors := make([]string, 0, len(doc.Contributors))
 	for _, c := range doc.Contributors {
 		contributors = append(contributors, c.Email)
 	}

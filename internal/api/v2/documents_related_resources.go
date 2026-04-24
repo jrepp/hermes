@@ -49,20 +49,23 @@ type hermesDocumentRelatedResourceGetResponse struct {
 	SortOrder      int    `json:"sortOrder"`
 }
 
+//nolint:gocognit,gocyclo // Small REST multiplexer with method-specific branches.
 func documentsResourceRelatedResourcesHandler(
 	w http.ResponseWriter,
 	r *http.Request,
 	docID string,
 	doc document.Document,
-	cfg *config.Config,
+	_ *config.Config,
 	l hclog.Logger,
 	searchProvider search.Provider,
 	db *gorm.DB,
 	useSharePoint bool,
 ) {
 	switch r.Method {
-	case "GET":
-		d := models.NewDocumentByFileID(docID, useSharePoint)
+	case httpMethodGet:
+		d := models.Document{
+			GoogleFileID: docID,
+		}
 		if err := d.Get(db); err != nil {
 			l.Error("error getting document from database",
 				"error", err,
@@ -95,8 +98,8 @@ func documentsResourceRelatedResourcesHandler(
 			HermesDocuments: []hermesDocumentRelatedResourceGetResponse{},
 		}
 		// Add external link related resources.
-		for _, elrr := range elrrs {
-			if err := elrr.Get(db); err != nil {
+		for i := range elrrs {
+			if err := elrrs[i].Get(db); err != nil {
 				l.Error("error getting external link related resource from database",
 					"error", err,
 					"path", r.URL.Path,
@@ -110,22 +113,22 @@ func documentsResourceRelatedResourcesHandler(
 
 			resp.ExternalLinks = append(resp.ExternalLinks,
 				externalLinkRelatedResourceGetResponse{
-					Name:      elrr.Name,
-					URL:       elrr.URL,
-					SortOrder: elrr.RelatedResource.SortOrder,
+					Name:      elrrs[i].Name,
+					URL:       elrrs[i].URL,
+					SortOrder: elrrs[i].RelatedResource.SortOrder,
 				})
 		}
 		// Add Hermes document related resources.
-		for _, hdrr := range hdrrs {
+		for i := range hdrrs {
 			// Get document object from search provider.
-			searchDoc, err := searchProvider.DocumentIndex().GetObject(r.Context(), hdrr.Document.GoogleFileID)
+			searchDoc, err := searchProvider.DocumentIndex().GetObject(r.Context(), hdrrs[i].Document.GoogleFileID)
 			if err != nil {
 				l.Error("error getting related resource document from search provider",
 					"error", err,
 					"path", r.URL.Path,
 					"method", r.Method,
 					"doc_id", docID,
-					"target_doc_id", targetDocID,
+					"target_doc_id", hdrrs[i].Document.GoogleFileID,
 				)
 				http.Error(w, "Error accessing document",
 					http.StatusInternalServerError)
@@ -135,11 +138,11 @@ func documentsResourceRelatedResourcesHandler(
 			resp.HermesDocuments = append(
 				resp.HermesDocuments,
 				hermesDocumentRelatedResourceGetResponse{
-					GoogleFileID:   hdrr.Document.GoogleFileID,
+					GoogleFileID:   hdrrs[i].Document.GoogleFileID,
 					Title:          searchDoc.Title,
 					DocumentType:   searchDoc.DocType,
 					DocumentNumber: searchDoc.DocNumber,
-					SortOrder:      hdrr.RelatedResource.SortOrder,
+					SortOrder:      hdrrs[i].RelatedResource.SortOrder,
 				})
 		}
 
@@ -157,9 +160,7 @@ func documentsResourceRelatedResourcesHandler(
 			return
 		}
 
-	case "POST":
-		fallthrough
-	case "PUT":
+	case httpMethodPost, httpMethodPut:
 		// Authorize request (only the document owner can replace related
 		// resources).
 		userEmail := pkgauth.MustGetUserEmail(r.Context())

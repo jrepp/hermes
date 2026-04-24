@@ -63,7 +63,7 @@ func TestMockAuth_MeEndpoint(t *testing.T) {
 	)
 
 	// Create test request
-	req := httptest.NewRequest("GET", "/api/v2/me", nil)
+	req := httptest.NewRequest("GET", "/api/v2/me", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	// Execute request
@@ -108,8 +108,8 @@ func TestMockAuth_HeaderBased(t *testing.T) {
 	tests := []struct {
 		name         string
 		headerValue  string
-		expectStatus int
 		expectBody   string
+		expectStatus int
 	}{
 		{
 			name:         "Valid email in header",
@@ -133,7 +133,7 @@ func TestMockAuth_HeaderBased(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
 			if tt.headerValue != "" {
 				req.Header.Set("X-Test-User-Email", tt.headerValue)
 			}
@@ -209,7 +209,7 @@ func TestMockAuth_DocumentCreation(t *testing.T) {
 	)
 
 	// Execute request
-	req := httptest.NewRequest("POST", "/api/v2/drafts", nil)
+	req := httptest.NewRequest("POST", "/api/v2/drafts", http.NoBody)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
@@ -272,7 +272,7 @@ func TestMockAuth_AuthorizationFailure(t *testing.T) {
 	)
 
 	// Execute request
-	req := httptest.NewRequest("PATCH", "/api/v2/documents/"+doc.GoogleFileID, nil)
+	req := httptest.NewRequest("PATCH", "/api/v2/documents/"+doc.GoogleFileID, http.NoBody)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 
@@ -311,7 +311,7 @@ func TestMockAuth_MultipleUsers(t *testing.T) {
 				}),
 			)
 
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest("GET", "/test", http.NoBody)
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)
 
@@ -333,7 +333,7 @@ func TestMockAuth_FailAuthentication(t *testing.T) {
 	log := hclog.NewNullLogger()
 
 	handler := pkgauth.Middleware(mockAuth, log)(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			// This should never be reached
 			t.Error("Handler should not be called when auth fails")
 			w.WriteHeader(http.StatusOK)
@@ -341,7 +341,7 @@ func TestMockAuth_FailAuthentication(t *testing.T) {
 	)
 
 	// Execute request
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest("GET", "/test", http.NoBody)
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
 

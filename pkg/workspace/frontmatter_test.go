@@ -138,9 +138,9 @@ Content.
 
 func TestFrontmatterParser_ParseFrontmatter_MultipleTimeFormats(t *testing.T) {
 	testCases := []struct {
+		expected time.Time
 		name     string
 		created  string
-		expected time.Time
 	}{
 		{
 			name:     "RFC3339",
@@ -304,15 +304,15 @@ func TestFrontmatterParser_ParseValue_TypeInference(t *testing.T) {
 	parser := NewFrontmatterParser("local")
 
 	testCases := []struct {
-		input    string
 		expected any
+		input    string
 	}{
-		{"true", true},
-		{"false", false},
-		{"42", int64(42)},
-		{"3.14", 3.14},
+		{true, "true"},
+		{false, "false"},
+		{int64(42), "42"},
+		{3.14, "3.14"},
 		{"hello", "hello"},
-		{"[a, b]", []string{"a", "b"}},
+		{[]string{"a", "b"}, "[a, b]"},
 	}
 
 	for _, tc := range testCases {

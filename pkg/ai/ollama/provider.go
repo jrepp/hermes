@@ -294,10 +294,10 @@ func (p *Provider) parseSummarizeResponse(responseText string, req *ai.Summarize
 
 	var response struct {
 		ExecutiveSummary string   `json:"executive_summary"`
+		SuggestedStatus  string   `json:"suggested_status"`
 		KeyPoints        []string `json:"key_points"`
 		Topics           []string `json:"topics"`
 		SuggestedTags    []string `json:"suggested_tags"`
-		SuggestedStatus  string   `json:"suggested_status"`
 		Confidence       float64  `json:"confidence"`
 	}
 

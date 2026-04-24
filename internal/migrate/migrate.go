@@ -12,6 +12,12 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
+const (
+	// Database driver names
+	driverPostgres = "postgres"
+	driverSQLite   = "sqlite"
+)
+
 //go:embed migrations/*.sql migrations/db-specific/*.sql
 var migrationsFS embed.FS
 
@@ -19,7 +25,7 @@ var migrationsFS embed.FS
 // Supports both PostgreSQL and SQLite with core + database-specific migrations.
 func RunMigrations(db *sql.DB, driver string) error {
 	// Validate driver
-	if driver != "postgres" && driver != "sqlite" {
+	if driver != driverPostgres && driver != driverSQLite {
 		return fmt.Errorf("unsupported database driver: %s (supported: postgres, sqlite)", driver)
 	}
 
@@ -32,12 +38,12 @@ func RunMigrations(db *sql.DB, driver string) error {
 	// Create database driver based on type
 	var databaseDriver database.Driver
 	switch driver {
-	case "postgres":
+	case driverPostgres:
 		databaseDriver, err = postgres.WithInstance(db, &postgres.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create postgres driver: %w", err)
 		}
-	case "sqlite":
+	case driverSQLite:
 		databaseDriver, err = sqlite.WithInstance(db, &sqlite.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create sqlite driver: %w", err)
@@ -74,13 +80,13 @@ func applyDatabaseSpecificMigrations(db *sql.DB, driver string) error {
 	var migrations []string
 
 	switch driver {
-	case "postgres":
+	case driverPostgres:
 		// PostgreSQL-specific migrations (extensions, UUID types, CITEXT)
 		migrations = []string{
 			"db-specific/000003_indexer_postgres.up.sql",
 			"db-specific/000005_postgres_extras.up.sql",
 		}
-	case "sqlite":
+	case driverSQLite:
 		// SQLite-specific migrations (PRAGMAs, optimizations)
 		migrations = []string{
 			"db-specific/000004_indexer_sqlite.up.sql",
@@ -113,9 +119,9 @@ func GetMigrationVersion(db *sql.DB, driver string) (version uint, dirty bool, e
 
 	var databaseDriver database.Driver
 	switch driver {
-	case "postgres":
+	case driverPostgres:
 		databaseDriver, err = postgres.WithInstance(db, &postgres.Config{})
-	case "sqlite":
+	case driverSQLite:
 		databaseDriver, err = sqlite.WithInstance(db, &sqlite.Config{})
 	default:
 		return 0, false, fmt.Errorf("unsupported database driver: %s", driver)

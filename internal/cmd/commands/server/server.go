@@ -51,6 +51,12 @@ import (
 	"github.com/hashicorp-forge/hermes/web"
 )
 
+const (
+	// Provider names
+	providerGoogle  = "google"
+	providerAlgolia = "algolia"
+)
+
 type Command struct {
 	*base.Command
 
@@ -66,9 +72,10 @@ type Command struct {
 	flagOktaDisabled      bool
 }
 
+//nolint:govet // Keep route declaration order aligned with existing positional literals.
 type endpoint struct {
-	pattern string
 	handler http.Handler
+	pattern string
 }
 
 func (c *Command) Synopsis() string {
@@ -144,6 +151,7 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+//nolint:gocognit,gocyclo // Server startup coordinates many optional subsystems in one entrypoint.
 func (c *Command) Run(args []string) int {
 	f := c.Flags()
 	if err := f.Parse(args); err != nil {
@@ -203,11 +211,9 @@ func (c *Command) Run(args []string) int {
 	if c.flagOidcClientID != f.Lookup("oidc-client-id").DefValue {
 		cfg.OidcAlb.ClientID = c.flagOidcClientID
 	}
-	if val, ok := os.LookupEnv("HERMES_SERVER_OIDC_DISABLED"); ok {
-		if val == "" || val == "false" {
-			// Keep OIDC ALB enabled if the env var value is an empty string or "false".
-		} else {
-			cfg.OidcAlb.Disabled = true
+	if val, ok := os.LookupEnv("HERMES_SERVER_OKTA_DISABLED"); ok {
+		if val != "" && val != "false" {
+			cfg.Okta.Disabled = true
 		}
 	}
 	if val, ok := os.LookupEnv("HERMES_SERVER_OIDC_JWT_SIGNER"); ok {
@@ -261,7 +267,7 @@ func (c *Command) Run(args []string) int {
 				cfg.Okta.Disabled = false
 			}
 			c.Log.Info("auth provider selection", "provider", "okta", "source", "flag/env")
-		case "google":
+		case providerGoogle:
 			// Disable both Dex and Okta to fall back to Google
 			if cfg.Dex != nil {
 				cfg.Dex.Disabled = true
@@ -269,7 +275,7 @@ func (c *Command) Run(args []string) int {
 			if cfg.Okta != nil {
 				cfg.Okta.Disabled = true
 			}
-			c.Log.Info("auth provider selection", "provider", "google", "source", "flag/env")
+			c.Log.Info("auth provider selection", "provider", providerGoogle, "source", "flag/env")
 		default:
 			c.UI.Error(fmt.Sprintf("invalid auth provider: %s (valid options: dex, okta, google)", authProvider))
 			return 1
@@ -361,7 +367,7 @@ func (c *Command) Run(args []string) int {
 		workspaceProviderName = cfg.Providers.Workspace
 	}
 	if workspaceProviderName == "" {
-		workspaceProviderName = "google" // Default to google for backward compatibility
+		workspaceProviderName = providerGoogle // Default to google for backward compatibility
 	}
 
 	searchProviderName := c.flagSearchProvider
@@ -372,7 +378,7 @@ func (c *Command) Run(args []string) int {
 		searchProviderName = cfg.Providers.Search
 	}
 	if searchProviderName == "" {
-		searchProviderName = "algolia" // Default to algolia for backward compatibility
+		searchProviderName = providerAlgolia // Default to algolia for backward compatibility
 	}
 
 	c.UI.Info(fmt.Sprintf("Using workspace provider: %s", workspaceProviderName))
@@ -383,7 +389,7 @@ func (c *Command) Run(args []string) int {
 	var goog *gw.Service // Keep for auth that still uses it directly
 
 	switch workspaceProviderName {
-	case "google":
+	case providerGoogle:
 		// Use Google Workspace service user auth if it is defined in the config.
 		if cfg.GoogleWorkspace.Auth != nil {
 			// Validate temporary drafts folder is configured if creating docs as user.
@@ -581,28 +587,28 @@ func (c *Command) Run(args []string) int {
 		// Use hermes-migrate binary for SQLite databases.
 		c.UI.Error("SQLite mode not supported in server binary. Use hermes-migrate for migrations. See docs-internal/SQLITE_DRIVER_CONFLICT.md")
 		return 1
-	} else {
-		// Traditional mode: use PostgreSQL
-		if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
-			cfg.Postgres.Password = val
-		}
-
-		// Auto-migrate PostgreSQL database
-		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
-			cfg.Postgres.Host, cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.DBName, cfg.Postgres.Port)
-		c.Log.Info("running database migrations (PostgreSQL)", "host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
-		if err := runMigrations("postgres", dsn); err != nil {
-			c.UI.Error(fmt.Sprintf("error running PostgreSQL migrations: %v", err))
-			return 1
-		}
-
-		db, err = dbpkg.NewDB(*cfg.Postgres)
-		if err != nil {
-			c.UI.Error(fmt.Sprintf("error initializing database: %v", err))
-			return 1
-		}
-		c.Log.Info("using PostgreSQL database", "host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
 	}
+
+	// Traditional mode: use PostgreSQL
+	if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
+		cfg.Postgres.Password = val
+	}
+
+	// Auto-migrate PostgreSQL database
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
+		cfg.Postgres.Host, cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.DBName, cfg.Postgres.Port)
+	c.Log.Info("running database migrations (PostgreSQL)", "host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
+	if err := runMigrations("postgres", dsn); err != nil {
+		c.UI.Error(fmt.Sprintf("error running PostgreSQL migrations: %v", err))
+		return 1
+	}
+
+	db, err = dbpkg.NewDB(*cfg.Postgres)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("error initializing database: %v", err))
+		return 1
+	}
+	c.Log.Info("using PostgreSQL database", "host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
 
 	// Initialize instance identity.
 	ctx := context.Background()
@@ -749,86 +755,86 @@ func (c *Command) Run(args []string) int {
 	// Define handlers for authenticated endpoints.
 	// All API endpoints use v2.
 	authenticatedEndpoints := []endpoint{
-		{"/api/v2/approvals/", apiv2.ApprovalsHandler(srv)},
-		{"/api/v2/document-types", apiv2.DocumentTypesHandler(srv)},
-		{"/api/v2/documents/", apiv2.DocumentHandler(srv)}, // Handles /content suffix too
-		{"/api/v2/drafts", apiv2.DraftsHandler(srv)},
-		{"/api/v2/drafts/", apiv2.DraftsDocumentHandler(srv)},
-		{"/api/v2/groups", apiv2.GroupsHandler(srv)},
-		{"/api/v2/jira/issues/", apiv2.JiraIssueHandler(srv)},
-		{"/api/v2/jira/issue/picker", apiv2.JiraIssuePickerHandler(srv)},
-		{"/api/v2/me", apiv2.MeHandler(srv)},
-		{"/api/v2/me/recently-viewed-docs", apiv2.MeRecentlyViewedDocsHandler(srv)},
-		{"/api/v2/me/recently-viewed-projects",
-			apiv2.MeRecentlyViewedProjectsHandler(srv)},
-		{"/api/v2/me/reviews", apiv2.MeReviewsHandler(srv)},
-		{"/api/v2/me/subscriptions", apiv2.MeSubscriptionsHandler(srv)},
-		{"/api/v2/migrations/", apiv2.MigrationsHandler(srv)},
-		{"/api/v2/people", apiv2.PeopleDataHandler(srv)},
-		{"/api/v2/products", apiv2.ProductsHandler(srv)},
-		{"/api/v2/projects", apiv2.ProjectsHandler(srv)},
-		{"/api/v2/projects/", apiv2.ProjectHandler(srv)},
-		{"/api/v2/providers", apiv2.ProvidersHandler(srv)},
-		{"/api/v2/providers/", apiv2.ProvidersHandler(srv)},
-		{"/api/v2/reviews/", apiv2.ReviewsHandler(srv)},
-		{"/api/v2/search/", apiv2.SearchHandler(srv)},
-		{"/api/v2/search/semantic", apiv2.SemanticSearchHandler(srv)}, // RFC-088: Semantic search
-		{"/api/v2/search/hybrid", apiv2.HybridSearchHandler(srv)},     // RFC-088: Hybrid search
-		{"/api/v2/documents/", apiv2.SimilarDocumentsHandler(srv)},    // RFC-088: Similar documents
-		{"/api/v2/web/analytics", apiv2.AnalyticsHandler(srv)},
-		{"/api/v2/workspace-projects", apiv2.WorkspaceProjectsHandler(srv)},
-		{"/api/v2/workspace-projects/", apiv2.WorkspaceProjectHandler(srv)},
+		{apiv2.ApprovalsHandler(srv), "/api/v2/approvals/"},
+		{apiv2.DocumentTypesHandler(srv), "/api/v2/document-types"},
+		{apiv2.DocumentHandler(srv), "/api/v2/documents/"}, // Handles /content suffix too
+		{apiv2.DraftsHandler(srv), "/api/v2/drafts"},
+		{apiv2.DraftsDocumentHandler(srv), "/api/v2/drafts/"},
+		{apiv2.GroupsHandler(srv), "/api/v2/groups"},
+		{apiv2.JiraIssueHandler(srv), "/api/v2/jira/issues/"},
+		{apiv2.JiraIssuePickerHandler(srv), "/api/v2/jira/issue/picker"},
+		{apiv2.MeHandler(srv), "/api/v2/me"},
+		{apiv2.MeRecentlyViewedDocsHandler(srv), "/api/v2/me/recently-viewed-docs"},
+		{apiv2.MeRecentlyViewedProjectsHandler(srv),
+			"/api/v2/me/recently-viewed-projects"},
+		{apiv2.MeReviewsHandler(srv), "/api/v2/me/reviews"},
+		{apiv2.MeSubscriptionsHandler(srv), "/api/v2/me/subscriptions"},
+		{apiv2.MigrationsHandler(srv), "/api/v2/migrations/"},
+		{apiv2.PeopleDataHandler(srv), "/api/v2/people"},
+		{apiv2.ProductsHandler(srv), "/api/v2/products"},
+		{apiv2.ProjectsHandler(srv), "/api/v2/projects"},
+		{apiv2.ProjectHandler(srv), "/api/v2/projects/"},
+		{apiv2.ProvidersHandler(srv), "/api/v2/providers"},
+		{apiv2.ProvidersHandler(srv), "/api/v2/providers/"},
+		{apiv2.ReviewsHandler(srv), "/api/v2/reviews/"},
+		{apiv2.SearchHandler(srv), "/api/v2/search/"},
+		{apiv2.SemanticSearchHandler(srv), "/api/v2/search/semantic"}, // RFC-088: Semantic search
+		{apiv2.HybridSearchHandler(srv), "/api/v2/search/hybrid"},     // RFC-088: Hybrid search
+		{apiv2.SimilarDocumentsHandler(srv), "/api/v2/documents/"},    // RFC-088: Similar documents
+		{apiv2.AnalyticsHandler(srv), "/api/v2/web/analytics"},
+		{apiv2.WorkspaceProjectsHandler(srv), "/api/v2/workspace-projects"},
+		{apiv2.WorkspaceProjectHandler(srv), "/api/v2/workspace-projects/"},
 	}
 
 	// Add Algolia-specific endpoints if using Algolia search provider.
-	if searchProviderName == "algolia" && algoSearch != nil {
+	if searchProviderName == providerAlgolia && algoSearch != nil {
 		authenticatedEndpoints = append(authenticatedEndpoints, endpoint{
-			"/1/indexes/",
 			algolia.AlgoliaProxyHandler(algoSearch, algoliaClientCfg, c.Log),
+			"/1/indexes/",
 		})
 	}
 
 	// Define handlers for unauthenticated endpoints.
 	unauthenticatedEndpoints := []endpoint{
-		{"/health", healthHandler()},
-		{"/pub/", http.StripPrefix("/pub/", pub.Handler())},
-		{"/api/v2/indexer/", apiv2.IndexerHandler(srv)},                                  // Indexer API (handles own token auth)
-		{"/api/v2/edge/", apiv2.EdgeSyncAuthMiddleware(srv, apiv2.EdgeSyncHandler(srv))}, // Edge sync API (token auth)
+		{healthHandler(), "/health"},
+		{http.StripPrefix("/pub/", pub.Handler()), "/pub/"},
+		{apiv2.IndexerHandler(srv), "/api/v2/indexer/"},                                  // Indexer API (handles own token auth)
+		{apiv2.EdgeSyncAuthMiddleware(srv, apiv2.EdgeSyncHandler(srv)), "/api/v2/edge/"}, // Edge sync API (token auth)
 	}
 
 	// Add Dex OIDC auth endpoints if Dex is configured
 	if cfg.Dex != nil && !cfg.Dex.Disabled {
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
-			endpoint{"/auth/login", api.LoginHandler(*cfg, c.Log)},
-			endpoint{"/auth/callback", api.CallbackHandler(*cfg, c.Log)},
-			endpoint{"/auth/logout", api.LogoutHandler(c.Log)},
+			endpoint{api.LoginHandler(*cfg, c.Log), "/auth/login"},
+			endpoint{api.CallbackHandler(*cfg, c.Log), "/auth/callback"},
+			endpoint{api.LogoutHandler(c.Log), "/auth/logout"},
 		)
 	}
 
 	// Web config endpoints are always unauthenticated so the frontend can load
 	// and determine the auth provider before attempting to authenticate.
-	if searchProviderName == "algolia" && algoSearch != nil {
+	if searchProviderName == providerAlgolia && algoSearch != nil {
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
-			endpoint{"/api/v2/web/config", web.ConfigHandler(cfg, algoSearch, c.Log)},
-			endpoint{"/api/v2/setup/status", apiv2.SetupStatusHandler(c.flagConfig, c.Log)},
-			endpoint{"/api/v2/setup/configure", apiv2.SetupConfigureHandler(c.Log)},
-			endpoint{"/api/v2/setup/validate-ollama", apiv2.OllamaValidateHandler(c.Log)},
-			endpoint{"/l/", links.RedirectHandler(algoSearch, algoliaClientCfg, c.Log)},
+			endpoint{web.ConfigHandler(cfg, algoSearch, c.Log), "/api/v2/web/config"},
+			endpoint{apiv2.SetupStatusHandler(c.flagConfig, c.Log), "/api/v2/setup/status"},
+			endpoint{apiv2.SetupConfigureHandler(c.Log), "/api/v2/setup/configure"},
+			endpoint{apiv2.OllamaValidateHandler(c.Log), "/api/v2/setup/validate-ollama"},
+			endpoint{links.RedirectHandler(algoSearch, algoliaClientCfg, c.Log), "/l/"},
 		)
 	} else {
 		// For non-Algolia search providers, provide minimal config handlers
 		// that return configuration without Algolia-specific data
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
-			endpoint{"/api/v2/web/config", web.ConfigHandler(cfg, nil, c.Log)},
-			endpoint{"/api/v2/setup/status", apiv2.SetupStatusHandler(c.flagConfig, c.Log)},
-			endpoint{"/api/v2/setup/configure", apiv2.SetupConfigureHandler(c.Log)},
-			endpoint{"/api/v2/setup/validate-ollama", apiv2.OllamaValidateHandler(c.Log)},
+			endpoint{web.ConfigHandler(cfg, nil, c.Log), "/api/v2/web/config"},
+			endpoint{apiv2.SetupStatusHandler(c.flagConfig, c.Log), "/api/v2/setup/status"},
+			endpoint{apiv2.SetupConfigureHandler(c.Log), "/api/v2/setup/configure"},
+			endpoint{apiv2.OllamaValidateHandler(c.Log), "/api/v2/setup/validate-ollama"},
 		)
 	}
 
 	// SPA handler - conditionally authenticated based on if Okta or Dex is enabled.
 	spaEndpoints := []endpoint{
-		{"/", web.Handler()},
+		{web.Handler(), "/"},
 	}
 
 	// If Okta or Dex is enabled, add the SPA handler as an authenticated endpoint.
@@ -859,17 +865,7 @@ func (c *Command) Run(args []string) int {
 		mux.Handle(e.pattern, e.handler)
 	}
 
-	// Use dev_mode flag from configuration
-	isDevelopment := cfg.Server.DevMode
-
-	if isDevelopment {
-		c.Log.Info("Running in development mode - permissive CORS policy enabled")
-	} else {
-		c.Log.Info("Running in production mode - restrictive CORS policy enabled")
-	} // Wrap the entire mux with CORS middleware
-	corsHandler := middleware.CorsMiddlewareWithConfig(c.Log, mux, isDevelopment)
-
-	server := &http.Server{
+	httpServer := &http.Server{
 		Addr:              cfg.Server.Addr,
 		Handler:           mux,
 		ReadHeaderTimeout: 30 * time.Second, // Prevent Slowloris attacks
@@ -878,22 +874,9 @@ func (c *Command) Run(args []string) int {
 		if cfg.Server.TLSEnabled {
 			c.Log.Info("Starting server with TLS/HTTPS", "addr", cfg.Server.Addr, "tls_enabled", true)
 
-			if cfg.Server.TLSCert == "" || cfg.Server.TLSKey == "" {
-				c.Log.Error("TLS is enabled but certificate or key file path is not specified")
-				os.Exit(1)
-			}
-
-			if err := server.ListenAndServeTLS(cfg.Server.TLSCert, cfg.Server.TLSKey); err != http.ErrServerClosed {
-				c.Log.Error("Error starting TLS listener", "error", err, "addr", cfg.Server.Addr)
-				os.Exit(1)
-			}
-		} else {
-			c.Log.Info("Starting server", "addr", cfg.Server.Addr, "tls_enabled", false)
-
-			if err := server.ListenAndServe(); err != http.ErrServerClosed {
-				c.Log.Error("Error starting listener", "error", err, "addr", cfg.Server.Addr)
-				os.Exit(1)
-			}
+		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
+			c.Log.Error(fmt.Sprintf("error starting listener: %v", err))
+			os.Exit(1)
 		}
 	}()
 
@@ -916,7 +899,7 @@ func (c *Command) Run(args []string) int {
 		})
 		if err != nil {
 			c.Log.Error(fmt.Sprintf("failed to create outbox relay service: %v", err))
-			os.Exit(1)
+			return 1
 		}
 
 		// Start relay goroutine
@@ -958,7 +941,7 @@ func (c *Command) Run(args []string) int {
 		sqlDB, err := db.DB()
 		if err != nil {
 			c.Log.Error(fmt.Sprintf("failed to get SQL DB for migration worker: %v", err))
-			os.Exit(1)
+			return 1
 		}
 
 		// For now, create a simple provider map with just the primary provider
@@ -1002,12 +985,12 @@ func (c *Command) Run(args []string) int {
 		defer cancel()
 	}
 
-	return c.WaitForInterrupt(c.ShutdownServer(server))
+	return c.WaitForInterrupt(c.ShutdownServer(httpServer))
 }
 
 // healthHandler responds with the health of the service.
 func healthHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte("OK")); err != nil {
 			// Error already logged by HTTP server
@@ -1050,14 +1033,11 @@ func registerDocumentTypes(cfg config.Config, db *gorm.DB) error {
 			t := strings.ToLower(c.Type)
 			switch t {
 			case "string":
-				cf.Type = models.DocumentTypeCustomFieldType(
-					models.StringDocumentTypeCustomFieldType)
+				cf.Type = models.StringDocumentTypeCustomFieldType
 			case "person":
-				cf.Type = models.DocumentTypeCustomFieldType(
-					models.PersonDocumentTypeCustomFieldType)
+				cf.Type = models.PersonDocumentTypeCustomFieldType
 			case "people":
-				cf.Type = models.DocumentTypeCustomFieldType(
-					models.PeopleDocumentTypeCustomFieldType)
+				cf.Type = models.PeopleDocumentTypeCustomFieldType
 			case "":
 				return fmt.Errorf("missing document type custom field")
 			default:
@@ -1137,7 +1117,8 @@ func registerProducts(
 func generateIndexerToken(db *gorm.DB, tokenPath string, logger hclog.Logger) error {
 	// Create parent directory if it doesn't exist
 	tokenDir := filepath.Dir(tokenPath)
-	if err := os.MkdirAll(tokenDir, 0755); err != nil {
+	//nolint:gosec // tokenDir is derived from config, not user input
+	if err := os.MkdirAll(tokenDir, 0o750); err != nil {
 		return fmt.Errorf("error creating token directory: %w", err)
 	}
 
@@ -1178,7 +1159,7 @@ func runMigrations(driver, dsn string) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	// Verify connection
 	if err := sqlDB.Ping(); err != nil {

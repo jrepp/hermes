@@ -321,13 +321,13 @@ func setupTestDatabase(t *testing.T) *gorm.DB {
 func cleanupTestDatabase(t *testing.T, db *gorm.DB) {
 	// Delete in reverse dependency order
 	tables := []struct {
-		name  string
 		model interface{}
+		name  string
 	}{
-		{"document_revisions", &models.DocumentRevision{}},
-		{"documents", &models.Document{}},
-		{"workspace_projects", &models.WorkspaceProject{}},
-		{"hermes_instances", &models.HermesInstance{}},
+		{&models.DocumentRevision{}, "document_revisions"},
+		{&models.Document{}, "documents"},
+		{&models.WorkspaceProject{}, "workspace_projects"},
+		{&models.HermesInstance{}, "hermes_instances"},
 	}
 
 	for _, table := range tables {

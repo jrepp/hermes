@@ -40,7 +40,7 @@ func TestLocalWorkspace_DocumentContentAPI(t *testing.T) {
 	WithTimeout(t, 2*time.Minute, 30*time.Second, func(ctx context.Context, progress func(string)) {
 		// Setup: Create temporary storage directory
 		storageDir := filepath.Join(os.TempDir(), fmt.Sprintf("hermes-content-test-%d", os.Getpid()))
-		err := os.MkdirAll(storageDir, 0755)
+		err := os.MkdirAll(storageDir, 0o755)
 		require.NoError(t, err, "Failed to create storage directory")
 		defer os.RemoveAll(storageDir)
 
@@ -49,9 +49,9 @@ func TestLocalWorkspace_DocumentContentAPI(t *testing.T) {
 		// Create docs and drafts directories
 		docsDir := filepath.Join(storageDir, "docs")
 		draftsDir := filepath.Join(storageDir, "drafts")
-		err = os.MkdirAll(docsDir, 0755)
+		err = os.MkdirAll(docsDir, 0o755)
 		require.NoError(t, err)
-		err = os.MkdirAll(draftsDir, 0755)
+		err = os.MkdirAll(draftsDir, 0o755)
 		require.NoError(t, err)
 
 		// Create users.json with test data
@@ -86,7 +86,7 @@ func TestLocalWorkspace_DocumentContentAPI(t *testing.T) {
 }`
 
 		usersPath := filepath.Join(storageDir, "users.json")
-		err = os.WriteFile(usersPath, []byte(usersJSON), 0644)
+		err = os.WriteFile(usersPath, []byte(usersJSON), 0o644)
 		require.NoError(t, err, "Failed to create users.json")
 
 		progress("Created users.json with test data")
@@ -110,7 +110,7 @@ func TestLocalWorkspace_DocumentContentAPI(t *testing.T) {
 		require.NoError(t, err, "Failed to create test database")
 
 		// Run migrations for all models
-		err = db.AutoMigrate(models.ModelsToAutoMigrate()...)
+		err = db.AutoMigrate(models.ToAutoMigrate()...)
 		require.NoError(t, err, "Failed to run migrations")
 
 		progress("Created test database and ran migrations")
@@ -180,7 +180,7 @@ trashed: false
 ---
 ` + initialContent
 
-		err = os.WriteFile(docPath, []byte(docContent), 0644)
+		err = os.WriteFile(docPath, []byte(docContent), 0o644)
 		require.NoError(t, err, "Failed to create document file")
 
 		progress("Created initial document content in local workspace") // Create mock server
@@ -204,7 +204,7 @@ trashed: false
 
 			handler := api.DocumentContentHandler(mockServer)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), http.NoBody)
 			reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, "owner@hermes.local")
 			req = req.WithContext(reqCtx)
 
@@ -228,7 +228,7 @@ trashed: false
 
 			handler := api.DocumentContentHandler(mockServer)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), http.NoBody)
 			reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, "contributor@hermes.local")
 			req = req.WithContext(reqCtx)
 
@@ -252,7 +252,7 @@ trashed: false
 
 			handler := api.DocumentContentHandler(mockServer)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), http.NoBody)
 			reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, "other@hermes.local")
 			req = req.WithContext(reqCtx)
 
@@ -359,7 +359,7 @@ trashed: false
 
 			handler := api.DocumentContentHandler(mockServer)
 
-			req := httptest.NewRequest(http.MethodGet, "/api/v2/documents/non-existent-doc/content", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/documents/non-existent-doc/content", http.NoBody)
 			reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, "owner@hermes.local")
 			req = req.WithContext(reqCtx)
 
@@ -397,7 +397,7 @@ trashed: false
 			handler := api.DocumentContentHandler(mockServer)
 
 			// Get content first time
-			req1 := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), nil)
+			req1 := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), http.NoBody)
 			reqCtx1 := context.WithValue(ctx, pkgauth.UserEmailKey, "owner@hermes.local")
 			req1 = req1.WithContext(reqCtx1)
 			rr1 := httptest.NewRecorder()
@@ -408,7 +408,7 @@ trashed: false
 			require.NoError(t, err)
 
 			// Get content second time
-			req2 := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), nil)
+			req2 := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/documents/%s/content", testDocID), http.NoBody)
 			reqCtx2 := context.WithValue(ctx, pkgauth.UserEmailKey, "contributor@hermes.local")
 			req2 = req2.WithContext(reqCtx2)
 			rr2 := httptest.NewRecorder()
@@ -469,7 +469,7 @@ func TestUnsupportedProvider_DocumentContentAPI(t *testing.T) {
 		t.Run("GET With Unsupported Provider Returns 501", func(t *testing.T) {
 			progress("Testing GET with unsupported provider")
 
-			req := httptest.NewRequest(http.MethodGet, "/api/v2/documents/test-doc/content", nil)
+			req := httptest.NewRequest(http.MethodGet, "/api/v2/documents/test-doc/content", http.NoBody)
 			reqCtx := context.WithValue(ctx, pkgauth.UserEmailKey, "test@hermes.local")
 			req = req.WithContext(reqCtx)
 

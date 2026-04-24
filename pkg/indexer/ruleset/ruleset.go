@@ -10,10 +10,10 @@ import (
 
 // Ruleset defines when and how to process a document revision.
 type Ruleset struct {
-	Name       string                 `hcl:"name,label"`
 	Conditions map[string]string      `hcl:"conditions,optional"`
-	Pipeline   []string               `hcl:"pipeline"`
 	Config     map[string]interface{} `hcl:"config,optional"`
+	Name       string                 `hcl:"name,label"`
+	Pipeline   []string               `hcl:"pipeline"`
 }
 
 // Rulesets is a collection of rulesets.

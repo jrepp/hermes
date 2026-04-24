@@ -28,15 +28,15 @@ type ProjectRelatedResourcesGetResponseExternalLink struct {
 type ProjectRelatedResourcesGetResponseHermesDocument struct {
 	FileID         string   `json:"FileID"`
 	Title          string   `json:"title"`
-	CreatedTime    int64    `json:"createdTime"`
 	DocumentType   string   `json:"documentType"`
 	DocumentNumber string   `json:"documentNumber"`
-	ModifiedTime   int64    `json:"modifiedTime"`
-	Owners         []string `json:"owners"`
 	Product        string   `json:"product"`
-	SortOrder      int      `json:"sortOrder"`
 	Status         string   `json:"status"`
 	Summary        string   `json:"summary"`
+	Owners         []string `json:"owners"`
+	CreatedTime    int64    `json:"createdTime"`
+	ModifiedTime   int64    `json:"modifiedTime"`
+	SortOrder      int      `json:"sortOrder"`
 }
 
 type ProjectRelatedResourcesPutRequest struct {
@@ -55,6 +55,7 @@ type ProjectRelatedResourcesPutRequestHermesDocument struct {
 	SortOrder int    `json:"sortOrder"`
 }
 
+//nolint:gocognit,gocyclo // Small REST multiplexer with method-specific resource branches.
 func projectsResourceRelatedResourcesHandler(
 	srv server.Server,
 	w http.ResponseWriter,
@@ -76,7 +77,7 @@ func projectsResourceRelatedResourcesHandler(
 	}
 
 	switch r.Method {
-	case "GET":
+	case httpMethodGet:
 		logArgs = append(logArgs, "method", r.Method)
 
 		// Get project's typed related resources.
@@ -102,26 +103,27 @@ func projectsResourceRelatedResourcesHandler(
 			HermesDocuments: []ProjectRelatedResourcesGetResponseHermesDocument{},
 		}
 		// Add external link related resources.
-		for _, elrr := range elrrs {
+		for i := range elrrs {
 			resp.ExternalLinks = append(resp.ExternalLinks,
 				ProjectRelatedResourcesGetResponseExternalLink{
-					Name:      elrr.Name,
-					URL:       elrr.URL,
-					SortOrder: elrr.RelatedResource.SortOrder,
+					Name:      elrrs[i].Name,
+					URL:       elrrs[i].URL,
+					SortOrder: elrrs[i].RelatedResource.SortOrder,
 				})
 		}
 		// Add Hermes document related resources.
-		for _, hdrr := range hdrrs {
-			logArgs = append(logArgs, "document_id", hdrr.Document.GetFileIdentifier())
+		for i := range hdrrs {
+			entryLogArgs := append([]any(nil), logArgs...)
+			entryLogArgs = append(entryLogArgs, "document_id", hdrrs[i].Document.GoogleFileID)
 			// Convert database model to a document. We don't need document review
 			// data for this endpoint.
 			doc, err := document.NewFromDatabaseModel(
-				hdrr.Document, models.DocumentReviews{}, models.DocumentGroupReviews{})
+				hdrrs[i].Document, models.DocumentReviews{}, models.DocumentGroupReviews{})
 			if err != nil {
 				srv.Logger.Error("error converting database model to document type",
 					append([]interface{}{
 						"error", err,
-					}, logArgs...)...)
+					}, entryLogArgs...)...)
 				http.Error(
 					w, "Error processing request", http.StatusInternalServerError)
 				return
@@ -138,7 +140,7 @@ func projectsResourceRelatedResourcesHandler(
 					ModifiedTime:   doc.ModifiedTime,
 					Owners:         doc.Owners,
 					Product:        doc.Product,
-					SortOrder:      hdrr.RelatedResource.SortOrder,
+					SortOrder:      hdrrs[i].RelatedResource.SortOrder,
 					Status:         doc.Status,
 					Summary:        doc.Summary,
 				})
@@ -159,9 +161,7 @@ func projectsResourceRelatedResourcesHandler(
 			return
 		}
 
-	case "POST":
-		fallthrough
-	case "PUT":
+	case httpMethodPost, httpMethodPut:
 		logArgs = append(logArgs, "method", r.Method)
 
 		// Decode request.
@@ -183,15 +183,15 @@ func projectsResourceRelatedResourcesHandler(
 				srv.Logger.Warn("project not found", logArgs...)
 				http.Error(w, "Project not found", http.StatusNotFound)
 				return
-			} else {
-				srv.Logger.Error("error getting project from database",
-					append([]interface{}{
-						"error", err,
-					}, logArgs...)...)
-				http.Error(
-					w, "Error processing request", http.StatusInternalServerError)
-				return
 			}
+
+			srv.Logger.Error("error getting project from database",
+				append([]interface{}{
+					"error", err,
+				}, logArgs...)...)
+			http.Error(
+				w, "Error processing request", http.StatusInternalServerError)
+			return
 		}
 
 		// Build external link related resources for database model.
@@ -199,7 +199,7 @@ func projectsResourceRelatedResourcesHandler(
 		for _, elrr := range req.ExternalLinks {
 			elrrs = append(elrrs, models.ProjectRelatedResourceExternalLink{
 				RelatedResource: models.ProjectRelatedResource{
-					ProjectID: uint(projectID),
+					ProjectID: projectID,
 					SortOrder: elrr.SortOrder,
 				},
 				Name: elrr.Name,

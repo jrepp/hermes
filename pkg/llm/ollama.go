@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
@@ -17,16 +16,16 @@ import (
 
 // OllamaClient implements the LLMClient interface for Ollama's local API.
 type OllamaClient struct {
-	baseURL    string
-	httpClient *http.Client
 	logger     hclog.Logger
+	httpClient *http.Client
+	baseURL    string
 }
 
 // OllamaConfig holds configuration for the Ollama client.
 type OllamaConfig struct {
-	BaseURL string        // Base URL (default: http://localhost:11434)
-	Timeout time.Duration // HTTP timeout (default: 300s for local generation)
-	Logger  hclog.Logger  // Logger (optional)
+	Logger  hclog.Logger
+	BaseURL string
+	Timeout time.Duration
 }
 
 // NewOllamaClient creates a new Ollama client.
@@ -115,9 +114,9 @@ func (c *OllamaClient) GenerateSummary(ctx context.Context, content string, opti
 	if resp.StatusCode != http.StatusOK {
 		var errResp OllamaErrorResponse
 		if err := json.Unmarshal(respBody, &errResp); err == nil && errResp.Error != "" {
-			return nil, fmt.Errorf("Ollama API error (%d): %s", resp.StatusCode, errResp.Error)
+			return nil, fmt.Errorf("ollama API error (%d): %s", resp.StatusCode, errResp.Error)
 		}
-		return nil, fmt.Errorf("Ollama API error (%d): %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("ollama API error (%d): %s", resp.StatusCode, string(respBody))
 	}
 
 	// Parse response
@@ -153,151 +152,27 @@ func (c *OllamaClient) GenerateSummary(ctx context.Context, content string, opti
 
 // buildPrompt builds the prompt for summary generation.
 func (c *OllamaClient) buildPrompt(content string, options steps.SummaryOptions) string {
-	// Truncate content if too long
-	maxContentChars := 40000
-	if len(content) > maxContentChars {
-		content = content[:maxContentChars] + "\n\n[Content truncated...]"
-	}
-
-	styleInstruction := ""
-	switch options.Style {
-	case "executive":
-		styleInstruction = "Provide an executive summary suitable for leadership."
-	case "technical":
-		styleInstruction = "Provide a technical summary with implementation details."
-	case "bullet-points":
-		styleInstruction = "Focus on concise bullet points of key information."
-	default:
-		styleInstruction = "Provide a clear and comprehensive summary."
-	}
-
-	return fmt.Sprintf(`%s
-
-Please analyze the following document and provide a summary:
-
-%s`, styleInstruction, content)
+	return buildSummaryPrompt(content, options)
 }
 
 // getSystemPrompt returns the system prompt for the LLM.
-func (c *OllamaClient) getSystemPrompt(options steps.SummaryOptions) string {
-	return `You are an expert document analyst. Your task is to provide accurate, well-structured summaries of documents.
-
-For each document, provide:
-1. EXECUTIVE SUMMARY: A concise 2-3 sentence overview
-2. KEY POINTS: The 3-5 most important takeaways (one per line, prefixed with "- ")
-3. TOPICS: Main topics covered (comma-separated)
-4. TAGS: Relevant tags for categorization (comma-separated)
-
-Format your response as follows:
-EXECUTIVE SUMMARY:
-[Your executive summary here]
-
-KEY POINTS:
-- [First key point]
-- [Second key point]
-- [Third key point]
-
-TOPICS:
-[topic1, topic2, topic3]
-
-TAGS:
-[tag1, tag2, tag3]`
+func (c *OllamaClient) getSystemPrompt(_ steps.SummaryOptions) string {
+	return summarySystemPrompt
 }
 
 // parseSummaryResponse parses the LLM response into a structured Summary.
 // Uses the same parser as OpenAI client for consistency.
 func (c *OllamaClient) parseSummaryResponse(content string) (*steps.Summary, error) {
-	summary := &steps.Summary{
-		KeyPoints:  []string{},
-		Topics:     []string{},
-		Tags:       []string{},
-		Confidence: 0.8, // Default confidence
-	}
-
-	lines := strings.Split(content, "\n")
-	currentSection := ""
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		lineUpper := strings.ToUpper(line)
-
-		// Detect section headers (check if line starts with the header)
-		if strings.HasPrefix(lineUpper, "EXECUTIVE SUMMARY") {
-			currentSection = "executive"
-			continue
-		}
-		if strings.HasPrefix(lineUpper, "KEY POINTS") {
-			currentSection = "keypoints"
-			continue
-		}
-		if strings.HasPrefix(lineUpper, "TOPICS") {
-			currentSection = "topics"
-			continue
-		}
-		if strings.HasPrefix(lineUpper, "TAGS") {
-			currentSection = "tags"
-			continue
-		}
-
-		// Parse content based on current section
-		switch currentSection {
-		case "executive":
-			if summary.ExecutiveSummary == "" {
-				summary.ExecutiveSummary = line
-			} else {
-				summary.ExecutiveSummary += " " + line
-			}
-
-		case "keypoints":
-			// Remove bullet prefixes
-			point := strings.TrimPrefix(line, "- ")
-			point = strings.TrimPrefix(point, "* ")
-			point = strings.TrimPrefix(point, "• ")
-			if point != line { // Only add if it had a bullet prefix
-				summary.KeyPoints = append(summary.KeyPoints, point)
-			}
-
-		case "topics":
-			// Split by commas
-			topics := strings.Split(line, ",")
-			for _, topic := range topics {
-				topic = strings.TrimSpace(topic)
-				if topic != "" {
-					summary.Topics = append(summary.Topics, topic)
-				}
-			}
-
-		case "tags":
-			// Split by commas
-			tags := strings.Split(line, ",")
-			for _, tag := range tags {
-				tag = strings.TrimSpace(tag)
-				if tag != "" {
-					summary.Tags = append(summary.Tags, tag)
-				}
-			}
-		}
-	}
-
-	// Validate we got the essential parts
-	if summary.ExecutiveSummary == "" {
-		return nil, fmt.Errorf("failed to extract executive summary from response")
-	}
-
-	return summary, nil
+	return parseSummaryResponse(content)
 }
 
 // Ollama API types
 
 type OllamaChatRequest struct {
+	Options  *OllamaOptions      `json:"options,omitempty"`
 	Model    string              `json:"model"`
 	Messages []OllamaChatMessage `json:"messages"`
 	Stream   bool                `json:"stream"`
-	Options  *OllamaOptions      `json:"options,omitempty"`
 }
 
 type OllamaChatMessage struct {

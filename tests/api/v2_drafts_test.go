@@ -74,7 +74,7 @@ func TestV2Drafts_List(t *testing.T) {
 	handler := pkgauth.Middleware(mockAuth, log)(apiv2.DraftsHandler(*srv))
 
 	// Create GET request to list drafts
-	req := httptest.NewRequest("GET", "/api/v2/drafts", nil)
+	req := httptest.NewRequest("GET", "/api/v2/drafts", http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)
@@ -145,7 +145,7 @@ func TestV2Drafts_GetSingle(t *testing.T) {
 	handler := pkgauth.Middleware(mockAuth, log)(apiv2.DraftsDocumentHandler(*srv))
 
 	// Create GET request for specific draft
-	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/drafts/%s", draft.GoogleFileID), nil)
+	req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/drafts/%s", draft.GoogleFileID), http.NoBody)
 	rr := httptest.NewRecorder()
 
 	handler.ServeHTTP(rr, req)

@@ -14,39 +14,24 @@ import (
 // DocumentContext holds all information about a document being processed
 // through the indexer pipeline. It accumulates state as commands execute.
 type DocumentContext struct {
-	// Source document from workspace provider
-	Document *workspace.Document
-
-	// UUID and Revision Tracking
-	DocumentUUID uuid.UUID                // Stable identifier across providers
-	ContentHash  string                   // SHA-256 hash for change detection
-	Revision     *models.DocumentRevision // Current revision info
-
-	// Database metadata
-	Metadata     *models.Document
-	Reviews      models.DocumentReviews
-	GroupReviews models.DocumentGroupReviews
-
-	// Processing state
-	Content     string             // Extracted document content
-	Transformed *document.Document // Transformed for search indexing
-
-	// Provider references
-	SourceProvider workspace.DocumentStorage
-	TargetProvider workspace.DocumentStorage
-	TargetFolderID string
-	TargetDocument *workspace.Document
-
-	// Migration tracking
-	MigrationStatus string        // "none", "source", "target", "conflict", "canonical"
-	ConflictInfo    *ConflictInfo // Details about migration conflicts
-
-	// Tracking
-	StartTime time.Time
-	Errors    []error
-
-	// Custom data that commands can use to pass information
-	Custom map[string]any
+	StartTime       time.Time
+	SourceProvider  workspace.DocumentStorage
+	TargetProvider  workspace.DocumentStorage
+	Transformed     *document.Document
+	Metadata        *models.Document
+	Custom          map[string]any
+	ConflictInfo    *ConflictInfo
+	TargetDocument  *workspace.Document
+	Document        *workspace.Document
+	Revision        *models.DocumentRevision
+	ContentHash     string
+	TargetFolderID  string
+	Content         string
+	MigrationStatus string
+	GroupReviews    models.DocumentGroupReviews
+	Errors          []error
+	Reviews         models.DocumentReviews
+	DocumentUUID    uuid.UUID
 }
 
 // ConflictInfo tracks migration conflicts between providers.
@@ -87,15 +72,11 @@ func (dc *DocumentContext) LoadMetadata(db *gorm.DB) error {
 	}
 
 	// Get group reviews
-	if err := dc.GroupReviews.Find(db, models.DocumentGroupReview{
+	return dc.GroupReviews.Find(db, models.DocumentGroupReview{
 		Document: models.Document{
 			GoogleFileID: dc.Document.ID,
 		},
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 // AddError adds an error to the context without failing immediately.

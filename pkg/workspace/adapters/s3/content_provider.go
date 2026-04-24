@@ -161,7 +161,7 @@ func (a *Adapter) CompareContent(ctx context.Context, providerID1, providerID2 s
 	} else {
 		// Simple heuristic: if content length is similar, it's a minor change
 		lenDiff := abs(len(content1.Body) - len(content2.Body))
-		totalLen := max(len(content1.Body), len(content2.Body))
+		totalLen := maxInt(len(content1.Body), len(content2.Body))
 		if float64(lenDiff)/float64(totalLen) < 0.1 {
 			hashDifference = "minor"
 		}
@@ -192,7 +192,7 @@ func abs(n int) int {
 	return n
 }
 
-func max(a, b int) int {
+func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}

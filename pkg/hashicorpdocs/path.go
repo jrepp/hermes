@@ -15,34 +15,27 @@ import (
 )
 
 // PATH contains metadata for documents based off of the HashiCorp Golden Path template.
+//
+//nolint:govet // Keep document metadata fields grouped for readability.
 type PATH struct {
-	BaseDoc `mapstructure:",squash"`
-
-	// Category is the golden path category (e.g., "Engineering", "Product Management", "TPM").
-	Category string `json:"category,omitempty"`
-
-	// TimeInvestment is the estimated time to complete the golden path.
-	TimeInvestment string `json:"timeInvestment,omitempty"`
-
-	// Prerequisites is a list of prerequisites for the golden path.
-	Prerequisites []string `json:"prerequisites,omitempty"`
-
-	// Steps is the number of steps in the golden path.
-	Steps int `json:"steps,omitempty"`
-
-	// RelatedPaths is a list of related golden paths.
-	RelatedPaths []string `json:"relatedPaths,omitempty"`
+	BaseDoc        `mapstructure:",squash"`
+	Category       string   `json:"category,omitempty"`
+	TimeInvestment string   `json:"timeInvestment,omitempty"`
+	Prerequisites  []string `json:"prerequisites,omitempty"`
+	RelatedPaths   []string `json:"relatedPaths,omitempty"`
+	Steps          int      `json:"steps,omitempty"`
 }
 
+//nolint:stylecheck // Receiver naming follows the rest of PATH methods.
 func (d PATH) GetCustomEditableFields() map[string]CustomDocTypeField {
 	return map[string]CustomDocTypeField{
 		"category": {
 			DisplayName: "Category",
-			Type:        "STRING",
+			Type:        fieldTypeStr,
 		},
 		"timeInvestment": {
 			DisplayName: "Time Investment",
-			Type:        "STRING",
+			Type:        fieldTypeStr,
 		},
 		"steps": {
 			DisplayName: "Number of Steps",
@@ -76,7 +69,7 @@ func (d PATH) MissingFields() []string {
 
 // NewPATH parses a Google Drive file based on the HashiCorp Golden Path template and
 // returns the resulting PATH struct.
-func NewPATH(f *drive.File, s *gw.Service, allFolders []string) (*PATH, error) {
+func NewPATH(f *drive.File, s *gw.Service, _ []string) (*PATH, error) {
 	r := &PATH{
 		BaseDoc: BaseDoc{
 			ObjectID:      f.Id,
@@ -135,6 +128,8 @@ func (d *PATH) parsePATHTitle(title string) {
 }
 
 // parsePATHSummary parses the summary of a PATH.
+//
+//nolint:gocognit // Summary extraction mirrors the document structure and is clearer inline.
 func (d *PATH) parsePATHSummary(body *docs.Body) {
 	// Find the Overview section.
 	summary := ""
@@ -165,7 +160,7 @@ func (d *PATH) parsePATHSummary(body *docs.Body) {
 			}
 		}
 
-		if inOverview && len(summary) > 0 && strings.HasPrefix(summary, "##") {
+		if inOverview && summary != "" && strings.HasPrefix(summary, "##") {
 			break
 		}
 	}
@@ -180,6 +175,8 @@ func (d *PATH) parsePATHSummary(body *docs.Body) {
 }
 
 // parsePATHHeader parses a HashiCorp PATH header for metadata.
+//
+//nolint:gocyclo // PATH header parsing is table-driven but still clearer inline.
 func (d *PATH) parsePATHHeader(doc *docs.Document) {
 	tables := gw.GetTables(doc.Body)
 
@@ -201,7 +198,7 @@ func (d *PATH) parsePATHHeader(doc *docs.Document) {
 
 					case strings.HasPrefix(label, "Created"):
 						// Best effort parsing - ignore errors
-						_ = d.parsePATHCreated(p)
+						_ = d.parsePATHCreated(p) //nolint:errcheck // Best-effort created date parsing.
 
 					case strings.HasPrefix(label, "Owner:") ||
 						strings.HasPrefix(label, "Owners:") ||
@@ -308,7 +305,7 @@ func (d *PATH) parsePATHSteps(p *docs.Paragraph) {
 	match := re.FindString(stepsText)
 	if match != "" {
 		// Best effort parsing - ignore errors
-		_, _ = fmt.Sscanf(match, "%d", &d.Steps)
+		_, _ = fmt.Sscanf(match, "%d", &d.Steps) //nolint:errcheck // Best-effort numeric extraction.
 	}
 }
 

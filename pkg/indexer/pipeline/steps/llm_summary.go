@@ -34,10 +34,10 @@ type LLMClient interface {
 
 // SummaryOptions holds options for summary generation.
 type SummaryOptions struct {
-	Model     string // e.g., "gpt-4o-mini", "claude-3-haiku"
-	MaxTokens int    // Maximum tokens for the summary
-	Language  string // Target language (default: "en")
-	Style     string // Summary style (e.g., "executive", "technical", "bullet-points")
+	Model     string
+	Language  string
+	Style     string
+	MaxTokens int
 }
 
 // Summary represents an LLM-generated summary.
@@ -310,7 +310,8 @@ func ptrInt(i int) *int {
 // MockLLMClient is a mock implementation for testing.
 type MockLLMClient struct{}
 
-func (m *MockLLMClient) GenerateSummary(ctx context.Context, content string, options SummaryOptions) (*Summary, error) {
+// GenerateSummary generates a mock summary for testing.
+func (m *MockLLMClient) GenerateSummary(_ context.Context, _ string, _ SummaryOptions) (*Summary, error) {
 	// Return a mock summary
 	return &Summary{
 		ExecutiveSummary: "This is a mock summary generated for testing purposes.",

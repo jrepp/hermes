@@ -59,9 +59,9 @@ func WithSearchProvider(provider search.Provider) Option {
 }
 
 // WithMaxParallelDocs sets the maximum parallel documents.
-func WithMaxParallelDocs(max int) Option {
+func WithMaxParallelDocs(limit int) Option {
 	return func(o *Orchestrator) {
-		o.maxParallelDocs = max
+		o.maxParallelDocs = limit
 	}
 }
 

@@ -19,127 +19,49 @@ import (
 	localadapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
 )
 
-type SharePointConfig struct {
-	ClientID        string `hcl:"client_id"`
-	ClientSecret    string `hcl:"client_secret"`
-	RedirectURI     string `hcl:"redirect_uri"`
-	TenantID        string `hcl:"tenant_id"`
-	SiteID          string `hcl:"site_id"`
-	DriveID         string `hcl:"drive_id"`
-	Domain          string `hcl:"domain"`           // Email Domain
-	DocsFolder      string `hcl:"docs_folder"`      // Folder for published documents
-	DraftsFolder    string `hcl:"drafts_folder"`    // Folder for draft documents
-	ShortcutsFolder string `hcl:"shortcuts_folder"` // Folder for document shortcuts
-
-	// GroupApprovals is the configuration for using Microsoft distribution lists as
-	// document approvers.
-	GroupApprovals *SharePointGroupApprovals `hcl:"group_approvals,block"`
-}
+const (
+	// Database types
+	dbTypePostgres = "postgres"
+)
 
 // Config contains the Hermes configuration.
 type Config struct {
-	// Algolia configures Hermes to work with Algolia.
-	Algolia *algoliaadapter.Config `hcl:"algolia,block"`
-
-	// BaseURL is the base URL used for building links.
-	BaseURL string `hcl:"base_url,optional"`
-
-	// Datadog contains the configuration for Datadog.
-	Datadog *Datadog `hcl:"datadog,block"`
-
-	// Dex configures Hermes to work with Dex OIDC.
-	Dex *dexadapter.Config `hcl:"dex,block"`
-
-	// DocumentTypes contain available document types.
-	DocumentTypes *DocumentTypes `hcl:"document_types,block"`
-
-	// Email configures Hermes to send email notifications.
-	Email *Email `hcl:"email,block"`
-
-	// Notifications configures the RFC-087 notification system.
-	Notifications *Notifications `hcl:"notifications,block"`
-
-	// FeatureFlags contain available feature flags.
-	FeatureFlags *FeatureFlags `hcl:"feature_flags,block"`
-
-	// GoogleAnalyticsTagID is the tag ID for Google Analytics
-	GoogleAnalyticsTagID string `hcl:"google_analytics_tag_id,optional"`
-
-	// GoogleWorkspace configures Hermes to work with Google Workspace.
-	GoogleWorkspace *GoogleWorkspace `hcl:"google_workspace,block"`
-
-	SharePoint *SharePointConfig `hcl:"sharepoint,block"`
-
-	// Indexer contains the configuration for the Hermes indexer.
-	Indexer *Indexer `hcl:"indexer,block"`
-
-	// Jira is the configuration for Hermes to work with Jira.
-	Jira *Jira `hcl:"jira,block"`
-
-	// LocalWorkspace configures local filesystem workspace storage.
-	LocalWorkspace *LocalWorkspace `hcl:"local_workspace,block"`
-
-	// LogFormat configures the logging format. Supported values are "standard" or
-	// "json".
-	LogFormat string `hcl:"log_format,optional"`
-
-	// Meilisearch configures Hermes to work with Meilisearch.
-	Meilisearch *Meilisearch `hcl:"meilisearch,block"`
-
-	// Migration configures the RFC-089 storage migration system.
-	Migration *Migration `hcl:"migration,block"`
-
-	// Bleve configures Hermes to work with Bleve (embedded full-text search).
-	Bleve *Bleve `hcl:"bleve,block"`
-
-	// Ollama configures Hermes to work with Ollama for local AI summarization.
-	Ollama *Ollama `hcl:"ollama,block"`
-
-	// Okta configures Hermes to work with Okta.
-	Okta *oktaadapter.Config `hcl:"okta,block"`
-
-	// Products contain available products.
-	Products *Products `hcl:"products,block"`
-
-	// Postgres configures PostgreSQL as the app database.
-	Postgres *Postgres `hcl:"postgres,block"`
-
-	// Providers specifies which workspace and search providers to use.
-	Providers *Providers `hcl:"providers,block"`
-
-	// Server contains the configuration for the Hermes server.
-	Server *Server `hcl:"server,block"`
-
-	// ShortenerBaseURL is the base URL for building short links.
-	ShortenerBaseURL string `hcl:"shortener_base_url,optional"`
-
-	// SupportLinkURL is the URL for the support documentation.
-	SupportLinkURL string `hcl:"support_link_url,optional"`
-
-	// SimplifiedMode indicates whether Hermes is running in simplified mode
-	// (zero-config, embedded database, local-first).
-	SimplifiedMode bool
-
-	// DatabaseType specifies which database to use: "postgres" or "sqlite".
-	DatabaseType string
-
-	// DBPath is the path to the SQLite database file (for simplified mode).
-	DBPath string
+	Meilisearch          *Meilisearch           `hcl:"meilisearch,block"`
+	Products             *Products              `hcl:"products,block"`
+	Datadog              *Datadog               `hcl:"datadog,block"`
+	Dex                  *dexadapter.Config     `hcl:"dex,block"`
+	Algolia              *algoliaadapter.Config `hcl:"algolia,block"`
+	Email                *Email                 `hcl:"email,block"`
+	Notifications        *Notifications         `hcl:"notifications,block"`
+	FeatureFlags         *FeatureFlags          `hcl:"feature_flags,block"`
+	Server               *Server                `hcl:"server,block"`
+	GoogleWorkspace      *GoogleWorkspace       `hcl:"google_workspace,block"`
+	Indexer              *Indexer               `hcl:"indexer,block"`
+	Jira                 *Jira                  `hcl:"jira,block"`
+	Providers            *Providers             `hcl:"providers,block"`
+	Postgres             *Postgres              `hcl:"postgres,block"`
+	DocumentTypes        *DocumentTypes         `hcl:"document_types,block"`
+	Migration            *Migration             `hcl:"migration,block"`
+	Bleve                *Bleve                 `hcl:"bleve,block"`
+	Ollama               *Ollama                `hcl:"ollama,block"`
+	Okta                 *oktaadapter.Config    `hcl:"okta,block"`
+	LocalWorkspace       *LocalWorkspace        `hcl:"local_workspace,block"`
+	ShortenerBaseURL     string                 `hcl:"shortener_base_url,optional"`
+	BaseURL              string                 `hcl:"base_url,optional"`
+	GoogleAnalyticsTagID string                 `hcl:"google_analytics_tag_id,optional"`
+	LogFormat            string                 `hcl:"log_format,optional"`
+	SupportLinkURL       string                 `hcl:"support_link_url,optional"`
+	DatabaseType         string
+	DBPath               string
+	SimplifiedMode       bool
 }
 
 // Datadog configures Hermes to send metrics to Datadog.
 type Datadog struct {
-	// Enabled enables sending metrics to Datadog.
-	Enabled bool `hcl:"enabled,optional"`
-
-	// Env overrides the Datadog environment.
-	Env string `hcl:"env,optional"`
-
-	// Service overrides the Datadog service name.
-	Service string `hcl:"service,optional"`
-
-	// ServiceVersion overrides the Datadog service version.
+	Env            string `hcl:"env,optional"`
+	Service        string `hcl:"service,optional"`
 	ServiceVersion string `hcl:"service_version,optional"`
+	Enabled        bool   `hcl:"enabled,optional"`
 }
 
 // DocumentTypes contain available document types.
@@ -201,16 +123,9 @@ type DocumentTypeCheck struct {
 }
 
 type DocumentTypeCustomField struct {
-	// Name is the name of the custom field. This is used as the custom field
-	// identifier.
-	Name string `hcl:"name" json:"name"`
-
-	// ReadOnly is true if the custom field can only be read.
-	ReadOnly bool `hcl:"read_only,optional" json:"readOnly"`
-
-	// Type is the type of custom field. Valid values are "people", "person", and
-	// "string".
-	Type string `hcl:"type" json:"type"`
+	Name     string `hcl:"name" json:"name"`
+	Type     string `hcl:"type" json:"type"`
+	ReadOnly bool   `hcl:"read_only,optional" json:"readOnly"`
 }
 
 // DocumentTypeLink is a document type link.
@@ -224,53 +139,18 @@ type DocumentTypeLink struct {
 
 // Email configures Hermes to send email notifications.
 type Email struct {
-	// Enabled enables sending email notifications.
-	Enabled bool `hcl:"enabled,optional"`
-
-	// FromAddress is the email address to send emails from.
 	FromAddress string `hcl:"from_address,optional"`
-
-	// BCCBatchSize is the maximum number of BCC recipients per email.
-	BCCBatchSize int `hcl:"bcc_batch_size,optional"`
-
-	// Retry configures email retry behavior.
-	Retry *EmailRetry `hcl:"retry,block"`
-}
-
-// EmailRetry configures email retry behavior with exponential backoff.
-type EmailRetry struct {
-	// MaxAttempts is the maximum number of send attempts (including initial attempt).
-	MaxAttempts int `hcl:"max_attempts,optional"`
-
-	// InitialDelayMinutes is the delay before the first retry in minutes.
-	// Subsequent retries use exponential backoff.
-	InitialDelayMinutes int `hcl:"initial_delay_minutes,optional"`
-
-	// FinalDelayMinutes is the delay before the final retry attempt in minutes.
-	FinalDelayMinutes int `hcl:"final_delay_minutes,optional"`
+	Enabled     bool   `hcl:"enabled,optional"`
 }
 
 // Notifications configures the RFC-087 notification system.
 type Notifications struct {
-	// Enabled enables the RFC-087 notification system.
-	Enabled bool `hcl:"enabled,optional"`
-
-	// Brokers is a comma-separated list of Kafka/Redpanda broker addresses.
-	Brokers string `hcl:"brokers,optional"`
-
-	// Topic is the Kafka/Redpanda topic for notifications.
-	Topic string `hcl:"topic,optional"`
-
-	// Backends is a comma-separated list of enabled notification backends
-	// (e.g., "audit,mail,slack").
-	Backends string `hcl:"backends,optional"`
-
-	// TemplatesPath is an optional path to override embedded templates.
-	// If not specified, uses embedded templates from internal/notifications/templates.
-	TemplatesPath string `hcl:"templates_path,optional"`
-
-	// SMTP configuration for mail backend
-	SMTP *SMTPConfig `hcl:"smtp,block"`
+	SMTP          *SMTPConfig `hcl:"smtp,block"`
+	Brokers       string      `hcl:"brokers,optional"`
+	Topic         string      `hcl:"topic,optional"`
+	Backends      string      `hcl:"backends,optional"`
+	TemplatesPath string      `hcl:"templates_path,optional"`
+	Enabled       bool        `hcl:"enabled,optional"`
 }
 
 // SMTPConfig configures SMTP for email notifications.
@@ -304,120 +184,52 @@ type FeatureFlags struct {
 }
 
 type FeatureFlag struct {
-	// Name is the name of the feature flag
-	Name string `hcl:"name,label"`
-	// Enabled enables the feature flag.
-	// Since the default value of uninitialized bool is false,
-	// *bool is used to check whether Enabled is set or not.
-	Enabled *bool `hcl:"enabled,optional"`
-	// Percentage defines the percentage of users that will have
-	// the feature flag enabled.
-	Percentage int `hcl:"percentage,optional"`
+	Enabled    *bool  `hcl:"enabled,optional"`
+	Name       string `hcl:"name,label"`
+	Percentage int    `hcl:"percentage,optional"`
 }
 
 // Indexer contains the configuration for the Hermes indexer.
 type Indexer struct {
-	// MaxParallelDocs is the maximum number of documents that will be
-	// simultaneously indexed.
-	MaxParallelDocs int `hcl:"max_parallel_docs,optional"`
-
-	// UpdateDocHeaders enables the indexer to automatically update document
-	// headers for Hermes-managed documents with Hermes document metadata.
-	UpdateDocHeaders bool `hcl:"update_doc_headers,optional"`
-
-	// UpdateDraftHeaders enables the indexer to automatically update document
-	// headers for draft documents with Hermes document metadata.
-	UpdateDraftHeaders bool `hcl:"update_draft_headers,optional"`
-
-	// UseDatabaseForDocumentData will use the database instead of Algolia as the
-	// source of truth for document data, if true.
-	UseDatabaseForDocumentData bool `hcl:"use_database_for_document_data,optional"`
-
-	// RFC-088: Event-driven indexer configuration
-
-	// RedpandaBrokers contains the Redpanda/Kafka broker addresses.
-	RedpandaBrokers []string `hcl:"redpanda_brokers,optional"`
-
-	// Topic is the Redpanda topic name for document revision events.
-	Topic string `hcl:"topic,optional"`
-
-	// ConsumerGroup is the Kafka consumer group for indexer workers.
-	ConsumerGroup string `hcl:"consumer_group,optional"`
-
-	// PollInterval is how often the outbox relay polls for pending events.
-	PollInterval time.Duration `hcl:"poll_interval,optional"`
-
-	// BatchSize is the maximum number of outbox entries to process per batch.
-	BatchSize int `hcl:"batch_size,optional"`
-
-	// Rulesets defines pipeline rulesets for document processing.
-	Rulesets []IndexerRuleset `hcl:"rulesets,block"`
+	Topic                      string           `hcl:"topic,optional"`
+	ConsumerGroup              string           `hcl:"consumer_group,optional"`
+	RedpandaBrokers            []string         `hcl:"redpanda_brokers,optional"`
+	Rulesets                   []IndexerRuleset `hcl:"rulesets,block"`
+	MaxParallelDocs            int              `hcl:"max_parallel_docs,optional"`
+	PollInterval               time.Duration    `hcl:"poll_interval,optional"`
+	BatchSize                  int              `hcl:"batch_size,optional"`
+	UpdateDocHeaders           bool             `hcl:"update_doc_headers,optional"`
+	UpdateDraftHeaders         bool             `hcl:"update_draft_headers,optional"`
+	UseDatabaseForDocumentData bool             `hcl:"use_database_for_document_data,optional"`
 }
 
 // IndexerRuleset defines when and how to process a document revision.
 type IndexerRuleset struct {
-	// Name is the ruleset identifier.
-	Name string `hcl:"name,label"`
-
-	// Conditions are the matching criteria for this ruleset.
-	Conditions map[string]string `hcl:"conditions,optional"`
-
-	// Pipeline is the ordered list of pipeline steps to execute.
-	Pipeline []string `hcl:"pipeline"`
-
-	// Config contains step-specific configuration.
-	Config map[string]interface{} `hcl:"config,optional"`
+	Conditions map[string]string      `hcl:"conditions,optional"`
+	Config     map[string]interface{} `hcl:"config,optional"`
+	Name       string                 `hcl:"name,label"`
+	Pipeline   []string               `hcl:"pipeline"`
 }
 
 // GoogleWorkspace is the configuration to work with Google Workspace.
 type GoogleWorkspace struct {
-	// Auth contains the authentication configuration for Google Workspace.
-	Auth *gw.Config `hcl:"auth,block"`
-
-	// CreateDocShortcuts enables creating a shortcut in the appropriate (per doc
-	// type and product) Shared Drive folder when a document is published.
-	CreateDocShortcuts bool `hcl:"create_doc_shortcuts,optional"`
-
-	// DocsFolder is the folder that contains all published documents.
-	DocsFolder string `hcl:"docs_folder"`
-
-	// Domain is the Google Workspace domain (e.g., "hashicorp.com").
-	Domain string `hcl:"domain"`
-
-	// DraftsFolder is the folder that contains all document drafts.
-	DraftsFolder string `hcl:"drafts_folder"`
-
-	// GoogleWorkspaceGroupApprovals is the configuration for using Google Groups as
-	// document approvers.
-	GroupApprovals *GoogleWorkspaceGroupApprovals `hcl:"group_approvals,block"`
-
-	// OAuth2 is the configuration to use OAuth 2.0 to access Google Workspace
-	// APIs.
-	OAuth2 *GoogleWorkspaceOAuth2 `hcl:"oauth2,block"`
-
-	// ShortcutsFolder is the folder that contains document shortcuts organized
-	// into doc type and product subfolders.
-	ShortcutsFolder string `hcl:"shortcuts_folder"`
-
-	// TemporaryDraftsFolder is a folder that will brieflly contain document
-	// drafts before they are moved to the DraftsFolder. This is used when
-	// create_docs_as_user is true in the auth block, so document notification
-	// settings will be the same as when a user creates their own document.
-	TemporaryDraftsFolder string `hcl:"temporary_drafts_folder,optional"`
-
-	// UserNotFoundEmail is the configuration to send an email when a user is not
-	// found in Google Workspace.
-	UserNotFoundEmail *GoogleWorkspaceUserNotFoundEmail `hcl:"user_not_found_email,block"`
+	Auth                  *gw.Config                        `hcl:"auth,block"`
+	GroupApprovals        *GoogleWorkspaceGroupApprovals    `hcl:"group_approvals,block"`
+	OAuth2                *GoogleWorkspaceOAuth2            `hcl:"oauth2,block"`
+	UserNotFoundEmail     *GoogleWorkspaceUserNotFoundEmail `hcl:"user_not_found_email,block"`
+	DocsFolder            string                            `hcl:"docs_folder"`
+	Domain                string                            `hcl:"domain"`
+	DraftsFolder          string                            `hcl:"drafts_folder"`
+	ShortcutsFolder       string                            `hcl:"shortcuts_folder"`
+	TemporaryDraftsFolder string                            `hcl:"temporary_drafts_folder,optional"`
+	CreateDocShortcuts    bool                              `hcl:"create_doc_shortcuts,optional"`
 }
 
 // GoogleWorkspaceGroupApprovals is the configuration for using Google Groups as
 // document approvers.
 type GoogleWorkspaceGroupApprovals struct {
-	// Enabled enables using Google Groups as document approvers.
-	Enabled bool `hcl:"enabled,optional"`
-
-	// SearchPrefix is the prefix to use when searching for Google Groups.
 	SearchPrefix string `hcl:"search_prefix,optional"`
+	Enabled      bool   `hcl:"enabled,optional"`
 }
 
 // SharePointGroupApprovals is the configuration for using Microsoft distribution lists as
@@ -448,48 +260,26 @@ type GoogleWorkspaceOAuth2 struct {
 // GoogleWorkspaceUserNotFoundEmail is the configuration to send an email when a
 // user is not found in Google Workspace.
 type GoogleWorkspaceUserNotFoundEmail struct {
-	// Body is the body of the email.
-	Body string `hcl:"body,optional"`
-
-	// Enabled enables sending an email when a user is not found in Google
-	// Workspace.
-	Enabled bool `hcl:"enabled,optional"`
-
-	// Subject is the subject of the email.
+	Body    string `hcl:"body,optional"`
 	Subject string `hcl:"subject,optional"`
+	Enabled bool   `hcl:"enabled,optional"`
 }
 
 // Jira is the configuration for Hermes to work with Jira.
 type Jira struct {
-	// APIToken is the API token for authenticating to Jira.
 	APIToken string `hcl:"api_token,optional"`
-
-	// Enabled enables integration with Jira.
-	Enabled bool `hcl:"enabled,optional"`
-
-	// URL is the URL of the Jira instance (ex: https://your-domain.atlassian.net).
-	URL string `hcl:"url,optional"`
-
-	// User is the user for authenticating to Jira.
-	User string `hcl:"user,optional"`
+	URL      string `hcl:"url,optional"`
+	User     string `hcl:"user,optional"`
+	Enabled  bool   `hcl:"enabled,optional"`
 }
 
 // Postgres configures PostgreSQL as the app database.
 type Postgres struct {
-	// Host is the database name.
-	DBName string `hcl:"dbname"`
-
-	// Host is the name of host to connect to.
-	Host string `hcl:"host"`
-
-	// Password is the password to be used.
+	DBName   string `hcl:"dbname"`
+	Host     string `hcl:"host"`
 	Password string `hcl:"password"`
-
-	// Port is the port number to connect to at the server host.
-	Port int `hcl:"port"`
-
-	// Host is the PostgreSQL user name to connect as.
-	User string `hcl:"user"`
+	User     string `hcl:"user"`
+	Port     int    `hcl:"port"`
 }
 
 // Products contain available products.
@@ -523,47 +313,23 @@ type Providers struct {
 
 // LocalWorkspace configures local filesystem workspace storage.
 type LocalWorkspace struct {
-	// BasePath is the root directory for all workspace data.
-	BasePath string `hcl:"base_path"`
-
-	// DocsPath is the directory containing published documents.
-	DocsPath string `hcl:"docs_path"`
-
-	// DraftsPath is the directory containing draft documents.
-	DraftsPath string `hcl:"drafts_path"`
-
-	// FoldersPath is the directory containing folder metadata.
-	FoldersPath string `hcl:"folders_path"`
-
-	// UsersPath is the directory containing user data.
-	UsersPath string `hcl:"users_path"`
-
-	// TokensPath is the directory containing auth tokens.
-	TokensPath string `hcl:"tokens_path"`
-
-	// Domain is the local domain name.
-	Domain string `hcl:"domain"`
-
-	// SMTP contains email configuration.
-	SMTP *LocalWorkspaceSMTP `hcl:"smtp,block"`
+	SMTP        *LocalWorkspaceSMTP `hcl:"smtp,block"`
+	BasePath    string              `hcl:"base_path"`
+	DocsPath    string              `hcl:"docs_path"`
+	DraftsPath  string              `hcl:"drafts_path"`
+	FoldersPath string              `hcl:"folders_path"`
+	UsersPath   string              `hcl:"users_path"`
+	TokensPath  string              `hcl:"tokens_path"`
+	Domain      string              `hcl:"domain"`
 }
 
 // LocalWorkspaceSMTP configures SMTP for the local workspace adapter.
 type LocalWorkspaceSMTP struct {
-	// Enabled enables SMTP email sending.
-	Enabled bool `hcl:"enabled,optional"`
-
-	// Host is the SMTP server hostname.
-	Host string `hcl:"host,optional"`
-
-	// Port is the SMTP server port.
-	Port int `hcl:"port,optional"`
-
-	// Username is the SMTP authentication username.
+	Host     string `hcl:"host,optional"`
 	Username string `hcl:"username,optional"`
-
-	// Password is the SMTP authentication password.
 	Password string `hcl:"password,optional"`
+	Port     int    `hcl:"port,optional"`
+	Enabled  bool   `hcl:"enabled,optional"`
 }
 
 // Meilisearch configures Hermes to work with Meilisearch.
@@ -596,22 +362,11 @@ type Bleve struct {
 
 // Migration configures the RFC-089 storage migration system.
 type Migration struct {
-	// Enabled indicates whether migration functionality is enabled.
-	Enabled bool `hcl:"enabled,optional"`
-
-	// PollInterval is how often the migration worker polls for pending tasks.
-	PollInterval time.Duration `hcl:"poll_interval,optional"`
-
-	// MaxConcurrency is the maximum number of concurrent migration tasks.
-	MaxConcurrency int `hcl:"max_concurrency,optional"`
-
-	// WriteStrategy determines how writes are distributed across providers.
-	// Options: "primary_only", "all_writable", "mirror"
-	WriteStrategy string `hcl:"write_strategy,optional"`
-
-	// ReadStrategy determines how reads are handled across providers.
-	// Options: "primary_only", "primary_fallback", "load_balance"
-	ReadStrategy string `hcl:"read_strategy,optional"`
+	WriteStrategy  string        `hcl:"write_strategy,optional"`
+	ReadStrategy   string        `hcl:"read_strategy,optional"`
+	PollInterval   time.Duration `hcl:"poll_interval,optional"`
+	MaxConcurrency int           `hcl:"max_concurrency,optional"`
+	Enabled        bool          `hcl:"enabled,optional"`
 }
 
 // Ollama configures Hermes to work with Ollama for local AI summarization.
@@ -635,7 +390,9 @@ type Server struct {
 // If profile is non-empty, loads config from profile block with that name.
 // If profile is empty and file has profiles, uses "default" profile.
 // If profile is empty and file has no profiles, loads from root level (backward compatible).
-func NewConfig(filename string, profile string) (*Config, error) {
+//
+//nolint:gocognit,gocyclo // Config loading preserves legacy/profile compatibility in one place.
+func NewConfig(filename, profile string) (*Config, error) {
 	// Read and parse file to check if it has profiles
 	src, err := os.ReadFile(filename)
 	if err != nil {
@@ -686,7 +443,7 @@ func NewConfig(filename string, profile string) (*Config, error) {
 				c.DBPath = filepath.Join(c.LocalWorkspace.BasePath, "data", "hermes.db")
 			}
 		} else if c.Postgres != nil && c.Postgres.Host != "" {
-			c.DatabaseType = "postgres"
+			c.DatabaseType = dbTypePostgres
 		}
 
 		return c, nil
@@ -698,39 +455,39 @@ func NewConfig(filename string, profile string) (*Config, error) {
 		selectedProfile = "default" // Default profile when file has profiles
 	}
 
-	// Find and decode the requested profile
+	// Find and decode the requested profile.
 	for _, block := range body.Blocks {
-		if block.Type == "profile" && len(block.Labels) > 0 && block.Labels[0] == selectedProfile {
-			// Found the profile, decode its body into Config
-			c := &Config{
-				Algolia:         &algoliaadapter.Config{},
-				Email:           &Email{},
-				FeatureFlags:    &FeatureFlags{},
-				GoogleWorkspace: &GoogleWorkspace{},
-				Indexer:         &Indexer{},
-				Okta:            &oktaadapter.Config{},
-				Server:          &Server{},
-			}
-			err := gohcl.DecodeBody(block.Body, nil, c)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode profile %q: %w", selectedProfile, err)
-			}
-
-			// Detect database type based on config
-			// If LocalWorkspace exists and no valid Postgres config, use SQLite
-			if c.LocalWorkspace != nil && (c.Postgres == nil || c.Postgres.Password == "") {
-				c.DatabaseType = "sqlite"
-				c.SimplifiedMode = true
-				// Set default DB path if not set
-				if c.DBPath == "" {
-					c.DBPath = filepath.Join(c.LocalWorkspace.BasePath, "data", "hermes.db")
-				}
-			} else if c.Postgres != nil && c.Postgres.Host != "" {
-				c.DatabaseType = "postgres"
-			}
-
-			return c, nil
+		if block.Type != "profile" || len(block.Labels) == 0 || block.Labels[0] != selectedProfile {
+			continue
 		}
+
+		c := &Config{
+			Algolia:         &algoliaadapter.Config{},
+			Email:           &Email{},
+			FeatureFlags:    &FeatureFlags{},
+			GoogleWorkspace: &GoogleWorkspace{},
+			Indexer:         &Indexer{},
+			Okta:            &oktaadapter.Config{},
+			Server:          &Server{},
+		}
+		err := gohcl.DecodeBody(block.Body, nil, c)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode profile %q: %w", selectedProfile, err)
+		}
+
+		// Detect database type based on config.
+		// If LocalWorkspace exists and no valid Postgres config, use SQLite.
+		if c.LocalWorkspace != nil && (c.Postgres == nil || c.Postgres.Password == "") {
+			c.DatabaseType = "sqlite"
+			c.SimplifiedMode = true
+			if c.DBPath == "" {
+				c.DBPath = filepath.Join(c.LocalWorkspace.BasePath, "data", "hermes.db")
+			}
+		} else if c.Postgres != nil && c.Postgres.Host != "" {
+			c.DatabaseType = dbTypePostgres
+		}
+
+		return c, nil
 	}
 
 	return nil, fmt.Errorf("profile %q not found in configuration", selectedProfile)

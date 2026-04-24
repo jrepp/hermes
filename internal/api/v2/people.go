@@ -18,10 +18,14 @@ type PeopleDataRequest struct {
 
 // PeopleDataHandler returns people related data from Microsoft Graph or Google
 // to the Hermes frontend.
+//
+//nolint:gocognit,gocyclo // Handler coordinates request parsing and directory lookup branches.
 func PeopleDataHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "POST":
+		// Using POST method to avoid logging the query in browser history
+		// and server logs
+		case httpMethodPost:
 			if err := decodeRequest(r, &req); err != nil {
 				srv.Logger.Error("error decoding people request", "error", err)
 				http.Error(w, fmt.Sprintf("Bad request: %q", err),
@@ -52,7 +56,7 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 					http.StatusInternalServerError)
 				return
 			}
-		case "GET":
+		case httpMethodGet:
 			query := r.URL.Query()
 			// Handle photo request (SharePoint only - Google uses direct photo URLs)
 			if query.Get("photo") != "" && srv.SharePoint != nil {

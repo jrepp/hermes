@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -11,6 +12,15 @@ import (
 
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
+
+// safeUintToInt converts uint to int, checking for overflow.
+// Returns 0 if the value would overflow.
+func safeUintToInt(u uint) int {
+	if u > math.MaxInt {
+		return 0
+	}
+	return int(u)
+}
 
 // EmbeddingsStep generates vector embeddings for document revisions.
 // Embeddings are stored in the document_embeddings table and enable semantic search.
@@ -32,10 +42,10 @@ type EmbeddingsClient interface {
 
 // EmbeddingsOptions holds options for embedding generation.
 type EmbeddingsOptions struct {
-	Model      string // e.g., "text-embedding-3-small", "text-embedding-3-large"
-	Dimensions int    // Vector dimensions (e.g., 1536, 3072)
-	ChunkSize  int    // Characters per chunk (0 = no chunking)
-	Provider   string // "openai", "bedrock", etc.
+	Model      string
+	Provider   string
+	Dimensions int
+	ChunkSize  int
 }
 
 // NewEmbeddingsStep creates a new embeddings step.
@@ -89,7 +99,7 @@ func (s *EmbeddingsStep) Execute(ctx context.Context, revision *models.DocumentR
 	}
 
 	// Check content length
-	if len(content) == 0 {
+	if content == "" {
 		s.logger.Warn("document has no content, skipping embeddings",
 			"document_uuid", revision.DocumentUUID,
 		)
@@ -121,7 +131,7 @@ func (s *EmbeddingsStep) generateSingleEmbedding(ctx context.Context, revision *
 	generationTime := int(time.Since(startTime).Milliseconds())
 
 	// Create embedding record
-	revisionID := int(revision.ID)
+	revisionID := safeUintToInt(revision.ID)
 	docEmbedding := &models.DocumentEmbedding{
 		DocumentID:       revision.DocumentID,
 		DocumentUUID:     &revision.DocumentUUID,
@@ -173,7 +183,7 @@ func (s *EmbeddingsStep) generateChunkedEmbeddings(ctx context.Context, revision
 	generationTime := int(time.Since(startTime).Milliseconds())
 
 	// Save each chunk's embedding
-	revisionID := int(revision.ID)
+	revisionID := safeUintToInt(revision.ID)
 	for i, embedding := range embeddings {
 		chunkIndex := i
 		docEmbedding := &models.DocumentEmbedding{
@@ -232,6 +242,8 @@ func (s *EmbeddingsStep) cleanContent(content string) string {
 }
 
 // chunkContent splits content into chunks of approximately the specified size.
+//
+//nolint:gocognit // Chunking logic is stateful and more readable kept in one function.
 func (s *EmbeddingsStep) chunkContent(content string, chunkSize int) []string {
 	var chunks []string
 
@@ -243,7 +255,7 @@ func (s *EmbeddingsStep) chunkContent(content string, chunkSize int) []string {
 		// If paragraph itself is too long, force split it
 		if len(para) > chunkSize {
 			// Save current chunk if exists
-			if len(currentChunk) > 0 {
+			if currentChunk != "" {
 				chunks = append(chunks, strings.TrimSpace(currentChunk))
 				currentChunk = ""
 			}
@@ -260,13 +272,13 @@ func (s *EmbeddingsStep) chunkContent(content string, chunkSize int) []string {
 		}
 
 		// If adding this paragraph would exceed chunk size
-		if len(currentChunk)+len(para)+2 > chunkSize && len(currentChunk) > 0 {
+		if len(currentChunk)+len(para)+2 > chunkSize && currentChunk != "" {
 			// Save current chunk and start new one
 			chunks = append(chunks, strings.TrimSpace(currentChunk))
 			currentChunk = para
 		} else {
 			// Add to current chunk
-			if len(currentChunk) > 0 {
+			if currentChunk != "" {
 				currentChunk += "\n\n" + para
 			} else {
 				currentChunk = para
@@ -275,7 +287,7 @@ func (s *EmbeddingsStep) chunkContent(content string, chunkSize int) []string {
 	}
 
 	// Add final chunk
-	if len(currentChunk) > 0 {
+	if currentChunk != "" {
 		chunks = append(chunks, strings.TrimSpace(currentChunk))
 	}
 
@@ -295,15 +307,17 @@ func (s *EmbeddingsStep) parseOptions(config map[string]interface{}) EmbeddingsO
 		opts.Model = model
 	}
 
-	if dimensions, ok := config["dimensions"].(int); ok {
+	switch dimensions := config["dimensions"].(type) {
+	case int:
 		opts.Dimensions = dimensions
-	} else if dimensions, ok := config["dimensions"].(float64); ok {
+	case float64:
 		opts.Dimensions = int(dimensions)
 	}
 
-	if chunkSize, ok := config["chunk_size"].(int); ok {
+	switch chunkSize := config["chunk_size"].(type) {
+	case int:
 		opts.ChunkSize = chunkSize
-	} else if chunkSize, ok := config["chunk_size"].(float64); ok {
+	case float64:
 		opts.ChunkSize = int(chunkSize)
 	}
 

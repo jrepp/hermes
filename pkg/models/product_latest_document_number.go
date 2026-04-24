@@ -10,18 +10,14 @@ import (
 
 // ProductLatestDocumentNumber is a model for latest product document numbers.
 type ProductLatestDocumentNumber struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-
-	DocumentType   DocumentType
-	DocumentTypeID uint `gorm:"primaryKey"`
-	Product        Product
-	ProductID      uint `gorm:"primaryKey"`
-
-	// LatestDocumentNumber is a the latest document number per product and
-	// document type.
-	LatestDocumentNumber int `gorm:"default:null;not null"`
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	DeletedAt            gorm.DeletedAt `gorm:"index"`
+	DocumentType         DocumentType
+	Product              Product
+	DocumentTypeID       uint `gorm:"primaryKey"`
+	ProductID            uint `gorm:"primaryKey"`
+	LatestDocumentNumber int  `gorm:"default:null;not null"`
 }
 
 // BeforeSave is a hook to find or create associations before saving.

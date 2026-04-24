@@ -14,12 +14,12 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
+//nolint:govet // Keep flag fields grouped for CLI readability.
 type AssignUUIDsCommand struct {
 	*base.Command
-
 	flagConfig    string
-	flagDryRun    bool
 	flagBatchSize int
+	flagDryRun    bool
 	flagVerbose   bool
 }
 
@@ -58,6 +58,7 @@ func (c *AssignUUIDsCommand) Flags() *base.FlagSet {
 	return f
 }
 
+//nolint:gocognit,gocyclo // Batch UUID backfill flow is easier to follow inline.
 func (c *AssignUUIDsCommand) Run(args []string) int {
 	logger, ui := c.Log, c.UI
 

@@ -153,7 +153,7 @@ func (pc *PrerequisiteChecker) checkHTTPService(ctx context.Context, svc Service
 	ctx, cancel := context.WithTimeout(ctx, svc.Timeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", svc.URL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", svc.URL, http.NoBody)
 	if err != nil {
 		if svc.Required {
 			pc.t.Fatalf("❌ Failed to create request for %s: %v", svc.Name, err)
@@ -264,13 +264,14 @@ func (pc *PrerequisiteChecker) checkMigrationTables(ctx context.Context, db *sql
 		FROM schema_migrations
 	`).Scan(&version)
 
-	if err != nil {
+	switch {
+	case err != nil:
 		// Table might not exist in old schemas
 		pc.t.Log("⚠️  Cannot verify schema_migrations table")
-	} else if version < 11 {
+	case version < 11:
 		pc.t.Fatalf("❌ Database migrations are outdated (version %d, need >= 11)\n"+
 			"   Run: make db-migrate", version)
-	} else {
+	default:
 		pc.t.Logf("✓ Database migrations up to date (version %d)", version)
 	}
 }
@@ -309,11 +310,12 @@ func (pc *PrerequisiteChecker) checkMinioBucket(ctx context.Context) {
 	cmd = exec.Command("docker", "exec", "hermes-minio", "mc", "version", "info", fmt.Sprintf("myminio/%s", pc.minioBucket))
 	output, err := cmd.CombinedOutput()
 
-	if err != nil {
+	switch {
+	case err != nil:
 		pc.t.Logf("⚠️  Cannot verify versioning status: %v", err)
-	} else if strings.Contains(string(output), "enabled") || strings.Contains(string(output), "Enabled") {
+	case strings.Contains(string(output), "enabled") || strings.Contains(string(output), "Enabled"):
 		pc.t.Log("✓ Bucket versioning is enabled")
-	} else {
+	default:
 		// Try to enable it
 		cmd = exec.Command("docker", "exec", "hermes-minio", "mc", "version", "enable", fmt.Sprintf("myminio/%s", pc.minioBucket))
 		if err := cmd.Run(); err != nil {

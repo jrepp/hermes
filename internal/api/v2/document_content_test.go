@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/server"
+	"github.com/hashicorp-forge/hermes/pkg/auth"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	"github.com/hashicorp-forge/hermes/pkg/workspace/adapters/mock"
@@ -30,10 +31,10 @@ func (m *mockProviderWithContentEditing) SupportsContentEditing() bool {
 func TestDocumentContentHandler_ProviderCapabilities(t *testing.T) {
 	tests := []struct {
 		name               string
-		supportsEditing    bool
 		method             string
-		expectedStatusCode int
 		expectedBody       string
+		expectedStatusCode int
+		supportsEditing    bool
 	}{
 		{
 			name:               "Provider does not support content editing - GET returns 501",
@@ -69,14 +70,14 @@ func TestDocumentContentHandler_ProviderCapabilities(t *testing.T) {
 			// Create test request
 			var req *http.Request
 			if tt.method == "GET" {
-				req = httptest.NewRequest(tt.method, "/api/v2/documents/test-doc-id/content", nil)
+				req = httptest.NewRequest(tt.method, "/api/v2/documents/test-doc-id/content", http.NoBody)
 			} else {
 				body := bytes.NewBufferString(`{"content":"test content"}`)
 				req = httptest.NewRequest(tt.method, "/api/v2/documents/test-doc-id/content", body)
 			}
 
 			// Add auth context
-			ctx := context.WithValue(req.Context(), "user_email", "test@example.com")
+			ctx := context.WithValue(req.Context(), auth.UserEmailKey, "test@example.com")
 			req = req.WithContext(ctx)
 
 			w := httptest.NewRecorder()
@@ -167,9 +168,9 @@ func TestParseDocumentContentURLPath(t *testing.T) {
 
 func TestIsOwnerOrContributor(t *testing.T) {
 	tests := []struct {
+		doc      *models.Document
 		name     string
 		email    string
-		doc      *models.Document
 		expected bool
 	}{
 		{

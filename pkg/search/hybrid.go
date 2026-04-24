@@ -83,12 +83,12 @@ func (h *HybridSearch) Search(ctx context.Context, query string, limit int, weig
 
 	// Perform both searches in parallel using goroutines (RFC-088 optimization)
 	type keywordResult struct {
-		results []KeywordSearchResult
 		err     error
+		results []KeywordSearchResult
 	}
 	type semanticResult struct {
-		results []SemanticSearchResult
 		err     error
+		results []SemanticSearchResult
 	}
 
 	keywordChan := make(chan keywordResult, 1)
@@ -97,13 +97,13 @@ func (h *HybridSearch) Search(ctx context.Context, query string, limit int, weig
 	// Launch keyword search in goroutine
 	go func() {
 		results, err := h.performKeywordSearch(ctx, query, limit*2) // Fetch more for merging
-		keywordChan <- keywordResult{results, err}
+		keywordChan <- keywordResult{err, results}
 	}()
 
 	// Launch semantic search in goroutine
 	go func() {
 		results, err := h.performSemanticSearch(ctx, query, limit*2) // Fetch more for merging
-		semanticChan <- semanticResult{results, err}
+		semanticChan <- semanticResult{err, results}
 	}()
 
 	// Wait for both searches to complete

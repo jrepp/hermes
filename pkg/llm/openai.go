@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
@@ -17,18 +16,18 @@ import (
 
 // OpenAIClient implements the LLMClient interface for OpenAI's API.
 type OpenAIClient struct {
+	logger     hclog.Logger
+	httpClient *http.Client
 	apiKey     string
 	baseURL    string
-	httpClient *http.Client
-	logger     hclog.Logger
 }
 
 // OpenAIConfig holds configuration for the OpenAI client.
 type OpenAIConfig struct {
-	APIKey  string        // OpenAI API key
-	BaseURL string        // Base URL (default: https://api.openai.com/v1)
-	Timeout time.Duration // HTTP timeout (default: 60s)
-	Logger  hclog.Logger  // Logger (optional)
+	Logger  hclog.Logger
+	APIKey  string
+	BaseURL string
+	Timeout time.Duration
 }
 
 // NewOpenAIClient creates a new OpenAI client.
@@ -159,141 +158,17 @@ func (c *OpenAIClient) GenerateSummary(ctx context.Context, content string, opti
 
 // buildPrompt builds the prompt for summary generation.
 func (c *OpenAIClient) buildPrompt(content string, options steps.SummaryOptions) string {
-	// Truncate content if too long (roughly 10k tokens max for input)
-	maxContentChars := 40000 // Roughly 10k tokens
-	if len(content) > maxContentChars {
-		content = content[:maxContentChars] + "\n\n[Content truncated...]"
-	}
-
-	styleInstruction := ""
-	switch options.Style {
-	case "executive":
-		styleInstruction = "Provide an executive summary suitable for leadership."
-	case "technical":
-		styleInstruction = "Provide a technical summary with implementation details."
-	case "bullet-points":
-		styleInstruction = "Focus on concise bullet points of key information."
-	default:
-		styleInstruction = "Provide a clear and comprehensive summary."
-	}
-
-	return fmt.Sprintf(`%s
-
-Please analyze the following document and provide a summary:
-
-%s`, styleInstruction, content)
+	return buildSummaryPrompt(content, options)
 }
 
 // getSystemPrompt returns the system prompt for the LLM.
-func (c *OpenAIClient) getSystemPrompt(options steps.SummaryOptions) string {
-	return `You are an expert document analyst. Your task is to provide accurate, well-structured summaries of documents.
-
-For each document, provide:
-1. EXECUTIVE SUMMARY: A concise 2-3 sentence overview
-2. KEY POINTS: The 3-5 most important takeaways (one per line, prefixed with "- ")
-3. TOPICS: Main topics covered (comma-separated)
-4. TAGS: Relevant tags for categorization (comma-separated)
-
-Format your response as follows:
-EXECUTIVE SUMMARY:
-[Your executive summary here]
-
-KEY POINTS:
-- [First key point]
-- [Second key point]
-- [Third key point]
-
-TOPICS:
-[topic1, topic2, topic3]
-
-TAGS:
-[tag1, tag2, tag3]`
+func (c *OpenAIClient) getSystemPrompt(_ steps.SummaryOptions) string {
+	return summarySystemPrompt
 }
 
 // parseSummaryResponse parses the LLM response into a structured Summary.
 func (c *OpenAIClient) parseSummaryResponse(content string) (*steps.Summary, error) {
-	summary := &steps.Summary{
-		KeyPoints:  []string{},
-		Topics:     []string{},
-		Tags:       []string{},
-		Confidence: 0.8, // Default confidence
-	}
-
-	lines := strings.Split(content, "\n")
-	currentSection := ""
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		lineUpper := strings.ToUpper(line)
-
-		// Detect section headers (check if line starts with the header, allowing for colons)
-		if strings.HasPrefix(lineUpper, "EXECUTIVE SUMMARY") {
-			currentSection = "executive"
-			continue
-		}
-		if strings.HasPrefix(lineUpper, "KEY POINTS") {
-			currentSection = "keypoints"
-			continue
-		}
-		if strings.HasPrefix(lineUpper, "TOPICS") {
-			currentSection = "topics"
-			continue
-		}
-		if strings.HasPrefix(lineUpper, "TAGS") {
-			currentSection = "tags"
-			continue
-		}
-
-		// Parse content based on current section
-		switch currentSection {
-		case "executive":
-			if summary.ExecutiveSummary == "" {
-				summary.ExecutiveSummary = line
-			} else {
-				summary.ExecutiveSummary += " " + line
-			}
-
-		case "keypoints":
-			// Remove bullet prefixes
-			point := strings.TrimPrefix(line, "- ")
-			point = strings.TrimPrefix(point, "* ")
-			point = strings.TrimPrefix(point, "• ")
-			if point != line { // Only add if it had a bullet prefix
-				summary.KeyPoints = append(summary.KeyPoints, point)
-			}
-
-		case "topics":
-			// Split by commas
-			topics := strings.Split(line, ",")
-			for _, topic := range topics {
-				topic = strings.TrimSpace(topic)
-				if topic != "" {
-					summary.Topics = append(summary.Topics, topic)
-				}
-			}
-
-		case "tags":
-			// Split by commas
-			tags := strings.Split(line, ",")
-			for _, tag := range tags {
-				tag = strings.TrimSpace(tag)
-				if tag != "" {
-					summary.Tags = append(summary.Tags, tag)
-				}
-			}
-		}
-	}
-
-	// Validate we got the essential parts
-	if summary.ExecutiveSummary == "" {
-		return nil, fmt.Errorf("failed to extract executive summary from response")
-	}
-
-	return summary, nil
+	return parseSummaryResponse(content)
 }
 
 // OpenAI API types
@@ -314,16 +189,16 @@ type OpenAIChatMessage struct {
 type OpenAIChatResponse struct {
 	ID      string             `json:"id"`
 	Object  string             `json:"object"`
-	Created int64              `json:"created"`
 	Model   string             `json:"model"`
 	Choices []OpenAIChatChoice `json:"choices"`
 	Usage   OpenAIUsage        `json:"usage"`
+	Created int64              `json:"created"`
 }
 
 type OpenAIChatChoice struct {
-	Index        int               `json:"index"`
 	Message      OpenAIChatMessage `json:"message"`
 	FinishReason string            `json:"finish_reason"`
+	Index        int               `json:"index"`
 }
 
 type OpenAIUsage struct {
@@ -343,7 +218,7 @@ type OpenAIErrorResponse struct {
 // Embeddings API
 
 // GenerateEmbeddings generates embeddings for the given text using OpenAI's embeddings API.
-func (c *OpenAIClient) GenerateEmbeddings(ctx context.Context, text string, model string, dimensions int) ([]float64, error) {
+func (c *OpenAIClient) GenerateEmbeddings(ctx context.Context, text, model string, dimensions int) ([]float64, error) {
 	startTime := time.Now()
 
 	// Prepare the request
@@ -509,15 +384,15 @@ type OpenAIEmbeddingsRequest struct {
 
 type OpenAIEmbeddingsResponse struct {
 	Object string                `json:"object"`
-	Data   []OpenAIEmbeddingData `json:"data"`
 	Model  string                `json:"model"`
+	Data   []OpenAIEmbeddingData `json:"data"`
 	Usage  OpenAIEmbeddingsUsage `json:"usage"`
 }
 
 type OpenAIEmbeddingData struct {
 	Object    string    `json:"object"`
-	Index     int       `json:"index"`
 	Embedding []float64 `json:"embedding"`
+	Index     int       `json:"index"`
 }
 
 type OpenAIEmbeddingsUsage struct {

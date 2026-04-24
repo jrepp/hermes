@@ -35,8 +35,8 @@ func TestRemoveStringSliceDuplicates(t *testing.T) {
 
 func TestStringSliceContains(t *testing.T) {
 	type testCase struct {
-		values []string
 		s      string
+		values []string
 		want   bool
 	}
 

@@ -28,7 +28,7 @@ func TestBedrockClient_GenerateSummary(t *testing.T) {
 	ctx := context.Background()
 
 	mockClient := &MockBedrockClient{
-		ConverseFunc: func(ctx context.Context, params *bedrockruntime.ConverseInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
+		ConverseFunc: func(_ context.Context, params *bedrockruntime.ConverseInput, _ ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
 			// Verify request
 			require.NotNil(t, params.ModelId)
 			assert.Equal(t, "us.anthropic.claude-3-7-sonnet-20250219-v1:0", *params.ModelId)
@@ -87,7 +87,7 @@ func TestBedrockClient_GenerateSummary_DefaultModel(t *testing.T) {
 	ctx := context.Background()
 
 	mockClient := &MockBedrockClient{
-		ConverseFunc: func(ctx context.Context, params *bedrockruntime.ConverseInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
+		ConverseFunc: func(_ context.Context, params *bedrockruntime.ConverseInput, _ ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
 			// Verify default model is used
 			require.NotNil(t, params.ModelId)
 			assert.Equal(t, "us.anthropic.claude-3-7-sonnet-20250219-v1:0", *params.ModelId)
@@ -125,7 +125,7 @@ func TestBedrockClient_GenerateSummary_EmptyResponse(t *testing.T) {
 	ctx := context.Background()
 
 	mockClient := &MockBedrockClient{
-		ConverseFunc: func(ctx context.Context, params *bedrockruntime.ConverseInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
+		ConverseFunc: func(_ context.Context, _ *bedrockruntime.ConverseInput, _ ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
 			return &bedrockruntime.ConverseOutput{
 				Output: &types.ConverseOutputMemberMessage{
 					Value: types.Message{
@@ -155,7 +155,7 @@ func TestBedrockClient_GenerateSummary_NoOutput(t *testing.T) {
 	ctx := context.Background()
 
 	mockClient := &MockBedrockClient{
-		ConverseFunc: func(ctx context.Context, params *bedrockruntime.ConverseInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
+		ConverseFunc: func(_ context.Context, _ *bedrockruntime.ConverseInput, _ ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
 			return &bedrockruntime.ConverseOutput{
 				Output: nil, // No output
 			}, nil
@@ -182,10 +182,10 @@ func TestBedrockClient_ParseSummaryResponse(t *testing.T) {
 	}
 
 	tests := []struct {
+		validate func(t *testing.T, summary *steps.Summary)
 		name     string
 		content  string
 		wantErr  bool
-		validate func(t *testing.T, summary *steps.Summary)
 	}{
 		{
 			name: "valid response",
@@ -348,7 +348,7 @@ func TestBedrockClient_DifferentModels(t *testing.T) {
 	for _, model := range models {
 		t.Run(model, func(t *testing.T) {
 			mockClient := &MockBedrockClient{
-				ConverseFunc: func(ctx context.Context, params *bedrockruntime.ConverseInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
+				ConverseFunc: func(_ context.Context, params *bedrockruntime.ConverseInput, _ ...func(*bedrockruntime.Options)) (*bedrockruntime.ConverseOutput, error) {
 					assert.Equal(t, model, *params.ModelId)
 
 					return &bedrockruntime.ConverseOutput{

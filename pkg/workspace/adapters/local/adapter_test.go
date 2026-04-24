@@ -328,8 +328,8 @@ func TestFilesystemAdapter(t *testing.T) {
 
 func TestFilesystemAdapterErrors(t *testing.T) {
 	tests := []struct {
-		name    string
 		test    func(*testing.T, *local.Adapter)
+		name    string
 		wantErr bool
 	}{
 		{

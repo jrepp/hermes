@@ -9,10 +9,10 @@ import (
 
 func TestConfigValidate(t *testing.T) {
 	tests := []struct {
-		name      string
 		config    *Config
-		wantErr   bool
+		name      string
 		errString string
+		wantErr   bool
 	}{
 		{
 			name: "valid config with all fields",

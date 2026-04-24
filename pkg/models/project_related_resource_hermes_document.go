@@ -7,14 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
+//nolint:govet // Keep ORM field grouping readable; alignment churn is low value here.
 type ProjectRelatedResourceHermesDocument struct {
 	gorm.Model
-
 	RelatedResource ProjectRelatedResource `gorm:"polymorphic:RelatedResource"`
-
-	// Document is the target related Hermes document.
-	Document   Document
-	DocumentID uint
+	DocumentID      uint
+	Document        Document
 }
 
 func (rr *ProjectRelatedResourceHermesDocument) Create(db *gorm.DB) error {

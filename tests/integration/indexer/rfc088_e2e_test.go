@@ -245,7 +245,7 @@ func TestRFC088_ChunkedEmbeddings(t *testing.T) {
 		mock.MatchedBy(func(texts []string) bool { return len(texts) >= 1 }),
 		"text-embedding-3-small",
 		1536,
-	).Return(func(ctx context.Context, texts []string, model string, dimensions int) [][]float64 {
+	).Return(func(_ context.Context, texts []string, _ string, _ int) [][]float64 {
 		embeddings := make([][]float64, len(texts))
 		for i := range embeddings {
 			embeddings[i] = make([]float64, 1536)
@@ -303,7 +303,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func createTestDocument(t *testing.T, db *gorm.DB, title, content string) *models.DocumentRevision {
+func createTestDocument(t *testing.T, db *gorm.DB, title, _ string) *models.DocumentRevision {
 	docUUID := uuid.New()
 	doc := &models.DocumentRevision{
 		DocumentUUID: docUUID,
@@ -352,7 +352,7 @@ func (m *MockOpenAIClient) GenerateSummary(ctx context.Context, content string, 
 	return args.Get(0).(*steps.Summary), args.Error(1)
 }
 
-func (m *MockOpenAIClient) GenerateEmbeddings(ctx context.Context, text string, model string, dimensions int) ([]float64, error) {
+func (m *MockOpenAIClient) GenerateEmbeddings(ctx context.Context, text, model string, dimensions int) ([]float64, error) {
 	args := m.Called(ctx, text, model, dimensions)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

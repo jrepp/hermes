@@ -64,6 +64,7 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+//nolint:gocognit,gocyclo // Agent registration and heartbeat flow is sequential by design.
 func (c *Command) Run(args []string) int {
 	f := c.Flags()
 	if err := f.Parse(args); err != nil {
@@ -160,7 +161,7 @@ func (c *Command) Run(args []string) int {
 	}
 
 	c.UI.Info(fmt.Sprintf("✓ Registered as indexer: %s", indexerID))
-	c.UI.Info(fmt.Sprintf("✓ API token: %s...", apiToken[:30]))
+	c.UI.Info(fmt.Sprintf("✓ API token: %s...", safeTruncate(apiToken, 30)))
 
 	// Start heartbeat loop
 	c.UI.Info(fmt.Sprintf("Starting heartbeat loop (interval: %v)", c.flagPollInterval))
@@ -173,15 +174,21 @@ func (c *Command) Run(args []string) int {
 		c.UI.Warn(fmt.Sprintf("Initial heartbeat failed: %v", err))
 	}
 
-	for {
-		select {
-		case <-ticker.C:
-			if err := sendHeartbeat(centralURL, indexerID, apiToken, c.Log); err != nil {
-				c.UI.Warn(fmt.Sprintf("Heartbeat failed: %v", err))
-			}
-			// TODO: Implement document indexing here
+	for range ticker.C {
+		if err := sendHeartbeat(centralURL, indexerID, apiToken, c.Log); err != nil {
+			c.UI.Warn(fmt.Sprintf("Heartbeat failed: %v", err))
 		}
+		// TODO: Implement document indexing here
 	}
+
+	return 0
+}
+
+func safeTruncate(s string, n int) string {
+	if len(s) < n {
+		return s
+	}
+	return s[:n]
 }
 
 func sendHeartbeat(centralURL, indexerID, apiToken string, logger hclog.Logger) error {
@@ -229,7 +236,7 @@ func makeRequest(method, url string, body interface{}, bearerToken string) (map[
 	if err != nil {
 		return nil, fmt.Errorf("error making request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -50,13 +50,10 @@ func DefaultConfig() *Config {
 
 // Provider implements ai.Provider using AWS Bedrock.
 type Provider struct {
-	cfg *Config
-	// client *bedrockruntime.Client // TODO: Uncomment when SDK added
-
-	// Usage tracking for cost control
+	lastReset     time.Time
+	cfg           *Config
 	dailyTokens   int
 	dailyRequests int
-	lastReset     time.Time
 }
 
 // NewProvider creates a new Bedrock AI provider.
@@ -84,7 +81,7 @@ func NewProvider(cfg *Config) (*Provider, error) {
 }
 
 // Summarize uses Claude Sonnet to generate document summaries.
-func (p *Provider) Summarize(ctx context.Context, req *ai.SummarizeRequest) (*ai.SummarizeResponse, error) {
+func (p *Provider) Summarize(_ context.Context, req *ai.SummarizeRequest) (*ai.SummarizeResponse, error) {
 	// Check rate limits
 	if err := p.checkLimits(); err != nil {
 		return nil, err
@@ -123,7 +120,7 @@ func (p *Provider) Summarize(ctx context.Context, req *ai.SummarizeRequest) (*ai
 }
 
 // GenerateEmbedding uses Titan Embeddings V2 to create vector embeddings.
-func (p *Provider) GenerateEmbedding(ctx context.Context, req *ai.EmbeddingRequest) (*ai.EmbeddingResponse, error) {
+func (p *Provider) GenerateEmbedding(_ context.Context, _ *ai.EmbeddingRequest) (*ai.EmbeddingResponse, error) {
 	// Check rate limits
 	if err := p.checkLimits(); err != nil {
 		return nil, err

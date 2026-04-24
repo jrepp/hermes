@@ -16,58 +16,35 @@ import (
 // - Core attributes: Universal metadata present across all document types
 // - Extensible attributes: Document-type-specific metadata in ExtendedMetadata map
 type DocumentMetadata struct {
-	// Global identifier (RFC-082)
-	UUID docid.UUID `json:"uuid"`
-
-	// Backend-specific identifier
-	ProviderType string `json:"providerType"` // "google", "local", "office365", "github"
-	ProviderID   string `json:"providerID"`   // Backend-specific ID
-
-	// Core Metadata
-	Name         string    `json:"name"`         // Document title
-	MimeType     string    `json:"mimeType"`     // MIME type (e.g., "text/markdown", "application/vnd.google-apps.document")
-	CreatedTime  time.Time `json:"createdTime"`  // When document was created
-	ModifiedTime time.Time `json:"modifiedTime"` // Last modification timestamp
-
-	// Ownership (unified identity aware)
-	Owner        *UserIdentity  `json:"owner,omitempty"`        // Individual owner (can be nil if team-owned)
-	OwningTeam   string         `json:"owningTeam,omitempty"`   // Team/group ownership (e.g., "Engineering Team")
-	Contributors []UserIdentity `json:"contributors,omitempty"` // Document contributors/collaborators
-
-	// Hierarchy and Organization
-	Parents []string `json:"parents,omitempty"` // Parent folder/directory IDs
-	Project string   `json:"project,omitempty"` // Project association (e.g., "agf-iac-remediation-poc")
-	Tags    []string `json:"tags,omitempty"`    // Universal tags for categorization and search
-
-	// Document Lifecycle
-	SyncStatus     string `json:"syncStatus"`               // Multi-backend sync: "canonical", "mirror", "conflict", "archived"
-	WorkflowStatus string `json:"workflowStatus,omitempty"` // Document workflow: "Draft", "In Review", "Published", "Deprecated"
-
-	// Multi-backend tracking
-	ContentHash string `json:"contentHash"` // SHA-256 for drift detection
-
-	// Extensible metadata for document-type-specific fields
-	// Examples: RFC id ("rfc-010"), sidebar_position (10), rfc_type ("Architecture")
+	CreatedTime      time.Time      `json:"createdTime"`
+	ModifiedTime     time.Time      `json:"modifiedTime"`
 	ExtendedMetadata map[string]any `json:"extendedMetadata,omitempty"`
+	Owner            *UserIdentity  `json:"owner,omitempty"`
+	OwningTeam       string         `json:"owningTeam,omitempty"`
+	MimeType         string         `json:"mimeType"`
+	Name             string         `json:"name"`
+	ProviderID       string         `json:"providerID"`
+	Project          string         `json:"project,omitempty"`
+	SyncStatus       string         `json:"syncStatus"`
+	WorkflowStatus   string         `json:"workflowStatus,omitempty"`
+	ContentHash      string         `json:"contentHash"`
+	ProviderType     string         `json:"providerType"`
+	Contributors     []UserIdentity `json:"contributors,omitempty"`
+	Parents          []string       `json:"parents,omitempty"`
+	Tags             []string       `json:"tags,omitempty"`
+	UUID             docid.UUID     `json:"uuid"`
 }
 
 // DocumentContent represents document content with backend-specific revision info
 type DocumentContent struct {
-	// Document identification
-	UUID       docid.UUID `json:"uuid"`
-	ProviderID string     `json:"providerID"`
-
-	// Content
-	Title  string `json:"title"`
-	Body   string `json:"body"`
-	Format string `json:"format"` // "markdown", "html", "plain", "richtext"
-
-	// Backend-specific revision information
+	LastModified    time.Time        `json:"lastModified"`
 	BackendRevision *BackendRevision `json:"backendRevision"`
-
-	// Content tracking
-	ContentHash  string    `json:"contentHash"` // SHA-256
-	LastModified time.Time `json:"lastModified"`
+	ProviderID      string           `json:"providerID"`
+	Title           string           `json:"title"`
+	Body            string           `json:"body"`
+	Format          string           `json:"format"`
+	ContentHash     string           `json:"contentHash"`
+	UUID            docid.UUID       `json:"uuid"`
 }
 
 // BackendRevision captures backend-specific revision metadata
@@ -97,23 +74,13 @@ type DocumentContent struct {
 //   - Retrieved via GitHub API with additional metadata
 //   - Example: "e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6"
 type BackendRevision struct {
-	ProviderType string `json:"providerType"` // "google", "git", "office365", "github"
-
-	// Backend-specific revision ID (varies by provider - see format docs above)
-	RevisionID string `json:"revisionID"`
-
-	// Revision metadata
-	ModifiedTime time.Time     `json:"modifiedTime"`
-	ModifiedBy   *UserIdentity `json:"modifiedBy,omitempty"`
-	Comment      string        `json:"comment,omitempty"`     // Git commit message, Drive comment, etc.
-	KeepForever  bool          `json:"keepForever,omitempty"` // Google Drive feature
-
-	// Backend-specific metadata (flexible for different systems)
-	// Examples:
-	//   - Google: {"published": true, "size": 12345}
-	//   - Git: {"tree": "abc123", "parent": "def456", "author": "..."}
-	//   - O365: {"versionLabel": "Major", "size": 12345, "comment": "..."}
-	Metadata map[string]any `json:"metadata,omitempty"`
+	ModifiedTime time.Time      `json:"modifiedTime"`
+	ModifiedBy   *UserIdentity  `json:"modifiedBy,omitempty"`
+	Metadata     map[string]any `json:"metadata,omitempty"`
+	ProviderType string         `json:"providerType"`
+	RevisionID   string         `json:"revisionID"`
+	Comment      string         `json:"comment,omitempty"`
+	KeepForever  bool           `json:"keepForever,omitempty"`
 }
 
 // UserIdentity represents a unified user identity across multiple auth providers
@@ -141,62 +108,58 @@ type AlternateIdentity struct {
 
 // FilePermission represents file access permissions
 type FilePermission struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Role  string `json:"role"` // "owner", "writer", "reader"
-	Type  string `json:"type"` // "user", "group", "domain", "anyone"
-
-	// Identity tracking
-	User *UserIdentity `json:"user,omitempty"`
+	User  *UserIdentity `json:"user,omitempty"`
+	ID    string        `json:"id"`
+	Email string        `json:"email"`
+	Role  string        `json:"role"`
+	Type  string        `json:"type"`
 }
 
 // Team represents a group/team (renamed from Group to avoid confusion)
 type Team struct {
-	ID          string `json:"id"`
-	Email       string `json:"email,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	MemberCount int    `json:"memberCount"`
-
-	// Provider-specific
+	ID           string `json:"id"`
+	Email        string `json:"email,omitempty"`
+	Name         string `json:"name"`
+	Description  string `json:"description,omitempty"`
 	ProviderType string `json:"providerType"`
 	ProviderID   string `json:"providerID"`
+	MemberCount  int    `json:"memberCount"`
 }
 
 // RevisionInfo represents a document revision for conflict detection
 type RevisionInfo struct {
-	UUID            docid.UUID       `json:"uuid"`
+	BackendRevision *BackendRevision `json:"backendRevision"`
 	ProviderType    string           `json:"providerType"`
 	ProviderID      string           `json:"providerID"`
-	BackendRevision *BackendRevision `json:"backendRevision"`
 	ContentHash     string           `json:"contentHash"`
-	SyncStatus      string           `json:"syncStatus"` // "canonical", "mirror", "conflict"
+	SyncStatus      string           `json:"syncStatus"`
+	UUID            docid.UUID       `json:"uuid"`
 }
 
 // ContentComparison represents a content comparison result
 type ContentComparison struct {
-	UUID           docid.UUID
 	Revision1      *BackendRevision
 	Revision2      *BackendRevision
-	ContentMatch   bool   // True if content hashes match
-	HashDifference string // "same", "minor", "major"
+	HashDifference string
+	UUID           docid.UUID
+	ContentMatch   bool
 }
 
 // SyncStatus represents document synchronization state
 type SyncStatus struct {
-	UUID         docid.UUID `json:"uuid"`
 	LastSyncTime time.Time  `json:"lastSyncTime"`
-	SyncState    string     `json:"syncState"` // "synced", "pending", "failed"
+	SyncState    string     `json:"syncState"`
 	ErrorMessage string     `json:"errorMessage,omitempty"`
+	UUID         docid.UUID `json:"uuid"`
 }
 
 // MergeRequest represents a request to merge two document UUIDs
 type MergeRequest struct {
-	SourceUUID     docid.UUID `json:"sourceUUID"`     // UUID to be merged (deprecated)
-	TargetUUID     docid.UUID `json:"targetUUID"`     // UUID to keep (canonical)
-	MergeRevisions bool       `json:"mergeRevisions"` // Merge revision histories
-	MergeStrategy  string     `json:"mergeStrategy"`  // "keep-target", "keep-source", "merge-all"
-	InitiatedBy    string     `json:"initiatedBy"`    // User email
+	MergeStrategy  string     `json:"mergeStrategy"`
+	InitiatedBy    string     `json:"initiatedBy"`
+	SourceUUID     docid.UUID `json:"sourceUUID"`
+	TargetUUID     docid.UUID `json:"targetUUID"`
+	MergeRevisions bool       `json:"mergeRevisions"`
 }
 
 // OAuthFlow represents OAuth flow initiation data

@@ -15,16 +15,24 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
+const (
+	// Provider status constants
+	providerStatusActive = "active"
+
+	// Provider health status constants
+	providerHealthStatusHealthy = "healthy"
+)
+
 // ProviderConfig represents a configured storage provider
 type ProviderConfig struct {
-	ID              int64  // Database ID
-	Name            string // Provider name (e.g., "local-primary", "s3-archive")
-	Type            string // Provider type (e.g., "local", "s3", "google")
-	IsPrimary       bool   // Is this the primary provider?
-	IsWritable      bool   // Can this provider accept writes?
-	Status          string // "active", "readonly", "disabled", "migrating"
-	HealthStatus    string // "healthy", "degraded", "unhealthy"
 	LastHealthCheck *time.Time
+	Name            string
+	Type            string
+	Status          string
+	HealthStatus    string
+	ID              int64
+	IsPrimary       bool
+	IsWritable      bool
 }
 
 // WriteStrategy determines how writes are handled across providers
@@ -55,16 +63,14 @@ type RouterConfig struct {
 
 // Router manages multiple storage providers and routes requests appropriately
 type Router struct {
-	db        *sql.DB
-	providers map[string]workspace.WorkspaceProvider // name -> provider
-	configs   map[string]*ProviderConfig             // name -> config
-	mu        sync.RWMutex
-	logger    hclog.Logger
-	config    *RouterConfig
-
-	// Health check
+	logger       hclog.Logger
+	db           *sql.DB
+	providers    map[string]workspace.WorkspaceProvider
+	configs      map[string]*ProviderConfig
+	config       *RouterConfig
 	healthTicker *time.Ticker
 	healthDone   chan struct{}
+	mu           sync.RWMutex
 }
 
 // NewRouter creates a new multi-provider router
@@ -161,7 +167,7 @@ func (r *Router) GetPrimaryProvider() (workspace.WorkspaceProvider, *ProviderCon
 	defer r.mu.RUnlock()
 
 	for name, config := range r.configs {
-		if config.IsPrimary && config.Status == "active" {
+		if config.IsPrimary && config.Status == providerStatusActive {
 			return r.providers[name], config, nil
 		}
 	}
@@ -176,7 +182,7 @@ func (r *Router) GetWritableProviders() []workspace.WorkspaceProvider {
 
 	var writable []workspace.WorkspaceProvider
 	for name, config := range r.configs {
-		if config.IsWritable && config.Status == "active" {
+		if config.IsWritable && config.Status == providerStatusActive {
 			writable = append(writable, r.providers[name])
 		}
 	}
@@ -191,7 +197,7 @@ func (r *Router) GetHealthyProviders() []workspace.WorkspaceProvider {
 
 	var healthy []workspace.WorkspaceProvider
 	for name, config := range r.configs {
-		if config.Status == "active" && config.HealthStatus == "healthy" {
+		if config.Status == providerStatusActive && config.HealthStatus == providerHealthStatusHealthy {
 			healthy = append(healthy, r.providers[name])
 		}
 	}
@@ -258,7 +264,7 @@ func (r *Router) readWithFallback(ctx context.Context, uuid docid.UUID) (*worksp
 	defer r.mu.RUnlock()
 
 	for name, providerConfig := range r.configs {
-		if providerConfig.IsPrimary || providerConfig.Status != "active" {
+		if providerConfig.IsPrimary || providerConfig.Status != providerStatusActive {
 			continue
 		}
 
@@ -457,13 +463,13 @@ func (r *Router) checkProviderHealth(ctx context.Context, name string) {
 
 	if err == nil || err.Error() == "resource not found: document with id \""+testUUID.String()+"\"" {
 		// Provider is healthy (either found or properly returned "not found")
-		if config.HealthStatus != "healthy" {
+		if config.HealthStatus != providerHealthStatusHealthy {
 			r.logger.Info("provider health recovered", "provider", name)
-			config.HealthStatus = "healthy"
+			config.HealthStatus = providerHealthStatusHealthy
 		}
 	} else {
 		// Provider is unhealthy
-		if config.HealthStatus == "healthy" {
+		if config.HealthStatus == providerHealthStatusHealthy {
 			r.logger.Warn("provider health degraded",
 				"provider", name,
 				"error", err)
@@ -472,6 +478,7 @@ func (r *Router) checkProviderHealth(ctx context.Context, name string) {
 	}
 
 	// Update database (best effort - ignore errors)
+	//nolint:errcheck
 	_, _ = r.db.Exec(`
 		UPDATE provider_storage
 		SET health_status = $1, last_health_check = $2, updated_at = NOW()

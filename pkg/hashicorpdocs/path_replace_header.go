@@ -41,6 +41,7 @@ import (
 //   |-----------------------------------------------------------------------------------|
 //
 
+//nolint:gocognit,gocyclo,gocritic // Header builder is verbose and intentionally explicit for Docs API requests.
 func (doc *PATH) ReplaceHeader(fileID, baseURL string, isDraft bool, provider workspace.Provider) error {
 	const (
 		tableRows = 10 // Number of rows in the header table.
@@ -226,7 +227,7 @@ func (doc *PATH) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wo
 }
 
 // buildTextInsertRequest builds a request to insert text.
-func buildTextInsertRequest(index int64, text string, bold bool, fontSize int64) *docs.Request {
+func buildTextInsertRequest(index int64, text string, _ bool, _ int64) *docs.Request {
 	return &docs.Request{
 		InsertText: &docs.InsertTextRequest{
 			Location: &docs.Location{
@@ -238,7 +239,7 @@ func buildTextInsertRequest(index int64, text string, bold bool, fontSize int64)
 }
 
 // buildLinkInsertRequest builds a request to insert a link.
-func buildLinkInsertRequest(index int64, text, linkURL string, fontSize int64) *docs.Request {
+func buildLinkInsertRequest(index int64, text, _ string, _ int64) *docs.Request {
 	return &docs.Request{
 		InsertText: &docs.InsertTextRequest{
 			Location: &docs.Location{

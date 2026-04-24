@@ -16,22 +16,22 @@ import (
 
 // DocumentMetadata stores metadata about a document.
 type DocumentMetadata struct {
+	CreatedTime    time.Time      `yaml:"created_time"`
+	ModifiedTime   time.Time      `yaml:"modified_time"`
+	Metadata       map[string]any `yaml:"metadata,omitempty"`
 	ID             string         `yaml:"id"`
 	Name           string         `yaml:"name"`
 	ParentFolderID string         `yaml:"parent_folder_id"`
-	CreatedTime    time.Time      `yaml:"created_time"`
-	ModifiedTime   time.Time      `yaml:"modified_time"`
 	Owner          string         `yaml:"owner"`
 	ThumbnailURL   string         `yaml:"thumbnail_url,omitempty"`
-	Metadata       map[string]any `yaml:"metadata,omitempty"`
 	Trashed        bool           `yaml:"trashed"`
 }
 
 // MetadataStore manages document metadata storage.
 // Metadata is stored as YAML frontmatter in the document files themselves.
 type MetadataStore struct {
-	basePath string
 	fs       FileSystem
+	basePath string
 	mu       sync.RWMutex
 }
 

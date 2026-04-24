@@ -3,7 +3,7 @@
 
 brokers        = "redpanda:9092"
 topic          = "hermes.notifications"
-consumer_group = "hermes-notifiers"
+consumer_group = "hermes-notifiers-mail"
 
 backends {
   mail {

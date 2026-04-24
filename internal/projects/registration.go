@@ -219,14 +219,14 @@ func RegisterAllProjects(ctx context.Context, db *gorm.DB, cfg *projectconfig.Co
 func calculateProjectConfigHash(cfg *projectconfig.Project) string {
 	// Create a canonical representation of the config for hashing
 	type hashData struct {
+		Providers    interface{}
+		Metadata     interface{}
 		Name         string
 		Title        string
 		FriendlyName string
 		ShortName    string
 		Description  string
 		Status       string
-		Providers    interface{}
-		Metadata     interface{}
 	}
 
 	data := hashData{
@@ -251,7 +251,7 @@ func calculateProjectConfigHash(cfg *projectconfig.Project) string {
 }
 
 // updateProjectFromConfig updates an existing project with new config values
-func updateProjectFromConfig(project *models.WorkspaceProject, cfg *projectconfig.Project, instanceUUID uuid.UUID, configHash string) error {
+func updateProjectFromConfig(project *models.WorkspaceProject, cfg *projectconfig.Project, _ uuid.UUID, configHash string) error {
 	project.Title = cfg.Title
 	project.FriendlyName = cfg.FriendlyName
 	project.ShortName = cfg.ShortName

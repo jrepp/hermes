@@ -213,7 +213,7 @@ func TestWithTransaction_Unit(t *testing.T) {
 	// is tested in integration tests
 	t.Run("Transaction helper exists", func(t *testing.T) {
 		// Just verify the function signature compiles
-		var fn func(*testing.T, *testing.T) = func(t1, t2 *testing.T) {
+		var fn = func(t1, t2 *testing.T) {
 			assert.NotNil(t, t1)
 			assert.NotNil(t, t2)
 		}
@@ -268,14 +268,14 @@ func TestContains_Unit(t *testing.T) {
 // TestModelToSearchDocument_AllStatuses tests all document status conversions
 func TestModelToSearchDocument_AllStatuses(t *testing.T) {
 	testCases := []struct {
-		status         models.DocumentStatus
 		expectedString string
+		status         models.DocumentStatus
 	}{
-		{models.WIPDocumentStatus, "WIP"},
-		{models.InReviewDocumentStatus, "In-Review"},
-		{models.ApprovedDocumentStatus, "Approved"},
-		{models.ObsoleteDocumentStatus, "Obsolete"},
-		{models.UnspecifiedDocumentStatus, "WIP"}, // Default case
+		{"WIP", models.WIPDocumentStatus},
+		{"In-Review", models.InReviewDocumentStatus},
+		{"Approved", models.ApprovedDocumentStatus},
+		{"Obsolete", models.ObsoleteDocumentStatus},
+		{"WIP", models.UnspecifiedDocumentStatus}, // Default case
 	}
 
 	for _, tc := range testCases {
@@ -456,14 +456,14 @@ func TestModelToSearchDocument_Timestamps(t *testing.T) {
 // TestModelToSearchDocument_DocNumber tests document number formatting
 func TestModelToSearchDocument_DocNumber(t *testing.T) {
 	testCases := []struct {
-		docNumber int
 		expected  string
+		docNumber int
 	}{
-		{0, "0"},
-		{1, "1"},
-		{42, "42"},
-		{100, "100"},
-		{9999, "9999"},
+		{"0", 0},
+		{"1", 1},
+		{"42", 42},
+		{"100", 100},
+		{"9999", 9999},
 	}
 
 	for _, tc := range testCases {

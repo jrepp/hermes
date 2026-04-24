@@ -17,109 +17,42 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
+const (
+	// FieldTypePeople represents a people custom field type.
+	FieldTypePeople = "PEOPLE"
+	// FieldTypeString represents a string custom field type.
+	FieldTypeString = "STRING"
+)
+
+// Document represents a Hermes document.
 type Document struct {
-	// ObjectID is the Google Drive file ID for the document.
-	ObjectID string `json:"objectID,omitempty"`
-
-	// Title is the title of the document. It does not contain the document number
-	// (e.g., "TF-123").
-	Title string `json:"title,omitempty"`
-
-	// DocType is the type of document (e.g., "RFC", "PRD").
-	DocType string `json:"docType,omitempty"`
-
-	// DocNumber is a unique document identifier containing a product/area
-	// abbreviation and a unique number (e.g., "TF-123").
-	DocNumber string `json:"docNumber,omitempty"`
-
-	// AppCreated should be set to true if the document was created through this
-	// application, and false if created directly in Google Docs and indexed
-	// afterwards.
-	AppCreated bool `json:"appCreated,omitempty"`
-
-	// ApprovedBy is a slice of email address strings for users that have approved
-	// the document.
-	ApprovedBy []string `json:"approvedBy,omitempty"`
-
-	// Approvers is a slice of email address strings for users whose approvals
-	// are requested for the document.
-	Approvers []string `json:"approvers,omitempty"`
-
-	// ApproverGroups is a slice of email address strings for groups whose
-	// approvals are requested for the document.
-	ApproverGroups []string `json:"approverGroups,omitempty"`
-
-	// ChangesRequestedBy is a slice of email address strings for users that have
-	// requested changes for the document.
-	ChangesRequestedBy []string `json:"changesRequestedBy,omitempty"`
-
-	// Contributors is a slice of email address strings for users who have
-	// contributed to the document.
-	Contributors []string `json:"contributors,omitempty"`
-
-	// Content is the plaintext content of the document.
-	Content string `json:"content,omitempty"`
-
-	// Created is the UTC time of document creation, in a "Jan 2, 2006" string
-	// format.
-	Created string `json:"created,omitempty"`
-
-	// CreatedTime is the time of document creation, in Unix time.
-	CreatedTime int64 `json:"createdTime,omitempty"`
-
-	// CustomEditableFields are all document-type-specific fields that are
-	// editable.
 	CustomEditableFields map[string]CustomDocTypeField `json:"customEditableFields,omitempty"`
-
-	// CustomFields are custom fields that contain values too.
-	// TODO: consolidate with CustomEditableFields.
-	CustomFields []CustomField `json:"customFields,omitempty"`
-
-	// FileRevisions is a map of file revision IDs to custom names.
-	FileRevisions map[string]string `json:"fileRevisions,omitempty"`
-
-	// TODO: LinkedDocs is not used yet.
-	LinkedDocs []string `json:"linkedDocs,omitempty"`
-
-	// Locked is true if the document is locked for editing.
-	Locked bool `json:"locked,omitempty"`
-
-	// MetaTags contains metadata tags that can be used for filtering in Algolia.
-	MetaTags []string `json:"_tags,omitempty"`
-
-	// Created is the time that the document was last modified, in Unix time.
-	ModifiedTime int64 `json:"modifiedTime,omitempty"`
-
-	// Owners is a slice of email address strings for document owners. Hermes
-	// generally only uses the first element as the document owner, but this is a
-	// slice for historical reasons as some HashiCorp documents have had multiple
-	// owners in the past.
-	Owners []string `json:"owners,omitempty"`
-
-	// OwnerPhotos is a slice of URL strings for the profile photos of the
-	// document owners (in the same order as the Owners field).
-	OwnerPhotos []string `json:"ownerPhotos,omitempty"`
-
-	// Product is the product or area that the document relates to.
-	Product string `json:"product,omitempty"`
-
-	// Summary is a summary of the document.
-	Summary string `json:"summary,omitempty"`
-
-	// Status is the status of the document (e.g., "WIP", "In-Review", "Approved",
-	// "Obsolete").
-	Status string `json:"status,omitempty"`
-
-	// Archived indicates whether the draft document is archived.
-	// Only applies to draft documents (status "WIP").
-	Archived bool `json:"archived,omitempty"`
-
-	// Tags is a slice of tags to help users discover the document based on their
-	// interests.
-	Tags []string `json:"tags,omitempty"`
-
-	// ThumbnailLink is a URL string for the document thumbnail image.
-	ThumbnailLink string `json:"thumbnailLink,omitempty"`
+	FileRevisions        map[string]string             `json:"fileRevisions,omitempty"`
+	Title                string                        `json:"title,omitempty"`
+	DocType              string                        `json:"docType,omitempty"`
+	DocNumber            string                        `json:"docNumber,omitempty"`
+	ThumbnailLink        string                        `json:"thumbnailLink,omitempty"`
+	Status               string                        `json:"status,omitempty"`
+	Summary              string                        `json:"summary,omitempty"`
+	Product              string                        `json:"product,omitempty"`
+	ObjectID             string                        `json:"objectID,omitempty"`
+	Content              string                        `json:"content,omitempty"`
+	Created              string                        `json:"created,omitempty"`
+	MetaTags             []string                      `json:"_tags,omitempty"`
+	ApproverGroups       []string                      `json:"approverGroups,omitempty"`
+	CustomFields         []CustomField                 `json:"customFields,omitempty"`
+	Contributors         []string                      `json:"contributors,omitempty"`
+	LinkedDocs           []string                      `json:"linkedDocs,omitempty"`
+	Tags                 []string                      `json:"tags,omitempty"`
+	ChangesRequestedBy   []string                      `json:"changesRequestedBy,omitempty"`
+	ApprovedBy           []string                      `json:"approvedBy,omitempty"`
+	Owners               []string                      `json:"owners,omitempty"`
+	OwnerPhotos          []string                      `json:"ownerPhotos,omitempty"`
+	Approvers            []string                      `json:"approvers,omitempty"`
+	CreatedTime          int64                         `json:"createdTime,omitempty"`
+	ModifiedTime         int64                         `json:"modifiedTime,omitempty"`
+	Locked               bool                          `json:"locked,omitempty"`
+	AppCreated           bool                          `json:"appCreated,omitempty"`
 }
 
 type CustomDocTypeField struct {
@@ -133,21 +66,10 @@ type CustomDocTypeField struct {
 }
 
 type CustomField struct {
-	// Name is the name of the custom field.
-	// TODO: consolidate with DisplayName and make corresponding frontend changes
-	//   to support this.
-	Name string `json:"name"`
-
-	// DisplayName is the display name of the custom field.
+	Value       any
+	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
-
-	// Type is the type of the custom field. It is used by the frontend to display
-	// the proper input component.
-	// Valid values: "PEOPLE", "STRING".
-	Type string `json:"type"`
-
-	// Value is the value of the custom field.
-	Value any
+	Type        string `json:"type"`
 }
 
 // NewFromAlgoliaObject creates a document from a document Algolia object.
@@ -167,82 +89,83 @@ func NewFromAlgoliaObject(
 	cefs := make(map[string]CustomDocTypeField)
 	cfs := []CustomField{}
 
-	if objDocType, ok := in["docType"]; !ok {
+	objDocType, ok := in["docType"]
+	if !ok {
 		return nil, fmt.Errorf("docType not found in object")
-	} else {
-		foundDocType := false
-		for _, dt := range docTypes {
-			if dt.Name == objDocType {
-				foundDocType = true
-				for _, cf := range dt.CustomFields {
-					ccName := strcase.ToLowerCamel(cf.Name)
-					switch cf.Type {
-					case "string":
-						if v, ok := in[ccName]; ok {
-							if v, ok := v.(string); ok {
-								cfs = append(cfs, CustomField{
-									Name:        ccName,
-									DisplayName: cf.Name,
-									Type:        "STRING",
-									Value:       v,
-								})
-							} else {
+	}
+
+	foundDocType := false
+	for _, dt := range docTypes {
+		if dt.Name == objDocType {
+			foundDocType = true
+			for _, cf := range dt.CustomFields {
+				ccName := strcase.ToLowerCamel(cf.Name)
+				switch cf.Type {
+				case "string":
+					if v, ok := in[ccName]; ok {
+						if v, ok := v.(string); ok {
+							cfs = append(cfs, CustomField{
+								Name:        ccName,
+								DisplayName: cf.Name,
+								Type:        FieldTypeString,
+								Value:       v,
+							})
+						} else {
+							return nil, fmt.Errorf(
+								"wrong type for custom field key %q, want string", ccName)
+						}
+					}
+					cefs[ccName] = CustomDocTypeField{
+						DisplayName: cf.Name,
+						Type:        FieldTypeString,
+					}
+				case "people":
+					cfVal := []string{}
+					if v, ok := in[ccName]; ok {
+						if reflect.TypeOf(v).Kind() == reflect.Slice {
+							slice, ok := v.([]any)
+							if !ok {
 								return nil, fmt.Errorf(
-									"wrong type for custom field key %q, want string", ccName)
+									"wrong type for custom field key %q, want []string",
+									ccName)
 							}
-						}
-						cefs[ccName] = CustomDocTypeField{
-							DisplayName: cf.Name,
-							Type:        "STRING",
-						}
-					case "people":
-						cfVal := []string{}
-						if v, ok := in[ccName]; ok {
-							if reflect.TypeOf(v).Kind() == reflect.Slice {
-								slice, ok := v.([]any)
-								if !ok {
+							for _, vv := range slice {
+								if vv, ok := vv.(string); ok {
+									cfVal = append(cfVal, vv)
+								} else {
 									return nil, fmt.Errorf(
 										"wrong type for custom field key %q, want []string",
 										ccName)
 								}
-								for _, vv := range slice {
-									if vv, ok := vv.(string); ok {
-										cfVal = append(cfVal, vv)
-									} else {
-										return nil, fmt.Errorf(
-											"wrong type for custom field key %q, want []string",
-											ccName)
-									}
-								}
-								cfs = append(cfs, CustomField{
-									Name:        ccName,
-									DisplayName: cf.Name,
-									Type:        "PEOPLE",
-									Value:       cfVal,
-								})
-							} else {
-								return nil, fmt.Errorf(
-									"wrong type for custom field key %q, want []string", dt.Name)
 							}
+							cfs = append(cfs, CustomField{
+								Name:        ccName,
+								DisplayName: cf.Name,
+								Type:        FieldTypePeople,
+								Value:       cfVal,
+							})
+						} else {
+							return nil, fmt.Errorf(
+								"wrong type for custom field key %q, want []string", dt.Name)
 						}
-						cefs[ccName] = CustomDocTypeField{
-							DisplayName: cf.Name,
-							Type:        "PEOPLE",
-						}
-					default:
-						return nil, fmt.Errorf(
-							"unknown type for custom field key %q: %s", dt.Name, cf.Type)
 					}
+					cefs[ccName] = CustomDocTypeField{
+						DisplayName: cf.Name,
+						Type:        FieldTypePeople,
+					}
+				default:
+					return nil, fmt.Errorf(
+						"unknown type for custom field key %q: %s", dt.Name, cf.Type)
 				}
-				break
 			}
+			break
 		}
-		if !foundDocType {
-			return nil, fmt.Errorf("invalid doc type: %s", objDocType)
-		}
-		doc.CustomFields = cfs
-		doc.CustomEditableFields = cefs
 	}
+	if !foundDocType {
+		return nil, fmt.Errorf("invalid doc type: %s", objDocType)
+	}
+	doc.CustomFields = cfs
+	doc.CustomEditableFields = cefs
 
 	return doc, nil
 }
@@ -316,11 +239,11 @@ func NewFromDatabaseModel(
 		var cType string
 		switch c.Type {
 		case models.PeopleDocumentTypeCustomFieldType:
-			cType = "PEOPLE"
+			cType = FieldTypePeople
 		case models.PersonDocumentTypeCustomFieldType:
 			cType = "PERSON"
 		case models.StringDocumentTypeCustomFieldType:
-			cType = "STRING"
+			cType = FieldTypeString
 		}
 		customEditableFields[strcase.ToLowerCamel(c.Name)] = CustomDocTypeField{
 			DisplayName: c.Name,
@@ -338,7 +261,7 @@ func NewFromDatabaseModel(
 		}
 		switch c.DocumentTypeCustomField.Type {
 		case models.PeopleDocumentTypeCustomFieldType:
-			cf.Type = "PEOPLE"
+			cf.Type = FieldTypePeople
 			var val []string
 			if err := json.Unmarshal([]byte(c.Value), &val); err != nil {
 				return nil, fmt.Errorf("error unmarshaling value for field %q: %w",
@@ -349,7 +272,7 @@ func NewFromDatabaseModel(
 			cf.Type = "PERSON"
 			cf.Value = c.Value
 		case models.StringDocumentTypeCustomFieldType:
-			cf.Type = "STRING"
+			cf.Type = FieldTypeString
 			cf.Value = c.Value
 		}
 		customFields = append(customFields, cf)
@@ -499,7 +422,7 @@ func (d Document) ToDatabaseModels(
 	customFields := []*models.DocumentCustomField{}
 	for _, cf := range d.CustomFields {
 		switch cf.Type {
-		case "STRING":
+		case FieldTypeString:
 			if v, ok := cf.Value.(string); ok {
 				customFields = append(customFields, &models.DocumentCustomField{
 					DocumentTypeCustomField: models.DocumentTypeCustomField{
@@ -649,7 +572,7 @@ func (d *Document) UpsertCustomField(cf CustomField) error {
 				return fmt.Errorf("incorrect display name for custom field")
 			}
 			switch cf.Type {
-			case "PEOPLE":
+			case FieldTypePeople:
 				if reflect.TypeOf(cf.Value).Kind() != reflect.Slice {
 					return fmt.Errorf("incorrect value type for custom field")
 				}
@@ -668,7 +591,7 @@ func (d *Document) UpsertCustomField(cf CustomField) error {
 				if len(slice) > 0 {
 					newCFs = append(newCFs, cf)
 				}
-			case "STRING":
+			case FieldTypeString:
 				v, ok := cf.Value.(string)
 				if !ok {
 					return fmt.Errorf("incorrect value type for custom field")

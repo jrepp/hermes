@@ -14,23 +14,28 @@ import (
 // PermissionProvider stub implementation
 // =========================================================================
 
-func (a *Adapter) ShareDocument(ctx context.Context, providerID, email, role string) error {
+// ShareDocument is a stub that returns an error for the S3 adapter.
+func (a *Adapter) ShareDocument(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("S3 adapter does not support permissions natively - delegate to API provider")
 }
 
-func (a *Adapter) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+// ShareDocumentWithDomain is a stub that returns an error for the S3 adapter.
+func (a *Adapter) ShareDocumentWithDomain(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("S3 adapter does not support permissions natively - delegate to API provider")
 }
 
-func (a *Adapter) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+// ListPermissions is a stub that returns an error for the S3 adapter.
+func (a *Adapter) ListPermissions(_ context.Context, _ string) ([]*workspace.FilePermission, error) {
 	return nil, fmt.Errorf("S3 adapter does not support permissions natively - delegate to API provider")
 }
 
-func (a *Adapter) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+// RemovePermission is a stub that returns an error for the S3 adapter.
+func (a *Adapter) RemovePermission(_ context.Context, _, _ string) error {
 	return fmt.Errorf("S3 adapter does not support permissions natively - delegate to API provider")
 }
 
-func (a *Adapter) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+// UpdatePermission is a stub that returns an error for the S3 adapter.
+func (a *Adapter) UpdatePermission(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("S3 adapter does not support permissions natively - delegate to API provider")
 }
 
@@ -38,19 +43,23 @@ func (a *Adapter) UpdatePermission(ctx context.Context, providerID, permissionID
 // PeopleProvider stub implementation
 // =========================================================================
 
-func (a *Adapter) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
+// SearchPeople is a stub that returns an error for the S3 adapter.
+func (a *Adapter) SearchPeople(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("S3 adapter does not support people directory - delegate to API provider")
 }
 
-func (a *Adapter) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+// GetPerson is a stub that returns an error for the S3 adapter.
+func (a *Adapter) GetPerson(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("S3 adapter does not support people directory - delegate to API provider")
 }
 
-func (a *Adapter) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
+// GetPersonByUnifiedID is a stub that returns an error for the S3 adapter.
+func (a *Adapter) GetPersonByUnifiedID(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("S3 adapter does not support people directory - delegate to API provider")
 }
 
-func (a *Adapter) ResolveIdentity(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+// ResolveIdentity is a stub that returns an error for the S3 adapter.
+func (a *Adapter) ResolveIdentity(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("S3 adapter does not support identity resolution - delegate to API provider")
 }
 
@@ -58,19 +67,23 @@ func (a *Adapter) ResolveIdentity(ctx context.Context, email string) (*workspace
 // TeamProvider stub implementation
 // =========================================================================
 
-func (a *Adapter) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+// ListTeams is a stub that returns an error for the S3 adapter.
+func (a *Adapter) ListTeams(_ context.Context, _, _ string, _ int64) ([]*workspace.Team, error) {
 	return nil, fmt.Errorf("S3 adapter does not support teams - delegate to API provider")
 }
 
-func (a *Adapter) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+// GetTeam is a stub that returns an error for the S3 adapter.
+func (a *Adapter) GetTeam(_ context.Context, _ string) (*workspace.Team, error) {
 	return nil, fmt.Errorf("S3 adapter does not support teams - delegate to API provider")
 }
 
-func (a *Adapter) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+// GetUserTeams is a stub that returns an error for the S3 adapter.
+func (a *Adapter) GetUserTeams(_ context.Context, _ string) ([]*workspace.Team, error) {
 	return nil, fmt.Errorf("S3 adapter does not support teams - delegate to API provider")
 }
 
-func (a *Adapter) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+// GetTeamMembers is a stub that returns an error for the S3 adapter.
+func (a *Adapter) GetTeamMembers(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("S3 adapter does not support teams - delegate to API provider")
 }
 
@@ -78,10 +91,12 @@ func (a *Adapter) GetTeamMembers(ctx context.Context, teamID string) ([]*workspa
 // NotificationProvider stub implementation
 // =========================================================================
 
-func (a *Adapter) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+// SendEmail is a stub that returns an error for the S3 adapter.
+func (a *Adapter) SendEmail(_ context.Context, _ []string, _, _, _ string) error {
 	return fmt.Errorf("S3 adapter does not support email sending - delegate to API provider or SMTP")
 }
 
-func (a *Adapter) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+// SendEmailWithTemplate is a stub that returns an error for the S3 adapter.
+func (a *Adapter) SendEmailWithTemplate(_ context.Context, _ []string, _ string, _ map[string]any) error {
 	return fmt.Errorf("S3 adapter does not support email sending - delegate to API provider or SMTP")
 }

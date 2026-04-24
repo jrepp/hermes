@@ -10,12 +10,9 @@ import (
 
 type ProjectRelatedResourceExternalLink struct {
 	gorm.Model
-
+	Name            string                 `gorm:"default:null;not null"`
+	URL             string                 `gorm:"default:null;not null"`
 	RelatedResource ProjectRelatedResource `gorm:"polymorphic:RelatedResource"`
-
-	Name string `gorm:"default:null;not null"`
-
-	URL string `gorm:"default:null;not null"`
 }
 
 type ProjectRelatedResourceExternalLinks []ProjectRelatedResourceExternalLink

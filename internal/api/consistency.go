@@ -66,6 +66,8 @@ func NewDocumentConsistencyChecker(
 // CheckDocumentConsistency validates a document across search and database.
 // This replaces the legacy compareAlgoliaAndDatabaseDocument function with
 // a provider-agnostic implementation.
+//
+//nolint:gocognit,gocyclo // Consistency checks intentionally keep validation branches explicit.
 func (c *DocumentConsistencyChecker) CheckDocumentConsistency(
 	ctx context.Context,
 	docID string,
@@ -182,6 +184,8 @@ func (c *DocumentConsistencyChecker) CheckDocumentConsistency(
 
 // compareDocuments performs detailed comparison between search and database documents.
 // This is the provider-agnostic version of compareAlgoliaAndDatabaseDocument.
+//
+//nolint:gocognit,gocyclo // Detailed field-by-field comparison is intentionally explicit for diagnostics.
 func (c *DocumentConsistencyChecker) compareDocuments(
 	searchDoc map[string]any,
 	dbDoc models.Document,
@@ -385,7 +389,8 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 			result, fmt.Errorf("error getting fileRevisions value: %w", err))
 	} else {
 		dbFileRevisions := make(map[string]string)
-		for _, fr := range dbDoc.FileRevisions {
+		for i := range dbDoc.FileRevisions {
+			fr := &dbDoc.FileRevisions[i]
 			dbFileRevisions[fr.GoogleDriveFileRevisionID] = fr.Name
 		}
 		if !reflect.DeepEqual(searchFileRevisions, dbFileRevisions) {

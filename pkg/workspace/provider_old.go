@@ -10,11 +10,11 @@ import (
 
 // PeopleSearchOptions contains advanced search parameters for directory searches.
 type PeopleSearchOptions struct {
-	Query      string   // Free-text search query
-	Fields     []string // Fields to return (e.g., "photos", "emailAddresses", "names")
-	Sources    []string // Source types (e.g., "DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE")
-	MaxResults int64    // Maximum number of results
-	PageToken  string   // Pagination token
+	Query      string
+	PageToken  string
+	Fields     []string
+	Sources    []string
+	MaxResults int64
 }
 
 // ProviderCapabilities defines optional features that a workspace provider may support.

@@ -109,14 +109,14 @@ func (d *DocumentType) Upsert(db *gorm.DB) error {
 // upsertAssocations creates required assocations.
 func (d *DocumentType) upsertAssocations(db *gorm.DB) error {
 	// Custom fields.
-	var customFields []DocumentTypeCustomField
-	for _, c := range d.CustomFields {
+	customFields := make([]DocumentTypeCustomField, 0, len(d.CustomFields))
+	for i := range d.CustomFields {
 		// Make sure document type name is provided.
-		c.DocumentType.Name = d.Name
-		if err := c.Upsert(db); err != nil {
+		d.CustomFields[i].DocumentType.Name = d.Name
+		if err := d.CustomFields[i].Upsert(db); err != nil {
 			return fmt.Errorf("error upserting document type custom field: %w", err)
 		}
-		customFields = append(customFields, c)
+		customFields = append(customFields, d.CustomFields[i])
 	}
 	d.CustomFields = customFields
 

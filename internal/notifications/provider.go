@@ -12,14 +12,14 @@ import (
 
 // NotificationRequest contains all data needed to create and send a notification
 type NotificationRequest struct {
-	Type            notifications.NotificationType
-	Recipients      []notifications.Recipient
 	TemplateContext map[string]any
-	Backends        []string
-	Priority        int
+	Type            notifications.NotificationType
 	DocumentUUID    string
 	ProjectID       string
 	UserID          string
+	Recipients      []notifications.Recipient
+	Backends        []string
+	Priority        int
 }
 
 // Provider handles notification creation and publishing
@@ -83,7 +83,7 @@ func (p *Provider) SendNotification(ctx context.Context, req NotificationRequest
 
 // SendEmail provides backward compatibility with existing email system
 // This is a simple pass-through that creates a basic notification
-func (p *Provider) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+func (p *Provider) SendEmail(ctx context.Context, to []string, _, subject, body string) error {
 	// Convert to recipients
 	recipients := make([]notifications.Recipient, len(to))
 	for i, email := range to {

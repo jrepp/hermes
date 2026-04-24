@@ -13,36 +13,22 @@ import (
 // DocumentRevisionOutbox stores events for reliable document revision processing.
 // Implements the transactional outbox pattern for event-driven indexing.
 type DocumentRevisionOutbox struct {
-	ID uint `gorm:"primaryKey" json:"id"`
-
-	// Document identification
-	RevisionID   uint      `gorm:"not null;index:idx_revision_outbox_revision_id" json:"revisionId"`
-	DocumentUUID uuid.UUID `gorm:"type:uuid;not null;index:idx_revision_outbox_document_uuid" json:"documentUuid"`
-	DocumentID   string    `gorm:"type:varchar(500);not null" json:"documentId"`
-
-	// Idempotency key: {document_uuid}:{content_hash}
-	IdempotentKey string `gorm:"type:varchar(128);not null;uniqueIndex" json:"idempotentKey"`
-	ContentHash   string `gorm:"type:varchar(64);not null" json:"contentHash"`
-
-	// Event metadata
-	EventType    string `gorm:"type:varchar(50);not null" json:"eventType"`    // 'revision.created', 'revision.updated', 'revision.deleted'
-	ProviderType string `gorm:"type:varchar(50);not null" json:"providerType"` // 'google', 'local', 's3', etc.
-
-	// Event payload (full revision data + metadata)
-	Payload map[string]interface{} `gorm:"serializer:json;type:jsonb;not null" json:"payload"`
-
-	// Outbox state
-	Status          string     `gorm:"type:varchar(20);not null;default:'pending';index:idx_revision_outbox_pending,where:status = 'pending'" json:"status"` // 'pending', 'published', 'failed'
-	PublishedAt     *time.Time `json:"publishedAt,omitempty"`
-	PublishAttempts int        `gorm:"default:0" json:"publishAttempts"`
-	LastError       string     `gorm:"type:text" json:"lastError,omitempty"`
-
-	// Timestamps
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-
-	// Associations
-	Revision *DocumentRevision `gorm:"foreignKey:RevisionID" json:"-"`
+	UpdatedAt       time.Time              `json:"updatedAt"`
+	CreatedAt       time.Time              `json:"createdAt"`
+	Payload         map[string]interface{} `gorm:"serializer:json;type:jsonb;not null" json:"payload"`
+	Revision        *DocumentRevision      `gorm:"foreignKey:RevisionID" json:"-"`
+	PublishedAt     *time.Time             `json:"publishedAt,omitempty"`
+	IdempotentKey   string                 `gorm:"type:varchar(128);not null;uniqueIndex" json:"idempotentKey"`
+	EventType       string                 `gorm:"type:varchar(50);not null" json:"eventType"`
+	ProviderType    string                 `gorm:"type:varchar(50);not null" json:"providerType"`
+	ContentHash     string                 `gorm:"type:varchar(64);not null" json:"contentHash"`
+	Status          string                 `gorm:"type:varchar(20);not null;default:'pending';index:idx_revision_outbox_pending,where:status = 'pending'" json:"status"`
+	LastError       string                 `gorm:"type:text" json:"lastError,omitempty"`
+	DocumentID      string                 `gorm:"type:varchar(500);not null" json:"documentId"`
+	ID              uint                   `gorm:"primaryKey" json:"id"`
+	PublishAttempts int                    `gorm:"default:0" json:"publishAttempts"`
+	RevisionID      uint                   `gorm:"not null;index:idx_revision_outbox_revision_id" json:"revisionId"`
+	DocumentUUID    uuid.UUID              `gorm:"type:uuid;not null;index:idx_revision_outbox_document_uuid" json:"documentUuid"`
 }
 
 // TableName specifies the table name.
@@ -82,7 +68,7 @@ func ComputeContentHash(payload interface{}) (string, error) {
 }
 
 // BeforeCreate hook to ensure required fields.
-func (o *DocumentRevisionOutbox) BeforeCreate(tx *gorm.DB) error {
+func (o *DocumentRevisionOutbox) BeforeCreate(_ *gorm.DB) error {
 	// Validate required fields
 	if o.DocumentUUID == uuid.Nil {
 		return fmt.Errorf("document_uuid is required")

@@ -17,8 +17,10 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
+const redpandaTestTopic = "test.document-revisions"
+
 // createKafkaTopic creates a Kafka topic for testing.
-func createKafkaTopic(t *testing.T, ctx context.Context, brokers string, topicName string) {
+func createKafkaTopic(ctx context.Context, t *testing.T, brokers string) {
 	adminClient, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers),
 	)
@@ -28,7 +30,7 @@ func createKafkaTopic(t *testing.T, ctx context.Context, brokers string, topicNa
 	createTopicsReq := kmsg.NewCreateTopicsRequest()
 	createTopicsReq.Topics = []kmsg.CreateTopicsRequestTopic{
 		{
-			Topic:             topicName,
+			Topic:             redpandaTestTopic,
 			NumPartitions:     1,
 			ReplicationFactor: 1,
 		},
@@ -67,7 +69,7 @@ func TestRelay_PublishToRedpanda(t *testing.T) {
 
 	// Create topic
 	topic := "test.document-revisions"
-	createKafkaTopic(t, ctx, brokers, topic)
+	createKafkaTopic(ctx, t, brokers)
 
 	// Setup test database
 	db := setupTestDB(t)
@@ -192,7 +194,7 @@ func TestRelay_MultipleBatches(t *testing.T) {
 
 	// Create topic
 	topic := "test.document-revisions"
-	createKafkaTopic(t, ctx, brokers, topic)
+	createKafkaTopic(ctx, t, brokers)
 
 	// Setup test database
 	db := setupTestDB(t)
@@ -261,7 +263,10 @@ func TestRelay_FailureHandling(t *testing.T) {
 		t.Skip("skipping integration test in short mode")
 	}
 
-	ctx := context.Background()
+	// Use a short timeout to prevent hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	logger := hclog.NewNullLogger()
 
 	// Setup test database (no Redpanda - will fail to connect)
@@ -345,7 +350,7 @@ func TestRelay_RetryFailed(t *testing.T) {
 
 	// Create topic
 	topic := "test.document-revisions"
-	createKafkaTopic(t, ctx, brokers, topic)
+	createKafkaTopic(ctx, t, brokers)
 
 	// Setup test database
 	db := setupTestDB(t)
@@ -425,7 +430,7 @@ func TestRelay_CleanupOldEntries_WithRedpanda(t *testing.T) {
 
 	// Create topic
 	topic := "test.document-revisions"
-	createKafkaTopic(t, ctx, brokers, topic)
+	createKafkaTopic(ctx, t, brokers)
 
 	// Setup test database
 	db := setupTestDB(t)

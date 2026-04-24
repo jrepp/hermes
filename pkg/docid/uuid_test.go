@@ -153,8 +153,8 @@ func TestUUID_MarshalJSON(t *testing.T) {
 
 	t.Run("in struct", func(t *testing.T) {
 		type testStruct struct {
-			ID   UUID   `json:"id"`
 			Name string `json:"name"`
+			ID   UUID   `json:"id"`
 		}
 		s := testStruct{
 			ID:   MustParseUUID("550e8400-e29b-41d4-a716-446655440000"),
@@ -203,8 +203,8 @@ func TestUUID_UnmarshalJSON(t *testing.T) {
 
 	t.Run("in struct", func(t *testing.T) {
 		type testStruct struct {
-			ID   UUID   `json:"id"`
 			Name string `json:"name"`
+			ID   UUID   `json:"id"`
 		}
 		var s testStruct
 		data := []byte(`{"id":"550e8400-e29b-41d4-a716-446655440000","name":"test"}`)

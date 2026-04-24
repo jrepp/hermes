@@ -10,12 +10,11 @@ import (
 
 type DocumentTypeCustomField struct {
 	gorm.Model
-
 	Name           string
-	DocumentTypeID uint
 	DocumentType   DocumentType
-	ReadOnly       bool
+	DocumentTypeID uint
 	Type           DocumentTypeCustomFieldType
+	ReadOnly       bool
 }
 
 type DocumentTypeCustomFieldType int

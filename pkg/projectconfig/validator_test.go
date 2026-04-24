@@ -7,10 +7,10 @@ import (
 
 func TestValidator_ValidateConfig(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name: "valid config",
@@ -86,10 +86,10 @@ func TestValidator_ValidateProject(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
 		project *Project
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name: "valid project",
@@ -224,10 +224,10 @@ func TestValidator_ValidateProvider(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
 		provider *Provider
-		wantErr  bool
+		name     string
 		errMsg   string
+		wantErr  bool
 	}{
 		{
 			name: "valid local provider",
@@ -349,10 +349,10 @@ func TestValidator_ValidateProvider(t *testing.T) {
 
 func TestValidator_ValidateMigration(t *testing.T) {
 	tests := []struct {
-		name    string
 		project *Project
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name: "valid migration with source and target",

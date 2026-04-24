@@ -433,121 +433,97 @@ func TestDocumentModel(t *testing.T) {
 		})
 	})
 
-	// TODO: should we allow this?
 	/*
-		t.Run("Upsert Owner", func(t *testing.T) {
-			db, tearDownTest := setupTest(t, dsn)
-			defer tearDownTest(t)
+		// TODO: should we allow owner upsert here?
+				t.Run("Create a document by Upsert", func(t *testing.T) {
+					assert, require := assert.New(t), require.New(t)
+					d := Document{
+						GoogleFileID: "fileID1",
+						DocumentType: DocumentType{
+							Name:     "DT1",
+							LongName: "DocumentType1",
+						},
+						Owner: &User{
+							EmailAddress: "a@a.com",
+						},
+						Product: Product{
+							Name:         "Product1",
+							Abbreviation: "P1",
+						},
+					}
+					err := d.Upsert(db)
+					require.NoError(err)
+					assert.EqualValues(1, d.ID)
+					assert.Equal("fileID1", d.GoogleFileID)
+					assert.Equal("a@a.com", d.Owner.EmailAddress)
+				})
 
-			t.Run("Create a document type", func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
-				dt := DocumentType{
-					Name:     "DT1",
-					LongName: "DocumentType1",
-				}
-				err := dt.FirstOrCreate(db)
-				require.NoError(err)
-			})
+				t.Run("Get the document", func(t *testing.T) {
+					assert, require := assert.New(t), require.New(t)
+					d := Document{
+						GoogleFileID: "fileID1",
+					}
+					err := d.Get(db)
+					require.NoError(err)
+					assert.EqualValues(1, d.ID)
+					assert.Equal("fileID1", d.GoogleFileID)
+					assert.Equal("a@a.com", d.Owner.EmailAddress)
+				})
 
-			t.Run("Create a product", func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
-				p := Product{
-					Name:         "Product1",
-					Abbreviation: "P1",
-				}
-				err := p.FirstOrCreate(db)
-				require.NoError(err)
-			})
+				t.Run("Update the Owner field by Upsert", func(t *testing.T) {
+					assert, require := assert.New(t), require.New(t)
+					d := Document{
+						GoogleFileID: "fileID1",
+						Owner: &User{
+							EmailAddress: "b@b.com",
+						},
+					}
+					err := d.Upsert(db)
+					require.NoError(err)
+					assert.EqualValues(1, d.ID)
+					assert.Equal("fileID1", d.GoogleFileID)
+					assert.Equal("b@b.com", d.Owner.EmailAddress)
+				})
 
-			t.Run("Create a document by Upsert", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
-				d := Document{
-					GoogleFileID: "fileID1",
-					DocumentType: DocumentType{
-						Name:     "DT1",
-						LongName: "DocumentType1",
-					},
-					Owner: &User{
-						EmailAddress: "a@a.com",
-					},
-					Product: Product{
-						Name:         "Product1",
-						Abbreviation: "P1",
-					},
-				}
-				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.Equal("a@a.com", d.Owner.EmailAddress)
-			})
+				t.Run("Get the document after upserting", func(t *testing.T) {
+					assert, require := assert.New(t), require.New(t)
+					d := Document{
+						GoogleFileID: "fileID1",
+					}
+					err := d.Get(db)
+					require.NoError(err)
+					assert.EqualValues(1, d.ID)
+					assert.Equal("fileID1", d.GoogleFileID)
+					assert.Equal("b@b.com", d.Owner.EmailAddress)
+				})
 
-			t.Run("Get the document", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
-				d := Document{
-					GoogleFileID: "fileID1",
-				}
-				err := d.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.Equal("a@a.com", d.Owner.EmailAddress)
-			})
+				t.Run("Update the Owner field back to first value by Upsert", func(t *testing.T) {
+					assert, require := assert.New(t), require.New(t)
+					d := Document{
+						GoogleFileID: "fileID1",
+						Owner: &User{
+							EmailAddress: "a@a.com",
+						},
+					}
+					err := d.Upsert(db)
+					require.NoError(err)
+					assert.EqualValues(1, d.ID)
+					assert.Equal("fileID1", d.GoogleFileID)
+					assert.Equal("a@a.com", d.Owner.EmailAddress)
+				})
 
-			t.Run("Update the Owner field by Upsert", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
-				d := Document{
-					GoogleFileID: "fileID1",
-					Owner: &User{
-						EmailAddress: "b@b.com",
-					},
-				}
-				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.Equal("b@b.com", d.Owner.EmailAddress)
+				t.Run("Get the document after upserting", func(t *testing.T) {
+					assert, require := assert.New(t), require.New(t)
+					d := Document{
+						GoogleFileID: "fileID1",
+					}
+					err := d.Get(db)
+					require.NoError(err)
+					assert.EqualValues(1, d.ID)
+					assert.Equal("fileID1", d.GoogleFileID)
+					assert.Equal("a@a.com", d.Owner.EmailAddress)
+				})
 			})
-
-			t.Run("Get the document after upserting", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
-				d := Document{
-					GoogleFileID: "fileID1",
-				}
-				err := d.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.Equal("b@b.com", d.Owner.EmailAddress)
-			})
-
-			t.Run("Update the Owner field back to first value by Upsert", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
-				d := Document{
-					GoogleFileID: "fileID1",
-					Owner: &User{
-						EmailAddress: "a@a.com",
-					},
-				}
-				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.Equal("a@a.com", d.Owner.EmailAddress)
-			})
-
-			t.Run("Get the document after upserting", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
-				d := Document{
-					GoogleFileID: "fileID1",
-				}
-				err := d.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.Equal("a@a.com", d.Owner.EmailAddress)
-			})
-		})
 	*/
 
 	t.Run("Upsert Summary", func(t *testing.T) {

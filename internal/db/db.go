@@ -15,17 +15,13 @@ import (
 // DatabaseConfig holds configuration for database connection.
 // Supports both PostgreSQL and SQLite.
 type DatabaseConfig struct {
-	Driver string // "postgres" or "sqlite"
-
-	// PostgreSQL config
+	Driver   string
 	Host     string
-	Port     int
 	User     string
 	Password string
 	DBName   string
-
-	// SQLite config
-	Path string // e.g., ".hermes/hermes.db"
+	Path     string
+	Port     int
 }
 
 // NewDB returns a new migrated database.

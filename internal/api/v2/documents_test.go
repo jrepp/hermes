@@ -12,8 +12,8 @@ func TestParseDocumentIDFromURLPath(t *testing.T) {
 	cases := map[string]struct {
 		path        string
 		collection  string
-		wantReqType documentSubcollectionRequestType
 		wantDocID   string
+		wantReqType documentSubcollectionRequestType
 		shouldErr   bool
 	}{
 		"good documents collection URL with related resources": {
@@ -64,10 +64,11 @@ func TestParseDocumentIDFromURLPath(t *testing.T) {
 }
 
 func TestAuthorizeDocumentPatchRequest(t *testing.T) {
+	//nolint:govet // Test case readability matters more than field packing here.
 	cases := map[string]struct {
-		userEmail string
-		doc       document.Document
 		req       DocumentPatchRequest
+		doc       document.Document
+		userEmail string
 		shouldErr bool
 	}{
 		"owner should be authorized": {

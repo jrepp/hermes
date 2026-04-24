@@ -10,10 +10,10 @@ import (
 func TestNotificationService_SendEmail(t *testing.T) {
 	tests := []struct {
 		name    string
-		to      []string
 		from    string
 		subject string
 		body    string
+		to      []string
 		wantErr bool
 	}{
 		{
@@ -71,10 +71,10 @@ func TestNotificationService_SendEmail(t *testing.T) {
 func TestNotificationService_SendHTMLEmail(t *testing.T) {
 	tests := []struct {
 		name    string
-		to      []string
 		from    string
 		subject string
 		body    string
+		to      []string
 		wantErr bool
 	}{
 		{
@@ -130,7 +130,7 @@ func TestNotificationService_NilContext(t *testing.T) {
 		adapter: adapter,
 	}
 
-	// Should handle nil context gracefully
-	err := notifSvc.SendEmail(nil, []string{"test@example.com"}, "from@example.com", "Test", "Body")
+	// Should handle empty context gracefully
+	err := notifSvc.SendEmail(context.TODO(), []string{"test@example.com"}, "from@example.com", "Test", "Body")
 	assert.NoError(t, err)
 }

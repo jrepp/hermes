@@ -51,7 +51,7 @@ func (p *Publisher) PublishRevisionDeleted(ctx context.Context, tx *gorm.DB, rev
 }
 
 // publishRevisionEvent is the internal method that creates and saves the outbox entry.
-func (p *Publisher) publishRevisionEvent(ctx context.Context, tx *gorm.DB, revision *models.DocumentRevision, eventType string, metadata map[string]interface{}) error {
+func (p *Publisher) publishRevisionEvent(_ context.Context, tx *gorm.DB, revision *models.DocumentRevision, eventType string, metadata map[string]interface{}) error {
 	if tx == nil {
 		return fmt.Errorf("transaction is required")
 	}
@@ -143,8 +143,8 @@ func (p *Publisher) PublishBatch(ctx context.Context, tx *gorm.DB, events []Revi
 // RevisionEvent represents a revision event to be published.
 type RevisionEvent struct {
 	Revision  *models.DocumentRevision
-	EventType string
 	Metadata  map[string]interface{}
+	EventType string
 }
 
 // WithTransaction wraps a function in a database transaction and publishes events.
@@ -214,7 +214,8 @@ func (p *Publisher) PublishFromDocument(ctx context.Context, tx *gorm.DB, docume
 	err := tx.Where("document_uuid = ? AND content_hash = ?", documentUUID, contentHash).
 		First(&existing).Error
 
-	if err == nil {
+	switch err {
+	case nil:
 		// Revision with same content hash already exists, use it
 		revision = &existing
 		p.logger.Debug("using existing revision",
@@ -222,7 +223,7 @@ func (p *Publisher) PublishFromDocument(ctx context.Context, tx *gorm.DB, docume
 			"content_hash", contentHash,
 			"revision_id", existing.ID,
 		)
-	} else if err == gorm.ErrRecordNotFound {
+	case gorm.ErrRecordNotFound:
 		// Create new revision
 		if err := tx.Create(revision).Error; err != nil {
 			return fmt.Errorf("failed to create revision: %w", err)
@@ -232,7 +233,7 @@ func (p *Publisher) PublishFromDocument(ctx context.Context, tx *gorm.DB, docume
 			"content_hash", contentHash,
 			"revision_id", revision.ID,
 		)
-	} else {
+	default:
 		return fmt.Errorf("failed to check for existing revision: %w", err)
 	}
 

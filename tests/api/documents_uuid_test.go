@@ -110,7 +110,7 @@ func TestDocuments_GetByUUID(t *testing.T) {
 		assert.Equal(t, "In-Review", result["status"], "status should match")
 	})
 
-	t.Run("Non-existent UUID returns 404", func(t *testing.T) {
+	t.Run("Non-existent UUID returns 404", func(_ *testing.T) {
 		// Create a UUID that doesn't exist in database
 		nonExistentUUID := docid.NewUUID()
 
@@ -121,7 +121,7 @@ func TestDocuments_GetByUUID(t *testing.T) {
 		resp.AssertStatusNotFound()
 	})
 
-	t.Run("Invalid UUID format falls back to GoogleFileID lookup", func(t *testing.T) {
+	t.Run("Invalid UUID format falls back to GoogleFileID lookup", func(_ *testing.T) {
 		// Try to get document with invalid UUID format (should try GoogleFileID lookup)
 		resp := suite.Client.Get("/api/v2/documents/not-a-valid-uuid-or-file-id")
 

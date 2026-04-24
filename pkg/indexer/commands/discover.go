@@ -14,10 +14,10 @@ import (
 // that have been modified within a time range.
 type DiscoverCommand struct {
 	Provider workspace.DocumentStorage
-	FolderID string
 	Since    *time.Time
 	Until    *time.Time
 	Filter   indexer.DocumentFilter
+	FolderID string
 }
 
 // Name returns the command name.
@@ -27,7 +27,7 @@ func (c *DiscoverCommand) Name() string {
 
 // Execute is not used for DiscoverCommand.
 // Use Discover() instead.
-func (c *DiscoverCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *DiscoverCommand) Execute(_ context.Context, _ *indexer.DocumentContext) error {
 	return fmt.Errorf("DiscoverCommand should use Discover() method")
 }
 

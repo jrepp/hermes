@@ -18,6 +18,7 @@ type recentlyViewedDoc struct {
 	ViewedTime int64  `json:"viewedTime"`
 }
 
+//nolint:gocognit,gocyclo // Handler combines auth, lookup, and response shaping in one endpoint.
 func MeRecentlyViewedDocsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errResp := func(
@@ -40,7 +41,7 @@ func MeRecentlyViewedDocsHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			// Find or create user.
 			u := models.User{
 				EmailAddress: userEmail,
@@ -57,7 +58,7 @@ func MeRecentlyViewedDocsHandler(srv server.Server) http.Handler {
 
 			// Get recently viewed documents for the user.
 			var rvds []models.RecentlyViewedDoc
-			if err := srv.DB.Where(&models.RecentlyViewedDoc{UserID: int(u.ID)}).
+			if err := srv.DB.Where(&models.RecentlyViewedDoc{UserID: safeUintToInt(u.ID)}).
 				Order("viewed_at desc").
 				Find(&rvds).Error; err != nil {
 
@@ -76,7 +77,7 @@ func MeRecentlyViewedDocsHandler(srv server.Server) http.Handler {
 				// Get document in database.
 				doc := models.Document{
 					Model: gorm.Model{
-						ID: uint(d.DocumentID),
+						ID: safeIntToUint(d.DocumentID),
 					},
 				}
 				if err := doc.Get(srv.DB); err != nil {

@@ -80,7 +80,7 @@ func (suite *ProviderTestSuite) TestCopyFile(t *testing.T) {
 		assert.Nil(t, copiedFile)
 	})
 
-	t.Run("CopyFile_InvalidDestination", func(t *testing.T) {
+	t.Run("CopyFile_InvalidDestination", func(_ *testing.T) {
 		sourceID := "source-file-1"
 		copiedFile, err := provider.CopyFile(sourceID, "invalid-folder", "Copy")
 		// Behavior may vary: some implementations might create folder, others error
@@ -138,7 +138,7 @@ func (suite *ProviderTestSuite) TestDeleteFile(t *testing.T) {
 		assert.Nil(t, file)
 	})
 
-	t.Run("DeleteFile_NonExistent", func(t *testing.T) {
+	t.Run("DeleteFile_NonExistent", func(_ *testing.T) {
 		// Deleting non-existent file should either succeed (idempotent) or error
 		err := provider.DeleteFile("non-existent")
 		// Accept either behavior, just verify it doesn't panic
@@ -188,7 +188,7 @@ func (suite *ProviderTestSuite) TestRenameFile(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("RenameFile_EmptyName", func(t *testing.T) {
+	t.Run("RenameFile_EmptyName", func(_ *testing.T) {
 		fileID := "file-to-rename"
 		err := provider.RenameFile(fileID, "")
 		// Should either error or allow empty name
@@ -299,7 +299,7 @@ func (suite *ProviderTestSuite) TestShareFile(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("ShareFile_InvalidRole", func(t *testing.T) {
+	t.Run("ShareFile_InvalidRole", func(_ *testing.T) {
 		fileID := "file-to-share"
 		err := provider.ShareFile(fileID, "user@example.com", "invalid-role")
 		// Should either accept any role or error - both acceptable
@@ -395,7 +395,7 @@ func (suite *ProviderTestSuite) TestDeletePermission(t *testing.T) {
 		}
 	})
 
-	t.Run("DeletePermission_NonExistent", func(t *testing.T) {
+	t.Run("DeletePermission_NonExistent", func(_ *testing.T) {
 		fileID := "file-del-perm"
 		err := provider.DeletePermission(fileID, "non-existent-perm-id")
 		// Should either succeed (idempotent) or error
@@ -491,7 +491,7 @@ func (suite *ProviderTestSuite) TestErrorCases(t *testing.T) {
 		assert.Nil(t, file)
 	})
 
-	t.Run("NilParameters", func(t *testing.T) {
+	t.Run("NilParameters", func(_ *testing.T) {
 		// Test that methods handle nil/empty parameters gracefully
 		err := provider.ShareFile("file-id", "", "writer")
 		// Should error on empty email
@@ -508,7 +508,7 @@ func (suite *ProviderTestSuite) TestConcurrency(t *testing.T) {
 	provider := suite.Setup(t)
 	defer suite.Cleanup(t, provider)
 
-	t.Run("ConcurrentReads", func(t *testing.T) {
+	t.Run("ConcurrentReads", func(_ *testing.T) {
 		fileID := "concurrent-read-file"
 
 		// Start multiple goroutines reading the same file
@@ -529,13 +529,13 @@ func (suite *ProviderTestSuite) TestConcurrency(t *testing.T) {
 		}
 	})
 
-	t.Run("ConcurrentWrites", func(t *testing.T) {
+	t.Run("ConcurrentWrites", func(_ *testing.T) {
 		// Test concurrent permission additions
 		fileID := "concurrent-write-file"
 
 		done := make(chan bool)
 		for i := 0; i < 5; i++ {
-			go func(idx int) {
+			go func(_ int) {
 				defer func() { done <- true }()
 				email := time.Now().Format("user-%d@example.com")
 				err := provider.ShareFile(fileID, email, "writer")
@@ -555,7 +555,7 @@ func (suite *ProviderTestSuite) TestConcurrency(t *testing.T) {
 
 // CreateTestFile is a helper to create a file in the provider for testing.
 // Implementations should provide their own setup logic.
-func CreateTestFile(t *testing.T, provider Provider, fileID, name string) *drive.File {
+func CreateTestFile(_ *testing.T, _ Provider, fileID, name string) *drive.File {
 	// This is a placeholder - implementations should override this
 	return &drive.File{
 		Id:   fileID,
@@ -564,7 +564,7 @@ func CreateTestFile(t *testing.T, provider Provider, fileID, name string) *drive
 }
 
 // CreateTestPerson is a helper to add a person to the provider's directory.
-func CreateTestPerson(t *testing.T, provider Provider, email, displayName, photoURL string) *people.Person {
+func CreateTestPerson(_ *testing.T, _ Provider, email, displayName, photoURL string) *people.Person {
 	// This is a placeholder - implementations should override this
 	return &people.Person{
 		EmailAddresses: []*people.EmailAddress{
@@ -580,7 +580,7 @@ func CreateTestPerson(t *testing.T, provider Provider, email, displayName, photo
 }
 
 // CreateTestFolder is a helper to create a folder in the provider.
-func CreateTestFolder(t *testing.T, provider Provider, parentID, name, folderID string) {
+func CreateTestFolder(_ *testing.T, _ Provider, _, _, _ string) {
 	// This is a placeholder - implementations should override this
 }
 

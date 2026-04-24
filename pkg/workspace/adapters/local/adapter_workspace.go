@@ -135,10 +135,8 @@ func (w *WorkspaceAdapter) CreateDocumentWithUUID(ctx context.Context, uuid doci
 		created.Metadata = make(map[string]any)
 	}
 	created.Metadata["hermes_uuid"] = uuid.String()
-	if templateMetadata != nil {
-		for k, v := range templateMetadata {
-			created.Metadata[k] = v
-		}
+	for k, v := range templateMetadata {
+		created.Metadata[k] = v
 	}
 
 	// Create CompositeID
@@ -321,7 +319,7 @@ func (w *WorkspaceAdapter) GetContentByUUID(ctx context.Context, uuid docid.UUID
 }
 
 // UpdateContent updates document content.
-func (w *WorkspaceAdapter) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (w *WorkspaceAdapter) UpdateContent(ctx context.Context, providerID, content string) (*workspace.DocumentContent, error) {
 	// Extract local ID from providerID
 	const prefix = "local:"
 	localID := providerID

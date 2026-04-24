@@ -20,6 +20,7 @@ func (c *Command) Help() string {
   This command groups subcommands for operators interacting with Hermes.`
 }
 
-func (c *Command) Run(args []string) int {
+// Run displays help for the operator command group.
+func (c *Command) Run(_ []string) int {
 	return cli.RunResultHelp
 }

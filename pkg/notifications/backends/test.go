@@ -15,27 +15,17 @@ import (
 // retry logic, DLQ processing, and error handling
 type TestBackend struct {
 	name     string
-	mu       sync.RWMutex
 	config   TestBackendConfig
 	messages []TestBackendMessage
+	mu       sync.RWMutex
 }
 
 // TestBackendConfig configures the test backend behavior
 type TestBackendConfig struct {
-	// FailureMode determines how the backend should fail
-	FailureMode FailureMode
-
-	// FailureRate is the percentage of messages that should fail (0-100)
-	// Only used when FailureMode is FailureModeIntermittent
-	FailureRate int
-
-	// FailureDelay adds artificial latency before processing
-	FailureDelay time.Duration
-
-	// FailureMessage is the error message to return
+	FailureMode    FailureMode
 	FailureMessage string
-
-	// RecordMessages enables recording of all processed messages for verification
+	FailureRate    int
+	FailureDelay   time.Duration
 	RecordMessages bool
 }
 
@@ -71,10 +61,10 @@ const (
 
 // TestBackendMessage records a processed message for verification
 type TestBackendMessage struct {
-	Message   *notifications.NotificationMessage
 	Timestamp time.Time
-	Success   bool
 	Error     error
+	Message   *notifications.NotificationMessage
+	Success   bool
 }
 
 // NewTestBackend creates a new test backend

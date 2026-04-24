@@ -24,12 +24,10 @@ func setupTest(t *testing.T, dsn string) (
 	require.NoError(t, err)
 
 	// Migrate test database.
-	err = db.AutoMigrate(
-		ModelsToAutoMigrate()...,
-	)
+	err = db.AutoMigrate(ToAutoMigrate()...)
 	require.NoError(t, err)
 
-	return db, func(t *testing.T) {
+	return db, func(_ *testing.T) {
 		// TODO: add back and make configurable.
 		// err := test.DropTestDatabase(dsn, dbName)
 		// require.NoError(t, err)

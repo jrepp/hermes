@@ -23,23 +23,21 @@ type AuditConfig struct {
 
 // MailConfig configures the mail backend
 type MailConfig struct {
-	Enabled bool `hcl:"enabled,optional"`
-
 	SMTPHost     string `hcl:"smtp_host,optional"`
 	SMTPPort     string `hcl:"smtp_port,optional"`
 	SMTPUsername string `hcl:"smtp_username,optional"`
 	SMTPPassword string `hcl:"smtp_password,optional"`
 	FromAddress  string `hcl:"from_address,optional"`
 	FromName     string `hcl:"from_name,optional"`
+	Enabled      bool   `hcl:"enabled,optional"`
 	UseTLS       bool   `hcl:"use_tls,optional"`
 }
 
 // NtfyConfig configures the ntfy backend
 type NtfyConfig struct {
-	Enabled bool `hcl:"enabled,optional"`
-
 	ServerURL string `hcl:"server_url,optional"`
 	Topic     string `hcl:"topic,optional"`
+	Enabled   bool   `hcl:"enabled,optional"`
 }
 
 // Registry manages available notification backends

@@ -26,16 +26,12 @@ func (g *Group) FirstOrCreate(db *gorm.DB) error {
 	}
 
 	return db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.
+		return tx.
 			Where(Group{EmailAddress: g.EmailAddress}).
 			Omit(clause.Associations).
 			Clauses(clause.OnConflict{DoNothing: true}).
 			FirstOrCreate(&g).
-			Error; err != nil {
-			return err
-		}
-
-		return nil
+			Error
 	})
 }
 
@@ -51,15 +47,11 @@ func (g *Group) Get(db *gorm.DB) error {
 // Upsert updates or inserts the receiver group into database db.
 func (g *Group) Upsert(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.
+		return tx.
 			Where(Group{EmailAddress: g.EmailAddress}).
 			Omit(clause.Associations).
 			Assign(*g).
 			FirstOrCreate(&g).
-			Error; err != nil {
-			return err
-		}
-
-		return nil
+			Error
 	})
 }

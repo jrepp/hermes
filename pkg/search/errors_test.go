@@ -59,9 +59,9 @@ func TestError_Error(t *testing.T) {
 
 func TestError_Unwrap(t *testing.T) {
 	tests := []struct {
-		name     string
-		err      *Error
 		expected error
+		err      *Error
+		name     string
 	}{
 		{
 			name: "unwrap sentinel error",
@@ -112,9 +112,9 @@ func TestError_Unwrap(t *testing.T) {
 
 func TestError_Is(t *testing.T) {
 	tests := []struct {
-		name   string
 		err    error
 		target error
+		name   string
 		want   bool
 	}{
 		{
@@ -284,8 +284,8 @@ func TestError_NilError(t *testing.T) {
 
 func TestError_EmptyFields(t *testing.T) {
 	tests := []struct {
-		name string
 		err  *Error
+		name string
 	}{
 		{
 			name: "empty Op and Msg",

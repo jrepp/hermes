@@ -59,11 +59,12 @@ func AuthenticateRequest(
 	var provider pkgauth.Provider
 
 	// Priority: Dex > Okta > Google
-	// If Dex is configured and enabled, use Dex session-based authentication.
-	if cfg.Dex != nil && !cfg.Dex.Disabled {
+	switch {
+	case cfg.Dex != nil && !cfg.Dex.Disabled:
+		// If Dex is configured and enabled, use Dex session-based authentication.
 		// For Dex, we use session cookies instead of bearer tokens
 		provider = NewDexSessionProvider(log)
-	} else if cfg.Okta != nil && !cfg.Okta.Disabled {
+	case cfg.Okta != nil && !cfg.Okta.Disabled:
 		// If Okta is configured and enabled, use Okta authentication.
 		oktaCfg := oktaadapter.Config{
 			AuthServerURL: cfg.Okta.AuthServerURL,
@@ -76,12 +77,12 @@ func AuthenticateRequest(
 		adapter, err := oktaadapter.NewAdapter(oktaCfg, log)
 		if err != nil {
 			log.Error("error creating Okta authentication adapter", "error", err)
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				http.Error(w, "Internal server error", http.StatusInternalServerError)
 			})
 		}
 		provider = adapter
-	} else {
+	default:
 		// Use Google authentication.
 		provider = googleadapter.NewAdapter(gwSvc)
 	}

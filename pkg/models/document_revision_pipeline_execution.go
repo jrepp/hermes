@@ -10,39 +10,22 @@ import (
 // DocumentRevisionPipelineExecution tracks pipeline processing for document revisions.
 // Records which rulesets matched and what steps were executed, with per-step results.
 type DocumentRevisionPipelineExecution struct {
-	ID uint `gorm:"primaryKey" json:"id"`
-
-	// Links to revision and outbox
-	RevisionID uint `gorm:"not null;index:idx_pipeline_exec_revision_id" json:"revisionId"`
-	OutboxID   uint `gorm:"not null;index:idx_pipeline_exec_outbox_id" json:"outboxId"`
-
-	// Execution metadata
-	RulesetName   string   `gorm:"type:varchar(100);not null;index:idx_pipeline_exec_ruleset" json:"rulesetName"`
-	PipelineSteps []string `gorm:"serializer:json;type:jsonb;not null" json:"pipelineSteps"` // ['search_index', 'embeddings', 'llm_summary']
-
-	// Execution state
-	Status      string     `gorm:"type:varchar(20);not null;default:'pending';index:idx_pipeline_exec_status" json:"status"` // 'pending', 'running', 'completed', 'failed', 'partial'
-	StartedAt   *time.Time `json:"startedAt,omitempty"`
-	CompletedAt *time.Time `json:"completedAt,omitempty"`
-
-	// Results per step
-	// Example: {"search_index": {"status": "success", "duration_ms": 234}, "embeddings": {"status": "failed", "error": "..."}}
-	StepResults map[string]interface{} `gorm:"serializer:json;type:jsonb" json:"stepResults,omitempty"`
-
-	// Error details for debugging
-	ErrorDetails map[string]interface{} `gorm:"serializer:json;type:jsonb" json:"errorDetails,omitempty"`
-
-	// Retry tracking
-	AttemptNumber int `gorm:"not null;default:1" json:"attemptNumber"`
-	MaxAttempts   int `gorm:"not null;default:3" json:"maxAttempts"`
-
-	// Timestamps
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-
-	// Associations
-	Revision *DocumentRevision       `gorm:"foreignKey:RevisionID" json:"-"`
-	Outbox   *DocumentRevisionOutbox `gorm:"foreignKey:OutboxID" json:"-"`
+	CreatedAt     time.Time               `json:"createdAt"`
+	UpdatedAt     time.Time               `json:"updatedAt"`
+	StepResults   map[string]interface{}  `gorm:"serializer:json;type:jsonb" json:"stepResults,omitempty"`
+	ErrorDetails  map[string]interface{}  `gorm:"serializer:json;type:jsonb" json:"errorDetails,omitempty"`
+	Outbox        *DocumentRevisionOutbox `gorm:"foreignKey:OutboxID" json:"-"`
+	Revision      *DocumentRevision       `gorm:"foreignKey:RevisionID" json:"-"`
+	StartedAt     *time.Time              `json:"startedAt,omitempty"`
+	CompletedAt   *time.Time              `json:"completedAt,omitempty"`
+	RulesetName   string                  `gorm:"type:varchar(100);not null;index:idx_pipeline_exec_ruleset" json:"rulesetName"`
+	Status        string                  `gorm:"type:varchar(20);not null;default:'pending';index:idx_pipeline_exec_status" json:"status"`
+	PipelineSteps []string                `gorm:"serializer:json;type:jsonb;not null" json:"pipelineSteps"`
+	ID            uint                    `gorm:"primaryKey" json:"id"`
+	AttemptNumber int                     `gorm:"not null;default:1" json:"attemptNumber"`
+	MaxAttempts   int                     `gorm:"not null;default:3" json:"maxAttempts"`
+	OutboxID      uint                    `gorm:"not null;index:idx_pipeline_exec_outbox_id" json:"outboxId"`
+	RevisionID    uint                    `gorm:"not null;index:idx_pipeline_exec_revision_id" json:"revisionId"`
 }
 
 // TableName specifies the table name.
@@ -67,7 +50,7 @@ const (
 )
 
 // BeforeCreate hook to ensure required fields.
-func (e *DocumentRevisionPipelineExecution) BeforeCreate(tx *gorm.DB) error {
+func (e *DocumentRevisionPipelineExecution) BeforeCreate(_ *gorm.DB) error {
 	if e.RevisionID == 0 {
 		return fmt.Errorf("revision_id is required")
 	}

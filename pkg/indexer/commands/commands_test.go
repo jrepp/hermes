@@ -26,79 +26,79 @@ func NewMockDocumentStorage() *MockDocumentStorage {
 	}
 }
 
-func (m *MockDocumentStorage) GetDocument(ctx context.Context, id string) (*workspace.Document, error) {
+func (m *MockDocumentStorage) GetDocument(_ context.Context, id string) (*workspace.Document, error) {
 	if doc, ok := m.documents[id]; ok {
 		return doc, nil
 	}
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) CreateDocument(ctx context.Context, doc *workspace.DocumentCreate) (*workspace.Document, error) {
+func (m *MockDocumentStorage) CreateDocument(_ context.Context, _ *workspace.DocumentCreate) (*workspace.Document, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) UpdateDocument(ctx context.Context, id string, updates *workspace.DocumentUpdate) (*workspace.Document, error) {
+func (m *MockDocumentStorage) UpdateDocument(_ context.Context, _ string, _ *workspace.DocumentUpdate) (*workspace.Document, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) DeleteDocument(ctx context.Context, id string) error {
+func (m *MockDocumentStorage) DeleteDocument(_ context.Context, id string) error {
 	delete(m.documents, id)
 	return nil
 }
 
-func (m *MockDocumentStorage) GetDocumentContent(ctx context.Context, id string) (string, error) {
+func (m *MockDocumentStorage) GetDocumentContent(_ context.Context, id string) (string, error) {
 	if content, ok := m.content[id]; ok {
 		return content, nil
 	}
 	return "", nil
 }
 
-func (m *MockDocumentStorage) UpdateDocumentContent(ctx context.Context, id string, content string) error {
+func (m *MockDocumentStorage) UpdateDocumentContent(_ context.Context, id, content string) error {
 	m.content[id] = content
 	return nil
 }
 
-func (m *MockDocumentStorage) ReplaceTextInDocument(ctx context.Context, id string, replacements map[string]string) error {
+func (m *MockDocumentStorage) ReplaceTextInDocument(_ context.Context, _ string, _ map[string]string) error {
 	return nil
 }
 
-func (m *MockDocumentStorage) CopyDocument(ctx context.Context, sourceID, destFolderID, name string) (*workspace.Document, error) {
+func (m *MockDocumentStorage) CopyDocument(_ context.Context, _, _, _ string) (*workspace.Document, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) MoveDocument(ctx context.Context, docID, destFolderID string) error {
+func (m *MockDocumentStorage) MoveDocument(_ context.Context, _, _ string) error {
 	return nil
 }
 
-func (m *MockDocumentStorage) CreateFolder(ctx context.Context, name, parentID string) (*workspace.Folder, error) {
+func (m *MockDocumentStorage) CreateFolder(_ context.Context, _, _ string) (*workspace.Folder, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) GetFolder(ctx context.Context, id string) (*workspace.Folder, error) {
+func (m *MockDocumentStorage) GetFolder(_ context.Context, _ string) (*workspace.Folder, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) ListFolders(ctx context.Context, parentID string) ([]*workspace.Folder, error) {
+func (m *MockDocumentStorage) ListFolders(_ context.Context, _ string) ([]*workspace.Folder, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) GetSubfolder(ctx context.Context, parentID, name string) (*workspace.Folder, error) {
+func (m *MockDocumentStorage) GetSubfolder(_ context.Context, _, _ string) (*workspace.Folder, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) ListRevisions(ctx context.Context, docID string) ([]*workspace.Revision, error) {
+func (m *MockDocumentStorage) ListRevisions(_ context.Context, _ string) ([]*workspace.Revision, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) GetRevision(ctx context.Context, docID, revisionID string) (*workspace.Revision, error) {
+func (m *MockDocumentStorage) GetRevision(_ context.Context, _, _ string) (*workspace.Revision, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) GetLatestRevision(ctx context.Context, docID string) (*workspace.Revision, error) {
+func (m *MockDocumentStorage) GetLatestRevision(_ context.Context, _ string) (*workspace.Revision, error) {
 	return nil, nil
 }
 
-func (m *MockDocumentStorage) ListDocuments(ctx context.Context, folderID string, opts *workspace.ListOptions) ([]*workspace.Document, error) {
+func (m *MockDocumentStorage) ListDocuments(_ context.Context, folderID string, opts *workspace.ListOptions) ([]*workspace.Document, error) {
 	docs := make([]*workspace.Document, 0)
 	for _, doc := range m.documents {
 		if doc.ParentFolderID == folderID {

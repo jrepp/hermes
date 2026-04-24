@@ -228,15 +228,6 @@ func (s *MainTestSuite) seedDatabase() {
 	s.T.Logf("✅ Seeded database with %d document types and %d products", len(docTypes), len(products))
 }
 
-// setupServer creates the test HTTP server.
-// This is deferred and should be called explicitly by tests that need it.
-// Most tests can create handlers directly without a full server.
-func (s *MainTestSuite) setupServer() {
-	// TODO: Implement when we need full server testing
-	// For now, tests create handlers directly
-	panic("setupServer not implemented - tests should create handlers directly")
-}
-
 // Cleanup tears down the test suite (but not shared Docker containers).
 func (s *MainTestSuite) Cleanup() {
 	for i := len(s.cleanupFuncs) - 1; i >= 0; i-- {

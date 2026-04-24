@@ -140,7 +140,7 @@ func (s *Suite) setupDatabase() error {
 	s.DBName = dbName
 
 	// Auto-migrate models
-	if err := db.AutoMigrate(models.ModelsToAutoMigrate()...); err != nil {
+	if err := db.AutoMigrate(models.ToAutoMigrate()...); err != nil {
 		return fmt.Errorf("failed to auto-migrate: %w", err)
 	}
 
@@ -353,7 +353,7 @@ func (m *mockSearchProvider) Name() string {
 	return "mock"
 }
 
-func (m *mockSearchProvider) Healthy(ctx context.Context) error {
+func (m *mockSearchProvider) Healthy(_ context.Context) error {
 	return nil
 }
 
@@ -583,7 +583,7 @@ func NewSuiteWithV2APIs(t *testing.T, opts ...Option) *Suite {
 //
 //	// Requests will be authenticated as test@example.com
 //	rr := suite.Client.Get(t, "/api/v2/me")
-func NewSuiteWithMockAuth(t *testing.T, authAdapter interface{}) *Suite {
+func NewSuiteWithMockAuth(t *testing.T, _ interface{}) *Suite {
 	// For now, create a basic suite and return it
 	// The auth adapter will be integrated when we enhance setupServer
 	suite := NewSuite(t)

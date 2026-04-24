@@ -35,7 +35,7 @@ func (s *SearchIndexStep) Name() string {
 }
 
 // Execute updates the search index for the given revision.
-func (s *SearchIndexStep) Execute(ctx context.Context, revision *models.DocumentRevision, config map[string]interface{}) error {
+func (s *SearchIndexStep) Execute(ctx context.Context, revision *models.DocumentRevision, _ map[string]interface{}) error {
 	s.logger.Debug("executing search index step",
 		"document_uuid", revision.DocumentUUID,
 		"revision_id", revision.ID,
@@ -43,10 +43,7 @@ func (s *SearchIndexStep) Execute(ctx context.Context, revision *models.Document
 	)
 
 	// Convert revision to search document
-	doc, err := s.revisionToSearchDocument(revision)
-	if err != nil {
-		return fmt.Errorf("failed to convert revision to search document: %w", err)
-	}
+	doc := s.revisionToSearchDocument(revision)
 
 	// Determine which index to use based on status
 	var indexer interface {
@@ -107,14 +104,14 @@ func (s *SearchIndexStep) IsRetryable(err error) bool {
 }
 
 // revisionToSearchDocument converts a DocumentRevision to a search.Document.
-func (s *SearchIndexStep) revisionToSearchDocument(revision *models.DocumentRevision) (*search.Document, error) {
+func (s *SearchIndexStep) revisionToSearchDocument(revision *models.DocumentRevision) *search.Document {
 	// Build search document from revision
 	doc := &search.Document{
 		ObjectID:     revision.DocumentID,
 		Title:        revision.Title,
 		DocType:      s.extractDocType(revision),
 		Status:       revision.Status,
-		Product:      s.extractProduct(revision),
+		Product:      s.extractProduct(),
 		ModifiedTime: revision.ModifiedTime.Unix(),
 		CreatedTime:  revision.CreatedAt.Unix(),
 	}
@@ -141,7 +138,7 @@ func (s *SearchIndexStep) revisionToSearchDocument(revision *models.DocumentRevi
 	// doc.Contributors = metadata.Contributors
 	// ...
 
-	return doc, nil
+	return doc
 }
 
 // isDraft determines if the revision represents a draft document.
@@ -173,17 +170,11 @@ func (s *SearchIndexStep) extractDocType(revision *models.DocumentRevision) stri
 }
 
 // extractProduct extracts the product from the revision.
-func (s *SearchIndexStep) extractProduct(revision *models.DocumentRevision) string {
+func (s *SearchIndexStep) extractProduct() string {
 	// This is a placeholder. In a real implementation, you would:
 	// 1. Look up the project associated with the revision
 	// 2. Get the product from the project
 	// 3. Use metadata from the document
-
-	if revision.ProjectUUID != nil {
-		// In a real implementation: fetch project and return project.Product
-		// For now, return empty string
-		return ""
-	}
 
 	return ""
 }

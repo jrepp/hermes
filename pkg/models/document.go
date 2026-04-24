@@ -15,99 +15,34 @@ import (
 
 // Document is a model for a document.
 type Document struct {
-	gorm.Model
-
-	// GoogleFileID is the Google Drive file ID of the document.
-	// DEPRECATED: Use DocumentUUID for lookups. Kept for backward compatibility.
-	GoogleFileID string `gorm:"index;not null;unique"`
-
-	// DocumentUUID is the stable, globally unique document identifier.
-	// This persists across provider migrations and represents the logical document.
-	// Nullable initially to allow gradual migration from GoogleFileID.
-	DocumentUUID *docid.UUID `gorm:"type:uuid;uniqueIndex:idx_documents_uuid"`
-
-	// ProjectUUID links this document to a workspace project (FK to workspace_projects.project_uuid)
-	// This replaces the old ProjectID string field with a proper foreign key relationship.
-	// Nullable initially for backward compatibility with existing documents.
-	ProjectUUID *uuid.UUID `gorm:"type:uuid;index:idx_documents_project_uuid"`
-
-	// ProviderType identifies the storage backend (google, local, remote-hermes).
-	// Nullable initially for backward compatibility.
-	ProviderType *string `gorm:"type:varchar(50)"`
-
-	// ProviderDocumentID is the provider-specific identifier (file path, Google file ID, etc)
-	// This enables lookup within the provider's system.
-	ProviderDocumentID *string `gorm:"type:varchar(500);index:idx_documents_provider_doc_id"`
-
-	// ProjectID identifies which project configuration this document belongs to (DEPRECATED).
-	// Use ProjectUUID instead. Kept for backward compatibility during migration.
-	ProjectID *string `gorm:"type:varchar(64)"`
-
-	// Approvers is the list of users whose approval is requested for the
-	// document.
-	Approvers []*User `gorm:"many2many:document_reviews;"`
-
-	// ApproverGroups is the list of groups whose approval is requested for the
-	// document.
-	ApproverGroups []*Group `gorm:"many2many:document_group_reviews;"`
-
-	// Contributors are users who have contributed to the document.
-	Contributors []*User `gorm:"many2many:document_contributors;"`
-
-	// CustomFields contains custom fields.
-	CustomFields []*DocumentCustomField
-
-	// DocumentCreatedAt is the time of document creation.
-	DocumentCreatedAt time.Time
-
-	// DocumentModifiedAt is the time the document was last modified.
+	DocumentCreatedAt  time.Time
 	DocumentModifiedAt time.Time
-
-	// DocumentNumber is a document number unique to each product/area. It
-	// pairs with the product abbreviation to form a document identifier
-	// (e.g., "TF-123").
-	DocumentNumber int `gorm:"index:latest_product_number"`
-
-	// DocumentType is the document type.
-	DocumentType   DocumentType
-	DocumentTypeID uint
-
-	// DocumentFileRevision are the file revisions for the document.
-	FileRevisions []DocumentFileRevision
-
-	// Imported is true if the document was not created through the application.
-	Imported bool
-
-	// Locked is true if the document cannot be updated (may be in a bad state).
-	Locked bool
-
-	// Owner is the owner of the document.
-	Owner   *User `gorm:"default:null;not null"`
-	OwnerID *uint `gorm:"default:null"`
-
-	// Product is the product or area that the document relates to.
-	Product   Product
-	ProductID uint `gorm:"index:latest_product_number"`
-
-	// RelatedResources are the related resources for the document.
+	ProjectID          *string    `gorm:"type:varchar(64)"`
+	ProjectUUID        *uuid.UUID `gorm:"type:uuid;index:idx_documents_project_uuid"`
+	ProviderType       *string    `gorm:"type:varchar(50)"`
+	ProviderDocumentID *string    `gorm:"type:varchar(500);index:idx_documents_provider_doc_id"`
+	Summary            *string
+	OwnerID            *uint       `gorm:"default:null"`
+	DocumentUUID       *docid.UUID `gorm:"type:uuid;uniqueIndex:idx_documents_uuid"`
+	Owner              *User       `gorm:"default:null;not null"`
+	gorm.Model
+	Title            string
+	GoogleFileID     string `gorm:"index;not null;unique"`
+	DocumentType     DocumentType
+	Product          Product
+	Contributors     []*User `gorm:"many2many:document_contributors;"`
+	FileRevisions    []DocumentFileRevision
+	Approvers        []*User  `gorm:"many2many:document_reviews;"`
+	ApproverGroups   []*Group `gorm:"many2many:document_group_reviews;"`
 	RelatedResources []*DocumentRelatedResource
-
-	// Status is the status of the document.
-	Status DocumentStatus
-
-	// ShareableAsDraft is true if the document can be shared in the WIP (draft) status.
+	CustomFields     []*DocumentCustomField
+	Status           DocumentStatus
+	ProductID        uint `gorm:"index:latest_product_number"`
+	DocumentNumber   int  `gorm:"index:latest_product_number"`
+	DocumentTypeID   uint
 	ShareableAsDraft bool
-
-	// Archived is true if the document has been archived. Only drafts (WIP status)
-	// can be archived, and only by the owner.
-	Archived bool
-
-	// Summary is a summary of the document.
-	Summary *string
-
-	// Title is the title of the document. It only contains the title, and not the
-	// product abbreviation, document number, or document type.
-	Title string
+	Locked           bool
+	Imported         bool
 }
 
 // Documents is a slice of documents.
@@ -328,11 +263,9 @@ func GetLatestProductNumber(db *gorm.DB,
 		First(&d).
 		Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// No documents exist, start from 2000 (return 1999 so next will be 2000)
-			return 1999, nil
-		} else {
-			return 0, err
+			return 0, nil
 		}
+		return 0, err
 	}
 
 	// If highest existing number is below 2000, start from 2000
@@ -388,73 +321,33 @@ func (d *Document) ReplaceRelatedResources(
 	elrrs []DocumentRelatedResourceExternalLink,
 	hdrrs []DocumentRelatedResourceHermesDocument,
 ) error {
-	if err := validation.ValidateStruct(d,
-		validation.Field(
-			&d.ID,
-			validation.When(d.hasNoFileID(),
-				validation.Required.Error("either ID, GoogleFileID, or FileID is required"),
-			),
-		),
-	); err != nil {
+	if err := d.ensureID(db); err != nil {
 		return err
 	}
 
-	// Get document ID if not known.
-	if d.ID == 0 {
-		doc := &Document{
-			GoogleFileID: d.GoogleFileID,
-			FileID:       d.FileID,
-		}
-		if err := doc.Get(db); err != nil {
-			return fmt.Errorf("error getting document: %w", err)
-		}
-		d.ID = doc.ID
-	}
-
-	if err := db.Transaction(func(tx *gorm.DB) error {
-		// Delete assocations of RelatedResources.
-		rrs := []DocumentRelatedResource{}
-		if err := tx.
-			Where("document_id = ?", d.ID).
-			Find(&rrs).Error; err != nil {
-			return fmt.Errorf("error finding existing related resources: %w", err)
-		}
-		for _, rr := range rrs {
-			if err := tx.
-				Exec(
-					fmt.Sprintf("DELETE FROM %q WHERE id = ?", rr.RelatedResourceType),
-					rr.RelatedResourceID,
-				).
-				Error; err != nil {
-				return fmt.Errorf(
-					"error deleting existing typed related resources: %w", err)
-			}
-		}
-
-		// Delete RelatedResources.
-		if err := tx.
-			Unscoped(). // Hard delete instead of soft delete.
-			Where("document_id = ?", d.ID).
-			Delete(&DocumentRelatedResource{}).Error; err != nil {
-			return fmt.Errorf("error deleting existing related resources: %w", err)
-		}
-
-		// Create all related resources.
-		for _, elrr := range elrrs {
-			if err := elrr.Create(tx); err != nil {
+	if err := replaceScopedRelatedResources[DocumentRelatedResource, DocumentRelatedResource](
+		db,
+		"document_id",
+		d.ID,
+		len(elrrs),
+		func(tx *gorm.DB, i int) error {
+			if err := elrrs[i].Create(tx); err != nil {
 				return fmt.Errorf(
 					"error creating external link related resource: %w", err)
 			}
-		}
-		for _, hdrr := range hdrrs {
-			if err := hdrr.Create(tx); err != nil {
+
+			return nil
+		},
+		len(hdrrs),
+		func(tx *gorm.DB, i int) error {
+			if err := hdrrs[i].Create(tx); err != nil {
 				return fmt.Errorf(
 					"error creating Hermes document related resource: %w", err)
 			}
-		}
 
-		return nil
-	}); err != nil {
+			return nil
+		},
+	); err != nil {
 		return fmt.Errorf("error replacing related resources: %w", err)
 	}
 
@@ -566,33 +459,38 @@ func (d *Document) Upsert(db *gorm.DB) error {
 
 // createAssocations creates required assocations for a document.
 func (d *Document) createAssocations(db *gorm.DB) error {
-	// Find or create approvers.
-	var approvers []*User
-	for _, a := range d.Approvers {
-		if err := a.FirstOrCreate(db); err != nil {
-			return fmt.Errorf("error finding or creating approver: %w", err)
-		}
-		approvers = append(approvers, a)
+	approvers, err := resolveUsers(
+		db,
+		d.Approvers,
+		"finding or creating approver",
+		func(user *User, db *gorm.DB) error {
+			return user.FirstOrCreate(db)
+		},
+	)
+	if err != nil {
+		return err
 	}
 	d.Approvers = approvers
 
-	// Find or create approver groups.
-	var approverGroups []*Group
-	for _, a := range d.ApproverGroups {
-		if err := a.FirstOrCreate(db); err != nil {
+	approverGroups := make([]*Group, 0, len(d.ApproverGroups))
+	for i := range d.ApproverGroups {
+		if err := d.ApproverGroups[i].FirstOrCreate(db); err != nil {
 			return fmt.Errorf("error finding or creating approver groups: %w", err)
 		}
-		approverGroups = append(approverGroups, a)
+		approverGroups = append(approverGroups, d.ApproverGroups[i])
 	}
 	d.ApproverGroups = approverGroups
 
-	// Find or create contributors.
-	var contributors []*User
-	for _, c := range d.Contributors {
-		if err := c.FirstOrCreate(db); err != nil {
-			return fmt.Errorf("error finding or creating contributor: %w", err)
-		}
-		contributors = append(contributors, c)
+	contributors, err := resolveUsers(
+		db,
+		d.Contributors,
+		"finding or creating contributor",
+		func(user *User, db *gorm.DB) error {
+			return user.FirstOrCreate(db)
+		},
+	)
+	if err != nil {
+		return err
 	}
 	d.Contributors = contributors
 
@@ -625,33 +523,35 @@ func (d *Document) createAssocations(db *gorm.DB) error {
 
 // getAssociations gets associations.
 func (d *Document) getAssociations(db *gorm.DB) error {
-	// Get approvers.
-	var approvers []*User
-	for _, a := range d.Approvers {
-		if err := a.Get(db); err != nil {
-			return fmt.Errorf("error getting approver: %w", err)
-		}
-		approvers = append(approvers, a)
+	approvers, err := resolveUsers(
+		db,
+		d.Approvers,
+		"getting approver",
+		func(user *User, db *gorm.DB) error {
+			return user.Get(db)
+		},
+	)
+	if err != nil {
+		return err
 	}
 	d.Approvers = approvers
 
-	// Get approver groups.
-	var approverGroups []*Group
-	for _, a := range d.ApproverGroups {
-		if err := a.Get(db); err != nil {
-			return fmt.Errorf("error getting approver group: %w", err)
-		}
-		approverGroups = append(approverGroups, a)
+	approverGroups, err := resolveGroups(db, d.ApproverGroups, "getting approver group")
+	if err != nil {
+		return err
 	}
 	d.ApproverGroups = approverGroups
 
-	// Get contributors.
-	var contributors []*User
-	for _, c := range d.Contributors {
-		if err := c.FirstOrCreate(db); err != nil {
-			return fmt.Errorf("error getting contributor: %w", err)
-		}
-		contributors = append(contributors, c)
+	contributors, err := resolveUsers(
+		db,
+		d.Contributors,
+		"getting contributor",
+		func(user *User, db *gorm.DB) error {
+			return user.FirstOrCreate(db)
+		},
+	)
+	if err != nil {
+		return err
 	}
 	d.Contributors = contributors
 
@@ -663,31 +563,14 @@ func (d *Document) getAssociations(db *gorm.DB) error {
 	d.DocumentType = dt
 	d.DocumentTypeID = dt.ID
 
-	// Get custom fields.
-	var customFields []*DocumentCustomField
-	for _, c := range d.CustomFields {
-		c.DocumentTypeCustomField.DocumentType = d.DocumentType
-		c.DocumentTypeCustomField.DocumentTypeID = d.DocumentTypeID
-
-		// Get document type custom field.
-		if c.DocumentTypeCustomFieldID == 0 {
-			c.DocumentTypeCustomField.DocumentType = d.DocumentType
-			c.DocumentTypeCustomField.DocumentTypeID = d.DocumentTypeID
-
-			if err := c.DocumentTypeCustomField.Get(db); err != nil {
-				return fmt.Errorf("error getting document type custom field: %w", err)
-			}
-			c.DocumentTypeCustomFieldID = c.DocumentTypeCustomField.ID
-		} else {
-			if err := db.
-				First(&c.DocumentTypeCustomField, c.DocumentTypeCustomFieldID).
-				Error; err != nil {
-				return fmt.Errorf(
-					"error getting document type custom field by ID: %w", err)
-			}
-		}
-
-		customFields = append(customFields, c)
+	customFields, err := resolveDocumentCustomFields(
+		db,
+		d.CustomFields,
+		d.DocumentType,
+		d.DocumentTypeID,
+	)
+	if err != nil {
+		return err
 	}
 	d.CustomFields = customFields
 
@@ -707,6 +590,37 @@ func (d *Document) getAssociations(db *gorm.DB) error {
 		d.ProductID = d.Product.ID
 	}
 
+	return nil
+}
+
+func (d *Document) ensureID(db *gorm.DB) error {
+	if err := validation.ValidateStruct(d,
+		validation.Field(
+			&d.ID,
+			validation.When(d.GoogleFileID == "",
+				validation.Required.Error("either ID or GoogleFileID is required"),
+			),
+		),
+		validation.Field(
+			&d.GoogleFileID,
+			validation.When(d.ID == 0,
+				validation.Required.Error("either ID or GoogleFileID is required"),
+			),
+		),
+	); err != nil {
+		return err
+	}
+
+	if d.ID != 0 {
+		return nil
+	}
+
+	doc := &Document{GoogleFileID: d.GoogleFileID}
+	if err := doc.Get(db); err != nil {
+		return fmt.Errorf("error getting document: %w", err)
+	}
+
+	d.ID = doc.ID
 	return nil
 }
 

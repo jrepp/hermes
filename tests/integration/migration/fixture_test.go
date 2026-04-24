@@ -21,7 +21,7 @@ func VerifyMinIOAvailable(t *testing.T) {
 	defer cancel()
 
 	// Try to connect to MinIO health endpoint
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:9000/minio/health/live", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://localhost:9000/minio/health/live", http.NoBody)
 	if err != nil {
 		t.Fatalf("❌ Failed to create MinIO health check request: %v\n   MinIO is required for migration tests.\n   Start it with: cd testing && docker compose up -d minio", err)
 	}

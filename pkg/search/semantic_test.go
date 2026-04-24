@@ -20,7 +20,7 @@ type MockEmbeddingsGenerator struct {
 	mock.Mock
 }
 
-func (m *MockEmbeddingsGenerator) GenerateEmbeddings(ctx context.Context, text string, model string, dimensions int) ([]float64, error) {
+func (m *MockEmbeddingsGenerator) GenerateEmbeddings(ctx context.Context, text, model string, dimensions int) ([]float64, error) {
 	args := m.Called(ctx, text, model, dimensions)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -106,8 +106,8 @@ func TestSemanticSearch_FormatVectorForPostgres(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		vector   []float64
 		expected string
+		vector   []float64
 	}{
 		{
 			name:     "empty vector",

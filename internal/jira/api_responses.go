@@ -48,12 +48,12 @@ type APIResponseIssuePickerGet struct {
 }
 type APIResponseIssuePickerGetSection struct {
 	ID     string                                  `json:"id"`
-	Issues []APIResponseIssuePickerGetSectionIssue `json:"issues"`
 	Label  string                                  `json:"label"`
+	Issues []APIResponseIssuePickerGetSectionIssue `json:"issues"`
 }
 type APIResponseIssuePickerGetSectionIssue struct {
-	ID          int    `json:"id"`
 	Key         string `json:"key"`
 	Img         string `json:"img"`
 	SummaryText string `json:"summaryText"`
+	ID          int    `json:"id"`
 }

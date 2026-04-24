@@ -32,7 +32,9 @@ type GroupsPostResponseGroup struct {
 	Name  string `json:"name,omitempty"`
 }
 
-// GroupsHandler returns information about groups (Microsoft or Google).
+// GroupsHandler returns information about Google Groups.
+//
+//nolint:gocognit,gocyclo // Handler dispatches multiple group operations from one endpoint.
 func GroupsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logArgs := []any{
@@ -68,7 +70,7 @@ func GroupsHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "POST":
+		case httpMethodPost:
 			// Decode request.
 			req := &GroupsPostRequest{}
 			if err := decodeRequest(r, &req); err != nil {

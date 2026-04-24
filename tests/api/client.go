@@ -12,10 +12,10 @@ import (
 
 // Client wraps http.Client with test-friendly methods.
 type Client struct {
-	BaseURL string
 	client  *http.Client
-	auth    string
 	t       *testing.T
+	BaseURL string
+	auth    string
 }
 
 // NewClient creates a new test client.
@@ -117,7 +117,7 @@ func (c *Client) GetWithQuery(path string, params map[string]string) *Response {
 	}
 	u.RawQuery = q.Encode()
 
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequest("GET", u.String(), http.NoBody)
 	if err != nil {
 		c.t.Fatalf("Failed to create request: %v", err)
 	}
@@ -312,6 +312,6 @@ func (r *Response) AssertBodyContains(substr string) *Response {
 
 // contains is a simple helper to check if a string contains a substring.
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		(len(s) > 0 && (s[:len(substr)] == substr || contains(s[1:], substr))))
+	return len(s) >= len(substr) && (s == substr || substr == "" ||
+		(s != "" && (s[:len(substr)] == substr || contains(s[1:], substr))))
 }

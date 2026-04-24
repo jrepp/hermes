@@ -121,6 +121,8 @@ func (c *IndexVectorCommand) Execute(ctx context.Context, doc *indexer.DocumentC
 }
 
 // ExecuteBatch implements BatchCommand for batch vector indexing.
+//
+//nolint:gocognit // Batch filtering and conversion are kept together to avoid churn in indexing flow.
 func (c *IndexVectorCommand) ExecuteBatch(ctx context.Context, docs []*indexer.DocumentContext) error {
 	// Collect documents with embeddings
 	vectorDocs := make([]*search.VectorDocument, 0, len(docs))

@@ -120,24 +120,22 @@ type LinksIndex interface {
 
 // Document represents a searchable document.
 type Document struct {
-	ObjectID     string                 `json:"objectID"`
+	IndexedAt    time.Time              `json:"-"`
+	CustomFields map[string]interface{} `json:"customFields,omitempty"`
+	Content      string                 `json:"content"`
 	DocID        string                 `json:"docID"`
 	Title        string                 `json:"title"`
 	DocNumber    string                 `json:"docNumber"`
 	DocType      string                 `json:"docType"`
 	Product      string                 `json:"product"`
 	Status       string                 `json:"status"`
-	Owners       []string               `json:"owners"`
+	ObjectID     string                 `json:"objectID"`
+	Summary      string                 `json:"summary"`
 	Contributors []string               `json:"contributors"`
 	Approvers    []string               `json:"approvers"`
-	Summary      string                 `json:"summary"`
-	Content      string                 `json:"content"`
+	Owners       []string               `json:"owners"`
 	CreatedTime  int64                  `json:"createdTime"`
 	ModifiedTime int64                  `json:"modifiedTime"`
-	CustomFields map[string]interface{} `json:"customFields,omitempty"`
-
-	// Timestamps for internal use
-	IndexedAt time.Time `json:"-"`
 }
 
 // FilterOperator defines logical operators for filter composition.
@@ -156,40 +154,26 @@ type FilterGroup struct {
 
 // SearchQuery defines search parameters.
 type SearchQuery struct {
-	// Query text
-	Query string
-
-	// Pagination
-	Page    int
-	PerPage int
-
-	// Filters
-	Filters map[string][]string // e.g., {"product": ["terraform"], "status": ["approved"]}
-
-	// FilterGroups enables complex filter logic with AND/OR operators.
-	// Example: OR group for (owners:user@example.com OR contributors:user@example.com)
-	FilterGroups []FilterGroup
-
-	// Facets to return
-	Facets []string
-
-	// Sorting
-	SortBy    string // Field name
-	SortOrder string // "asc" or "desc"
-
-	// Highlighting
+	Filters          map[string][]string
+	Query            string
+	SortBy           string
+	SortOrder        string
 	HighlightPreTag  string
 	HighlightPostTag string
+	FilterGroups     []FilterGroup
+	Facets           []string
+	Page             int
+	PerPage          int
 }
 
 // SearchResult contains search results.
 type SearchResult struct {
+	Facets     *Facets
 	Hits       []*Document
 	TotalHits  int
 	Page       int
 	PerPage    int
 	TotalPages int
-	Facets     *Facets
 	QueryTime  time.Duration
 }
 

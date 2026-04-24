@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -40,9 +39,9 @@ type MetadataStore interface {
 // Best for: Simple metadata, low cost, no extra infrastructure
 
 type S3TagsMetadataStore struct {
+	logger hclog.Logger
 	client *s3.Client
 	bucket string
-	logger hclog.Logger
 }
 
 func NewS3TagsMetadataStore(client *s3.Client, bucket string, logger hclog.Logger) *S3TagsMetadataStore {
@@ -216,10 +215,10 @@ func (s *S3TagsMetadataStore) List(ctx context.Context, prefix string) ([]string
 // Best for: Rich metadata, no tag limits, simple architecture
 
 type ManifestMetadataStore struct {
+	logger hclog.Logger
 	client *s3.Client
 	bucket string
 	prefix string
-	logger hclog.Logger
 }
 
 func NewManifestMetadataStore(client *s3.Client, bucket, prefix string, logger hclog.Logger) *ManifestMetadataStore {
@@ -360,18 +359,3 @@ func (m *ManifestMetadataStore) buildMetadataFromObject(ctx context.Context, key
 // =================================================================
 // Helper Functions
 // =================================================================
-
-// encodeTag URL-encodes a tag value to fit S3 tag constraints
-func encodeTag(value string) string {
-	return url.QueryEscape(value)
-}
-
-// decodeTag URL-decodes a tag value
-func decodeTag(value string) string {
-	decoded, err := url.QueryUnescape(value)
-	if err != nil {
-		// Return original value if unescape fails
-		return value
-	}
-	return decoded
-}

@@ -9,48 +9,23 @@ import (
 
 // Indexer represents a registered indexer instance that syncs documents to central Hermes.
 type Indexer struct {
-	// ID is the unique indexer identifier (UUID).
-	ID uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-
-	// CreatedAt is when the indexer was registered.
-	CreatedAt time.Time `json:"created_at"`
-
-	// UpdatedAt is when the indexer was last updated.
-	UpdatedAt time.Time `json:"updated_at"`
-
-	// DeletedAt implements soft deletes.
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-
-	// IndexerType identifies the kind of indexer (local-workspace, google-workspace, remote-hermes).
-	IndexerType string `gorm:"type:varchar(50);not null" json:"indexer_type"`
-
-	// WorkspacePath is the path for local workspace indexers.
-	WorkspacePath string `gorm:"type:varchar(1024)" json:"workspace_path,omitempty"`
-
-	// Hostname is the hostname where the indexer is running.
-	Hostname string `gorm:"type:varchar(255)" json:"hostname,omitempty"`
-
-	// Version is the indexer software version.
-	Version string `gorm:"type:varchar(50)" json:"version,omitempty"`
-
-	// Status indicates the indexer's current state (active, inactive, deregistered).
-	Status string `gorm:"type:varchar(50);default:'active'" json:"status"`
-
-	// LastHeartbeatAt is the timestamp of the last heartbeat received from the indexer.
-	LastHeartbeatAt *time.Time `json:"last_heartbeat_at,omitempty"`
-
-	// DocumentCount is the number of documents managed by this indexer.
-	DocumentCount int `gorm:"default:0" json:"document_count"`
-
-	// Metadata stores additional JSON data for extensibility.
-	Metadata string `gorm:"type:text" json:"metadata,omitempty"`
-
-	// Tokens are the authentication tokens associated with this indexer.
-	Tokens []IndexerToken `gorm:"foreignKey:IndexerID" json:"-"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	LastHeartbeatAt *time.Time     `json:"last_heartbeat_at,omitempty"`
+	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
+	IndexerType     string         `gorm:"type:varchar(50);not null" json:"indexer_type"`
+	WorkspacePath   string         `gorm:"type:varchar(1024)" json:"workspace_path,omitempty"`
+	Hostname        string         `gorm:"type:varchar(255)" json:"hostname,omitempty"`
+	Version         string         `gorm:"type:varchar(50)" json:"version,omitempty"`
+	Status          string         `gorm:"type:varchar(50);default:'active'" json:"status"`
+	Metadata        string         `gorm:"type:text" json:"metadata,omitempty"`
+	Tokens          []IndexerToken `gorm:"foreignKey:IndexerID" json:"-"`
+	DocumentCount   int            `gorm:"default:0" json:"document_count"`
+	ID              uuid.UUID      `gorm:"type:uuid;primaryKey" json:"id"`
 }
 
 // BeforeCreate hook to generate UUID if not set.
-func (i *Indexer) BeforeCreate(tx *gorm.DB) error {
+func (i *Indexer) BeforeCreate(_ *gorm.DB) error {
 	if i.ID == uuid.Nil {
 		i.ID = uuid.New()
 	}

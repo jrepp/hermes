@@ -33,7 +33,7 @@ func WorkspaceProjectsHandler(srv server.Server) http.Handler {
 		}
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			// Get all active projects from database
 			workspaceProjects, err := projectconfig.GetAllActiveWorkspaceProjectsFromDB(srv.DB)
 			if err != nil {
@@ -45,11 +45,11 @@ func WorkspaceProjectsHandler(srv server.Server) http.Handler {
 
 			// Convert to summaries
 			summaries := make([]*projectconfig.ProjectSummary, 0, len(workspaceProjects))
-			for _, wp := range workspaceProjects {
-				summary, err := projectconfig.GetWorkspaceProjectSummary(&wp)
+			for i := range workspaceProjects {
+				summary, err := projectconfig.GetWorkspaceProjectSummary(&workspaceProjects[i])
 				if err != nil {
 					srv.Logger.Error("error converting workspace project to summary",
-						append(logArgs, "project", wp.Name, "error", err)...)
+						append(logArgs, "project", workspaceProjects[i].Name, "error", err)...)
 					continue
 				}
 				summaries = append(summaries, summary)
@@ -100,7 +100,7 @@ func WorkspaceProjectHandler(srv server.Server) http.Handler {
 		projectName := pathParts[0]
 
 		switch r.Method {
-		case "GET":
+		case httpMethodGet:
 			// Get single project from database
 			wp, err := projectconfig.GetWorkspaceProjectByNameFromDB(srv.DB, projectName)
 			if err != nil {

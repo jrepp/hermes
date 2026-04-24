@@ -15,8 +15,8 @@ import (
 
 // mockProvider is a simple mock provider for testing
 type mockProvider struct {
-	name       string
 	documents  map[string]*workspace.DocumentMetadata
+	name       string
 	shouldFail bool
 }
 

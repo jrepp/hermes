@@ -72,7 +72,8 @@ func (a *CompatAdapter) CreateFileAsUser(templateID, destFolderID, name, userEma
 
 // People operations
 
-func (a *CompatAdapter) SearchPeople(email string, fields string) ([]*people.Person, error) {
+// SearchPeople searches for people by email and returns matching results.
+func (a *CompatAdapter) SearchPeople(email, fields string) ([]*people.Person, error) {
 	return a.service.SearchPeople(email, fields)
 }
 

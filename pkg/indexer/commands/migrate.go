@@ -17,9 +17,9 @@ import (
 type MigrateCommand struct {
 	Source         workspace.DocumentStorage
 	Target         workspace.DocumentStorage
+	Logger         hclog.Logger
 	TargetFolderID string
 	DryRun         bool
-	Logger         hclog.Logger
 }
 
 // Name returns the command name.
@@ -52,21 +52,23 @@ func (c *MigrateCommand) Execute(ctx context.Context, doc *indexer.DocumentConte
 
 	// Look for existing document with same name
 	for _, existing := range existingDocs {
-		if existing.Name == doc.Document.Name {
-			c.Logger.Warn("document already exists in target",
-				"document_id", doc.Document.ID,
-				"name", doc.Document.Name,
-				"target_id", existing.ID,
-			)
-
-			// Store target document for conflict detection
-			doc.TargetProvider = c.Target
-			doc.TargetDocument = existing
-			doc.SetCustom("migration_status", "conflict")
-			doc.SetCustom("conflict_reason", "document_exists")
-
-			return nil // Don't fail, let conflict detection handle it
+		if existing.Name != doc.Document.Name {
+			continue
 		}
+
+		c.Logger.Warn("document already exists in target",
+			"document_id", doc.Document.ID,
+			"name", doc.Document.Name,
+			"target_id", existing.ID,
+		)
+
+		// Store target document for conflict detection.
+		doc.TargetProvider = c.Target
+		doc.TargetDocument = existing
+		doc.SetCustom("migration_status", "conflict")
+		doc.SetCustom("conflict_reason", "document_exists")
+
+		return nil // Don't fail, let conflict detection handle it.
 	}
 
 	if c.DryRun {
