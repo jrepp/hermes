@@ -18,6 +18,8 @@ type recentlyViewedDoc struct {
 	ViewedTime int64  `json:"viewedTime"`
 }
 
+// MeRecentlyViewedDocsHandler returns an HTTP handler for recently viewed documents.
+//
 //nolint:gocognit,gocyclo // Handler combines auth, lookup, and response shaping in one endpoint.
 func MeRecentlyViewedDocsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

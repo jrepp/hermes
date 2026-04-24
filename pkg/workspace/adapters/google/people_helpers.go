@@ -56,6 +56,8 @@ func (s *Service) SearchPeople(
 }
 
 // SearchDirectory performs advanced directory search with query strings, field selection, and source filtering.
+//
+//nolint:gocognit // multiple optional search parameters
 func (s *Service) SearchDirectory(opts workspace.PeopleSearchOptions) ([]*people.Person, error) {
 	var (
 		call          *people.PeopleSearchDirectoryPeopleCall

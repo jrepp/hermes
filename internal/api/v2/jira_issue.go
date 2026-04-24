@@ -15,6 +15,7 @@ import (
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 )
 
+// JiraIssueGetResponse represents the response for a Jira issue GET request.
 type JiraIssueGetResponse struct {
 	Assignee       string `json:"assignee,omitempty"`
 	AssigneeAvatar string `json:"assigneeAvatar,omitempty"`
@@ -111,7 +112,7 @@ func JiraIssueHandler(srv server.Server) http.Handler {
 						http.StatusInternalServerError)
 					return
 				}
-				defer resp.Body.Close()
+				defer func() { _ = resp.Body.Close() }()
 
 				switch {
 				case resp.StatusCode >= 200 && resp.StatusCode <= 299:
@@ -203,12 +204,12 @@ func JiraIssueHandler(srv server.Server) http.Handler {
 	})
 }
 
-func executeJiraRequest(url string, srv server.Server) (*http.Response, error) {
+func executeJiraRequest(requestURL string, srv server.Server) (*http.Response, error) {
 	// Create HTTP request.
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
-	req, err := http.NewRequest("GET", url, http.NoBody)
+	req, err := http.NewRequest("GET", requestURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating HTTP request: %w", err)
 	}
@@ -230,8 +231,8 @@ func executeJiraRequest(url string, srv server.Server) (*http.Response, error) {
 
 // getJiraIssueIDFromPath returns the Jira issue ID from a request path and
 // corresponding regular expression.
-func getJiraIssueIDFromPath(path string, re *regexp.Regexp) (string, error) {
-	matches := re.FindStringSubmatch(path)
+func getJiraIssueIDFromPath(reqPath string, re *regexp.Regexp) (string, error) {
+	matches := re.FindStringSubmatch(reqPath)
 	if len(matches) != 2 {
 		return "",
 			fmt.Errorf(

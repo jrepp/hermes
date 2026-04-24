@@ -167,7 +167,7 @@ func (r *Response) ExpectJSON() *Response {
 	if err != nil {
 		r.t.Fatalf("Failed to read response body: %v", err)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 
 	// Store the body for later access
 	r.Body = io.NopCloser(bytes.NewReader(body))
@@ -187,12 +187,13 @@ func (r *Response) GetArray() []interface{} {
 	if err != nil {
 		r.t.Fatalf("Failed to read response body: %v", err)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 
 	var data []interface{}
 	if err := json.Unmarshal(body, &data); err != nil {
 		r.t.Fatalf("Failed to decode JSON array: %v. Body: %s", err, string(body))
 	}
+	_ = r.Body.Close()
 	return data
 }
 
@@ -202,12 +203,13 @@ func (r *Response) GetMap() map[string]interface{} {
 	if err != nil {
 		r.t.Fatalf("Failed to read response body: %v", err)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 
 	var data map[string]interface{}
 	if err := json.Unmarshal(body, &data); err != nil {
 		r.t.Fatalf("Failed to decode JSON object: %v. Body: %s", err, string(body))
 	}
+	_ = r.Body.Close()
 	return data
 }
 
@@ -258,7 +260,7 @@ func (r *Response) DecodeJSON(v interface{}) *Response {
 	if err != nil {
 		r.t.Fatalf("Failed to read response body: %v", err)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 
 	if err := json.Unmarshal(body, v); err != nil {
 		r.t.Fatalf("Failed to decode JSON response. Body: %s, Error: %v", string(body), err)
@@ -272,7 +274,7 @@ func (r *Response) AssertJSONContains(key string, expectedValue interface{}) *Re
 	if err != nil {
 		r.t.Fatalf("Failed to read response body: %v", err)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 
 	var data map[string]interface{}
 	if err := json.Unmarshal(body, &data); err != nil {
@@ -297,7 +299,7 @@ func (r *Response) GetBody() string {
 	if err != nil {
 		r.t.Fatalf("Failed to read response body: %v", err)
 	}
-	r.Body.Close()
+	_ = r.Body.Close()
 	return string(body)
 }
 

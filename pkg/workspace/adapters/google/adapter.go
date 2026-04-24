@@ -56,7 +56,7 @@ func (a *Adapter) GetService() *Service {
 
 // GetDocument retrieves document metadata by backend-specific ID.
 // For Google: providerID = "google:{fileId}"
-func (a *Adapter) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+func (a *Adapter) GetDocument(_ context.Context, providerID string) (*workspace.DocumentMetadata, error) {
 	// Extract Google file ID from providerID
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
@@ -109,7 +109,7 @@ func (a *Adapter) CreateDocument(ctx context.Context, templateID, destFolderID, 
 }
 
 // CreateDocumentWithUUID creates document with explicit UUID (for migration).
-func (a *Adapter) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (a *Adapter) CreateDocumentWithUUID(_ context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
 	// Copy file from template
 	file, err := a.service.CopyFile(templateID, destFolderID, name)
 	if err != nil {
@@ -149,7 +149,7 @@ func (a *Adapter) RegisterDocument(ctx context.Context, doc *workspace.DocumentM
 }
 
 // CopyDocument copies a document (preserves UUID if in frontmatter/metadata).
-func (a *Adapter) CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (a *Adapter) CopyDocument(_ context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
 	srcFileID, err := extractGoogleFileID(srcProviderID)
 	if err != nil {
 		return nil, err
@@ -165,7 +165,7 @@ func (a *Adapter) CopyDocument(ctx context.Context, srcProviderID, destFolderID,
 }
 
 // MoveDocument moves a document to different folder.
-func (a *Adapter) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+func (a *Adapter) MoveDocument(_ context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func (a *Adapter) MoveDocument(ctx context.Context, providerID, destFolderID str
 }
 
 // DeleteDocument deletes a document.
-func (a *Adapter) DeleteDocument(ctx context.Context, providerID string) error {
+func (a *Adapter) DeleteDocument(_ context.Context, providerID string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -190,7 +190,7 @@ func (a *Adapter) DeleteDocument(ctx context.Context, providerID string) error {
 }
 
 // RenameDocument renames a document.
-func (a *Adapter) RenameDocument(ctx context.Context, providerID, newName string) error {
+func (a *Adapter) RenameDocument(_ context.Context, providerID, newName string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -200,7 +200,7 @@ func (a *Adapter) RenameDocument(ctx context.Context, providerID, newName string
 }
 
 // CreateFolder creates a folder/directory.
-func (a *Adapter) CreateFolder(ctx context.Context, name, parentID string) (*workspace.DocumentMetadata, error) {
+func (a *Adapter) CreateFolder(_ context.Context, name, parentID string) (*workspace.DocumentMetadata, error) {
 	file, err := a.service.CreateFolder(name, parentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create folder: %w", err)
@@ -210,7 +210,7 @@ func (a *Adapter) CreateFolder(ctx context.Context, name, parentID string) (*wor
 }
 
 // GetSubfolder finds a subfolder by name.
-func (a *Adapter) GetSubfolder(ctx context.Context, parentID, name string) (string, error) {
+func (a *Adapter) GetSubfolder(_ context.Context, parentID, name string) (string, error) {
 	subfolder, err := a.service.GetSubfolder(parentID, name)
 	if err != nil {
 		return "", err
@@ -226,7 +226,7 @@ func (a *Adapter) GetSubfolder(ctx context.Context, parentID, name string) (stri
 // ===================================================================
 
 // GetContent retrieves document content with backend-specific revision.
-func (a *Adapter) GetContent(ctx context.Context, providerID string) (*workspace.DocumentContent, error) {
+func (a *Adapter) GetContent(_ context.Context, providerID string) (*workspace.DocumentContent, error) {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return nil, err
@@ -259,7 +259,7 @@ func (a *Adapter) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*works
 }
 
 // UpdateContent updates document content.
-func (a *Adapter) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (a *Adapter) UpdateContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	// Note: For Google Docs, this would require using the Docs API to update content
 	// This is a complex operation that requires converting markdown to Google Docs format
 	// For now, return not implemented

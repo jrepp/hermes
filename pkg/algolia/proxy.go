@@ -10,6 +10,8 @@ import (
 )
 
 // AlgoliaProxyHandler proxies Algolia API requests from the Hermes frontend.
+//
+//nolint:revive // AlgoliaProxyHandler is intentional to distinguish from other proxy handlers
 func AlgoliaProxyHandler(
 	c *Client, cfg *Config, log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -30,6 +32,7 @@ func AlgoliaProxyHandler(
 		client := &http.Client{
 			Timeout: time.Second * 10,
 		}
+		//nolint:gosec // G704: url is constructed from config, not user input
 		req, err := http.NewRequest(r.Method, url, r.Body)
 		if err != nil {
 			log.Error("AlgoliaProxyHandler: Error creating HTTP request",
@@ -48,7 +51,7 @@ func AlgoliaProxyHandler(
 		log.Debug("AlgoliaProxyHandler: Added Algolia auth headers")
 
 		// Execute HTTP request.
-		log.Debug("AlgoliaProxyHandler: Sending request to Algolia")
+		//nolint:gosec // G704: req is constructed from config, not user input
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Error("AlgoliaProxyHandler: Error executing search request",
@@ -60,10 +63,7 @@ func AlgoliaProxyHandler(
 				http.StatusInternalServerError)
 			return
 		}
-		defer resp.Body.Close()
-		log.Debug("AlgoliaProxyHandler: Received response from Algolia",
-			"status_code", resp.StatusCode,
-		)
+		defer func() { _ = resp.Body.Close() }()
 
 		// Build and write HTTP response.
 		w.WriteHeader(resp.StatusCode)

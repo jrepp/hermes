@@ -175,6 +175,7 @@ func handleIndexerRegister(srv server.Server, w http.ResponseWriter, r *http.Req
 		"workspace_path", indexer.WorkspacePath)
 
 	w.Header().Set("Content-Type", "application/json")
+	//nolint:gosec // G117: APIToken is a registration token, not a real secret
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		srv.Logger.Error("error encoding response", "error", err)
 	}

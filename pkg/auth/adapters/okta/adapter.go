@@ -47,6 +47,8 @@ func NewAdapter(cfg Config, log hclog.Logger) (*Adapter, error) {
 
 // Authenticate validates the OIDC token from the AWS ALB headers
 // and returns the authenticated user's email address.
+//
+//nolint:gocyclo // authentication flow with multiple validation steps
 func (a *Adapter) Authenticate(r *http.Request) (string, error) {
 	// Get the encoded JWT from the ALB header.
 	encodedJWT := r.Header.Get("x-amzn-oidc-data")
@@ -145,6 +147,7 @@ func (a *Adapter) getPublicKey(kid string) (interface{}, error) {
 
 	err = backoff.RetryNotify(
 		func() error {
+			//nolint:gosec // G107: url is constructed from OIDC key ID, not user input
 			resp, err = http.Get(url)
 			return err
 		},
@@ -159,7 +162,7 @@ func (a *Adapter) getPublicKey(kid string) (interface{}, error) {
 	if err != nil || resp == nil {
 		return nil, fmt.Errorf("error fetching public key: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

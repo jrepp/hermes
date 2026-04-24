@@ -65,6 +65,8 @@ const (
 	archivedDocumentSubcollectionRequestType
 )
 
+// DocumentHandler returns an HTTP handler for document operations.
+//
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; large patch/get flows are kept together to avoid behavior drift.
 func DocumentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -290,10 +292,10 @@ func DocumentHandler(srv server.Server) http.Handler {
 				// document metadata.
 				if r.Header.Get("Add-To-Recently-Viewed") != "" {
 					// Get authenticated user's email address.
-					email := pkgauth.MustGetUserEmail(r.Context())
+					userEmail := pkgauth.MustGetUserEmail(r.Context())
 
 					if err := updateRecentlyViewedDocs(
-						email, docID, srv.DB, now, srv.IsSharePoint(),
+						userEmail, docID, srv.DB, now,
 					); err != nil {
 						srv.Logger.Error("error updating recently viewed docs",
 							"error", err,
@@ -1116,10 +1118,10 @@ func DocumentHandler(srv server.Server) http.Handler {
 // provided email address, using the document file ID and viewed at time for a
 // document view event.
 func updateRecentlyViewedDocs(
-	email, docID string, db *gorm.DB, viewedAt time.Time, useSharePoint bool) error {
+	userAddr, docID string, db *gorm.DB, viewedAt time.Time) error {
 	// Get user (if exists).
 	u := models.User{
-		EmailAddress: email,
+		EmailAddress: userAddr,
 	}
 	if err := u.Get(db); err != nil && !errors.Is(
 		err, gorm.ErrRecordNotFound) {

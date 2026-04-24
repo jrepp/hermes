@@ -1,3 +1,4 @@
+// Package backends provides notification backend implementations.
 package backends
 
 import (
@@ -35,7 +36,7 @@ func (b *AuditBackend) SupportsBackend(backend string) bool {
 }
 
 // Handle processes a notification message
-func (b *AuditBackend) Handle(ctx context.Context, msg *notifications.NotificationMessage) error {
+func (b *AuditBackend) Handle(_ context.Context, msg *notifications.NotificationMessage) error {
 	// Log notification metadata
 	b.logger.Printf("Notification ID: %s", msg.ID)
 	b.logger.Printf("  Type: %s", msg.Type)

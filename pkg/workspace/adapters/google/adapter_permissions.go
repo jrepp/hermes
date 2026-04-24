@@ -14,7 +14,7 @@ import (
 // ===================================================================
 
 // ShareDocument grants access to a user/group.
-func (a *Adapter) ShareDocument(ctx context.Context, providerID, email, role string) error {
+func (a *Adapter) ShareDocument(_ context.Context, providerID, email, role string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func (a *Adapter) ShareDocument(ctx context.Context, providerID, email, role str
 }
 
 // ShareDocumentWithDomain grants access to entire domain.
-func (a *Adapter) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+func (a *Adapter) ShareDocumentWithDomain(_ context.Context, providerID, domain, role string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func (a *Adapter) ShareDocumentWithDomain(ctx context.Context, providerID, domai
 }
 
 // ListPermissions lists all permissions for a document.
-func (a *Adapter) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+func (a *Adapter) ListPermissions(_ context.Context, providerID string) ([]*workspace.FilePermission, error) {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (a *Adapter) ListPermissions(ctx context.Context, providerID string) ([]*wo
 }
 
 // RemovePermission revokes access.
-func (a *Adapter) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+func (a *Adapter) RemovePermission(_ context.Context, providerID, permissionID string) error {
 	fileID, err := extractGoogleFileID(providerID)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func (a *Adapter) UpdatePermission(ctx context.Context, providerID, permissionID
 // ===================================================================
 
 // SearchPeople searches for users in the directory.
-func (a *Adapter) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
+func (a *Adapter) SearchPeople(_ context.Context, query string) ([]*workspace.UserIdentity, error) {
 	persons, err := a.service.SearchPeople(query, "emailAddresses,names,photos")
 	if err != nil {
 		return nil, fmt.Errorf("failed to search people: %w", err)
@@ -138,7 +138,7 @@ func (a *Adapter) GetPerson(ctx context.Context, email string) (*workspace.UserI
 // GetPersonByUnifiedID retrieves user by unified ID (cross-provider lookup).
 // Note: Google adapter does not have access to unified ID system.
 // This would need to be implemented by a higher-level service.
-func (a *Adapter) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
+func (a *Adapter) GetPersonByUnifiedID(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("GetPersonByUnifiedID not supported by Google adapter (requires identity service)")
 }
 
@@ -270,13 +270,13 @@ func (a *Adapter) GetTeamMembers(ctx context.Context, teamID string) ([]*workspa
 // ===================================================================
 
 // SendEmail sends an email notification.
-func (a *Adapter) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+func (a *Adapter) SendEmail(_ context.Context, to []string, from, subject, body string) error {
 	// Use Gmail API to send email
 	return a.service.SendEmail(to, from, subject, body)
 }
 
 // SendEmailWithTemplate sends email using template.
-func (a *Adapter) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+func (a *Adapter) SendEmailWithTemplate(_ context.Context, to []string, template string, data map[string]any) error {
 	// For now, just send plain email
 	// Template rendering would be implemented by a higher-level service
 	return a.service.SendEmail(to, "", template, fmt.Sprintf("%v", data))

@@ -1,3 +1,4 @@
+// Package mock provides mock functionality.
 package mock
 
 import (
@@ -43,7 +44,7 @@ func (p *Provider) WithDelay(ms int) *Provider {
 }
 
 // Summarize generates a mock summary.
-func (p *Provider) Summarize(ctx context.Context, req *ai.SummarizeRequest) (*ai.SummarizeResponse, error) {
+func (p *Provider) Summarize(_ context.Context, req *ai.SummarizeRequest) (*ai.SummarizeResponse, error) {
 	if p.simulateErrors {
 		return nil, fmt.Errorf("mock error: summarization failed")
 	}
@@ -86,7 +87,7 @@ func (p *Provider) Summarize(ctx context.Context, req *ai.SummarizeRequest) (*ai
 }
 
 // GenerateEmbedding generates mock embeddings.
-func (p *Provider) GenerateEmbedding(ctx context.Context, req *ai.EmbeddingRequest) (*ai.EmbeddingResponse, error) {
+func (p *Provider) GenerateEmbedding(_ context.Context, req *ai.EmbeddingRequest) (*ai.EmbeddingResponse, error) {
 	if p.simulateErrors {
 		return nil, fmt.Errorf("mock error: embedding generation failed")
 	}

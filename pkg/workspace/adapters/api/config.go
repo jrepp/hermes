@@ -85,6 +85,7 @@ func (c *Config) NewHTTPClient() *http.Client {
 	// Configure TLS verification
 	if c.TLSVerify != nil && !*c.TLSVerify {
 		transport.TLSClientConfig = &tls.Config{
+			//nolint:gosec // G402: InsecureSkipVerify controlled by config for development
 			InsecureSkipVerify: true,
 		}
 	}

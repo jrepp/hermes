@@ -42,6 +42,8 @@ const (
 	statusActive = "active"
 )
 
+// ApprovalsHandler returns an HTTP handler for document approval operations.
+//
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; splitting further is high-churn and behavior-sensitive.
 func ApprovalsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

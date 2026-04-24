@@ -1,3 +1,4 @@
+// Package api provides api functionality.
 package api
 
 import (
@@ -308,7 +309,7 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 		result = multierror.Append(
 			result, fmt.Errorf("error getting approvers value: %w", err))
 	}
-	dbApprovers := []string{}
+	dbApprovers := make([]string, 0, len(dbDoc.Approvers))
 	for _, a := range dbDoc.Approvers {
 		dbApprovers = append(dbApprovers, a.EmailAddress)
 	}
@@ -349,7 +350,7 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 		result = multierror.Append(
 			result, fmt.Errorf("error getting contributors value: %w", err))
 	}
-	dbContributors := []string{}
+	dbContributors := make([]string, 0, len(dbDoc.Contributors))
 	for _, c := range dbDoc.Contributors {
 		dbContributors = append(dbContributors, c.EmailAddress)
 	}

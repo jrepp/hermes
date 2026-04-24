@@ -1,3 +1,4 @@
+// Package backends provides notification backend implementations.
 package backends
 
 import (
@@ -57,7 +58,7 @@ func (b *MailBackend) SupportsBackend(backend string) bool {
 }
 
 // Handle processes a notification message by sending emails
-func (b *MailBackend) Handle(ctx context.Context, msg *notifications.NotificationMessage) error {
+func (b *MailBackend) Handle(_ context.Context, msg *notifications.NotificationMessage) error {
 	// Extract email recipients
 	var recipients []string
 	for _, r := range msg.Recipients {
@@ -270,7 +271,7 @@ func (b *MailBackend) sendMailTLS(addr string, auth smtp.Auth, from string, to [
 	if err != nil {
 		return fmt.Errorf("failed to connect to SMTP server: %w", err)
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	// Start TLS
 	if err = client.StartTLS(&tls.Config{

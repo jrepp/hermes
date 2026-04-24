@@ -145,6 +145,8 @@ type MeGetResponse struct {
 	VerifiedEmail bool   `json:"verified_email"`
 }
 
+// MeHandler returns an HTTP handler for the current user's profile.
+//
 //nolint:gocognit,gocyclo // User info resolution has several fallbacks that are clearer inline.
 func MeHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

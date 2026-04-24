@@ -47,7 +47,8 @@ func (a *Adapter) GetRevisionHistory(ctx context.Context, providerID string, lim
 	}
 
 	var revisions []*workspace.BackendRevision
-	for _, version := range result.Versions {
+	for i := range result.Versions {
+		version := result.Versions[i]
 		// Only include versions for the exact key (not other objects with same prefix)
 		if aws.ToString(version.Key) != objectKey {
 			continue
@@ -120,7 +121,7 @@ func (a *Adapter) GetRevisionContent(ctx context.Context, providerID, revisionID
 	if err != nil {
 		return nil, fmt.Errorf("failed to get revision content: %w", err)
 	}
-	defer result.Body.Close()
+	defer func() { _ = result.Body.Close() }()
 
 	// Read content
 	contentBytes := make([]byte, aws.ToInt64(result.ContentLength))
@@ -168,7 +169,7 @@ func (a *Adapter) GetRevisionContent(ctx context.Context, providerID, revisionID
 
 // KeepRevisionForever marks a revision as permanent (if supported)
 // S3 doesn't have a "keep forever" feature like Google Drive, so this is a no-op
-func (a *Adapter) KeepRevisionForever(ctx context.Context, providerID, revisionID string) error {
+func (a *Adapter) KeepRevisionForever(_ context.Context, providerID, revisionID string) error {
 	// S3 versioning is permanent by default (until lifecycle policies delete them)
 	// We can tag the version to indicate it should be kept, but that's implementation-specific
 	a.logger.Info("KeepRevisionForever called (no-op for S3)",

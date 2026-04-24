@@ -21,14 +21,17 @@ import (
 )
 
 const (
-	defaultHitsPerPage        = 24
+	defaultHitsPerPage = 24
+	// MaxRecentlyViewedProjects is the maximum number of recently viewed projects.
 	MaxRecentlyViewedProjects = 10
 )
 
+// ProjectGetResponse represents a single project in a GET response.
 type ProjectGetResponse struct {
 	project
 }
 
+// ProjectPatchRequest represents a request to patch a project.
 type ProjectPatchRequest struct {
 	Description *string `json:"description"`
 	JiraIssueID *string `json:"jiraIssueID"`
@@ -36,18 +39,21 @@ type ProjectPatchRequest struct {
 	Title       *string `json:"title"`
 }
 
+// ProjectsPostRequest represents a request to create a project.
 type ProjectsPostRequest struct {
 	Description *string `json:"description"`
 	JiraIssueID *string `json:"jiraIssueID"`
 	Title       string  `json:"title"`
 }
 
+// ProjectsGetResponse represents the response for listing projects.
 type ProjectsGetResponse struct {
 	Projects []project `json:"projects"`
 	NumPages int       `json:"numPages"`
 	Page     int       `json:"page"`
 }
 
+// ProjectsPostResponse represents the response for creating a project.
 type ProjectsPostResponse struct {
 	ID int `json:"id"`
 }
@@ -64,6 +70,8 @@ type project struct {
 	ModifiedTime int64    `json:"modifiedTime,omitempty"`
 }
 
+// ProjectsHandler returns an HTTP handler for projects operations.
+//
 //nolint:gocognit,gocyclo // Collection handler keeps paging/filtering branches together.
 func ProjectsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -318,6 +326,8 @@ func ProjectsHandler(srv server.Server) http.Handler {
 	})
 }
 
+// ProjectHandler returns an HTTP handler for a single project.
+//
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; patch/get flows are centralized to limit churn.
 func ProjectHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

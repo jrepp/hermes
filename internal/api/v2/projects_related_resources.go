@@ -14,17 +14,20 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
+// ProjectRelatedResourcesGetResponse contains related resources for a project.
 type ProjectRelatedResourcesGetResponse struct {
 	ExternalLinks   []ProjectRelatedResourcesGetResponseExternalLink   `json:"externalLinks,omitempty"`
 	HermesDocuments []ProjectRelatedResourcesGetResponseHermesDocument `json:"hermesDocuments,omitempty"`
 }
 
+// ProjectRelatedResourcesGetResponseExternalLink represents an external link resource.
 type ProjectRelatedResourcesGetResponseExternalLink struct {
 	Name      string `json:"name"`
 	URL       string `json:"url"`
 	SortOrder int    `json:"sortOrder"`
 }
 
+// ProjectRelatedResourcesGetResponseHermesDocument represents a Hermes document resource.
 type ProjectRelatedResourcesGetResponseHermesDocument struct {
 	FileID         string   `json:"FileID"`
 	Title          string   `json:"title"`
@@ -39,17 +42,20 @@ type ProjectRelatedResourcesGetResponseHermesDocument struct {
 	SortOrder      int      `json:"sortOrder"`
 }
 
+// ProjectRelatedResourcesPutRequest represents a request to update related resources.
 type ProjectRelatedResourcesPutRequest struct {
 	ExternalLinks   []ProjectRelatedResourcesPutRequestExternalLink   `json:"externalLinks,omitempty"`
 	HermesDocuments []ProjectRelatedResourcesPutRequestHermesDocument `json:"hermesDocuments,omitempty"`
 }
 
+// ProjectRelatedResourcesPutRequestExternalLink represents an external link in a PUT request.
 type ProjectRelatedResourcesPutRequestExternalLink struct {
 	Name      string `json:"name"`
 	URL       string `json:"url"`
 	SortOrder int    `json:"sortOrder"`
 }
 
+// ProjectRelatedResourcesPutRequestHermesDocument represents a Hermes document in a PUT request.
 type ProjectRelatedResourcesPutRequestHermesDocument struct {
 	FileID    string `json:"FileID"`
 	SortOrder int    `json:"sortOrder"`

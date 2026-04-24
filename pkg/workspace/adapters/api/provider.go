@@ -128,7 +128,7 @@ func (p *Provider) discoverCapabilities(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to discover capabilities: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// If endpoint doesn't exist (404), return error to trigger default capabilities
 	if resp.StatusCode == http.StatusNotFound {
@@ -153,7 +153,9 @@ func (p *Provider) discoverCapabilities(ctx context.Context) error {
 }
 
 // doRequest executes an HTTP request with retry logic and error handling
-func (p *Provider) doRequest(ctx context.Context, method, path string, body interface{}, result interface{}) error {
+//
+//nolint:gocognit,gocyclo // retry logic with multiple error paths
+func (p *Provider) doRequest(ctx context.Context, method, path string, body, result interface{}) error {
 	endpoint := fmt.Sprintf("%s%s", p.config.BaseURL, path)
 
 	var bodyReader io.Reader

@@ -1,3 +1,4 @@
+// Package backends provides notification backend implementations.
 package backends
 
 import (

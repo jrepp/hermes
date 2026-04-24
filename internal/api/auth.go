@@ -1,3 +1,4 @@
+// Package api provides api functionality.
 package api
 
 import (

@@ -86,13 +86,9 @@ func TestAPIProvider_ConfigValidation(t *testing.T) {
 				if tt.errorMsg != "" {
 					assert.Contains(t, err.Error(), tt.errorMsg)
 				}
-			} else {
-				// Provider creation might still fail due to capabilities discovery
-				// So we only check that validation didn't fail
-				if err != nil {
-					// If error, it should be about connection, not validation
-					assert.NotContains(t, err.Error(), "invalid")
-				}
+			} else if err != nil {
+				// If error, it should be about connection, not validation
+				assert.NotContains(t, err.Error(), "invalid")
 			}
 		})
 	}

@@ -15,8 +15,10 @@ import (
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 )
 
+// JiraIssuePickerGetResponse is the response for Jira issue picker queries.
 type JiraIssuePickerGetResponse []JiraIssuePickerGetResponseIssue
 
+// JiraIssuePickerGetResponseIssue represents a single issue in the picker response.
 type JiraIssuePickerGetResponseIssue struct {
 	Key            string `json:"key"`
 	IssueTypeImage string `json:"issueTypeImage"`
@@ -110,7 +112,7 @@ func JiraIssuePickerHandler(srv server.Server) http.Handler {
 						http.StatusInternalServerError)
 					return
 				}
-				defer resp.Body.Close()
+				defer func() { _ = resp.Body.Close() }()
 
 				if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
 					respBody, err := io.ReadAll(resp.Body)
@@ -176,7 +178,7 @@ func JiraIssuePickerHandler(srv server.Server) http.Handler {
 						http.StatusInternalServerError)
 					return
 				}
-				defer resp.Body.Close()
+				defer func() { _ = resp.Body.Close() }()
 
 				// Only write the response body if the response was successful.
 				if resp.StatusCode >= 200 && resp.StatusCode <= 299 {

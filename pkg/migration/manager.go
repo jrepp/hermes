@@ -147,7 +147,7 @@ func (m *Manager) QueueDocuments(ctx context.Context, jobID int64, documentUUIDs
 	if err != nil {
 		return fmt.Errorf("failed to prepare item insert: %w", err)
 	}
-	defer itemStmt.Close()
+	defer func() { _ = itemStmt.Close() }()
 
 	// Get job details for outbox events
 	var sourceProvider, destProvider string
@@ -174,7 +174,7 @@ func (m *Manager) QueueDocuments(ctx context.Context, jobID int64, documentUUIDs
 	if err != nil {
 		return fmt.Errorf("failed to prepare outbox insert: %w", err)
 	}
-	defer outboxStmt.Close()
+	defer func() { _ = outboxStmt.Close() }()
 
 	// Queue each document
 	for i, docUUID := range documentUUIDs {

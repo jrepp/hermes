@@ -1,3 +1,4 @@
+// Package notifications provides notifications functionality.
 package notifications
 
 import (
@@ -8,10 +9,15 @@ import (
 type NotificationType string
 
 const (
-	NotificationTypeEmail             NotificationType = "email"
-	NotificationTypeDocumentApproved  NotificationType = "document_approved"
-	NotificationTypeReviewRequested   NotificationType = "review_requested"
-	NotificationTypeNewOwner          NotificationType = "new_owner"
+	// NotificationTypeEmail is an email notification.
+	NotificationTypeEmail NotificationType = "email"
+	// NotificationTypeDocumentApproved is a document approved notification.
+	NotificationTypeDocumentApproved NotificationType = "document_approved"
+	// NotificationTypeReviewRequested is a review requested notification.
+	NotificationTypeReviewRequested NotificationType = "review_requested"
+	// NotificationTypeNewOwner is a new owner notification.
+	NotificationTypeNewOwner NotificationType = "new_owner"
+	// NotificationTypeDocumentPublished is a document published notification.
 	NotificationTypeDocumentPublished NotificationType = "document_published"
 )
 

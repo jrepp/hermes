@@ -1,3 +1,4 @@
+// Package backends provides notification backend implementations.
 package backends
 
 import (
@@ -82,6 +83,8 @@ func (b *TestBackend) Name() string {
 }
 
 // Handle processes a notification message according to the configured failure mode
+//
+//nolint:gocyclo // test backend with multiple failure modes
 func (b *TestBackend) Handle(ctx context.Context, msg *notifications.NotificationMessage) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()

@@ -167,19 +167,19 @@ func processRecord(ctx context.Context, client *kgo.Client, backendList []backen
 	}
 }
 
-func processMessage(ctx context.Context, backends []backends.Backend, record *kgo.Record) error {
+func processMessage(ctx context.Context, bks []backends.Backend, record *kgo.Record) error {
 	msg, err := parseNotificationMessage(record)
 	if err != nil {
 		return err
 	}
 
-	if !shouldProcessMessage(backends, &msg) {
+	if !shouldProcessMessage(bks, &msg) {
 		log.Printf("Skipping message %s (backends=%v, not handled by this notifier)", msg.ID, msg.Backends)
 		return nil
 	}
 
 	log.Printf("Processing message: id=%s template=%s backends=%v", msg.ID, msg.Template, msg.Backends)
-	routeToBackends(ctx, backends, &msg)
+	routeToBackends(ctx, bks, &msg)
 
 	return nil
 }
@@ -192,8 +192,8 @@ func parseNotificationMessage(record *kgo.Record) (notifications.NotificationMes
 	return msg, nil
 }
 
-func shouldProcessMessage(backends []backends.Backend, msg *notifications.NotificationMessage) bool {
-	for _, backend := range backends {
+func shouldProcessMessage(bks []backends.Backend, msg *notifications.NotificationMessage) bool {
+	for _, backend := range bks {
 		for _, targetBackend := range msg.Backends {
 			if backend.SupportsBackend(targetBackend) {
 				return true
@@ -203,8 +203,8 @@ func shouldProcessMessage(backends []backends.Backend, msg *notifications.Notifi
 	return false
 }
 
-func routeToBackends(ctx context.Context, backends []backends.Backend, msg *notifications.NotificationMessage) {
-	for _, backend := range backends {
+func routeToBackends(ctx context.Context, bks []backends.Backend, msg *notifications.NotificationMessage) {
+	for _, backend := range bks {
 		for _, targetBackend := range msg.Backends {
 			if backend.SupportsBackend(targetBackend) {
 				if err := backend.Handle(ctx, msg); err != nil {

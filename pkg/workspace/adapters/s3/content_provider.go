@@ -66,7 +66,7 @@ func (a *Adapter) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*works
 }
 
 // UpdateContent updates document content
-func (a *Adapter) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (a *Adapter) UpdateContent(ctx context.Context, providerID, content string) (*workspace.DocumentContent, error) {
 	objectKey := a.parseProviderID(providerID)
 
 	// Get current metadata

@@ -7,16 +7,18 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/server"
 )
 
+// AnalyticsRequest represents a user analytics event request.
 type AnalyticsRequest struct {
 	DocumentID  string `json:"document_id"`
 	ProductName string `json:"product_name"`
 }
 
+// AnalyticsResponse represents the response from an analytics event.
 type AnalyticsResponse struct {
 	Recorded bool `json:"recorded"`
 }
 
-// Analytics handles user events for analytics
+// AnalyticsHandler returns an HTTP handler for analytics events.
 func AnalyticsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Only allow POST requests.

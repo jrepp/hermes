@@ -1247,7 +1247,7 @@ func TestCompareAlgoliaAndDatabaseDocument(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			as, req := assert.New(t), require.New(t)
 
 			// Define minimum document types configuration for tests.
 			docTypes := []*config.DocumentType{
@@ -1274,19 +1274,19 @@ func TestCompareAlgoliaAndDatabaseDocument(t *testing.T) {
 				c.algoDoc, c.dbDoc, c.dbDocReviews, docTypes,
 			)
 			if !c.shouldErr {
-				require.NoError(err)
+				req.NoError(err)
 				return
 			}
 
 			switch {
 			case len(c.multiErrContains) > 0:
 				for _, m := range c.multiErrContains {
-					assert.ErrorContains(err, m)
+					as.ErrorContains(err, m)
 				}
 			case c.errContains != "":
-				assert.ErrorContains(err, c.errContains)
+				as.ErrorContains(err, c.errContains)
 			default:
-				require.Error(err)
+				req.Error(err)
 			}
 		})
 	}

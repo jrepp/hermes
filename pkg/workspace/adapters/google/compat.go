@@ -1,3 +1,4 @@
+//nolint:revive // compat aliases re-export types for backward compatibility
 package google
 
 import (

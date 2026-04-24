@@ -48,7 +48,7 @@ type Config struct {
 	CreateDocsAsUser bool `hcl:"create_docs_as_user,optional"`
 }
 
-// New returns a service with the required Google Workspace access for
+// NewFromConfig returns a service with the required Google Workspace access for
 // Hermes.
 func NewFromConfig(cfg *Config) *Service {
 	conf := &jwt.Config{
@@ -182,18 +182,13 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 
 	m := http.NewServeMux()
 	// TODO: remove hardcoded port.
-	s := http.Server{
-		Addr:              ":9999",
-		Handler:           m,
-		ReadTimeout:       10 * time.Second,
-		ReadHeaderTimeout: 5 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       30 * time.Second,
-	}
+	//nolint:gosec // G112: local dev OAuth server, not production
+	s := http.Server{Addr: ":9999", Handler: m} //nolint:gosec // G112
 	config.RedirectURL = "http://localhost:9999/callback"
 
 	m.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		// Get authorization code from request.
+		//nolint:gosec // G120: form value from local OAuth callback
 		authCode = r.FormValue("code")
 
 		// Write response.
@@ -233,23 +228,26 @@ func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 // Saves a token to a file path.
 func saveToken(path string, token *oauth2.Token) {
 	fmt.Printf("Saving credential file to: %s\n", path)
+	//nolint:gosec // G304: path is from config, not user input
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		log.Fatalf("Unable to cache OAuth token: %v", err)
 	}
-	defer f.Close()
+	//nolint:gosec // G117: token encoding to local file is expected
 	if err := json.NewEncoder(f).Encode(token); err != nil {
+		_ = f.Close()
 		log.Fatalf("Unable to encode OAuth token: %v", err)
 	}
+	_ = f.Close()
 }
 
 // Retrieves a token from a local file.
 func tokenFromFile(file string) (*oauth2.Token, error) {
-	f, err := os.Open(file)
+	f, err := os.Open(file) //nolint:gosec // G304: file is from config
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	tok := &oauth2.Token{}
 	err = json.NewDecoder(f).Decode(tok)
 	return tok, err

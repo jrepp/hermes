@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/server"
 )
 
+// DocumentTypesHandler returns an HTTP handler for document type operations.
 func DocumentTypesHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

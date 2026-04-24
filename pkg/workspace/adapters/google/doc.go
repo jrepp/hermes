@@ -1,2 +1,2 @@
-// Package googleworkspace contains logic for working with Google Workspace.
+// Package google provides Google Workspace integration for Hermes.
 package google

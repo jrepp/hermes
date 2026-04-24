@@ -14,6 +14,7 @@ type recentlyViewedProject struct {
 	ViewedTime int64 `json:"viewedTime"`
 }
 
+// MeRecentlyViewedProjectsHandler returns an HTTP handler for recently viewed projects.
 func MeRecentlyViewedProjectsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errResp := func(

@@ -1,3 +1,4 @@
+// Package services provides services functionality.
 package services
 
 import (
@@ -228,7 +229,7 @@ func (s *DocumentSyncService) GetSyncStatus(ctx context.Context, edgeInstance st
 	if err != nil {
 		return nil, fmt.Errorf("failed to query sync status: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var records []*EdgeDocumentRecord
 	for rows.Next() {
@@ -303,6 +304,8 @@ func (s *DocumentSyncService) GetDocumentByUUID(ctx context.Context, uuid docid.
 }
 
 // SearchDocuments searches edge documents by various criteria
+//
+//nolint:gocyclo // dynamic query building with multiple filter conditions
 func (s *DocumentSyncService) SearchDocuments(ctx context.Context, query string, filters map[string]any, limit int) ([]*EdgeDocumentRecord, error) {
 	// Get underlying sql.DB from gorm
 	sqlDB, err := s.db.DB()
@@ -359,6 +362,7 @@ func (s *DocumentSyncService) SearchDocuments(ctx context.Context, query string,
 		argCount++
 	}
 
+	//nolint:gosec // G202: argCount is an integer counter, not user input
 	sqlQuery += fmt.Sprintf(" ORDER BY updated_at DESC LIMIT $%d", argCount)
 	args = append(args, limit)
 
@@ -366,7 +370,7 @@ func (s *DocumentSyncService) SearchDocuments(ctx context.Context, query string,
 	if err != nil {
 		return nil, fmt.Errorf("failed to search documents: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var records []*EdgeDocumentRecord
 	for rows.Next() {

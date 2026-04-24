@@ -89,7 +89,7 @@ func (p *Provider) Summarize(ctx context.Context, req *ai.SummarizeRequest) (*ai
 	if err != nil {
 		return nil, fmt.Errorf("ollama request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
@@ -204,7 +204,7 @@ func (p *Provider) generateSingleEmbedding(ctx context.Context, text string) ([]
 	if err != nil {
 		return nil, fmt.Errorf("ollama request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
@@ -243,10 +243,10 @@ func (p *Provider) buildSummarizePrompt(req *ai.SummarizeRequest) string {
 	builder.WriteString("You are analyzing a document. Please provide a structured analysis.\n\n")
 
 	if req.DocType != "" {
-		builder.WriteString(fmt.Sprintf("Document Type: %s\n", req.DocType))
+		fmt.Fprintf(&builder, "Document Type: %s\n", req.DocType)
 	}
 	if req.Title != "" {
-		builder.WriteString(fmt.Sprintf("Document Title: %s\n", req.Title))
+		fmt.Fprintf(&builder, "Document Title: %s\n", req.Title)
 	}
 
 	builder.WriteString("\nPlease provide:\n")
@@ -281,7 +281,7 @@ func (p *Provider) buildSummarizePrompt(req *ai.SummarizeRequest) string {
 }
 
 // parseSummarizeResponse parses Llama's JSON response.
-func (p *Provider) parseSummarizeResponse(responseText string, req *ai.SummarizeRequest) (*ai.DocumentSummary, error) {
+func (p *Provider) parseSummarizeResponse(responseText string, _ *ai.SummarizeRequest) (*ai.DocumentSummary, error) {
 	// Try to extract JSON from the response (Llama might add explanatory text)
 	jsonStart := strings.Index(responseText, "{")
 	jsonEnd := strings.LastIndex(responseText, "}")

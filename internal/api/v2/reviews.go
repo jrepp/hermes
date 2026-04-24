@@ -23,6 +23,8 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
+// ReviewsHandler returns an HTTP handler for document review operations.
+//
 //nolint:gocognit,gocyclo // Legacy review workflow handler with many coordinated side effects.
 func ReviewsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

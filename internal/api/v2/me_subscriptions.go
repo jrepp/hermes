@@ -9,10 +9,13 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
+// MeSubscriptionsPostRequest represents a request to update subscriptions.
 type MeSubscriptionsPostRequest struct {
 	Subscriptions []string `json:"subscriptions"`
 }
 
+// MeSubscriptionsHandler returns an HTTP handler for subscription operations.
+//
 //nolint:gocognit,gocyclo // Small subscription endpoint with centralized branching.
 func MeSubscriptionsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -40,6 +40,8 @@ func (s *Service) UpdateDoc(fileID string, requests []*docs.Request) (*docs.Batc
 }
 
 // GetLinkURLs returns all link URLs in a Google Doc Body.
+//
+//nolint:gocognit // nested document structure traversal
 func GetLinkURLs(b *docs.Body) []string {
 	var urls []string
 	structelems := b.Content

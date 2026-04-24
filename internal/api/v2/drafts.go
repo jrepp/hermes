@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
+// DraftsRequest represents a request to create or manage a draft document.
 type DraftsRequest struct {
 	DocType             string   `json:"docType,omitempty"`
 	Product             string   `json:"product,omitempty"`
@@ -45,10 +46,13 @@ type DraftsPatchRequest struct {
 	Title *string `json:"title,omitempty"`
 }
 
+// DraftsResponse represents the response for draft operations.
 type DraftsResponse struct {
 	ID string `json:"id"`
 }
 
+// DraftsHandler returns an HTTP handler for draft operations.
+//
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; request handling is intentionally centralized.
 func DraftsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -693,6 +697,8 @@ func getWorkspaceProviderID(cfg *config.Config, docID string) string {
 	return fmt.Sprintf("%s:%s", workspaceProvider, docID)
 }
 
+// DraftsDocumentHandler returns an HTTP handler for individual draft document operations.
+//
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; large draft flows are kept together to minimize behavior churn.
 func DraftsDocumentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

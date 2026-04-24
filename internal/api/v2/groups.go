@@ -21,12 +21,15 @@ const (
 	maxPrefixGroupResults = 10
 )
 
+// GroupsPostRequest represents a request to search for groups.
 type GroupsPostRequest struct {
 	Query string `json:"query,omitempty"`
 }
 
+// GroupsPostResponse is the response for a groups search.
 type GroupsPostResponse []GroupsPostResponseGroup
 
+// GroupsPostResponseGroup represents a group in the response.
 type GroupsPostResponseGroup struct {
 	Email string `json:"email,omitempty"`
 	Name  string `json:"name,omitempty"`
@@ -191,186 +194,12 @@ func GroupsHandler(srv server.Server) http.Handler {
 	})
 }
 
-// handleGroupsPost processes POST requests for group search.
-func handleGroupsPost(srv server.Server, w http.ResponseWriter, r *http.Request, logArgs []any) {
-	// Decode request.
-	req := &GroupsPostRequest{}
-	if err := decodeRequest(r, &req); err != nil {
-		srv.Logger.Warn("error decoding request",
-			append([]interface{}{
-				"error", err,
-			}, logArgs...)...)
-		http.Error(w, fmt.Sprintf("Bad request: %q", err),
-			http.StatusBadRequest)
-		return
-	}
-
-	// Sanitize query.
-	query := req.Query
-	query = strings.ReplaceAll(query, " ", "-")
-
-	if srv.SharePoint != nil {
-		handleGroupsPostSharePoint(srv, w, query, logArgs)
-	} else {
-		handleGroupsPostGoogle(srv, w, query, logArgs)
-	}
-}
-
-// handleGroupsPostSharePoint handles group search using Microsoft Graph.
-func handleGroupsPostSharePoint(srv server.Server, w http.ResponseWriter, query string, logArgs []any) {
-	var (
-		allGroups            []sharepointhelper.Group
-		err                  error
-		groups, prefixGroups []sharepointhelper.Group
-		maxNonPrefixGroups   = maxGroupResults
-	)
-
-	// Retrieve groups with prefix, if configured.
-	searchPrefix := ""
-	if srv.Config.SharePoint.GroupApprovals != nil &&
-		srv.Config.SharePoint.GroupApprovals.SearchPrefix != "" {
-		searchPrefix = srv.Config.SharePoint.GroupApprovals.SearchPrefix
-	}
-	if searchPrefix != "" {
-		maxNonPrefixGroups = maxGroupResults - maxPrefixGroupResults
-
-		prefixQuery := fmt.Sprintf(
-			"%s%s", searchPrefix, query)
-		prefixGroups, err = srv.SharePoint.SearchGroup(
-			prefixQuery, srv.Config.SharePoint.Domain, maxPrefixGroupResults)
-		if err != nil {
-			srv.Logger.Error("error searching groups with prefix",
-				append([]interface{}{
-					"error", err,
-				}, logArgs...)...)
-			http.Error(w, fmt.Sprintf("Error searching groups: %q", err),
-				http.StatusInternalServerError)
-			return
-		}
-	}
-
-	// Retrieve groups without prefix.
-	groups, err = srv.SharePoint.SearchGroup(
-		query, srv.Config.SharePoint.Domain, maxNonPrefixGroups)
-	if err != nil {
-		srv.Logger.Error("error searching groups without prefix",
-			append([]interface{}{
-				"error", err,
-			}, logArgs...)...)
-		http.Error(w, fmt.Sprintf("Error searching groups: %q", err),
-			http.StatusInternalServerError)
-		return
-	}
-
-	allGroups = concatSPGroupSlicesAndRemoveDuplicates(
-		prefixGroups, groups)
-
-	// Build response.
-	resp := make(GroupsPostResponse, len(allGroups))
-	for i, group := range allGroups {
-		resp[i] = GroupsPostResponseGroup{
-			Email: group.Mail,
-			Name:  group.DisplayName,
-		}
-	}
-
-	writeGroupsResponse(srv, w, resp, logArgs)
-}
-
-// handleGroupsPostGoogle handles group search using Google Admin Directory.
-func handleGroupsPostGoogle(srv server.Server, w http.ResponseWriter, query string, logArgs []any) {
-	var (
-		allGroups            []*admin.Group
-		err                  error
-		groups, prefixGroups *admin.Groups
-		maxNonPrefixGroups   = maxGroupResults
-	)
-
-	// Retrieve groups with prefix, if configured.
-	searchPrefix := ""
-	if srv.Config.GoogleWorkspace.GroupApprovals != nil &&
-		srv.Config.GoogleWorkspace.GroupApprovals.SearchPrefix != "" {
-		searchPrefix = srv.Config.GoogleWorkspace.GroupApprovals.SearchPrefix
-	}
-	if searchPrefix != "" {
-		maxNonPrefixGroups = maxGroupResults - maxPrefixGroupResults
-
-		prefixQuery := fmt.Sprintf(
-			"%s%s", searchPrefix, query)
-		prefixGroups, err = srv.GWService.AdminDirectory.Groups.List().
-			Domain(srv.Config.GoogleWorkspace.Domain).
-			MaxResults(int64(maxPrefixGroupResults)).
-			Query(fmt.Sprintf("email:%s*", prefixQuery)).
-			Do()
-		if err != nil {
-			srv.Logger.Error("error searching groups with prefix",
-				append([]interface{}{
-					"error", err,
-				}, logArgs...)...)
-			http.Error(w, fmt.Sprintf("Error searching groups: %q", err),
-				http.StatusInternalServerError)
-			return
-		}
-	}
-
-	// Retrieve groups without prefix.
-	groups, err = srv.GWService.AdminDirectory.Groups.List().
-		Domain(srv.Config.GoogleWorkspace.Domain).
-		MaxResults(int64(maxNonPrefixGroups)).
-		Query(fmt.Sprintf("email:%s*", query)).
-		Do()
-	if err != nil {
-		srv.Logger.Error("error searching groups without prefix",
-			append([]interface{}{
-				"error", err,
-			}, logArgs...)...)
-		http.Error(w, fmt.Sprintf("Error searching groups: %q", err),
-			http.StatusInternalServerError)
-		return
-	}
-
-	var prefixGroupsList []*admin.Group
-	if prefixGroups != nil {
-		prefixGroupsList = prefixGroups.Groups
-	}
-	allGroups = concatGoogleGroupSlicesAndRemoveDuplicates(
-		prefixGroupsList, groups.Groups)
-
-	// Build response.
-	resp := make(GroupsPostResponse, len(allGroups))
-	for i, group := range allGroups {
-		resp[i] = GroupsPostResponseGroup{
-			Email: group.Email,
-			Name:  group.Name,
-		}
-	}
-
-	writeGroupsResponse(srv, w, resp, logArgs)
-}
-
-// writeGroupsResponse writes the groups response.
-func writeGroupsResponse(srv server.Server, w http.ResponseWriter, resp GroupsPostResponse, logArgs []any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	enc := json.NewEncoder(w)
-	err := enc.Encode(resp)
-	if err != nil {
-		srv.Logger.Error("error encoding groups response",
-			append([]interface{}{
-				"error", err,
-			}, logArgs...)...)
-		http.Error(w, "Error searching groups",
-			http.StatusInternalServerError)
-		return
-	}
-}
-
-// concatSPGroupSlicesAndRemoveDuplicates concatenates two SharePoint group slices
-// and removes any duplicate elements from the result.
-func concatSPGroupSlicesAndRemoveDuplicates(
-	slice1, slice2 []sharepointhelper.Group) []sharepointhelper.Group {
-	uniqueMap := make(map[string]sharepointhelper.Group)
-	result := []sharepointhelper.Group{}
+// concatGroupSlicesAndRemoveDuplicates concatenates two group slices and
+// removes any duplicate elements from the result.
+func concatGroupSlicesAndRemoveDuplicates(
+	slice1, slice2 []*admin.Group) []*admin.Group {
+	uniqueMap := make(map[string]*admin.Group)
+	result := make([]*admin.Group, 0, len(uniqueMap))
 
 	for _, g := range slice1 {
 		if g.Mail != "" {

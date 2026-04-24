@@ -47,7 +47,7 @@ func (p *Provider) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*work
 }
 
 // UpdateContent updates document content on remote Hermes
-func (p *Provider) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (p *Provider) UpdateContent(ctx context.Context, providerID, content string) (*workspace.DocumentContent, error) {
 	if err := p.checkCapability("content"); err != nil {
 		return nil, err
 	}

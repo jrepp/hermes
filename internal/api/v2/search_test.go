@@ -76,13 +76,13 @@ func TestParseSearchIndexFromURLPath(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert := assert.New(t)
+			a := assert.New(t)
 			indexName := parseSearchIndexFromURLPath(c.path)
 
 			if c.shouldErr {
-				assert.Empty(indexName)
+				a.Empty(indexName)
 			} else {
-				assert.Equal(c.wantIndex, indexName)
+				a.Equal(c.wantIndex, indexName)
 			}
 		})
 	}
@@ -175,11 +175,10 @@ func TestConvertFiltersToMap(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert := assert.New(t)
+			a := assert.New(t)
 			got := convertFiltersToMap(c.input)
 
-			// Note: convertFiltersToMap ignores invalid filters (documented by errMsg cases)
-			assert.Equal(c.want, got)
+			a.Equal(c.want, got)
 		})
 	}
 }

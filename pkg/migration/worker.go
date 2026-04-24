@@ -88,7 +88,7 @@ func (w *Worker) processPendingTasks(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch pending tasks: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var tasks []struct {
 		payload  string

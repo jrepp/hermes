@@ -49,15 +49,15 @@ func TestParseDocumentIDFromURLPath(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert := assert.New(t)
+			a := assert.New(t)
 			docID, reqType, err := parseDocumentsURLPath(c.path, c.collection)
 
 			if c.shouldErr {
-				assert.Error(err)
+				a.Error(err)
 			} else {
-				assert.NoError(err)
-				assert.Equal(c.wantDocID, docID)
-				assert.Equal(c.wantReqType, reqType)
+				a.NoError(err)
+				a.Equal(c.wantDocID, docID)
+				a.Equal(c.wantReqType, reqType)
 			}
 		})
 	}
@@ -194,13 +194,13 @@ func TestAuthorizeDocumentPatchRequest(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert := assert.New(t)
+			a := assert.New(t)
 			err := authorizeDocumentPatchRequest(c.userEmail, c.doc, c.req)
 
 			if c.shouldErr {
-				assert.Error(err)
+				a.Error(err)
 			} else {
-				assert.NoError(err)
+				a.NoError(err)
 			}
 		})
 	}

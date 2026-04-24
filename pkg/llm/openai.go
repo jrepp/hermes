@@ -108,7 +108,7 @@ func (c *OpenAIClient) GenerateSummary(ctx context.Context, content string, opti
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
@@ -173,6 +173,7 @@ func (c *OpenAIClient) parseSummaryResponse(content string) (*steps.Summary, err
 
 // OpenAI API types
 
+// OpenAIChatRequest represents an OpenAI chat API request.
 type OpenAIChatRequest struct {
 	Model       string              `json:"model"`
 	Messages    []OpenAIChatMessage `json:"messages"`
@@ -181,11 +182,13 @@ type OpenAIChatRequest struct {
 	TopP        float64             `json:"top_p,omitempty"`
 }
 
+// OpenAIChatMessage represents a message in an OpenAI chat.
 type OpenAIChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
+// OpenAIChatResponse represents an OpenAI chat API response.
 type OpenAIChatResponse struct {
 	ID      string             `json:"id"`
 	Object  string             `json:"object"`
@@ -195,18 +198,21 @@ type OpenAIChatResponse struct {
 	Created int64              `json:"created"`
 }
 
+// OpenAIChatChoice represents a choice in an OpenAI chat response.
 type OpenAIChatChoice struct {
 	Message      OpenAIChatMessage `json:"message"`
 	FinishReason string            `json:"finish_reason"`
 	Index        int               `json:"index"`
 }
 
+// OpenAIUsage represents token usage in an OpenAI response.
 type OpenAIUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
 	TotalTokens      int `json:"total_tokens"`
 }
 
+// OpenAIErrorResponse represents an OpenAI error response.
 type OpenAIErrorResponse struct {
 	Error struct {
 		Message string `json:"message"`
@@ -253,7 +259,7 @@ func (c *OpenAIClient) GenerateEmbeddings(ctx context.Context, text, model strin
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
@@ -328,7 +334,7 @@ func (c *OpenAIClient) GenerateEmbeddingsBatch(ctx context.Context, texts []stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
@@ -376,12 +382,14 @@ func (c *OpenAIClient) GenerateEmbeddingsBatch(ctx context.Context, texts []stri
 
 // OpenAI Embeddings API types
 
+// OpenAIEmbeddingsRequest represents an OpenAI embeddings API request.
 type OpenAIEmbeddingsRequest struct {
 	Input      interface{} `json:"input"` // string or []string
 	Model      string      `json:"model"`
 	Dimensions int         `json:"dimensions,omitempty"`
 }
 
+// OpenAIEmbeddingsResponse represents an OpenAI embeddings API response.
 type OpenAIEmbeddingsResponse struct {
 	Object string                `json:"object"`
 	Model  string                `json:"model"`
@@ -389,12 +397,14 @@ type OpenAIEmbeddingsResponse struct {
 	Usage  OpenAIEmbeddingsUsage `json:"usage"`
 }
 
+// OpenAIEmbeddingData represents embedding data in an OpenAI response.
 type OpenAIEmbeddingData struct {
 	Object    string    `json:"object"`
 	Embedding []float64 `json:"embedding"`
 	Index     int       `json:"index"`
 }
 
+// OpenAIEmbeddingsUsage represents token usage in an embeddings response.
 type OpenAIEmbeddingsUsage struct {
 	PromptTokens int `json:"prompt_tokens"`
 	TotalTokens  int `json:"total_tokens"`

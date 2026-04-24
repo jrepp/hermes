@@ -102,7 +102,7 @@ func (c *OllamaClient) GenerateSummary(ctx context.Context, content string, opti
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
@@ -168,6 +168,7 @@ func (c *OllamaClient) parseSummaryResponse(content string) (*steps.Summary, err
 
 // Ollama API types
 
+// OllamaChatRequest represents an Ollama chat API request.
 type OllamaChatRequest struct {
 	Options  *OllamaOptions      `json:"options,omitempty"`
 	Model    string              `json:"model"`
@@ -175,16 +176,19 @@ type OllamaChatRequest struct {
 	Stream   bool                `json:"stream"`
 }
 
+// OllamaChatMessage represents a message in an Ollama chat.
 type OllamaChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
+// OllamaOptions represents Ollama generation options.
 type OllamaOptions struct {
 	Temperature float64 `json:"temperature,omitempty"`
 	NumPredict  int     `json:"num_predict,omitempty"` // Max tokens to generate
 }
 
+// OllamaChatResponse represents an Ollama chat API response.
 type OllamaChatResponse struct {
 	Model     string            `json:"model"`
 	CreatedAt string            `json:"created_at"`
@@ -192,6 +196,7 @@ type OllamaChatResponse struct {
 	Done      bool              `json:"done"`
 }
 
+// OllamaErrorResponse represents an Ollama error response.
 type OllamaErrorResponse struct {
 	Error string `json:"error"`
 }

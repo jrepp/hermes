@@ -1,3 +1,4 @@
+// Package backends provides notification backend implementations.
 package backends
 
 import (
@@ -99,7 +100,7 @@ func (b *NtfyBackend) Handle(ctx context.Context, msg *notifications.Notificatio
 		// Network errors are retryable (RFC-087-ADDENDUM Section 9)
 		return NewBackendError("ntfy", "send", true, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check response status
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

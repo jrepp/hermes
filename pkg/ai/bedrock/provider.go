@@ -139,8 +139,8 @@ func (p *Provider) Name() string {
 func (p *Provider) buildSummarizePrompt(req *ai.SummarizeRequest) string {
 	var builder strings.Builder
 
-	builder.WriteString(fmt.Sprintf("You are analyzing a %s document titled \"%s\".\n\n",
-		req.DocType, req.Title))
+	fmt.Fprintf(&builder, "You are analyzing a %s document titled %q.\n\n",
+		req.DocType, req.Title)
 
 	builder.WriteString("Please provide:\n")
 	builder.WriteString("1. A concise executive summary (2-3 sentences)\n")

@@ -38,12 +38,16 @@ type MetadataStore interface {
 // Limitations: S3 tags have a 10-tag limit and 256-character value limit
 // Best for: Simple metadata, low cost, no extra infrastructure
 
+// S3TagsMetadataStore stores metadata as S3 object tags.
+//
+//nolint:revive // S3TagsMetadataStore preserves package-qualified clarity for callers.
 type S3TagsMetadataStore struct {
 	logger hclog.Logger
 	client *s3.Client
 	bucket string
 }
 
+// NewS3TagsMetadataStore creates a new S3TagsMetadataStore.
 func NewS3TagsMetadataStore(client *s3.Client, bucket string, logger hclog.Logger) *S3TagsMetadataStore {
 	return &S3TagsMetadataStore{
 		client: client,
@@ -52,6 +56,7 @@ func NewS3TagsMetadataStore(client *s3.Client, bucket string, logger hclog.Logge
 	}
 }
 
+// Get retrieves metadata from S3 object tags.
 func (s *S3TagsMetadataStore) Get(ctx context.Context, key string) (*workspace.DocumentMetadata, error) {
 	// Get object metadata (head request)
 	headResult, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
@@ -121,6 +126,7 @@ func (s *S3TagsMetadataStore) Get(ctx context.Context, key string) (*workspace.D
 	return metadata, nil
 }
 
+// Set stores metadata as S3 object tags.
 func (s *S3TagsMetadataStore) Set(ctx context.Context, key string, metadata *workspace.DocumentMetadata) error {
 	// Build tag set from metadata
 	tagSet := []struct {
@@ -154,7 +160,7 @@ func (s *S3TagsMetadataStore) Set(ctx context.Context, key string, metadata *wor
 	}
 
 	// Convert to S3 types
-	var s3Tags []types.Tag
+	s3Tags := make([]types.Tag, 0, len(tagSet))
 	for _, tag := range tagSet {
 		s3Tags = append(s3Tags, types.Tag{
 			Key:   tag.Key,
@@ -177,12 +183,14 @@ func (s *S3TagsMetadataStore) Set(ctx context.Context, key string, metadata *wor
 	return nil
 }
 
-func (s *S3TagsMetadataStore) Delete(ctx context.Context, key string) error {
+// Delete removes metadata from S3 object tags.
+func (s *S3TagsMetadataStore) Delete(_ context.Context, _ string) error {
 	// S3 tags are automatically deleted when the object is deleted
 	// No action needed
 	return nil
 }
 
+// List returns all metadata keys in the store.
 func (s *S3TagsMetadataStore) List(ctx context.Context, prefix string) ([]string, error) {
 	var providerIDs []string
 
@@ -214,6 +222,7 @@ func (s *S3TagsMetadataStore) List(ctx context.Context, prefix string) ([]string
 // Stores metadata in a separate manifest file (.metadata.json)
 // Best for: Rich metadata, no tag limits, simple architecture
 
+// ManifestMetadataStore stores metadata as JSON manifests.
 type ManifestMetadataStore struct {
 	logger hclog.Logger
 	client *s3.Client
@@ -221,6 +230,7 @@ type ManifestMetadataStore struct {
 	prefix string
 }
 
+// NewManifestMetadataStore creates a new ManifestMetadataStore.
 func NewManifestMetadataStore(client *s3.Client, bucket, prefix string, logger hclog.Logger) *ManifestMetadataStore {
 	return &ManifestMetadataStore{
 		client: client,
@@ -230,6 +240,7 @@ func NewManifestMetadataStore(client *s3.Client, bucket, prefix string, logger h
 	}
 }
 
+// Get retrieves metadata from a JSON manifest.
 func (m *ManifestMetadataStore) Get(ctx context.Context, key string) (*workspace.DocumentMetadata, error) {
 	// Get manifest file
 	manifestKey := m.getManifestKey(key)
@@ -241,7 +252,7 @@ func (m *ManifestMetadataStore) Get(ctx context.Context, key string) (*workspace
 		// If manifest doesn't exist, try to build metadata from object
 		return m.buildMetadataFromObject(ctx, key)
 	}
-	defer result.Body.Close()
+	defer func() { _ = result.Body.Close() }()
 
 	// Parse manifest JSON
 	var metadata workspace.DocumentMetadata
@@ -252,6 +263,7 @@ func (m *ManifestMetadataStore) Get(ctx context.Context, key string) (*workspace
 	return &metadata, nil
 }
 
+// Set stores metadata in a JSON manifest.
 func (m *ManifestMetadataStore) Set(ctx context.Context, key string, metadata *workspace.DocumentMetadata) error {
 	// Serialize metadata to JSON
 	metadataJSON, err := json.Marshal(metadata)
@@ -274,6 +286,7 @@ func (m *ManifestMetadataStore) Set(ctx context.Context, key string, metadata *w
 	return nil
 }
 
+// Delete removes a metadata manifest.
 func (m *ManifestMetadataStore) Delete(ctx context.Context, key string) error {
 	// Delete manifest file
 	manifestKey := m.getManifestKey(key)
@@ -288,6 +301,7 @@ func (m *ManifestMetadataStore) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
+// List returns all metadata keys in the store.
 func (m *ManifestMetadataStore) List(ctx context.Context, prefix string) ([]string, error) {
 	var providerIDs []string
 

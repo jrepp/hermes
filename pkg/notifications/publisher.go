@@ -1,3 +1,4 @@
+// Package notifications provides notifications functionality.
 package notifications
 
 import (
@@ -127,13 +128,13 @@ func (p *Publisher) PublishEmail(ctx context.Context, to []string, from, subject
 	}
 
 	// Use generic email template
-	context := map[string]any{
+	contextData := map[string]any{
 		"subject": subject,
 		"body":    body,
 		"from":    from,
 	}
 
-	return p.PublishNotification(ctx, NotificationTypeEmail, "generic_email", context, recipients, []string{"mail", "audit"})
+	return p.PublishNotification(ctx, NotificationTypeEmail, "generic_email", contextData, recipients, []string{"mail", "audit"})
 }
 
 // Close closes the publisher

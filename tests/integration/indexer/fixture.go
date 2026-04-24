@@ -1,6 +1,7 @@
 //go:build integration
 // +build integration
 
+// Package indexer provides integration test fixtures for the indexer.
 package indexer
 
 import (
@@ -63,7 +64,7 @@ func NewLocalWorkspaceFixture(t *testing.T) *LocalWorkspaceFixture {
 // Cleanup removes temporary directory
 func (f *LocalWorkspaceFixture) Cleanup() {
 	if f.tempDir != "" {
-		os.RemoveAll(f.tempDir)
+		_ = os.RemoveAll(f.tempDir)
 	}
 }
 
@@ -304,6 +305,7 @@ func (f *LocalWorkspaceFixture) GetDocumentContent(doc *workspace.Document) stri
 	f.t.Helper()
 
 	docPath := filepath.Join(f.tempDir, doc.ID+".md")
+	//nolint:gosec // G304: docPath is constructed from temp dir, not user input
 	content, err := os.ReadFile(docPath)
 	require.NoError(f.t, err, "failed to read document file")
 

@@ -186,12 +186,12 @@ func (s *Service) GetFiles(folderID, mimeType string) ([]*drive.File, error) {
 	return s.ListFiles(folderID, query)
 }
 
-// GetDocs returns all folders in a Google Drive folder.
+// GetFolders returns all folders in a Google Drive folder.
 func (s *Service) GetFolders(folderID string) ([]*drive.File, error) {
 	return s.GetFiles(folderID, "application/vnd.google-apps.folder")
 }
 
-// GetDocs returns all folders and recursively all subfolders in a Google Drive
+// GetFoldersRecursive returns all folders and recursively all subfolders in a Google Drive
 // folder.
 func (s *Service) GetFoldersRecursive(folderID string) ([]*drive.File, error) {
 	folders, err := s.GetFolders(folderID)
@@ -291,7 +291,7 @@ func (s *Service) KeepRevisionForever(
 	return resp, nil
 }
 
-// KeepRevisionForever keeps a Google Drive file revision forever.
+// UpdateKeepRevisionForever keeps a Google Drive file revision forever.
 func (s *Service) UpdateKeepRevisionForever(
 	fileID, revisionID string, keepForever bool) error {
 
@@ -305,7 +305,7 @@ func (s *Service) UpdateKeepRevisionForever(
 }
 
 // ListFiles lists files in a Google Drive folder using the provided query.
-func (s *Service) ListFiles(folderID, query string) ([]*drive.File, error) {
+func (s *Service) ListFiles(_, query string) ([]*drive.File, error) {
 	var files []*drive.File
 	var nextPageToken string
 

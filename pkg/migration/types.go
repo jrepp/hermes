@@ -12,11 +12,17 @@ import (
 type JobStatus string
 
 const (
-	JobStatusPending   JobStatus = "pending"
-	JobStatusRunning   JobStatus = "running"
-	JobStatusPaused    JobStatus = "paused"
+	// JobStatusPending indicates the job is waiting to start.
+	JobStatusPending JobStatus = "pending"
+	// JobStatusRunning indicates the job is actively running.
+	JobStatusRunning JobStatus = "running"
+	// JobStatusPaused indicates the job has been paused.
+	JobStatusPaused JobStatus = "paused"
+	// JobStatusCompleted indicates the job finished successfully.
 	JobStatusCompleted JobStatus = "completed"
-	JobStatusFailed    JobStatus = "failed"
+	// JobStatusFailed indicates the job failed.
+	JobStatusFailed JobStatus = "failed"
+	// JobStatusCancelled indicates the job was canceled.
 	JobStatusCancelled JobStatus = "canceled"
 )
 
@@ -24,20 +30,28 @@ const (
 type ItemStatus string
 
 const (
-	ItemStatusPending    ItemStatus = "pending"
+	// ItemStatusPending indicates the item is waiting.
+	ItemStatusPending ItemStatus = "pending"
+	// ItemStatusInProgress indicates the item is being processed.
 	ItemStatusInProgress ItemStatus = "in_progress"
-	ItemStatusCompleted  ItemStatus = "completed"
-	ItemStatusFailed     ItemStatus = "failed"
-	ItemStatusSkipped    ItemStatus = "skipped"
+	// ItemStatusCompleted indicates the item completed successfully.
+	ItemStatusCompleted ItemStatus = "completed"
+	// ItemStatusFailed indicates the item failed.
+	ItemStatusFailed ItemStatus = "failed"
+	// ItemStatusSkipped indicates the item was skipped.
+	ItemStatusSkipped ItemStatus = "skipped"
 )
 
 // Strategy defines how documents are migrated
 type Strategy string
 
 const (
-	StrategyMove   Strategy = "move"   // Move documents (delete from source)
-	StrategyCopy   Strategy = "copy"   // Copy documents (keep in source)
-	StrategyMirror Strategy = "mirror" // Keep both in sync
+	// StrategyMove removes documents from source after migration.
+	StrategyMove Strategy = "move"
+	// StrategyCopy keeps documents in source after migration.
+	StrategyCopy Strategy = "copy"
+	// StrategyMirror keeps both source and destination in sync.
+	StrategyMirror Strategy = "mirror"
 )
 
 // Job represents a migration job

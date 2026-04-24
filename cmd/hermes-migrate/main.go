@@ -61,7 +61,7 @@ func run() int {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v\n", err)
 	}
-	defer sqlDB.Close()
+	defer func() { _ = sqlDB.Close() }()
 
 	// Verify connection
 	if err := sqlDB.Ping(); err != nil {

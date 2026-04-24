@@ -68,7 +68,7 @@ func setupFixtureImpl() error {
 	// This is a workaround for Docker environments (Orbstack, Podman Desktop) where
 	// the bridge network may not be properly configured.
 	// Set environment variable to disable reaper (Ryuk container)
-	os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
+	_ = os.Setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 	// Create new fixture
 	ctx := context.Background()

@@ -38,6 +38,8 @@ type DocumentReviewResponse struct {
 	ModifiedTime int64    `json:"modifiedTime"`
 }
 
+// MeReviewsHandler returns an HTTP handler for the current user's reviews.
+//
 //nolint:gocognit,gocyclo // Handler performs multi-step review enrichment inline for now.
 func MeReviewsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

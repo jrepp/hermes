@@ -262,6 +262,7 @@ func listMigrationJobs(w http.ResponseWriter, r *http.Request, srv server.Server
 		args = append(args, status)
 	}
 
+	//nolint:gosec // G202: query is built from integer limit, not user input
 	query += " ORDER BY created_at DESC LIMIT $" + strconv.Itoa(len(args)+1)
 	args = append(args, limit)
 
@@ -272,13 +273,14 @@ func listMigrationJobs(w http.ResponseWriter, r *http.Request, srv server.Server
 		return
 	}
 
+	//nolint:gosec // G701: query uses parameterized args, not string interpolation
 	rows, err := sqlDB.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		srv.Logger.Error("failed to query jobs", "error", err)
 		http.Error(w, "Failed to list jobs", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var jobs []map[string]interface{}
 	for rows.Next() {
@@ -539,6 +541,7 @@ func listMigrationItems(w http.ResponseWriter, r *http.Request, srv server.Serve
 		args = append(args, status)
 	}
 
+	//nolint:gosec // G202: query is built from integer limit, not user input
 	query += " ORDER BY created_at ASC LIMIT $" + strconv.Itoa(len(args)+1)
 	args = append(args, limit)
 
@@ -549,13 +552,14 @@ func listMigrationItems(w http.ResponseWriter, r *http.Request, srv server.Serve
 		return
 	}
 
+	//nolint:gosec // G701: query uses parameterized args, not string interpolation
 	rows, err := sqlDB.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		srv.Logger.Error("failed to query items", "error", err)
 		http.Error(w, "Failed to list items", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var items []map[string]interface{}
 	for rows.Next() {

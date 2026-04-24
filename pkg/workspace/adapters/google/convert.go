@@ -22,6 +22,8 @@ import (
 //   - Tags: Extracted from description or properties
 //   - Owner: First owner from file.Owners
 //   - CreatedTime/ModifiedTime: From Drive API
+//
+//nolint:gocognit,gocyclo // many optional fields to map from Drive API
 func ConvertToDocumentMetadata(file *drive.File) (*workspace.DocumentMetadata, error) {
 	if file == nil {
 		return nil, fmt.Errorf("file cannot be nil")
@@ -286,6 +288,8 @@ func ConvertToFilePermission(perm *drive.Permission) *workspace.FilePermission {
 
 // ExtractDocText extracts plain text from a Google Doc.
 // Walks through the document structure and concatenates text content.
+//
+//nolint:gocognit,gocyclo // recursive document structure traversal
 func ExtractDocText(doc *docs.Document) string {
 	if doc == nil || doc.Body == nil {
 		return ""

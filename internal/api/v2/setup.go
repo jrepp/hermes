@@ -289,7 +289,7 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 			}
 			return
 		}
-		defer versionResp.Body.Close()
+		defer func() { _ = versionResp.Body.Close() }()
 
 		if versionResp.StatusCode != http.StatusOK {
 			response := OllamaValidationResponse{
@@ -329,7 +329,7 @@ func OllamaValidateHandler(log hclog.Logger) http.Handler {
 				}
 				return
 			}
-			defer tagsResp.Body.Close()
+			defer func() { _ = tagsResp.Body.Close() }()
 
 			var tagsData struct {
 				Models []struct {

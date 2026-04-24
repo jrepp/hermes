@@ -1,3 +1,4 @@
+// Package migrate provides migrate functionality.
 package migrate
 
 import (
@@ -101,8 +102,8 @@ func applyDatabaseSpecificMigrations(db *sql.DB, driver string) error {
 			continue
 		}
 
-		sql := string(sqlBytes)
-		if _, err := db.Exec(sql); err != nil {
+		sqlContent := string(sqlBytes)
+		if _, err := db.Exec(sqlContent); err != nil {
 			return fmt.Errorf("failed to apply %s: %w", migrationFile, err)
 		}
 	}

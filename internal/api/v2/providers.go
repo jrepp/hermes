@@ -115,11 +115,13 @@ func listProviders(w http.ResponseWriter, r *http.Request, srv server.Server) {
 	args := []interface{}{}
 
 	if providerType != "" {
+		//nolint:gosec // G202: query built from integer position, not user input
 		query += " AND provider_type = $" + strconv.Itoa(len(args)+1)
 		args = append(args, providerType)
 	}
 
 	if status != "" {
+		//nolint:gosec // G202: query built from integer position, not user input
 		query += " AND status = $" + strconv.Itoa(len(args)+1)
 		args = append(args, status)
 	}
@@ -133,13 +135,14 @@ func listProviders(w http.ResponseWriter, r *http.Request, srv server.Server) {
 		return
 	}
 
+	//nolint:gosec // G701: query uses parameterized args, not string interpolation
 	rows, err := sqlDB.QueryContext(r.Context(), query, args...)
 	if err != nil {
 		srv.Logger.Error("failed to query providers", "error", err)
 		http.Error(w, "Failed to list providers", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var providers []map[string]interface{}
 	for rows.Next() {

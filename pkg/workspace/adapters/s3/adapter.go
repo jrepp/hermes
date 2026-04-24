@@ -102,6 +102,7 @@ func createAWSConfig(cfg *Config) (aws.Config, error) {
 		Timeout: time.Duration(cfg.RequestTimeoutSeconds) * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
+				//nolint:gosec // G402: InsecureSkipVerify controlled by config
 				InsecureSkipVerify: cfg.InsecureSkipVerify,
 			},
 		},
@@ -233,7 +234,7 @@ func (a *Adapter) getObject(ctx context.Context, key string) ([]byte, *string, e
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get object from S3: %w", err)
 	}
-	defer result.Body.Close()
+	defer func() { _ = result.Body.Close() }()
 
 	// Read content
 	content, err := io.ReadAll(result.Body)
