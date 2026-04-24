@@ -26,7 +26,9 @@ type PATH struct {
 	Steps          int      `json:"steps,omitempty"`
 }
 
-//nolint:stylecheck // Receiver naming follows the rest of PATH methods.
+// GetCustomEditableFields returns the custom editable fields for a PATH document.
+//
+//nolint:staticcheck // Receiver naming follows the rest of PATH methods.
 func (d PATH) GetCustomEditableFields() map[string]CustomDocTypeField {
 	return map[string]CustomDocTypeField{
 		"category": {
@@ -44,6 +46,7 @@ func (d PATH) GetCustomEditableFields() map[string]CustomDocTypeField {
 	}
 }
 
+// SetCustomEditableFields sets the custom editable fields for a PATH document.
 func (d *PATH) SetCustomEditableFields() {
 	d.CustomEditableFields = d.GetCustomEditableFields()
 }

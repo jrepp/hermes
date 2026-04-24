@@ -48,6 +48,8 @@ const (
 	tableRows = 12 // Number of rows in the header table.
 )
 
+// ReplaceHeader replaces the RFC document header, which is the first table in the document.
+//
 //nolint:gocognit,gocyclo,gocritic,dupl // Header builder is verbose and intentionally explicit for Docs API requests.
 func (doc *RFC) ReplaceHeader(fileID, baseURL string, isDraft bool, provider workspace.Provider) error {
 	// Get doc.
@@ -509,7 +511,7 @@ func (doc *RFC) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 	switch strings.ToLower(doc.Status) {
 	case "in review":
 		fallthrough
-	case "in-review":
+	case statusInReview:
 		statusStartIndex = 14
 		statusEndIndex = 23
 	case "approved":

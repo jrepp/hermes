@@ -14,15 +14,17 @@ const (
 	// MaxDocSize is the maximum size of a doc's content in bytes. If the doc is
 	// larger than this, its content will be trimmed to this length.
 	// Algolia has a hard limit of 100000 bytes total per record.
-	MaxDocSize   = 85000
-	docTypePRD   = "PRD"
-	fieldTypeStr = "STRING"
-	fieldTypePpl = "PEOPLE"
-	summaryLabel = "Summary:"
-	statusWIP    = "Status: WIP"
-	wipStatus    = "WIP"
+	MaxDocSize     = 85000
+	docTypePRD     = "PRD"
+	fieldTypeStr   = "STRING"
+	fieldTypePpl   = "PEOPLE"
+	summaryLabel   = "Summary:"
+	statusWIP      = "Status: WIP"
+	statusInReview = "in-review"
+	wipStatus      = "WIP"
 )
 
+// Doc defines the interface for Hermes document types.
 type Doc interface {
 	DeleteFileRevision(string)
 
@@ -60,11 +62,13 @@ type Doc interface {
 	SetCustomEditableFields()
 }
 
+// ValidCustomDocTypeFieldTypes lists the allowed field types for custom document-type fields.
 var ValidCustomDocTypeFieldTypes = []string{
 	"PEOPLE",
 	"STRING",
 }
 
+// CustomDocTypeField represents a custom editable field for a document type.
 type CustomDocTypeField struct {
 	// DisplayName is the display name of the custom document-type field.
 	DisplayName string `json:"displayName"`
@@ -75,6 +79,7 @@ type CustomDocTypeField struct {
 	Type string `json:"type"`
 }
 
+// MissingFields represents a document with its missing required fields.
 type MissingFields struct {
 	ObjectID      string   `json:"objectID,omitempty"`
 	MissingFields []string `json:"missingFields,omitempty"`

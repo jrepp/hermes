@@ -330,10 +330,10 @@ func TestParseParagraphWithEmails(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.testName, func(t *testing.T) {
-			assert := assert.New(t)
+			assertT := assert.New(t)
 
 			got := parseParagraphWithEmails(tt.label, tt.para)
-			assert.Equal(tt.want, got)
+			assertT.Equal(tt.want, got)
 		})
 	}
 }
