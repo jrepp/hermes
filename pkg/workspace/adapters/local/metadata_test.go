@@ -231,7 +231,7 @@ func TestMetadataStoreSet(t *testing.T) {
 	docPath := "/test/docs/doc-789.md"
 
 	// Need to create parent directory
-	err = fs.MkdirAll(filepath.Dir(docPath), 0755)
+	err = fs.MkdirAll(filepath.Dir(docPath), 0o755)
 	require.NoError(t, err)
 
 	err = store.Set(docPath, meta, content)
@@ -256,7 +256,7 @@ func TestMetadataStoreDelete(t *testing.T) {
 
 	// Create a document
 	docPath := "/test/docs/doc-delete.md"
-	err = fs.MkdirAll(filepath.Dir(docPath), 0755)
+	err = fs.MkdirAll(filepath.Dir(docPath), 0o755)
 	require.NoError(t, err)
 
 	meta := &DocumentMetadata{
@@ -297,7 +297,7 @@ func TestMetadataStoreList(t *testing.T) {
 
 	// Create directory
 	dirPath := "/test/docs"
-	err = fs.MkdirAll(dirPath, 0755)
+	err = fs.MkdirAll(dirPath, 0o755)
 	require.NoError(t, err)
 
 	// Create multiple documents
@@ -330,7 +330,7 @@ func TestMetadataStoreListEmptyDirectory(t *testing.T) {
 
 	// Create empty directory
 	dirPath := "/test/empty"
-	err = fs.MkdirAll(dirPath, 0755)
+	err = fs.MkdirAll(dirPath, 0o755)
 	require.NoError(t, err)
 
 	// List should return empty slice
@@ -346,7 +346,7 @@ func TestMetadataStoreConcurrent(t *testing.T) {
 
 	// Create directory
 	dirPath := "/test/concurrent"
-	err = fs.MkdirAll(dirPath, 0755)
+	err = fs.MkdirAll(dirPath, 0o755)
 	require.NoError(t, err)
 
 	// Concurrent writes
@@ -386,7 +386,7 @@ func TestMetadataStorePreservesContentDuringUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	docPath := "/test/docs/doc-update.md"
-	err = fs.MkdirAll(filepath.Dir(docPath), 0755)
+	err = fs.MkdirAll(filepath.Dir(docPath), 0o755)
 	require.NoError(t, err)
 
 	// Create initial document
@@ -460,7 +460,7 @@ func TestMetadataStoreListIgnoresNonMarkdownFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	dirPath := "/test/docs"
-	err = fs.MkdirAll(dirPath, 0755)
+	err = fs.MkdirAll(dirPath, 0o755)
 	require.NoError(t, err)
 
 	// Create markdown file
@@ -476,9 +476,9 @@ func TestMetadataStoreListIgnoresNonMarkdownFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create non-markdown files
-	err = afero.WriteFile(fs, filepath.Join(dirPath, "readme.txt"), []byte("text"), 0644)
+	err = afero.WriteFile(fs, filepath.Join(dirPath, "readme.txt"), []byte("text"), 0o644)
 	require.NoError(t, err)
-	err = afero.WriteFile(fs, filepath.Join(dirPath, "data.json"), []byte("{}"), 0644)
+	err = afero.WriteFile(fs, filepath.Join(dirPath, "data.json"), []byte("{}"), 0o644)
 	require.NoError(t, err)
 
 	// List should only return markdown files
@@ -494,7 +494,7 @@ func TestMetadataStoreListIgnoresSubdirectories(t *testing.T) {
 	require.NoError(t, err)
 
 	dirPath := "/test/docs"
-	err = fs.MkdirAll(dirPath, 0755)
+	err = fs.MkdirAll(dirPath, 0o755)
 	require.NoError(t, err)
 
 	// Create markdown file
@@ -510,7 +510,7 @@ func TestMetadataStoreListIgnoresSubdirectories(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create subdirectory
-	err = fs.MkdirAll(filepath.Join(dirPath, "subdir"), 0755)
+	err = fs.MkdirAll(filepath.Join(dirPath, "subdir"), 0o755)
 	require.NoError(t, err)
 
 	// List should only return files, not directories
@@ -522,7 +522,7 @@ func TestMetadataStoreListIgnoresSubdirectories(t *testing.T) {
 func BenchmarkMetadataStoreSet(b *testing.B) {
 	fs := afero.NewMemMapFs()
 	store, _ := NewMetadataStore("/test", fs)
-	_ = fs.MkdirAll("/test/docs", 0755)
+	_ = fs.MkdirAll("/test/docs", 0o755)
 
 	meta := &DocumentMetadata{
 		ID:             "doc-bench",
@@ -543,7 +543,7 @@ func BenchmarkMetadataStoreSet(b *testing.B) {
 func BenchmarkMetadataStoreGet(b *testing.B) {
 	fs := afero.NewMemMapFs()
 	store, _ := NewMetadataStore("/test", fs)
-	_ = fs.MkdirAll("/test/docs", 0755)
+	_ = fs.MkdirAll("/test/docs", 0o755)
 
 	meta := &DocumentMetadata{
 		ID:             "doc-bench",

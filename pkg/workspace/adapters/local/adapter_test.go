@@ -2,7 +2,6 @@ package local_test
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -49,7 +48,7 @@ func TestFilesystemAdapter(t *testing.T) {
 		}
 
 		// Verify file was created
-		docPath := filepath.Join("/workspace", "docs", doc.ID+".md")
+		docPath := "/workspace/docs/" + doc.ID + ".md"
 		exists, err := afero.Exists(fs, docPath)
 		require.NoError(t, err)
 		assert.True(t, exists, "Document file was not created")

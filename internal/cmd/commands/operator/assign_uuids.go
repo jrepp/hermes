@@ -1,3 +1,4 @@
+// Package operator provides CLI commands for operational tasks.
 package operator
 
 import (
@@ -14,6 +15,8 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
+// AssignUUIDsCommand assigns UUIDs to documents.
+//
 //nolint:govet // Keep flag fields grouped for CLI readability.
 type AssignUUIDsCommand struct {
 	*base.Command
@@ -23,10 +26,12 @@ type AssignUUIDsCommand struct {
 	flagVerbose   bool
 }
 
+// Synopsis returns a short description.
 func (c *AssignUUIDsCommand) Synopsis() string {
 	return "Assign UUIDs to documents that don't have them"
 }
 
+// Help returns the full help text.
 func (c *AssignUUIDsCommand) Help() string {
 	return `Usage: hermes operator assign-uuids
 
@@ -35,6 +40,7 @@ func (c *AssignUUIDsCommand) Help() string {
 		c.Flags().Help()
 }
 
+// Flags returns the flag set.
 func (c *AssignUUIDsCommand) Flags() *base.FlagSet {
 	f := base.NewFlagSet(
 		flag.NewFlagSet("assign-uuids", flag.ExitOnError))
@@ -58,6 +64,8 @@ func (c *AssignUUIDsCommand) Flags() *base.FlagSet {
 	return f
 }
 
+// Run executes the command.
+//
 //nolint:gocognit,gocyclo // Batch UUID backfill flow is easier to follow inline.
 func (c *AssignUUIDsCommand) Run(args []string) int {
 	logger, ui := c.Log, c.UI

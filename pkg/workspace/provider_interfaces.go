@@ -6,9 +6,7 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/docid"
 )
 
-// ===================================================================
 // CORE PROVIDER INTERFACES (RFC-084)
-// ===================================================================
 //
 // This file defines the 7 core provider interfaces from RFC-084.
 //
@@ -26,13 +24,10 @@ import (
 // 9. DocumentMergeProvider - UUID merging for drift resolution
 // 10. IdentityJoinProvider - Cross-provider identity linking
 
-// ===================================================================
-// CORE INTERFACE: DocumentProvider
-// ===================================================================
-// DocumentProvider handles document metadata operations (CRUD)
-// Works with DocID system (UUID + ProviderID)
+// DocumentProvider handles document metadata operations (CRUD).
+// Works with DocID system (UUID + ProviderID).
 //
-// NOTE: Renamed from "FileProvider" to avoid confusion with file system directories
+// NOTE: Renamed from "FileProvider" to avoid confusion with file system directories.
 type DocumentProvider interface {
 	// GetDocument retrieves document metadata by backend-specific ID
 	// Returns: DocumentMetadata with UUID, ProviderID, status, content hash
@@ -72,13 +67,10 @@ type DocumentProvider interface {
 	GetSubfolder(ctx context.Context, parentID, name string) (string, error)
 }
 
-// ===================================================================
-// CORE INTERFACE: ContentProvider
-// ===================================================================
-// ContentProvider handles document content operations with revision tracking
+// ContentProvider handles document content operations with revision tracking.
 //
 // CRITICAL: Content operations must return BackendRevision info for
-// multi-backend conflict detection (e.g., Google Doc v123 vs Git commit abc)
+// multi-backend conflict detection (e.g., Google Doc v123 vs Git commit abc).
 type ContentProvider interface {
 	// GetContent retrieves document content with backend-specific revision
 	// Returns: DocumentContent with BackendRevision (Google rev, Git commit, etc.)
@@ -99,13 +91,10 @@ type ContentProvider interface {
 	CompareContent(ctx context.Context, providerID1, providerID2 string) (*ContentComparison, error)
 }
 
-// ===================================================================
-// CORE INTERFACE: RevisionTrackingProvider
-// ===================================================================
-// RevisionTrackingProvider handles backend-specific revision operations
+// RevisionTrackingProvider handles backend-specific revision operations.
 //
-// NOTE: Renamed from "RevisionProvider" to emphasize backend-specific tracking
-// Each backend (Google, Git, O365, GitHub) has its own revision system
+// NOTE: Renamed from "RevisionProvider" to emphasize backend-specific tracking.
+// Each backend (Google, Git, O365, GitHub) has its own revision system.
 type RevisionTrackingProvider interface {
 	// GetRevisionHistory lists all revisions for a document in this backend
 	// Returns: List of BackendRevision ordered by time (newest first)
@@ -129,11 +118,10 @@ type RevisionTrackingProvider interface {
 	GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*RevisionInfo, error)
 }
 
-// ===================================================================
-// REQUIRED INTERFACE: PermissionProvider
-// ===================================================================
 // PermissionProvider handles file sharing and access control
 // NOTE: ALL providers must implement this - either locally or via delegation
+//
+//nolint:revive // PermissionProvider comment format
 type PermissionProvider interface {
 	// ShareDocument grants access to a user/group
 	ShareDocument(ctx context.Context, providerID, email, role string) error
@@ -151,14 +139,13 @@ type PermissionProvider interface {
 	UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error
 }
 
-// ===================================================================
-// REQUIRED INTERFACE: PeopleProvider
-// ===================================================================
 // PeopleProvider handles user directory operations
 // NOTE: ALL providers must implement this - either locally or via delegation
 //
 // Renamed from "DirectoryProvider" to avoid confusion with file directories
 // This is about PEOPLE/USERS, not file system directories
+//
+//nolint:revive // PeopleProvider comment format
 type PeopleProvider interface {
 	// SearchPeople searches for users in the directory
 	SearchPeople(ctx context.Context, query string) ([]*UserIdentity, error)
@@ -183,13 +170,12 @@ type PeopleProvider interface {
 	ResolveIdentity(ctx context.Context, email string) (*UserIdentity, error)
 }
 
-// ===================================================================
-// REQUIRED INTERFACE: TeamProvider
-// ===================================================================
 // TeamProvider handles group/team operations
 // NOTE: ALL providers must implement this - either locally or via delegation
 //
 // Renamed from "GroupProvider" to avoid generic term confusion
+//
+//nolint:revive // TeamProvider comment format
 type TeamProvider interface {
 	// ListTeams lists teams matching query
 	ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*Team, error)
@@ -204,13 +190,12 @@ type TeamProvider interface {
 	GetTeamMembers(ctx context.Context, teamID string) ([]*UserIdentity, error)
 }
 
-// ===================================================================
-// REQUIRED INTERFACE: NotificationProvider
-// ===================================================================
 // NotificationProvider handles email/notification sending
 // NOTE: ALL providers must implement this - either locally or via delegation
 //
 // Renamed from "EmailProvider" to be more generic
+//
+//nolint:revive // NotificationProvider comment format
 type NotificationProvider interface {
 	// SendEmail sends an email notification
 	SendEmail(ctx context.Context, to []string, from, subject, body string) error
@@ -219,11 +204,10 @@ type NotificationProvider interface {
 	SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error
 }
 
-// ===================================================================
-// OPTIONAL INTERFACE: DocumentSyncProvider
-// ===================================================================
-// DocumentSyncProvider handles document synchronization between edge and central instances
-// This interface is OPTIONAL - only needed for multi-provider edge/central architectures
+// DocumentSyncProvider handles document synchronization between edge and central instances.
+// This interface is OPTIONAL - only needed for multi-provider edge/central architectures.
+//
+//nolint:revive // DocumentSyncProvider comment format
 type DocumentSyncProvider interface {
 	// SyncMetadata synchronizes document metadata from edge to central
 	SyncMetadata(ctx context.Context, uuid docid.UUID, metadata *DocumentMetadata) error
@@ -235,11 +219,10 @@ type DocumentSyncProvider interface {
 	SyncRevision(ctx context.Context, uuid docid.UUID, revision *BackendRevision) error
 }
 
-// ===================================================================
-// OPTIONAL INTERFACE: DocumentMergeProvider
-// ===================================================================
-// DocumentMergeProvider handles UUID merging for drift resolution
-// This interface is OPTIONAL - only needed for central instances managing multi-backend documents
+// DocumentMergeProvider handles UUID merging for drift resolution.
+// This interface is OPTIONAL - only needed for central instances managing multi-backend documents.
+//
+//nolint:revive // DocumentMergeProvider comment format
 type DocumentMergeProvider interface {
 	// MergeDocuments merges two document UUIDs (combine revision histories)
 	MergeDocuments(ctx context.Context, req *MergeRequest) error
@@ -264,11 +247,10 @@ type MergeRecord struct {
 	TargetUUID    docid.UUID `json:"targetUuid"`
 }
 
-// ===================================================================
-// OPTIONAL INTERFACE: IdentityJoinProvider
-// ===================================================================
-// IdentityJoinProvider handles cross-provider identity linking
-// This interface is OPTIONAL - only needed for central instances with multi-provider auth
+// IdentityJoinProvider handles cross-provider identity linking.
+// This interface is OPTIONAL - only needed for central instances with multi-provider auth.
+//
+//nolint:revive // IdentityJoinProvider comment format
 type IdentityJoinProvider interface {
 	// InitiateIdentityJoin starts OAuth flow to join identity from another provider
 	InitiateIdentityJoin(ctx context.Context, provider string) (*OAuthFlow, error)
@@ -283,11 +265,10 @@ type IdentityJoinProvider interface {
 	ListLinkedIdentities(ctx context.Context, userEmail string) ([]*AlternateIdentity, error)
 }
 
-// ===================================================================
-// COMPOSITE INTERFACE: WorkspaceProvider
-// ===================================================================
-// WorkspaceProvider composes all 7 required interfaces
-// This is the main interface that provider adapters implement
+// WorkspaceProvider composes all 7 required interfaces.
+// This is the main interface that provider adapters implement.
+//
+//nolint:revive // WorkspaceProvider name is intentional for clarity
 type WorkspaceProvider interface {
 	DocumentProvider
 	ContentProvider

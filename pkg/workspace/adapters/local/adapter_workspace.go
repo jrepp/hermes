@@ -107,11 +107,8 @@ func (w *WorkspaceAdapter) CreateDocumentWithUUID(ctx context.Context, uuid doci
 		template, err := storage.GetDocument(ctx, templateID)
 		if err == nil {
 			templateContent = template.Content
-			// Copy relevant metadata from template
 			if tags, ok := template.Metadata["tags"]; ok {
-				if templateMetadata == nil {
-					templateMetadata = make(map[string]any)
-				}
+				templateMetadata = make(map[string]any)
 				templateMetadata["tags"] = tags
 			}
 		}
@@ -162,7 +159,7 @@ func (w *WorkspaceAdapter) CreateDocumentWithUUID(ctx context.Context, uuid doci
 
 // RegisterDocument registers document metadata with provider.
 // For local filesystem, this is a no-op as there's no central registry.
-func (w *WorkspaceAdapter) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+func (w *WorkspaceAdapter) RegisterDocument(_ context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
 	// For local filesystem, just return the metadata as-is
 	// There's no central registry to register with
 	return doc, nil
@@ -395,33 +392,33 @@ func (w *WorkspaceAdapter) CompareContent(ctx context.Context, providerID1, prov
 // GetRevisionHistory lists all revisions for a document in this backend.
 // For local filesystem with Git, this would query Git history.
 // For simple filesystem, this returns empty list (not yet implemented).
-func (w *WorkspaceAdapter) GetRevisionHistory(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+func (w *WorkspaceAdapter) GetRevisionHistory(_ context.Context, _ string, _ int) ([]*workspace.BackendRevision, error) {
 	// TODO: Implement Git integration for revision tracking
 	// For now, return empty list
 	return []*workspace.BackendRevision{}, nil
 }
 
 // GetRevision retrieves a specific revision.
-func (w *WorkspaceAdapter) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+func (w *WorkspaceAdapter) GetRevision(_ context.Context, _, _ string) (*workspace.BackendRevision, error) {
 	// TODO: Implement Git integration for revision tracking
 	return nil, fmt.Errorf("revision tracking not yet implemented for local filesystem")
 }
 
 // GetRevisionContent retrieves content at a specific revision.
-func (w *WorkspaceAdapter) GetRevisionContent(ctx context.Context, providerID, revisionID string) (*workspace.DocumentContent, error) {
+func (w *WorkspaceAdapter) GetRevisionContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	// TODO: Implement Git integration for revision tracking
 	return nil, fmt.Errorf("revision tracking not yet implemented for local filesystem")
 }
 
 // KeepRevisionForever marks a revision as permanent (if supported).
 // For local filesystem, this is a no-op.
-func (w *WorkspaceAdapter) KeepRevisionForever(ctx context.Context, providerID, revisionID string) error {
+func (w *WorkspaceAdapter) KeepRevisionForever(_ context.Context, _, _ string) error {
 	// Not applicable for local filesystem
 	return nil
 }
 
 // GetAllDocumentRevisions returns all revisions across all backends for a UUID.
-func (w *WorkspaceAdapter) GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*workspace.RevisionInfo, error) {
+func (w *WorkspaceAdapter) GetAllDocumentRevisions(_ context.Context, _ docid.UUID) ([]*workspace.RevisionInfo, error) {
 	// For local filesystem, return empty list for now
 	// TODO: Implement Git integration
 	return []*workspace.RevisionInfo{}, nil
@@ -433,30 +430,30 @@ func (w *WorkspaceAdapter) GetAllDocumentRevisions(ctx context.Context, uuid doc
 
 // ShareDocument grants access to a user/group.
 // For local filesystem, permissions are handled by OS file permissions.
-func (w *WorkspaceAdapter) ShareDocument(ctx context.Context, providerID, email, role string) error {
+func (w *WorkspaceAdapter) ShareDocument(_ context.Context, _, _, _ string) error {
 	// Local filesystem doesn't have user-level sharing
 	// This would need to be implemented via ACLs or external system
 	return fmt.Errorf("document sharing not supported for local filesystem")
 }
 
 // ShareDocumentWithDomain grants access to entire domain.
-func (w *WorkspaceAdapter) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+func (w *WorkspaceAdapter) ShareDocumentWithDomain(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("domain sharing not supported for local filesystem")
 }
 
 // ListPermissions lists all permissions for a document.
-func (w *WorkspaceAdapter) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+func (w *WorkspaceAdapter) ListPermissions(_ context.Context, _ string) ([]*workspace.FilePermission, error) {
 	// Return empty list for local filesystem
 	return []*workspace.FilePermission{}, nil
 }
 
 // RemovePermission revokes access.
-func (w *WorkspaceAdapter) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+func (w *WorkspaceAdapter) RemovePermission(_ context.Context, _, _ string) error {
 	return fmt.Errorf("permission management not supported for local filesystem")
 }
 
 // UpdatePermission changes permission role.
-func (w *WorkspaceAdapter) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+func (w *WorkspaceAdapter) UpdatePermission(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("permission management not supported for local filesystem")
 }
 
@@ -511,24 +508,24 @@ func (w *WorkspaceAdapter) ResolveIdentity(ctx context.Context, email string) (*
 
 // ListTeams lists teams matching query.
 // For local filesystem, teams are stored in configuration files.
-func (w *WorkspaceAdapter) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+func (w *WorkspaceAdapter) ListTeams(_ context.Context, _, _ string, _ int64) ([]*workspace.Team, error) {
 	// Local filesystem doesn't have teams by default
 	// This would need to be implemented via configuration
 	return []*workspace.Team{}, nil
 }
 
 // GetTeam retrieves team details.
-func (w *WorkspaceAdapter) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+func (w *WorkspaceAdapter) GetTeam(_ context.Context, _ string) (*workspace.Team, error) {
 	return nil, fmt.Errorf("teams not supported for local filesystem")
 }
 
 // GetUserTeams lists all teams a user belongs to.
-func (w *WorkspaceAdapter) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+func (w *WorkspaceAdapter) GetUserTeams(_ context.Context, _ string) ([]*workspace.Team, error) {
 	return []*workspace.Team{}, nil
 }
 
 // GetTeamMembers lists all members of a team.
-func (w *WorkspaceAdapter) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+func (w *WorkspaceAdapter) GetTeamMembers(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return []*workspace.UserIdentity{}, nil
 }
 

@@ -265,7 +265,6 @@ func TestSemanticSearchResult_Structure(t *testing.T) {
 func TestSearchFilter_Structure(t *testing.T) {
 	filter := SearchFilter{
 		DocumentTypes: []string{"RFC", "PRD"},
-		DocumentIDs:   []string{"doc-1", "doc-2"},
 		MinSimilarity: 0.8,
 	}
 

@@ -274,7 +274,7 @@ func TestProviderCompliance_SearchPeople_Initial(t *testing.T) {
 			"isActive": true
 		}
 	}`
-	err := afero.WriteFile(adapter.fs, adapter.usersPath, []byte(usersJSON), 0644)
+	err := afero.WriteFile(adapter.fs, adapter.usersPath, []byte(usersJSON), 0o644)
 	require.NoError(t, err)
 
 	// Test SearchPeople
@@ -494,7 +494,7 @@ func TestProviderCompliance_SearchPeople(t *testing.T) {
 			"isActive": true
 		}
 	}`
-	err := afero.WriteFile(adapter.fs, adapter.usersPath, []byte(usersJSON), 0644)
+	err := afero.WriteFile(adapter.fs, adapter.usersPath, []byte(usersJSON), 0o644)
 	require.NoError(t, err)
 
 	// Test search by email
@@ -551,7 +551,7 @@ func TestProviderCompliance_SearchDirectory(t *testing.T) {
 			"isActive": false
 		}
 	}`
-	err := afero.WriteFile(adapter.fs, adapter.usersPath, []byte(usersJSON), 0644)
+	err := afero.WriteFile(adapter.fs, adapter.usersPath, []byte(usersJSON), 0o644)
 	require.NoError(t, err)
 
 	// Test basic query
@@ -1012,7 +1012,7 @@ func TestProviderCompliance_SearchDirectory_MaxResults(t *testing.T) {
 		"user4@example.com": {"email": "user4@example.com", "name": "User Four", "givenName": "User", "familyName": "Four", "isActive": true},
 		"user5@example.com": {"email": "user5@example.com", "name": "User Five", "givenName": "User", "familyName": "Five", "isActive": true}
 	}`
-	err := afero.WriteFile(adapter.fs, adapter.usersPath, []byte(usersJSON), 0644)
+	err := afero.WriteFile(adapter.fs, adapter.usersPath, []byte(usersJSON), 0o644)
 	require.NoError(t, err)
 
 	// Test with max results

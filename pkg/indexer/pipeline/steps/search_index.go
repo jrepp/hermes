@@ -1,3 +1,4 @@
+// Package steps provides steps functionality.
 package steps
 
 import (

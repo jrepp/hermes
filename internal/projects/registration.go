@@ -1,3 +1,4 @@
+// Package projects handles project registration and configuration.
 package projects
 
 import (
@@ -19,7 +20,9 @@ import (
 // RegisterProject registers a single project from config with the current instance.
 // It creates or updates the workspace project, linking it to the instance and
 // calculating a config hash for drift detection.
-func RegisterProject(ctx context.Context, db *gorm.DB, cfg *projectconfig.Project, logger hclog.Logger) (*models.WorkspaceProject, error) {
+//
+//nolint:gocognit,gocyclo // complex project registration logic with multiple DB operations
+func RegisterProject(_ context.Context, db *gorm.DB, cfg *projectconfig.Project, logger hclog.Logger) (*models.WorkspaceProject, error) {
 	inst := instance.GetCurrentInstance()
 	if inst == nil {
 		return nil, fmt.Errorf("instance not initialized - call instance.Initialize first")
@@ -299,6 +302,8 @@ func updateProjectFromConfig(project *models.WorkspaceProject, cfg *projectconfi
 }
 
 // convertProvidersToData converts projectconfig providers to models providers format
+//
+//nolint:gocognit,gocyclo // complex provider data conversion with many fields
 func convertProvidersToData(providers []*projectconfig.Provider) *models.ProvidersData {
 	data := &models.ProvidersData{
 		Providers: make([]models.ProviderData, 0, len(providers)),

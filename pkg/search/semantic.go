@@ -186,7 +186,9 @@ func (s *SemanticSearch) SearchByEmbedding(ctx context.Context, embedding []floa
 	return s.searchSimilar(ctx, embedding, limit)
 }
 
-// SearchWithFilter performs semantic search with additional filters.
+// SearchFilter configures filters for semantic search.
+//
+//nolint:revive // SearchFilter name preserves API consistency
 type SearchFilter struct {
 	DocumentTypes []string // Filter by document type
 	DocumentIDs   []string // Filter by specific document IDs

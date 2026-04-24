@@ -18,6 +18,8 @@ import (
 //   - Owner: Document.Owner
 //   - Tags: Extracted from metadata
 //   - CreatedTime/ModifiedTime: From Document
+//
+//nolint:gocognit,gocyclo // many optional fields to map from document metadata
 func ConvertToDocumentMetadata(doc *workspace.Document) (*workspace.DocumentMetadata, error) {
 	if doc == nil {
 		return nil, fmt.Errorf("document cannot be nil")
@@ -70,12 +72,13 @@ func ConvertToDocumentMetadata(doc *workspace.Document) (*workspace.DocumentMeta
 	// Extract tags and extended metadata
 	if doc.Metadata != nil {
 		// Try to extract tags
-		if tags, ok := doc.Metadata["tags"].([]string); ok {
-			meta.Tags = tags
-		} else if tagsIface, ok := doc.Metadata["tags"].([]interface{}); ok {
+		switch tagsVal := doc.Metadata["tags"].(type) {
+		case []string:
+			meta.Tags = tagsVal
+		case []interface{}:
 			// Handle case where tags come as []interface{}
-			tags := make([]string, 0, len(tagsIface))
-			for _, t := range tagsIface {
+			tags := make([]string, 0, len(tagsVal))
+			for _, t := range tagsVal {
 				if tagStr, ok := t.(string); ok {
 					tags = append(tags, tagStr)
 				}

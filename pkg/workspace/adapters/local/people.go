@@ -16,7 +16,7 @@ type peopleService struct {
 }
 
 // GetUser retrieves user information by email.
-func (ps *peopleService) GetUser(ctx context.Context, email string) (*workspace.User, error) {
+func (ps *peopleService) GetUser(_ context.Context, email string) (*workspace.User, error) {
 	// Load from local user database (simple JSON file implementation)
 	usersPath := filepath.Join(ps.adapter.basePath, "users.json")
 	data, err := afero.ReadFile(ps.adapter.fs, usersPath)
@@ -42,7 +42,7 @@ func (ps *peopleService) GetUser(ctx context.Context, email string) (*workspace.
 }
 
 // SearchUsers searches for users matching a query.
-func (ps *peopleService) SearchUsers(ctx context.Context, query string, fields []string) ([]*workspace.User, error) {
+func (ps *peopleService) SearchUsers(_ context.Context, query string, _ []string) ([]*workspace.User, error) {
 	// Simple implementation: load all users and filter by email/name
 	usersPath := filepath.Join(ps.adapter.basePath, "users.json")
 	data, err := afero.ReadFile(ps.adapter.fs, usersPath)
@@ -92,7 +92,7 @@ func toLower(s string) string {
 	for i := 0; i < len(s); i++ {
 		c := s[i]
 		if c >= 'A' && c <= 'Z' {
-			c = c + 32
+			c += 32
 		}
 		result[i] = c
 	}

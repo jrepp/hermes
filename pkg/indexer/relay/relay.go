@@ -1,3 +1,4 @@
+// Package relay provides relay functionality.
 package relay
 
 import (

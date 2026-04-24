@@ -149,6 +149,8 @@ func (h *HybridSearch) Search(ctx context.Context, query string, limit int, weig
 }
 
 // SearchWeights defines the weights for combining keyword and semantic scores.
+//
+//nolint:revive // SearchWeights name preserves API consistency
 type SearchWeights struct {
 	KeywordWeight  float64 // Weight for keyword search (0-1)
 	SemanticWeight float64 // Weight for semantic search (0-1)

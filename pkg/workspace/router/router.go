@@ -39,21 +39,29 @@ type ProviderConfig struct {
 type WriteStrategy string
 
 const (
-	WriteStrategyPrimaryOnly WriteStrategy = "primary_only" // Write to primary only
-	WriteStrategyAllWritable WriteStrategy = "all_writable" // Write to all writable providers
-	WriteStrategyMirror      WriteStrategy = "mirror"       // Mirror writes to specific providers
+	// WriteStrategyPrimaryOnly writes to primary only.
+	WriteStrategyPrimaryOnly WriteStrategy = "primary_only"
+	// WriteStrategyAllWritable writes to all writable providers.
+	WriteStrategyAllWritable WriteStrategy = "all_writable"
+	// WriteStrategyMirror mirrors writes to specific providers.
+	WriteStrategyMirror WriteStrategy = "mirror"
 )
 
 // ReadStrategy determines how reads are handled
 type ReadStrategy string
 
 const (
-	ReadStrategyPrimaryOnly         ReadStrategy = "primary_only"     // Read from primary only
-	ReadStrategyPrimaryThenFallback ReadStrategy = "primary_fallback" // Try primary, fallback to others
-	ReadStrategyLoadBalance         ReadStrategy = "load_balance"     // Load balance across healthy providers
+	// ReadStrategyPrimaryOnly reads from primary only.
+	ReadStrategyPrimaryOnly ReadStrategy = "primary_only"
+	// ReadStrategyPrimaryThenFallback tries primary then fallback.
+	ReadStrategyPrimaryThenFallback ReadStrategy = "primary_fallback"
+	// ReadStrategyLoadBalance load balances across healthy providers.
+	ReadStrategyLoadBalance ReadStrategy = "load_balance"
 )
 
 // RouterConfig configures the multi-provider router
+//
+//nolint:revive // RouterConfig name preserves API consistency
 type RouterConfig struct {
 	WriteStrategy       WriteStrategy
 	ReadStrategy        ReadStrategy
@@ -322,7 +330,7 @@ func (r *Router) RouteWrite(ctx context.Context, operation func(workspace.Worksp
 }
 
 // writeToPrimary writes to primary provider only
-func (r *Router) writeToPrimary(ctx context.Context, operation func(workspace.WorkspaceProvider) error) error {
+func (r *Router) writeToPrimary(_ context.Context, operation func(workspace.WorkspaceProvider) error) error {
 	primary, config, err := r.GetPrimaryProvider()
 	if err != nil {
 		return fmt.Errorf("no primary provider: %w", err)
@@ -345,7 +353,7 @@ func (r *Router) writeToPrimary(ctx context.Context, operation func(workspace.Wo
 }
 
 // writeToAll writes to all writable providers
-func (r *Router) writeToAll(ctx context.Context, operation func(workspace.WorkspaceProvider) error) error {
+func (r *Router) writeToAll(_ context.Context, operation func(workspace.WorkspaceProvider) error) error {
 	writable := r.GetWritableProviders()
 	if len(writable) == 0 {
 		return fmt.Errorf("no writable providers available")
@@ -478,7 +486,7 @@ func (r *Router) checkProviderHealth(ctx context.Context, name string) {
 	}
 
 	// Update database (best effort - ignore errors)
-	//nolint:errcheck
+	//nolint:errcheck // best-effort DB update, errors are acceptable
 	_, _ = r.db.Exec(`
 		UPDATE provider_storage
 		SET health_status = $1, last_health_check = $2, updated_at = NOW()

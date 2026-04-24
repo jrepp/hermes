@@ -1,3 +1,4 @@
+// Package database provides database functionality.
 package database
 
 import (
@@ -153,28 +154,28 @@ func (g *gormHclogAdapter) LogMode(level logger.LogLevel) logger.Interface {
 }
 
 // Info logs info messages.
-func (g *gormHclogAdapter) Info(ctx context.Context, msg string, data ...interface{}) {
+func (g *gormHclogAdapter) Info(_ context.Context, msg string, data ...interface{}) {
 	if g.level >= logger.Info && g.logger != nil {
 		g.logger.Info(msg, data...)
 	}
 }
 
 // Warn logs warning messages.
-func (g *gormHclogAdapter) Warn(ctx context.Context, msg string, data ...interface{}) {
+func (g *gormHclogAdapter) Warn(_ context.Context, msg string, data ...interface{}) {
 	if g.level >= logger.Warn && g.logger != nil {
 		g.logger.Warn(msg, data...)
 	}
 }
 
 // Error logs error messages.
-func (g *gormHclogAdapter) Error(ctx context.Context, msg string, data ...interface{}) {
+func (g *gormHclogAdapter) Error(_ context.Context, msg string, data ...interface{}) {
 	if g.level >= logger.Error && g.logger != nil {
 		g.logger.Error(msg, data...)
 	}
 }
 
 // Trace logs SQL queries and execution time.
-func (g *gormHclogAdapter) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+func (g *gormHclogAdapter) Trace(_ context.Context, begin time.Time, fc func() (string, int64), err error) {
 	if g.level <= logger.Silent {
 		return
 	}
@@ -182,20 +183,21 @@ func (g *gormHclogAdapter) Trace(ctx context.Context, begin time.Time, fc func()
 	elapsed := time.Since(begin)
 	sql, rows := fc()
 
-	if err != nil && g.level >= logger.Error {
+	switch {
+	case err != nil && g.level >= logger.Error:
 		g.logger.Error("database query failed",
 			"error", err,
 			"elapsed", elapsed,
 			"rows", rows,
 			"sql", sql,
 		)
-	} else if elapsed > 200*time.Millisecond && g.level >= logger.Warn {
+	case elapsed > 200*time.Millisecond && g.level >= logger.Warn:
 		g.logger.Warn("slow database query",
 			"elapsed", elapsed,
 			"rows", rows,
 			"sql", sql,
 		)
-	} else if g.level >= logger.Info {
+	case g.level >= logger.Info:
 		g.logger.Debug("database query",
 			"elapsed", elapsed,
 			"rows", rows,

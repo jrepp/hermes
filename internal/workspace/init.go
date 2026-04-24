@@ -1,3 +1,4 @@
+// Package workspace provides workspace functionality.
 package workspace
 
 import (
@@ -129,6 +130,7 @@ func InitializeWorkspace(basePath string) error {
 	}
 
 	for _, dir := range dirs {
+		//nolint:gosec // G301: 0o755 is appropriate for workspace directories
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}

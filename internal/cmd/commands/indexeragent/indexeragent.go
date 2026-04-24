@@ -1,3 +1,4 @@
+// Package indexeragent provides indexeragent functionality.
 package indexeragent
 
 import (
@@ -16,6 +17,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 )
 
+// Command implements the indexer agent CLI command.
 type Command struct {
 	*base.Command
 
@@ -26,10 +28,12 @@ type Command struct {
 	flagPollInterval time.Duration
 }
 
+// Synopsis returns a short description.
 func (c *Command) Synopsis() string {
 	return "Run the stateless indexer agent"
 }
 
+// Help returns the full help text.
 func (c *Command) Help() string {
 	return `Usage: hermes indexer-agent
 
@@ -37,6 +41,7 @@ This command runs the stateless indexer agent that registers with central Hermes
 and submits documents via API.` + c.Flags().Help()
 }
 
+// Flags returns the flag set.
 func (c *Command) Flags() *base.FlagSet {
 	f := base.NewFlagSet(flag.NewFlagSet("indexer-agent", flag.ExitOnError))
 
@@ -64,6 +69,8 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+// Run executes the command.
+//
 //nolint:gocognit,gocyclo // Agent registration and heartbeat flow is sequential by design.
 func (c *Command) Run(args []string) int {
 	f := c.Flags()
@@ -107,6 +114,7 @@ func (c *Command) Run(args []string) int {
 	c.UI.Info(fmt.Sprintf("Waiting for registration token at: %s", tokenPath))
 	var registrationToken string
 	for i := 0; i < 60; i++ { // Wait up to 60 seconds
+		//nolint:gosec // G304: tokenPath is constructed from config, not user input
 		tokenBytes, err := os.ReadFile(tokenPath)
 		if err == nil {
 			registrationToken = strings.TrimSpace(string(tokenBytes))

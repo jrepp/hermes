@@ -1,3 +1,4 @@
+// Package serve provides serve functionality.
 package serve
 
 import (
@@ -28,6 +29,7 @@ func openBrowser(url string) error {
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 
+	//nolint:gosec // G204: cmd and args are constructed from known constants, not user input
 	return exec.Command(cmd, args...).Start()
 }
 

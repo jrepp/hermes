@@ -142,8 +142,10 @@ type Document struct {
 type FilterOperator string
 
 const (
+	// FilterOperatorAND combines filters with logical AND.
 	FilterOperatorAND FilterOperator = "AND"
-	FilterOperatorOR  FilterOperator = "OR"
+	// FilterOperatorOR combines filters with logical OR.
+	FilterOperatorOR FilterOperator = "OR"
 )
 
 // FilterGroup represents a group of filters with a logical operator.
@@ -153,6 +155,8 @@ type FilterGroup struct {
 }
 
 // SearchQuery defines search parameters.
+//
+//nolint:revive // SearchQuery name preserves API consistency
 type SearchQuery struct {
 	Filters          map[string][]string
 	Query            string
@@ -167,6 +171,8 @@ type SearchQuery struct {
 }
 
 // SearchResult contains search results.
+//
+//nolint:revive // SearchResult name preserves API consistency
 type SearchResult struct {
 	Facets     *Facets
 	Hits       []*Document

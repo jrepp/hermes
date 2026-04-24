@@ -12,6 +12,8 @@ import (
 	hermessearch "github.com/hashicorp-forge/hermes/pkg/search"
 )
 
+const objectIDKey = "objectID"
+
 // Adapter implements search.Provider for Meilisearch.
 type Adapter struct {
 	client        meilisearch.ServiceManager
@@ -56,11 +58,13 @@ func NewAdapter(cfg *Config) (*Adapter, error) {
 }
 
 // initializeIndexes sets up index configuration.
+//
+//nolint:gocyclo // index setup with multiple conditional branches
 func (a *Adapter) initializeIndexes(ctx context.Context) error {
 	// Create documents index if it doesn't exist
 	if _, err := a.client.CreateIndexWithContext(ctx, &meilisearch.IndexConfig{
 		Uid:        a.docsIndex,
-		PrimaryKey: "objectID",
+		PrimaryKey: objectIDKey,
 	}); err != nil {
 		// Ignore error if index already exists
 		if !strings.Contains(err.Error(), "already exists") {
@@ -71,7 +75,7 @@ func (a *Adapter) initializeIndexes(ctx context.Context) error {
 	// Create drafts index if it doesn't exist
 	if _, err := a.client.CreateIndexWithContext(ctx, &meilisearch.IndexConfig{
 		Uid:        a.draftsIndex,
-		PrimaryKey: "objectID",
+		PrimaryKey: objectIDKey,
 	}); err != nil {
 		// Ignore error if index already exists
 		if !strings.Contains(err.Error(), "already exists") {
@@ -124,7 +128,7 @@ func (a *Adapter) initializeIndexes(ctx context.Context) error {
 	// Create projects index if it doesn't exist
 	if _, err := a.client.CreateIndexWithContext(ctx, &meilisearch.IndexConfig{
 		Uid:        a.projectsIndex,
-		PrimaryKey: "objectID",
+		PrimaryKey: objectIDKey,
 	}); err != nil {
 		// Ignore error if index already exists
 		if !strings.Contains(err.Error(), "already exists") {
@@ -226,7 +230,7 @@ type documentIndex struct {
 func (di *documentIndex) Index(ctx context.Context, doc *hermessearch.Document) error {
 	idx := di.client.Index(di.index)
 
-	primaryKey := "objectID"
+	primaryKey := objectIDKey
 	task, err := idx.AddDocumentsWithContext(ctx, []interface{}{doc}, &primaryKey)
 	if err != nil {
 		return &hermessearch.Error{
@@ -269,7 +273,7 @@ func (di *documentIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Do
 		objects[i] = doc
 	}
 
-	primaryKey := "objectID"
+	primaryKey := objectIDKey
 	task, err := idx.AddDocumentsWithContext(ctx, objects, &primaryKey)
 	if err != nil {
 		return &hermessearch.Error{
@@ -391,11 +395,12 @@ func (di *documentIndex) Search(ctx context.Context, query *hermessearch.SearchQ
 		filterGroupsStr := buildMeilisearchFilterGroups(query.FilterGroups)
 
 		// Combine basic filters and filter groups with AND
-		if filters != nil && filterGroupsStr != "" {
+		switch {
+		case filters != nil && filterGroupsStr != "":
 			req.Filter = fmt.Sprintf("(%s) AND (%s)", filters, filterGroupsStr)
-		} else if filters != nil {
+		case filters != nil:
 			req.Filter = filters
-		} else if filterGroupsStr != "" {
+		case filterGroupsStr != "":
 			req.Filter = filterGroupsStr
 		}
 	}
@@ -727,9 +732,9 @@ type projectIndex struct {
 	index  string
 }
 
-func (pi *projectIndex) Index(ctx context.Context, project map[string]any) error {
+func (pi *projectIndex) Index(_ context.Context, project map[string]any) error {
 	idx := pi.client.Index(pi.index)
-	primaryKey := "objectID"
+	primaryKey := objectIDKey
 	_, err := idx.AddDocuments([]map[string]any{project}, &primaryKey)
 	if err != nil {
 		return &hermessearch.Error{
@@ -741,7 +746,7 @@ func (pi *projectIndex) Index(ctx context.Context, project map[string]any) error
 	return nil
 }
 
-func (pi *projectIndex) Delete(ctx context.Context, projectID string) error {
+func (pi *projectIndex) Delete(_ context.Context, projectID string) error {
 	idx := pi.client.Index(pi.index)
 	_, err := idx.DeleteDocument(projectID)
 	if err != nil {
@@ -769,11 +774,12 @@ func (pi *projectIndex) Search(ctx context.Context, query *hermessearch.SearchQu
 		filterGroupsStr := buildMeilisearchFilterGroups(query.FilterGroups)
 
 		// Combine basic filters and filter groups with AND
-		if filters != nil && filterGroupsStr != "" {
+		switch {
+		case filters != nil && filterGroupsStr != "":
 			req.Filter = fmt.Sprintf("(%s) AND (%s)", filters, filterGroupsStr)
-		} else if filters != nil {
+		case filters != nil:
 			req.Filter = filters
-		} else if filterGroupsStr != "" {
+		case filterGroupsStr != "":
 			req.Filter = filterGroupsStr
 		}
 	}
@@ -844,7 +850,7 @@ func (pi *projectIndex) Search(ctx context.Context, query *hermessearch.SearchQu
 	return result, nil
 }
 
-func (pi *projectIndex) GetObject(ctx context.Context, projectID string) (map[string]any, error) {
+func (pi *projectIndex) GetObject(_ context.Context, projectID string) (map[string]any, error) {
 	idx := pi.client.Index(pi.index)
 	var project map[string]any
 	err := idx.GetDocument(projectID, nil, &project)
@@ -858,7 +864,7 @@ func (pi *projectIndex) GetObject(ctx context.Context, projectID string) (map[st
 	return project, nil
 }
 
-func (pi *projectIndex) Clear(ctx context.Context) error {
+func (pi *projectIndex) Clear(_ context.Context) error {
 	idx := pi.client.Index(pi.index)
 	_, err := idx.DeleteAllDocuments()
 	if err != nil {
@@ -877,14 +883,14 @@ type linksIndex struct {
 	index  string
 }
 
-func (li *linksIndex) SaveLink(ctx context.Context, link map[string]string) error {
+func (li *linksIndex) SaveLink(_ context.Context, link map[string]string) error {
 	idx := li.client.Index(li.index)
 	// Convert to []map[string]any for Meilisearch API
 	linkAny := make(map[string]any)
 	for k, v := range link {
 		linkAny[k] = v
 	}
-	primaryKey := "objectID"
+	primaryKey := objectIDKey
 	_, err := idx.AddDocuments([]map[string]any{linkAny}, &primaryKey)
 	if err != nil {
 		return &hermessearch.Error{
@@ -896,7 +902,7 @@ func (li *linksIndex) SaveLink(ctx context.Context, link map[string]string) erro
 	return nil
 }
 
-func (li *linksIndex) DeleteLink(ctx context.Context, objectID string) error {
+func (li *linksIndex) DeleteLink(_ context.Context, objectID string) error {
 	idx := li.client.Index(li.index)
 	_, err := idx.DeleteDocument(objectID)
 	if err != nil {
@@ -909,7 +915,7 @@ func (li *linksIndex) DeleteLink(ctx context.Context, objectID string) error {
 	return nil
 }
 
-func (li *linksIndex) GetLink(ctx context.Context, objectID string) (map[string]string, error) {
+func (li *linksIndex) GetLink(_ context.Context, objectID string) (map[string]string, error) {
 	idx := li.client.Index(li.index)
 	var linkAny map[string]any
 	err := idx.GetDocument(objectID, nil, &linkAny)
@@ -932,7 +938,7 @@ func (li *linksIndex) GetLink(ctx context.Context, objectID string) (map[string]
 	return link, nil
 }
 
-func (li *linksIndex) Clear(ctx context.Context) error {
+func (li *linksIndex) Clear(_ context.Context) error {
 	idx := li.client.Index(li.index)
 	_, err := idx.DeleteAllDocuments()
 	if err != nil {

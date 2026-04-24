@@ -1,3 +1,4 @@
+// Package structs provides structs functionality.
 package structs
 
 // ProductDocTypeData contains data for each document type.

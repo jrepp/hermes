@@ -1,3 +1,4 @@
+// Package publisher provides publisher functionality.
 package publisher
 
 import (

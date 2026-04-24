@@ -1,3 +1,4 @@
+// Package indexer provides indexer functionality.
 package indexer
 
 import (
@@ -18,6 +19,7 @@ import (
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
 
+// Command implements the indexer CLI command.
 type Command struct {
 	*base.Command
 
@@ -25,10 +27,12 @@ type Command struct {
 	flagDryRun bool
 }
 
+// Synopsis returns a short description of the indexer command.
 func (c *Command) Synopsis() string {
 	return "Run the indexer"
 }
 
+// Help returns the help text for the indexer command.
 func (c *Command) Help() string {
 	return `Usage: hermes indexer
 
@@ -38,6 +42,7 @@ The indexer is a background process that indexes documents in Algolia, refreshes
 document headers, sends notifications, etc.` + c.Flags().Help()
 }
 
+// Flags returns the flag set for the indexer command.
 func (c *Command) Flags() *base.FlagSet {
 	f := base.NewFlagSet(flag.NewFlagSet("indexer", flag.ExitOnError))
 
@@ -51,6 +56,8 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+// Run executes the indexer command.
+//
 //nolint:gocognit,gocyclo // Indexer startup coordinates several required subsystems.
 func (c *Command) Run(args []string) int {
 	log, ui := c.Log, c.UI

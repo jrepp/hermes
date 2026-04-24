@@ -76,7 +76,7 @@ func NewFakeAdapter() *FakeAdapter {
 // ===================================================================
 
 // GetDocument retrieves document metadata by backend-specific ID.
-func (f *FakeAdapter) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+func (f *FakeAdapter) GetDocument(_ context.Context, providerID string) (*workspace.DocumentMetadata, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -88,7 +88,7 @@ func (f *FakeAdapter) GetDocument(ctx context.Context, providerID string) (*work
 }
 
 // GetDocumentByUUID retrieves document metadata by UUID.
-func (f *FakeAdapter) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
+func (f *FakeAdapter) GetDocumentByUUID(_ context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -106,7 +106,7 @@ func (f *FakeAdapter) CreateDocument(ctx context.Context, templateID, destFolder
 }
 
 // CreateDocumentWithUUID creates document with explicit UUID (for migration).
-func (f *FakeAdapter) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (f *FakeAdapter) CreateDocumentWithUUID(_ context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -173,7 +173,7 @@ func (f *FakeAdapter) generateIDUnsafe() string {
 }
 
 // RegisterDocument registers document metadata with provider.
-func (f *FakeAdapter) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+func (f *FakeAdapter) RegisterDocument(_ context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -185,7 +185,7 @@ func (f *FakeAdapter) RegisterDocument(ctx context.Context, doc *workspace.Docum
 }
 
 // CopyDocument copies a document (preserves UUID if in frontmatter/metadata).
-func (f *FakeAdapter) CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (f *FakeAdapter) CopyDocument(_ context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -249,7 +249,7 @@ func (f *FakeAdapter) CopyDocument(ctx context.Context, srcProviderID, destFolde
 }
 
 // MoveDocument moves a document to different folder.
-func (f *FakeAdapter) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+func (f *FakeAdapter) MoveDocument(_ context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -269,7 +269,7 @@ func (f *FakeAdapter) MoveDocument(ctx context.Context, providerID, destFolderID
 }
 
 // DeleteDocument deletes a document.
-func (f *FakeAdapter) DeleteDocument(ctx context.Context, providerID string) error {
+func (f *FakeAdapter) DeleteDocument(_ context.Context, providerID string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -289,7 +289,7 @@ func (f *FakeAdapter) DeleteDocument(ctx context.Context, providerID string) err
 }
 
 // RenameDocument renames a document.
-func (f *FakeAdapter) RenameDocument(ctx context.Context, providerID, newName string) error {
+func (f *FakeAdapter) RenameDocument(_ context.Context, providerID, newName string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -305,7 +305,7 @@ func (f *FakeAdapter) RenameDocument(ctx context.Context, providerID, newName st
 }
 
 // CreateFolder creates a folder/directory.
-func (f *FakeAdapter) CreateFolder(ctx context.Context, name, parentID string) (*workspace.DocumentMetadata, error) {
+func (f *FakeAdapter) CreateFolder(_ context.Context, name, parentID string) (*workspace.DocumentMetadata, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -344,7 +344,7 @@ func (f *FakeAdapter) CreateFolder(ctx context.Context, name, parentID string) (
 }
 
 // GetSubfolder finds a subfolder by name.
-func (f *FakeAdapter) GetSubfolder(ctx context.Context, parentID, name string) (string, error) {
+func (f *FakeAdapter) GetSubfolder(_ context.Context, parentID, name string) (string, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -366,7 +366,7 @@ func (f *FakeAdapter) GetSubfolder(ctx context.Context, parentID, name string) (
 // ===================================================================
 
 // GetContent retrieves document content with backend-specific revision.
-func (f *FakeAdapter) GetContent(ctx context.Context, providerID string) (*workspace.DocumentContent, error) {
+func (f *FakeAdapter) GetContent(_ context.Context, providerID string) (*workspace.DocumentContent, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -389,7 +389,7 @@ func (f *FakeAdapter) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*w
 }
 
 // UpdateContent updates document content.
-func (f *FakeAdapter) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (f *FakeAdapter) UpdateContent(_ context.Context, providerID, content string) (*workspace.DocumentContent, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -432,7 +432,7 @@ func (f *FakeAdapter) UpdateContent(ctx context.Context, providerID string, cont
 }
 
 // GetContentBatch retrieves multiple documents (efficient for migration).
-func (f *FakeAdapter) GetContentBatch(ctx context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
+func (f *FakeAdapter) GetContentBatch(_ context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -479,7 +479,7 @@ func (f *FakeAdapter) CompareContent(ctx context.Context, providerID1, providerI
 // ===================================================================
 
 // GetRevisionHistory lists all revisions for a document in this backend.
-func (f *FakeAdapter) GetRevisionHistory(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+func (f *FakeAdapter) GetRevisionHistory(_ context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -503,7 +503,7 @@ func (f *FakeAdapter) GetRevisionHistory(ctx context.Context, providerID string,
 }
 
 // GetRevision retrieves a specific revision.
-func (f *FakeAdapter) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+func (f *FakeAdapter) GetRevision(_ context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -529,7 +529,7 @@ func (f *FakeAdapter) GetRevisionContent(ctx context.Context, providerID, _ stri
 }
 
 // KeepRevisionForever marks a revision as permanent (if supported).
-func (f *FakeAdapter) KeepRevisionForever(ctx context.Context, providerID, revisionID string) error {
+func (f *FakeAdapter) KeepRevisionForever(_ context.Context, providerID, revisionID string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -584,7 +584,7 @@ func (f *FakeAdapter) GetAllDocumentRevisions(ctx context.Context, uuid docid.UU
 // ===================================================================
 
 // ShareDocument grants access to a user/group.
-func (f *FakeAdapter) ShareDocument(ctx context.Context, providerID, email, role string) error {
+func (f *FakeAdapter) ShareDocument(_ context.Context, providerID, email, role string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -618,7 +618,7 @@ func (f *FakeAdapter) ShareDocument(ctx context.Context, providerID, email, role
 }
 
 // ShareDocumentWithDomain grants access to entire domain.
-func (f *FakeAdapter) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+func (f *FakeAdapter) ShareDocumentWithDomain(_ context.Context, providerID, domain, role string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -654,7 +654,7 @@ func (f *FakeAdapter) ShareDocumentWithDomain(ctx context.Context, providerID, d
 }
 
 // ListPermissions lists all permissions for a document.
-func (f *FakeAdapter) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+func (f *FakeAdapter) ListPermissions(_ context.Context, providerID string) ([]*workspace.FilePermission, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -671,7 +671,7 @@ func (f *FakeAdapter) ListPermissions(ctx context.Context, providerID string) ([
 }
 
 // RemovePermission revokes access.
-func (f *FakeAdapter) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+func (f *FakeAdapter) RemovePermission(_ context.Context, providerID, permissionID string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -692,7 +692,7 @@ func (f *FakeAdapter) RemovePermission(ctx context.Context, providerID, permissi
 }
 
 // UpdatePermission changes permission role.
-func (f *FakeAdapter) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+func (f *FakeAdapter) UpdatePermission(_ context.Context, providerID, permissionID, newRole string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -716,7 +716,7 @@ func (f *FakeAdapter) UpdatePermission(ctx context.Context, providerID, permissi
 // ===================================================================
 
 // SearchPeople searches for users in the directory.
-func (f *FakeAdapter) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
+func (f *FakeAdapter) SearchPeople(_ context.Context, query string) ([]*workspace.UserIdentity, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -732,7 +732,7 @@ func (f *FakeAdapter) SearchPeople(ctx context.Context, query string) ([]*worksp
 }
 
 // GetPerson retrieves a user by email.
-func (f *FakeAdapter) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (f *FakeAdapter) GetPerson(_ context.Context, email string) (*workspace.UserIdentity, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -761,7 +761,7 @@ func (f *FakeAdapter) ResolveIdentity(ctx context.Context, email string) (*works
 // ===================================================================
 
 // ListTeams lists teams matching query.
-func (f *FakeAdapter) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+func (f *FakeAdapter) ListTeams(_ context.Context, _, query string, maxResults int64) ([]*workspace.Team, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -780,7 +780,7 @@ func (f *FakeAdapter) ListTeams(ctx context.Context, domain, query string, maxRe
 }
 
 // GetTeam retrieves team details.
-func (f *FakeAdapter) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+func (f *FakeAdapter) GetTeam(_ context.Context, teamID string) (*workspace.Team, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -793,7 +793,7 @@ func (f *FakeAdapter) GetTeam(ctx context.Context, teamID string) (*workspace.Te
 }
 
 // GetUserTeams lists all teams a user belongs to.
-func (f *FakeAdapter) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+func (f *FakeAdapter) GetUserTeams(_ context.Context, userEmail string) ([]*workspace.Team, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -813,7 +813,7 @@ func (f *FakeAdapter) GetUserTeams(ctx context.Context, userEmail string) ([]*wo
 }
 
 // GetTeamMembers lists all members of a team.
-func (f *FakeAdapter) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+func (f *FakeAdapter) GetTeamMembers(_ context.Context, teamID string) ([]*workspace.UserIdentity, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -837,7 +837,7 @@ func (f *FakeAdapter) GetTeamMembers(ctx context.Context, teamID string) ([]*wor
 // ===================================================================
 
 // SendEmail sends an email notification.
-func (f *FakeAdapter) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+func (f *FakeAdapter) SendEmail(_ context.Context, to []string, from, subject, body string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -854,7 +854,7 @@ func (f *FakeAdapter) SendEmail(ctx context.Context, to []string, from, subject,
 }
 
 // SendEmailWithTemplate sends email using template.
-func (f *FakeAdapter) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+func (f *FakeAdapter) SendEmailWithTemplate(_ context.Context, to []string, template string, data map[string]any) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 

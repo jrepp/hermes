@@ -1,3 +1,4 @@
+// Package projectconfig provides projectconfig functionality.
 package projectconfig
 
 import (
@@ -85,6 +86,8 @@ func (c *Config) SyncToDatabase(db *gorm.DB, sourcePath string) error {
 }
 
 // convertProvidersToData converts project providers to the database model format.
+//
+//nolint:gocognit,gocyclo // complex provider data conversion with many fields
 func convertProvidersToData(providers []*Provider) *models.ProvidersData {
 	data := &models.ProvidersData{
 		Providers: make([]models.ProviderData, 0, len(providers)),
@@ -221,6 +224,8 @@ func LoadFromDatabase(db *gorm.DB) (*Config, error) {
 }
 
 // convertDataToProviders converts database provider data back to Provider structs.
+//
+//nolint:gocognit,gocyclo // complex reverse conversion with many fields
 func convertDataToProviders(data *models.ProvidersData) []*Provider {
 	providers := make([]*Provider, 0, len(data.Providers))
 
@@ -324,6 +329,8 @@ func interfaceSliceToStringSlice(in []interface{}) []string {
 
 // GetWorkspaceProjectSummary returns a simplified summary of a workspace project
 // suitable for API responses.
+//
+//nolint:gocognit,gocyclo // summary assembly requires many field mappings
 func GetWorkspaceProjectSummary(wp *models.WorkspaceProject) (*ProjectSummary, error) {
 	summary := &ProjectSummary{
 		Name:         wp.Name,
@@ -437,11 +444,13 @@ func determineProviderState(migrationStatus string) string {
 	return migrationStatus
 }
 
+const activeReadWriteDesc = "Active (read/write)"
+
 // describeProviderRole returns a human-readable role description
 func describeProviderRole(migrationStatus string) string {
 	switch migrationStatus {
 	case ProviderStateActive:
-		return "Active (read/write)"
+		return activeReadWriteDesc
 	case ProviderStateSource:
 		return "Migration source (read-only)"
 	case ProviderStateTarget:
@@ -449,7 +458,7 @@ func describeProviderRole(migrationStatus string) string {
 	case ProviderStateArchived:
 		return "Archived (no operations)"
 	case "":
-		return "Active (read/write)"
+		return activeReadWriteDesc
 	default:
 		return "Unknown"
 	}

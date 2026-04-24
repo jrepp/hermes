@@ -1,3 +1,4 @@
+// Package operator provides CLI commands for operational tasks.
 package operator
 
 import (
@@ -23,6 +24,8 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
+// MigrateAlgoliaToPostgreSQLCommand migrates data from Algolia to PostgreSQL.
+//
 //nolint:govet // Keep flag fields grouped for CLI readability.
 type MigrateAlgoliaToPostgreSQLCommand struct {
 	*base.Command
@@ -46,10 +49,12 @@ type migrator struct {
 	Verbose        bool
 }
 
+// Synopsis returns a short description.
 func (c *MigrateAlgoliaToPostgreSQLCommand) Synopsis() string {
 	return "Migrate Algolia data to PostgreSQL"
 }
 
+// Help returns the full help text.
 func (c *MigrateAlgoliaToPostgreSQLCommand) Help() string {
 	return `Usage: hermes operator migrate-algolia-to-postgresql
 
@@ -57,6 +62,7 @@ func (c *MigrateAlgoliaToPostgreSQLCommand) Help() string {
 		c.Flags().Help()
 }
 
+// Flags returns the flag set.
 func (c *MigrateAlgoliaToPostgreSQLCommand) Flags() *base.FlagSet {
 	f := base.NewFlagSet(
 		flag.NewFlagSet("migrate-algolia-to-postgresql", flag.ExitOnError))
@@ -80,6 +86,8 @@ func (c *MigrateAlgoliaToPostgreSQLCommand) Flags() *base.FlagSet {
 	return f
 }
 
+// Run executes the command.
+//
 //nolint:gocyclo // Command setup is linear but touches several required subsystems.
 func (c *MigrateAlgoliaToPostgreSQLCommand) Run(args []string) int {
 	logger, ui := c.Log, c.UI

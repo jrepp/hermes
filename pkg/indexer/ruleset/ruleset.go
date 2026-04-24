@@ -1,3 +1,4 @@
+// Package ruleset provides ruleset functionality.
 package ruleset
 
 import (

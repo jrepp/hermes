@@ -24,7 +24,7 @@ type documentStorage struct {
 }
 
 // GetDocument retrieves a document by ID.
-func (ds *documentStorage) GetDocument(ctx context.Context, id string) (*workspace.Document, error) {
+func (ds *documentStorage) GetDocument(_ context.Context, id string) (*workspace.Document, error) {
 	// Find the document in either docs or drafts
 	docPath, _, _, err := ds.adapter.findDocumentPath(id)
 	if err != nil {
@@ -99,7 +99,7 @@ func (ds *documentStorage) CreateDocument(ctx context.Context, doc *workspace.Do
 
 	// Write content to file (use single-file format for new documents)
 	docPath, _ := ds.adapter.getDocumentPath(id, isDraft)
-	if err := afero.WriteFile(ds.adapter.fs, docPath, []byte(content), 0644); err != nil {
+	if err := afero.WriteFile(ds.adapter.fs, docPath, []byte(content), 0o644); err != nil {
 		return nil, fmt.Errorf("failed to write document: %w", err)
 	}
 
@@ -199,7 +199,7 @@ func (ds *documentStorage) UpdateDocument(ctx context.Context, id string, update
 }
 
 // DeleteDocument deletes a document.
-func (ds *documentStorage) DeleteDocument(ctx context.Context, id string) error {
+func (ds *documentStorage) DeleteDocument(_ context.Context, id string) error {
 	// Find the document
 	docPath, _, _, err := ds.adapter.findDocumentPath(id)
 	if err != nil {
@@ -219,7 +219,7 @@ func (ds *documentStorage) DeleteDocument(ctx context.Context, id string) error 
 }
 
 // ListDocuments lists documents in a folder.
-func (ds *documentStorage) ListDocuments(ctx context.Context, folderID string, opts *workspace.ListOptions) ([]*workspace.Document, error) {
+func (ds *documentStorage) ListDocuments(_ context.Context, folderID string, opts *workspace.ListOptions) ([]*workspace.Document, error) {
 	allMeta, err := ds.adapter.metadataStore.List(ds.adapter.docsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list metadata: %w", err)
@@ -324,7 +324,7 @@ func (ds *documentStorage) MoveDocument(ctx context.Context, docID, destFolderID
 }
 
 // CreateFolder creates a new folder.
-func (ds *documentStorage) CreateFolder(ctx context.Context, name, parentID string) (*workspace.Folder, error) {
+func (ds *documentStorage) CreateFolder(_ context.Context, name, parentID string) (*workspace.Folder, error) {
 	if name == "" {
 		return nil, workspace.InvalidInputError("name", "cannot be empty")
 	}
@@ -348,7 +348,7 @@ func (ds *documentStorage) CreateFolder(ctx context.Context, name, parentID stri
 		return nil, fmt.Errorf("failed to marshal folder: %w", err)
 	}
 
-	if err := afero.WriteFile(ds.adapter.fs, folderPath, data, 0644); err != nil {
+	if err := afero.WriteFile(ds.adapter.fs, folderPath, data, 0o644); err != nil {
 		return nil, fmt.Errorf("failed to write folder metadata: %w", err)
 	}
 
@@ -356,7 +356,7 @@ func (ds *documentStorage) CreateFolder(ctx context.Context, name, parentID stri
 }
 
 // GetFolder retrieves folder information.
-func (ds *documentStorage) GetFolder(ctx context.Context, id string) (*workspace.Folder, error) {
+func (ds *documentStorage) GetFolder(_ context.Context, id string) (*workspace.Folder, error) {
 	folderPath := ds.adapter.getFolderPath(id)
 	data, err := afero.ReadFile(ds.adapter.fs, folderPath)
 	if err != nil {
@@ -418,14 +418,14 @@ func (ds *documentStorage) GetSubfolder(ctx context.Context, parentID, name stri
 }
 
 // ListRevisions lists document revisions/versions.
-func (ds *documentStorage) ListRevisions(ctx context.Context, docID string) ([]*workspace.Revision, error) {
+func (ds *documentStorage) ListRevisions(_ context.Context, _ string) ([]*workspace.Revision, error) {
 	// Filesystem adapter doesn't support revisions by default
 	// This would require additional implementation (e.g., git backend)
 	return nil, workspace.ErrNotImplemented
 }
 
 // GetRevision retrieves a specific revision.
-func (ds *documentStorage) GetRevision(ctx context.Context, docID, revisionID string) (*workspace.Revision, error) {
+func (ds *documentStorage) GetRevision(_ context.Context, _, _ string) (*workspace.Revision, error) {
 	return nil, workspace.ErrNotImplemented
 }
 

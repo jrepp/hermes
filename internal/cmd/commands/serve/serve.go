@@ -1,3 +1,4 @@
+// Package serve provides serve functionality.
 package serve
 
 import (
@@ -11,6 +12,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/config"
 )
 
+// Command implements the serve CLI command.
 type Command struct {
 	*base.Command
 
@@ -21,10 +23,12 @@ type Command struct {
 	FlagBrowser bool
 }
 
+// Synopsis returns a short description.
 func (c *Command) Synopsis() string {
 	return "Run the server (zero-config simplified mode or traditional server)"
 }
 
+// Help returns the full help text.
 func (c *Command) Help() string {
 	return `Usage: hermes serve [path]
        hermes serve -config=config.hcl
@@ -48,6 +52,7 @@ func (c *Command) Help() string {
 ` + c.Flags().Help()
 }
 
+// Flags returns the flag set.
 func (c *Command) Flags() *base.FlagSet {
 	// Use server command's flags
 	if c.serverCmd == nil {
@@ -64,6 +69,7 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+// Run executes the command.
 func (c *Command) Run(args []string) int {
 	// Initialize server command
 	c.serverCmd = &server.Command{Command: c.Command}

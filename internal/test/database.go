@@ -1,3 +1,4 @@
+// Package test provides test utilities for database operations.
 package test
 
 import (
@@ -10,6 +11,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// CreateTestDatabase creates a temporary test database and returns the connection.
 func CreateTestDatabase(t *testing.T, dsn string) (
 	db *gorm.DB, dbName string, err error,
 ) {
@@ -49,6 +51,7 @@ func CreateTestDatabase(t *testing.T, dsn string) (
 	return
 }
 
+// DropTestDatabase drops the specified test database.
 func DropTestDatabase(dsn, dbName string) error {
 	db, err := gorm.Open(postgres.Open(dsn))
 	if err != nil {

@@ -159,6 +159,6 @@ func (a *Adapter) getFolderPath(id string) string {
 
 // CompareContent is a stub implementation for RFC-084 ContentProvider interface.
 // TODO: Implement actual content comparison once GetContent is available
-func (a *Adapter) CompareContent(ctx context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
+func (a *Adapter) CompareContent(_ context.Context, _, _ string) (*workspace.ContentComparison, error) {
 	return nil, fmt.Errorf("CompareContent not yet implemented for local adapter")
 }

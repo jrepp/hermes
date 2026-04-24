@@ -1,3 +1,4 @@
+// Package bleve provides bleve functionality.
 package bleve
 
 import (
@@ -51,6 +52,7 @@ func NewAdapter(cfg *Config) (*Adapter, error) {
 	}
 
 	// Create index directory
+	//nolint:gosec // G301: 0o755 is appropriate for search index directories
 	if err := os.MkdirAll(cfg.IndexPath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create index directory: %w", err)
 	}
@@ -200,7 +202,7 @@ func (a *Adapter) Name() string {
 }
 
 // Healthy checks if the search backend is accessible.
-func (a *Adapter) Healthy(ctx context.Context) error {
+func (a *Adapter) Healthy(_ context.Context) error {
 	// Check if all indexes are accessible
 	if a.docsIndex == nil || a.draftsIndex == nil || a.projectsIndex == nil || a.linksIndex == nil {
 		return fmt.Errorf("one or more indexes are not initialized")
@@ -269,12 +271,12 @@ type documentIndex struct {
 }
 
 // Index adds or updates a document in the search index.
-func (d *documentIndex) Index(ctx context.Context, doc *hermessearch.Document) error {
+func (d *documentIndex) Index(_ context.Context, doc *hermessearch.Document) error {
 	return d.index.Index(doc.ObjectID, doc)
 }
 
 // IndexBatch adds or updates multiple documents.
-func (d *documentIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Document) error {
+func (d *documentIndex) IndexBatch(_ context.Context, docs []*hermessearch.Document) error {
 	batch := d.index.NewBatch()
 
 	for _, doc := range docs {
@@ -287,12 +289,12 @@ func (d *documentIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Doc
 }
 
 // Delete removes a document from the search index.
-func (d *documentIndex) Delete(ctx context.Context, docID string) error {
+func (d *documentIndex) Delete(_ context.Context, docID string) error {
 	return d.index.Delete(docID)
 }
 
 // DeleteBatch removes multiple documents.
-func (d *documentIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
+func (d *documentIndex) DeleteBatch(_ context.Context, docIDs []string) error {
 	batch := d.index.NewBatch()
 
 	for _, id := range docIDs {
@@ -308,7 +310,7 @@ func (d *documentIndex) Search(ctx context.Context, searchQuery *hermessearch.Se
 }
 
 // GetObject retrieves a single document by ID from the search index.
-func (d *documentIndex) GetObject(ctx context.Context, docID string) (*hermessearch.Document, error) {
+func (d *documentIndex) GetObject(_ context.Context, docID string) (*hermessearch.Document, error) {
 	doc, err := d.index.Document(docID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get document: %w", err)
@@ -328,7 +330,7 @@ func (d *documentIndex) GetObject(ctx context.Context, docID string) (*hermessea
 }
 
 // GetFacets retrieves available facets for filtering.
-func (d *documentIndex) GetFacets(ctx context.Context, facetNames []string) (*hermessearch.Facets, error) {
+func (d *documentIndex) GetFacets(_ context.Context, facetNames []string) (*hermessearch.Facets, error) {
 	// Create a match-all query to get facet counts
 	matchAllQuery := bleve.NewMatchAllQuery()
 	searchRequest := bleve.NewSearchRequest(matchAllQuery)
@@ -380,7 +382,7 @@ func (d *documentIndex) GetFacets(ctx context.Context, facetNames []string) (*he
 }
 
 // Clear removes all documents from the index.
-func (d *documentIndex) Clear(ctx context.Context) error {
+func (d *documentIndex) Clear(_ context.Context) error {
 	// Close and delete the index, then recreate it
 	indexPath := d.adapter.docsPath
 
@@ -411,11 +413,11 @@ type draftIndex struct {
 	index   bleve.Index
 }
 
-func (d *draftIndex) Index(ctx context.Context, doc *hermessearch.Document) error {
+func (d *draftIndex) Index(_ context.Context, doc *hermessearch.Document) error {
 	return d.index.Index(doc.ObjectID, doc)
 }
 
-func (d *draftIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Document) error {
+func (d *draftIndex) IndexBatch(_ context.Context, docs []*hermessearch.Document) error {
 	batch := d.index.NewBatch()
 	for _, doc := range docs {
 		if err := batch.Index(doc.ObjectID, doc); err != nil {
@@ -425,11 +427,11 @@ func (d *draftIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Docume
 	return d.index.Batch(batch)
 }
 
-func (d *draftIndex) Delete(ctx context.Context, docID string) error {
+func (d *draftIndex) Delete(_ context.Context, docID string) error {
 	return d.index.Delete(docID)
 }
 
-func (d *draftIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
+func (d *draftIndex) DeleteBatch(_ context.Context, docIDs []string) error {
 	batch := d.index.NewBatch()
 	for _, id := range docIDs {
 		batch.Delete(id)
@@ -441,7 +443,7 @@ func (d *draftIndex) Search(ctx context.Context, searchQuery *hermessearch.Searc
 	return performSearch(ctx, d.index, searchQuery)
 }
 
-func (d *draftIndex) GetObject(ctx context.Context, docID string) (*hermessearch.Document, error) {
+func (d *draftIndex) GetObject(_ context.Context, docID string) (*hermessearch.Document, error) {
 	doc, err := d.index.Document(docID)
 	if err != nil {
 		return nil, err
@@ -452,7 +454,7 @@ func (d *draftIndex) GetObject(ctx context.Context, docID string) (*hermessearch
 	return &hermessearch.Document{ObjectID: docID}, nil
 }
 
-func (d *draftIndex) GetFacets(ctx context.Context, facetNames []string) (*hermessearch.Facets, error) {
+func (d *draftIndex) GetFacets(_ context.Context, facetNames []string) (*hermessearch.Facets, error) {
 	// Same implementation as documentIndex
 	matchAllQuery := bleve.NewMatchAllQuery()
 	searchRequest := bleve.NewSearchRequest(matchAllQuery)
@@ -501,7 +503,7 @@ func (d *draftIndex) GetFacets(ctx context.Context, facetNames []string) (*herme
 	return facets, nil
 }
 
-func (d *draftIndex) Clear(ctx context.Context) error {
+func (d *draftIndex) Clear(_ context.Context) error {
 	indexPath := d.adapter.draftsPath
 
 	if err := d.index.Close(); err != nil {
@@ -529,7 +531,7 @@ type projectIndex struct {
 	index   bleve.Index
 }
 
-func (p *projectIndex) Index(ctx context.Context, project map[string]any) error {
+func (p *projectIndex) Index(_ context.Context, project map[string]any) error {
 	objectID, ok := project["objectID"].(string)
 	if !ok {
 		return fmt.Errorf("project missing objectID")
@@ -537,7 +539,7 @@ func (p *projectIndex) Index(ctx context.Context, project map[string]any) error 
 	return p.index.Index(objectID, project)
 }
 
-func (p *projectIndex) Delete(ctx context.Context, projectID string) error {
+func (p *projectIndex) Delete(_ context.Context, projectID string) error {
 	return p.index.Delete(projectID)
 }
 
@@ -545,7 +547,7 @@ func (p *projectIndex) Search(ctx context.Context, searchQuery *hermessearch.Sea
 	return performSearch(ctx, p.index, searchQuery)
 }
 
-func (p *projectIndex) GetObject(ctx context.Context, projectID string) (map[string]any, error) {
+func (p *projectIndex) GetObject(_ context.Context, projectID string) (map[string]any, error) {
 	doc, err := p.index.Document(projectID)
 	if err != nil {
 		return nil, err
@@ -557,7 +559,7 @@ func (p *projectIndex) GetObject(ctx context.Context, projectID string) (map[str
 	return map[string]any{"objectID": projectID}, nil
 }
 
-func (p *projectIndex) Clear(ctx context.Context) error {
+func (p *projectIndex) Clear(_ context.Context) error {
 	indexPath := p.adapter.projectsPath
 
 	if err := p.index.Close(); err != nil {
@@ -585,7 +587,7 @@ type linksIndex struct {
 	index   bleve.Index
 }
 
-func (l *linksIndex) SaveLink(ctx context.Context, link map[string]string) error {
+func (l *linksIndex) SaveLink(_ context.Context, link map[string]string) error {
 	objectID := link["objectID"]
 	if objectID == "" {
 		return fmt.Errorf("link missing objectID")
@@ -593,11 +595,11 @@ func (l *linksIndex) SaveLink(ctx context.Context, link map[string]string) error
 	return l.index.Index(objectID, link)
 }
 
-func (l *linksIndex) DeleteLink(ctx context.Context, objectID string) error {
+func (l *linksIndex) DeleteLink(_ context.Context, objectID string) error {
 	return l.index.Delete(objectID)
 }
 
-func (l *linksIndex) GetLink(ctx context.Context, objectID string) (map[string]string, error) {
+func (l *linksIndex) GetLink(_ context.Context, objectID string) (map[string]string, error) {
 	doc, err := l.index.Document(objectID)
 	if err != nil {
 		return nil, err
@@ -609,7 +611,7 @@ func (l *linksIndex) GetLink(ctx context.Context, objectID string) (map[string]s
 	return map[string]string{"objectID": objectID}, nil
 }
 
-func (l *linksIndex) Clear(ctx context.Context) error {
+func (l *linksIndex) Clear(_ context.Context) error {
 	indexPath := l.adapter.linksPath
 
 	if err := l.index.Close(); err != nil {
@@ -632,7 +634,9 @@ func (l *linksIndex) Clear(ctx context.Context) error {
 }
 
 // performSearch executes a search query on a Bleve index.
-func performSearch(ctx context.Context, index bleve.Index, searchQuery *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
+//
+//nolint:gocognit,gocyclo // search query building has many conditional branches
+func performSearch(_ context.Context, index bleve.Index, searchQuery *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
 	startTime := time.Now()
 
 	// Build Bleve query

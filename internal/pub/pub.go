@@ -1,3 +1,4 @@
+// Package pub serves embedded static assets.
 package pub
 
 import (
@@ -9,6 +10,7 @@ import (
 //go:embed assets/*
 var assetsFS embed.FS
 
+// Handler returns an HTTP handler for serving embedded pub assets.
 func Handler() http.Handler {
 	return http.FileServer(httpFileSystem())
 }

@@ -213,7 +213,7 @@ func (dri *draftIndex) Index(_ context.Context, doc *hermessearch.Document) erro
 	return nil
 }
 
-func (dri *draftIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Document) error {
+func (dri *draftIndex) IndexBatch(_ context.Context, docs []*hermessearch.Document) error {
 	objects := make([]interface{}, len(docs))
 	for i, doc := range docs {
 		objects[i] = doc
@@ -230,7 +230,7 @@ func (dri *draftIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Docu
 	return nil
 }
 
-func (dri *draftIndex) Delete(ctx context.Context, docID string) error {
+func (dri *draftIndex) Delete(_ context.Context, docID string) error {
 	_, err := dri.index.DeleteObject(docID)
 	if err != nil {
 		return &hermessearch.Error{
@@ -242,7 +242,7 @@ func (dri *draftIndex) Delete(ctx context.Context, docID string) error {
 	return nil
 }
 
-func (dri *draftIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
+func (dri *draftIndex) DeleteBatch(_ context.Context, docIDs []string) error {
 	_, err := dri.index.DeleteObjects(docIDs)
 	if err != nil {
 		return &hermessearch.Error{
@@ -254,12 +254,12 @@ func (dri *draftIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
 	return nil
 }
 
-func (dri *draftIndex) Search(ctx context.Context, query *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
+func (dri *draftIndex) Search(_ context.Context, _ *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
 	// TODO: Implement full search with query parameters
 	return nil, fmt.Errorf("Search not yet implemented")
 }
 
-func (dri *draftIndex) GetObject(ctx context.Context, docID string) (*hermessearch.Document, error) {
+func (dri *draftIndex) GetObject(_ context.Context, docID string) (*hermessearch.Document, error) {
 	var doc hermessearch.Document
 	err := dri.index.GetObject(docID, &doc)
 	if err != nil {
@@ -272,12 +272,12 @@ func (dri *draftIndex) GetObject(ctx context.Context, docID string) (*hermessear
 	return &doc, nil
 }
 
-func (dri *draftIndex) GetFacets(ctx context.Context, facetNames []string) (*hermessearch.Facets, error) {
+func (dri *draftIndex) GetFacets(_ context.Context, _ []string) (*hermessearch.Facets, error) {
 	// TODO: Implement facet retrieval
 	return nil, fmt.Errorf("GetFacets not yet implemented")
 }
 
-func (dri *draftIndex) Clear(ctx context.Context) error {
+func (dri *draftIndex) Clear(_ context.Context) error {
 	_, err := dri.index.ClearObjects()
 	if err != nil {
 		return &hermessearch.Error{
@@ -294,7 +294,7 @@ type projectIndex struct {
 	index *search.Index
 }
 
-func (pi *projectIndex) Index(ctx context.Context, project map[string]any) error {
+func (pi *projectIndex) Index(_ context.Context, project map[string]any) error {
 	_, err := pi.index.SaveObject(project)
 	if err != nil {
 		return &hermessearch.Error{
@@ -306,7 +306,7 @@ func (pi *projectIndex) Index(ctx context.Context, project map[string]any) error
 	return nil
 }
 
-func (pi *projectIndex) Delete(ctx context.Context, projectID string) error {
+func (pi *projectIndex) Delete(_ context.Context, projectID string) error {
 	_, err := pi.index.DeleteObject(projectID)
 	if err != nil {
 		return &hermessearch.Error{
@@ -318,12 +318,12 @@ func (pi *projectIndex) Delete(ctx context.Context, projectID string) error {
 	return nil
 }
 
-func (pi *projectIndex) Search(ctx context.Context, query *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
+func (pi *projectIndex) Search(_ context.Context, _ *hermessearch.SearchQuery) (*hermessearch.SearchResult, error) {
 	// TODO: Implement full search with query parameters
 	return nil, fmt.Errorf("Search not yet implemented")
 }
 
-func (pi *projectIndex) GetObject(ctx context.Context, projectID string) (map[string]any, error) {
+func (pi *projectIndex) GetObject(_ context.Context, projectID string) (map[string]any, error) {
 	var project map[string]any
 	err := pi.index.GetObject(projectID, &project)
 	if err != nil {
@@ -336,7 +336,7 @@ func (pi *projectIndex) GetObject(ctx context.Context, projectID string) (map[st
 	return project, nil
 }
 
-func (pi *projectIndex) Clear(ctx context.Context) error {
+func (pi *projectIndex) Clear(_ context.Context) error {
 	_, err := pi.index.ClearObjects()
 	if err != nil {
 		return &hermessearch.Error{
@@ -353,7 +353,7 @@ type linksIndex struct {
 	index *search.Index
 }
 
-func (li *linksIndex) SaveLink(ctx context.Context, link map[string]string) error {
+func (li *linksIndex) SaveLink(_ context.Context, link map[string]string) error {
 	_, err := li.index.SaveObject(link)
 	if err != nil {
 		return &hermessearch.Error{
@@ -365,7 +365,7 @@ func (li *linksIndex) SaveLink(ctx context.Context, link map[string]string) erro
 	return nil
 }
 
-func (li *linksIndex) DeleteLink(ctx context.Context, objectID string) error {
+func (li *linksIndex) DeleteLink(_ context.Context, objectID string) error {
 	_, err := li.index.DeleteObject(objectID)
 	if err != nil {
 		return &hermessearch.Error{
@@ -377,7 +377,7 @@ func (li *linksIndex) DeleteLink(ctx context.Context, objectID string) error {
 	return nil
 }
 
-func (li *linksIndex) GetLink(ctx context.Context, objectID string) (map[string]string, error) {
+func (li *linksIndex) GetLink(_ context.Context, objectID string) (map[string]string, error) {
 	var link map[string]string
 	err := li.index.GetObject(objectID, &link)
 	if err != nil {
@@ -390,7 +390,7 @@ func (li *linksIndex) GetLink(ctx context.Context, objectID string) (map[string]
 	return link, nil
 }
 
-func (li *linksIndex) Clear(ctx context.Context) error {
+func (li *linksIndex) Clear(_ context.Context) error {
 	_, err := li.index.ClearObjects()
 	if err != nil {
 		return &hermessearch.Error{

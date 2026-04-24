@@ -82,7 +82,7 @@ func CreateTestUser(t *testing.T, adapter *Adapter, email, name string) {
 
 	// Get the users path from config
 	usersPath := adapter.basePath + "/users.json"
-	if err := afero.WriteFile(adapter.fs, usersPath, data, 0644); err != nil {
+	if err := afero.WriteFile(adapter.fs, usersPath, data, 0o644); err != nil {
 		t.Fatalf("failed to write test users: %v", err)
 	}
 }
@@ -115,7 +115,7 @@ func CreateTestToken(t *testing.T, adapter *Adapter, token, email string) {
 
 	// Get the tokens path from config
 	tokensPath := adapter.basePath + "/tokens.json"
-	if err := afero.WriteFile(adapter.fs, tokensPath, data, 0644); err != nil {
+	if err := afero.WriteFile(adapter.fs, tokensPath, data, 0o644); err != nil {
 		t.Fatalf("failed to write test tokens: %v", err)
 	}
 }

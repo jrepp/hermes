@@ -15,14 +15,14 @@ type notificationService struct {
 // SendEmail sends a plain text email.
 // This is a simple SMTP implementation. In production, you might want to use
 // a more robust email service or configuration.
-func (ns *notificationService) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+func (ns *notificationService) SendEmail(_ context.Context, to []string, from, subject, body string) error {
 	// For filesystem adapter, we'll just log emails to a file
 	// In a real implementation, you'd configure SMTP settings
 	return ns.logEmail(to, from, subject, body, false)
 }
 
 // SendHTMLEmail sends an HTML email.
-func (ns *notificationService) SendHTMLEmail(ctx context.Context, to []string, from, subject, htmlBody string) error {
+func (ns *notificationService) SendHTMLEmail(_ context.Context, to []string, from, subject, htmlBody string) error {
 	return ns.logEmail(to, from, subject, htmlBody, true)
 }
 

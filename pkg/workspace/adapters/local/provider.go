@@ -40,6 +40,8 @@ func NewProviderAdapter(adapter *Adapter) *ProviderAdapter {
 }
 
 // NewProviderAdapterWithContext creates a Provider interface wrapper with a specific context.
+//
+//nolint:revive // context position matches interface
 func NewProviderAdapterWithContext(adapter *Adapter, ctx context.Context) *ProviderAdapter {
 	return &ProviderAdapter{
 		adapter: adapter,
@@ -195,6 +197,7 @@ func (p *ProviderAdapter) ListPermissions(ctx context.Context, providerID string
 }
 
 // ListPermissionsLegacy lists all permissions with old Provider interface signature.
+//
 // Deprecated: Use ListPermissions with context parameter instead.
 func (p *ProviderAdapter) ListPermissionsLegacy(fileID string) ([]*drive.Permission, error) {
 	rfc084Perms, err := p.ListPermissions(p.ctx, fileID)
@@ -272,6 +275,7 @@ func (p *ProviderAdapter) SearchPeople(ctx context.Context, query string) ([]*wo
 }
 
 // SearchPeopleLegacy searches for people with old Provider interface signature.
+//
 // Deprecated: Use SearchPeople with context parameter instead.
 func (p *ProviderAdapter) SearchPeopleLegacy(email, _ string) ([]*people.Person, error) {
 	// SearchUsers expects a query and fields slice
@@ -415,6 +419,7 @@ func (p *ProviderAdapter) GetSubfolder(ctx context.Context, parentID, name strin
 }
 
 // GetSubfolderLegacy finds a subfolder by name with old Provider interface signature.
+//
 // Deprecated: Use GetSubfolder with context parameter instead.
 func (p *ProviderAdapter) GetSubfolderLegacy(parentID, name string) (string, error) {
 	return p.GetSubfolder(p.ctx, parentID, name)
@@ -542,6 +547,7 @@ func (p *ProviderAdapter) CreateFolder(ctx context.Context, name, parentID strin
 }
 
 // CreateFolderLegacy creates a new folder with old Provider interface signature.
+//
 // Deprecated: Use CreateFolder with context parameter instead.
 func (p *ProviderAdapter) CreateFolderLegacy(name, parentID string) (*drive.File, error) {
 	meta, err := p.CreateFolder(p.ctx, name, parentID)
@@ -675,12 +681,13 @@ func (p *ProviderAdapter) GetLatestRevision(fileID string) (*drive.Revision, err
 
 // KeepRevisionForever marks a revision to be kept forever with RFC-084 signature.
 // The local adapter doesn't support revisions, so this is a no-op.
-func (p *ProviderAdapter) KeepRevisionForever(ctx context.Context, providerID, revisionID string) error {
+func (p *ProviderAdapter) KeepRevisionForever(_ context.Context, _, _ string) error {
 	// Local adapter doesn't have revision tracking yet
 	return nil
 }
 
 // KeepRevisionForeverLegacy marks a revision to be kept forever with old Provider interface signature.
+//
 // Deprecated: Use KeepRevisionForever with context parameter instead.
 func (p *ProviderAdapter) KeepRevisionForeverLegacy(fileID, revisionID string) (*drive.Revision, error) {
 	err := p.KeepRevisionForever(p.ctx, fileID, revisionID)
@@ -706,6 +713,7 @@ func (p *ProviderAdapter) SendEmail(ctx context.Context, to []string, from, subj
 }
 
 // SendEmailLegacy sends an email with old Provider interface signature.
+//
 // Deprecated: Use SendEmail with context parameter instead.
 func (p *ProviderAdapter) SendEmailLegacy(to []string, from, subject, body string) error {
 	return p.SendEmail(p.ctx, to, from, subject, body)
@@ -755,55 +763,55 @@ func (p *ProviderAdapter) CompareContent(ctx context.Context, providerID1, provi
 
 // CopyDocument creates a copy of a document.
 // TODO: Implement actual document copying
-func (p *ProviderAdapter) CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (p *ProviderAdapter) CopyDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("CopyDocument not yet implemented for local adapter")
 }
 
 // MoveDocument moves a document to a different folder.
 // TODO: Implement actual document moving
-func (p *ProviderAdapter) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+func (p *ProviderAdapter) MoveDocument(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("MoveDocument not yet implemented for local adapter")
 }
 
 // DeleteDocument deletes a document.
 // TODO: Implement actual document deletion
-func (p *ProviderAdapter) DeleteDocument(ctx context.Context, providerID string) error {
+func (p *ProviderAdapter) DeleteDocument(_ context.Context, _ string) error {
 	return fmt.Errorf("DeleteDocument not yet implemented for local adapter")
 }
 
 // RenameDocument renames a document.
 // TODO: Implement actual document renaming
-func (p *ProviderAdapter) RenameDocument(ctx context.Context, providerID, newName string) error {
+func (p *ProviderAdapter) RenameDocument(_ context.Context, _, _ string) error {
 	return fmt.Errorf("RenameDocument not yet implemented for local adapter")
 }
 
 // GetDocument retrieves document metadata by provider ID.
 // TODO: Implement actual document metadata retrieval
-func (p *ProviderAdapter) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+func (p *ProviderAdapter) GetDocument(_ context.Context, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("GetDocument not yet implemented for local adapter")
 }
 
 // GetDocumentByUUID retrieves document metadata by UUID.
 // TODO: Implement actual document metadata retrieval by UUID
-func (p *ProviderAdapter) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
+func (p *ProviderAdapter) GetDocumentByUUID(_ context.Context, _ docid.UUID) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("GetDocumentByUUID not yet implemented for local adapter")
 }
 
 // CreateDocument creates a new document from template.
 // TODO: Implement actual document creation
-func (p *ProviderAdapter) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (p *ProviderAdapter) CreateDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("CreateDocument not yet implemented for local adapter")
 }
 
 // CreateDocumentWithUUID creates a document with explicit UUID.
 // TODO: Implement actual document creation with UUID
-func (p *ProviderAdapter) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (p *ProviderAdapter) CreateDocumentWithUUID(_ context.Context, _ docid.UUID, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("CreateDocumentWithUUID not yet implemented for local adapter")
 }
 
 // RegisterDocument registers document metadata with provider.
 // TODO: Implement actual document registration
-func (p *ProviderAdapter) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+func (p *ProviderAdapter) RegisterDocument(_ context.Context, _ *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("RegisterDocument not yet implemented for local adapter")
 }
 
@@ -850,7 +858,7 @@ func (p *ProviderAdapter) GetContent(ctx context.Context, providerID string) (*w
 
 // GetContentByUUID retrieves content by UUID.
 // TODO: Implement actual content retrieval by UUID
-func (p *ProviderAdapter) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentContent, error) {
+func (p *ProviderAdapter) GetContentByUUID(_ context.Context, _ docid.UUID) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("GetContentByUUID not yet implemented for local adapter")
 }
 
@@ -893,7 +901,7 @@ func (p *ProviderAdapter) UpdateContent(ctx context.Context, providerID, content
 
 // GetContentBatch retrieves multiple documents efficiently.
 // TODO: Implement actual batch content retrieval
-func (p *ProviderAdapter) GetContentBatch(ctx context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
+func (p *ProviderAdapter) GetContentBatch(_ context.Context, _ []string) ([]*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("GetContentBatch not yet implemented for local adapter")
 }
 
@@ -903,25 +911,25 @@ func (p *ProviderAdapter) GetContentBatch(ctx context.Context, providerIDs []str
 
 // GetRevisionHistory lists all revisions for a document.
 // TODO: Implement actual revision history retrieval
-func (p *ProviderAdapter) GetRevisionHistory(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+func (p *ProviderAdapter) GetRevisionHistory(_ context.Context, _ string, _ int) ([]*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("GetRevisionHistory not yet implemented for local adapter")
 }
 
 // GetRevision retrieves a specific revision.
 // TODO: Implement actual revision retrieval
-func (p *ProviderAdapter) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+func (p *ProviderAdapter) GetRevision(_ context.Context, _, _ string) (*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("GetRevision not yet implemented for local adapter")
 }
 
 // GetRevisionContent retrieves content at a specific revision.
 // TODO: Implement actual revision content retrieval
-func (p *ProviderAdapter) GetRevisionContent(ctx context.Context, providerID, revisionID string) (*workspace.DocumentContent, error) {
+func (p *ProviderAdapter) GetRevisionContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("GetRevisionContent not yet implemented for local adapter")
 }
 
 // GetAllDocumentRevisions returns all revisions across all backends for a UUID.
 // TODO: Implement actual multi-backend revision retrieval
-func (p *ProviderAdapter) GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*workspace.RevisionInfo, error) {
+func (p *ProviderAdapter) GetAllDocumentRevisions(_ context.Context, _ docid.UUID) ([]*workspace.RevisionInfo, error) {
 	return nil, fmt.Errorf("GetAllDocumentRevisions not yet implemented for local adapter")
 }
 
@@ -931,26 +939,26 @@ func (p *ProviderAdapter) GetAllDocumentRevisions(ctx context.Context, uuid doci
 
 // ShareDocument grants access to a user/group.
 // TODO: Implement actual permission granting
-func (p *ProviderAdapter) ShareDocument(ctx context.Context, providerID, email, role string) error {
+func (p *ProviderAdapter) ShareDocument(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("ShareDocument not yet implemented for local adapter")
 }
 
 // ShareDocumentWithDomain grants access to entire domain.
 // TODO: Implement actual domain-wide permission granting
-func (p *ProviderAdapter) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+func (p *ProviderAdapter) ShareDocumentWithDomain(_ context.Context, _, _, _ string) error {
 	// Local adapter doesn't support domain-wide sharing
 	return nil
 }
 
 // RemovePermission revokes access.
 // TODO: Implement actual permission revocation
-func (p *ProviderAdapter) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+func (p *ProviderAdapter) RemovePermission(_ context.Context, _, _ string) error {
 	return fmt.Errorf("RemovePermission not yet implemented for local adapter")
 }
 
 // UpdatePermission changes permission role.
 // TODO: Implement actual permission update
-func (p *ProviderAdapter) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+func (p *ProviderAdapter) UpdatePermission(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("UpdatePermission not yet implemented for local adapter")
 }
 
@@ -961,19 +969,19 @@ func (p *ProviderAdapter) UpdatePermission(ctx context.Context, providerID, perm
 
 // GetPerson retrieves a user by email.
 // TODO: Implement actual user retrieval
-func (p *ProviderAdapter) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (p *ProviderAdapter) GetPerson(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("GetPerson not yet implemented for local adapter")
 }
 
 // GetPersonByUnifiedID retrieves user by unified ID.
 // TODO: Implement actual unified ID lookup
-func (p *ProviderAdapter) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
+func (p *ProviderAdapter) GetPersonByUnifiedID(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("GetPersonByUnifiedID not yet implemented for local adapter")
 }
 
 // ResolveIdentity resolves alternate identities for a user.
 // TODO: Implement actual identity resolution
-func (p *ProviderAdapter) ResolveIdentity(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (p *ProviderAdapter) ResolveIdentity(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("ResolveIdentity not yet implemented for local adapter")
 }
 
@@ -983,27 +991,27 @@ func (p *ProviderAdapter) ResolveIdentity(ctx context.Context, email string) (*w
 
 // ListTeams lists teams matching query.
 // TODO: Implement actual team listing
-func (p *ProviderAdapter) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+func (p *ProviderAdapter) ListTeams(_ context.Context, _, _ string, _ int64) ([]*workspace.Team, error) {
 	// Local adapter doesn't support team management
 	return []*workspace.Team{}, nil
 }
 
 // GetTeam retrieves team details.
 // TODO: Implement actual team retrieval
-func (p *ProviderAdapter) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+func (p *ProviderAdapter) GetTeam(_ context.Context, _ string) (*workspace.Team, error) {
 	return nil, fmt.Errorf("GetTeam not yet implemented for local adapter")
 }
 
 // GetUserTeams lists all teams a user belongs to.
 // TODO: Implement actual user team listing
-func (p *ProviderAdapter) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+func (p *ProviderAdapter) GetUserTeams(_ context.Context, _ string) ([]*workspace.Team, error) {
 	// Local adapter doesn't support team management
 	return []*workspace.Team{}, nil
 }
 
 // GetTeamMembers lists all members of a team.
 // TODO: Implement actual team member listing
-func (p *ProviderAdapter) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+func (p *ProviderAdapter) GetTeamMembers(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("GetTeamMembers not yet implemented for local adapter")
 }
 
@@ -1013,6 +1021,6 @@ func (p *ProviderAdapter) GetTeamMembers(ctx context.Context, teamID string) ([]
 
 // SendEmailWithTemplate sends email using template.
 // TODO: Implement actual template-based email sending
-func (p *ProviderAdapter) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+func (p *ProviderAdapter) SendEmailWithTemplate(_ context.Context, _ []string, _ string, _ map[string]any) error {
 	return fmt.Errorf("SendEmailWithTemplate not yet implemented for local adapter")
 }

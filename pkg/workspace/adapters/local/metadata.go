@@ -115,6 +115,8 @@ func (ms *MetadataStore) GetWithContent(docPath string) (*DocumentMetadata, stri
 }
 
 // getFromMetadataJSON reads metadata from a metadata.json file.
+//
+//nolint:gocognit,gocyclo // multiple parsing strategies with fallback logic
 func (ms *MetadataStore) getFromMetadataJSON(metadataPath string) (*DocumentMetadata, error) {
 	data, err := afero.ReadFile(ms.fs, metadataPath)
 	if err != nil {
@@ -205,7 +207,7 @@ func (ms *MetadataStore) Set(docPath string, meta *DocumentMetadata, content str
 
 	// Single-file format: write .md file with frontmatter
 	data := serializeFrontmatter(meta, content)
-	if err := afero.WriteFile(ms.fs, docPath, data, 0644); err != nil {
+	if err := afero.WriteFile(ms.fs, docPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write document: %w", err)
 	}
 
@@ -240,13 +242,13 @@ func (ms *MetadataStore) setInDirectory(docPath string, meta *DocumentMetadata, 
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := afero.WriteFile(ms.fs, metadataPath, metadataData, 0644); err != nil {
+	if err := afero.WriteFile(ms.fs, metadataPath, metadataData, 0o644); err != nil {
 		return fmt.Errorf("failed to write metadata.json: %w", err)
 	}
 
 	// Write content.md
 	contentPath := filepath.Join(docPath, "content.md")
-	if err := afero.WriteFile(ms.fs, contentPath, []byte(content), 0644); err != nil {
+	if err := afero.WriteFile(ms.fs, contentPath, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("failed to write content.md: %w", err)
 	}
 
@@ -304,6 +306,8 @@ func (ms *MetadataStore) List(dirPath string) ([]*DocumentMetadata, error) {
 
 // parseFrontmatter extracts metadata and content from a document with YAML frontmatter.
 // Format: ---\n<yaml>\n---\n<content>
+//
+//nolint:gocognit,gocyclo // frontmatter parsing has multiple validation paths
 func parseFrontmatter(data []byte) (*DocumentMetadata, string, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 
@@ -386,22 +390,22 @@ func serializeFrontmatter(meta *DocumentMetadata, content string) []byte {
 	var buf bytes.Buffer
 
 	buf.WriteString("---\n")
-	buf.WriteString(fmt.Sprintf("id: %s\n", meta.ID))
-	buf.WriteString(fmt.Sprintf("name: %s\n", meta.Name))
-	buf.WriteString(fmt.Sprintf("parent_folder_id: %s\n", meta.ParentFolderID))
-	buf.WriteString(fmt.Sprintf("created_time: %s\n", meta.CreatedTime.Format(time.RFC3339Nano)))
-	buf.WriteString(fmt.Sprintf("modified_time: %s\n", meta.ModifiedTime.Format(time.RFC3339Nano)))
-	buf.WriteString(fmt.Sprintf("owner: %s\n", meta.Owner))
+	fmt.Fprintf(&buf, "id: %s\n", meta.ID)
+	fmt.Fprintf(&buf, "name: %s\n", meta.Name)
+	fmt.Fprintf(&buf, "parent_folder_id: %s\n", meta.ParentFolderID)
+	fmt.Fprintf(&buf, "created_time: %s\n", meta.CreatedTime.Format(time.RFC3339Nano))
+	fmt.Fprintf(&buf, "modified_time: %s\n", meta.ModifiedTime.Format(time.RFC3339Nano))
+	fmt.Fprintf(&buf, "owner: %s\n", meta.Owner)
 
 	if meta.ThumbnailURL != "" {
-		buf.WriteString(fmt.Sprintf("thumbnail_url: %s\n", meta.ThumbnailURL))
+		fmt.Fprintf(&buf, "thumbnail_url: %s\n", meta.ThumbnailURL)
 	}
 
-	buf.WriteString(fmt.Sprintf("trashed: %v\n", meta.Trashed))
+	fmt.Fprintf(&buf, "trashed: %v\n", meta.Trashed)
 
 	// Write custom metadata
 	for key, value := range meta.Metadata {
-		buf.WriteString(fmt.Sprintf("%s: %v\n", key, value))
+		fmt.Fprintf(&buf, "%s: %v\n", key, value)
 	}
 
 	buf.WriteString("---\n\n")

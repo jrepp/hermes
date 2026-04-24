@@ -1,3 +1,4 @@
+// Package helpers provides helpers functionality.
 package helpers
 
 import "strings"

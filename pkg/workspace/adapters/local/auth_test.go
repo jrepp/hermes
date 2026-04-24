@@ -117,7 +117,7 @@ func TestAuthService_ValidateToken_MalformedJSON(t *testing.T) {
 	tokensPath := adapter.basePath + "/tokens.json"
 
 	// Write malformed JSON
-	require.NoError(t, afero.WriteFile(adapter.fs, tokensPath, []byte("not valid json {"), 0644))
+	require.NoError(t, afero.WriteFile(adapter.fs, tokensPath, []byte("not valid json {"), 0o644))
 
 	authSvc := &authService{
 		adapter: adapter,
@@ -207,7 +207,7 @@ func TestAuthService_GetUserInfo(t *testing.T) {
 			usersPath := adapter.basePath + "/users.json"
 			usersJSON, err := json.Marshal(tt.usersData)
 			require.NoError(t, err)
-			require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0644))
+			require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0o644))
 
 			authSvc := &authService{
 				adapter: adapter,
@@ -251,7 +251,7 @@ func TestAuthService_GetUserInfo_UserNotFound(t *testing.T) {
 	tokensPath := adapter.basePath + "/tokens.json"
 	tokensJSON, err := json.Marshal(tokensData)
 	require.NoError(t, err)
-	require.NoError(t, afero.WriteFile(adapter.fs, tokensPath, tokensJSON, 0644))
+	require.NoError(t, afero.WriteFile(adapter.fs, tokensPath, tokensJSON, 0o644))
 
 	// Create users.json but without the user
 	usersData := map[string]interface{}{
@@ -263,7 +263,7 @@ func TestAuthService_GetUserInfo_UserNotFound(t *testing.T) {
 	usersPath := adapter.basePath + "/users.json"
 	usersJSON, err := json.Marshal(usersData)
 	require.NoError(t, err)
-	require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0644))
+	require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0o644))
 
 	authSvc := &authService{
 		adapter: adapter,

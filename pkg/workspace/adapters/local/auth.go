@@ -19,7 +19,7 @@ type authService struct {
 // ValidateToken validates an authentication token.
 // For filesystem adapter, this is a simple file-based token store.
 // In production, you'd integrate with an actual auth system.
-func (as *authService) ValidateToken(ctx context.Context, token string) (*workspace.AuthInfo, error) {
+func (as *authService) ValidateToken(_ context.Context, token string) (*workspace.AuthInfo, error) {
 	tokensPath := filepath.Join(as.adapter.basePath, "tokens.json")
 	data, err := afero.ReadFile(as.adapter.fs, tokensPath)
 	if err != nil {

@@ -74,12 +74,12 @@ func NewProviderID(provider ProviderType, id string) (ProviderID, error) {
 // This is a convenience constructor for the most common use case.
 func GoogleFileID(id string) (ProviderID, error) {
 	if id == "" {
-		return ProviderID{}, fmt.Errorf("Google file ID cannot be empty")
+		return ProviderID{}, fmt.Errorf("google file ID cannot be empty")
 	}
 	// Basic validation: Google file IDs are alphanumeric and hyphens
 	// Typical length: 33-44 characters, but we don't enforce strict length
 	if len(id) < 10 {
-		return ProviderID{}, fmt.Errorf("Google file ID too short: %s", id)
+		return ProviderID{}, fmt.Errorf("google file ID too short: %s", id)
 	}
 	return NewProviderID(ProviderTypeGoogle, id)
 }

@@ -1,3 +1,4 @@
+// Package config provides config functionality.
 package config
 
 import (
@@ -122,6 +123,7 @@ type DocumentTypeCheck struct {
 	Links []*DocumentTypeLink `hcl:"link,block" json:"links"`
 }
 
+// DocumentTypeCustomField defines a custom field for a document type.
 type DocumentTypeCustomField struct {
 	Name     string `hcl:"name" json:"name"`
 	Type     string `hcl:"type" json:"type"`
@@ -183,6 +185,7 @@ type FeatureFlags struct {
 	FeatureFlag []*FeatureFlag `hcl:"flag,block"`
 }
 
+// FeatureFlag defines a feature flag configuration.
 type FeatureFlag struct {
 	Enabled    *bool  `hcl:"enabled,optional"`
 	Name       string `hcl:"name,label"`
@@ -394,6 +397,7 @@ type Server struct {
 //nolint:gocognit,gocyclo // Config loading preserves legacy/profile compatibility in one place.
 func NewConfig(filename, profile string) (*Config, error) {
 	// Read and parse file to check if it has profiles
+	//nolint:gosec // G304: filename is provided by the caller, typically CLI flag
 	src, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)

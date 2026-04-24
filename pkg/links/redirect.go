@@ -1,3 +1,4 @@
+// Package links provides link/redirect data operations.
 package links
 
 import (
@@ -16,6 +17,7 @@ const sharedRFCsFolderURL = "https://drive.google.com/drive/folders/0AJA7q1x_uaL
 // sharedPRDsFolderURL is the Google Drive URL to the shared PRDs folder
 const sharedPRDsFolderURL = "https://drive.google.com/drive/folders/0AJvQodV_kfUeUk9PVA"
 
+// LinkData represents link metadata for redirects.
 type LinkData struct {
 	// ObjectID is the short link path
 	ObjectID string `json:"objectID,omitempty"`
@@ -108,10 +110,10 @@ func parseAndValidatePath(p string) (string, error) {
 // with string paths and returns the appropriate
 // redirect URL
 func matchStaticPathRedirects(p string) string {
-	switch {
-	case p == "/l/rfc" || p == "/l/rfc/":
+	switch p {
+	case "/l/rfc", "/l/rfc/":
 		return sharedRFCsFolderURL
-	case p == "/l/prd" || p == "/l/prd/":
+	case "/l/prd", "/l/prd/":
 		return sharedPRDsFolderURL
 	}
 	return ""

@@ -36,13 +36,13 @@ func TestCopyDocument_FromTemplates(t *testing.T) {
 
 		// Create templates directory and template file
 		templatesDir := filepath.Join(adapter.basePath, "templates")
-		require.NoError(t, adapter.fs.MkdirAll(templatesDir, 0755))
+		require.NoError(t, adapter.fs.MkdirAll(templatesDir, 0o755))
 
 		templatePath := filepath.Join(templatesDir, "template-rfc.md")
 		templateContent := "# RFC Template\n\n## Summary\nTemplate for RFC documents."
 
 		// Write template file
-		require.NoError(t, afero.WriteFile(adapter.fs, templatePath, []byte(templateContent), 0644))
+		require.NoError(t, afero.WriteFile(adapter.fs, templatePath, []byte(templateContent), 0o644))
 
 		// Verify template file exists
 		exists, err := afero.Exists(adapter.fs, templatePath)

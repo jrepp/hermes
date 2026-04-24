@@ -1,3 +1,4 @@
+// Package server provides server functionality.
 package server
 
 import (
@@ -57,6 +58,7 @@ const (
 	providerAlgolia = "algolia"
 )
 
+// Command implements the server CLI command.
 type Command struct {
 	*base.Command
 
@@ -78,16 +80,19 @@ type endpoint struct {
 	pattern string
 }
 
+// Synopsis returns a short description.
 func (c *Command) Synopsis() string {
 	return "Run the server"
 }
 
+// Help returns the full help text.
 func (c *Command) Help() string {
 	return `Usage: hermes server
 
   This command runs the Hermes web server.` + c.Flags().Help()
 }
 
+// Flags returns the flag set.
 func (c *Command) Flags() *base.FlagSet {
 	f := base.NewFlagSet(flag.NewFlagSet("server", flag.ExitOnError))
 
@@ -151,6 +156,8 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+// Run executes the server command.
+//
 //nolint:gocognit,gocyclo // Server startup coordinates many optional subsystems in one entrypoint.
 func (c *Command) Run(args []string) int {
 	f := c.Flags()
@@ -1140,6 +1147,7 @@ func generateIndexerToken(db *gorm.DB, tokenPath string, logger hclog.Logger) er
 	}
 
 	// Write token to file
+	//nolint:gosec // G703: tokenPath is constructed from config, not user input
 	if err := os.WriteFile(tokenPath, []byte(token), 0o600); err != nil {
 		return fmt.Errorf("error writing token file: %w", err)
 	}

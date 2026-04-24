@@ -1,3 +1,4 @@
+// Package base provides base functionality.
 package base
 
 import (

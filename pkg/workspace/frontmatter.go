@@ -166,6 +166,8 @@ func (p *FrontmatterParser) ParseFrontmatter(data []byte, providerID string) (*D
 }
 
 // parseField parses a single frontmatter field into DocumentMetadata.
+//
+//nolint:gocyclo // large switch on field names
 func (p *FrontmatterParser) parseField(meta *DocumentMetadata, key, value string, hasTitle, hasCreated, hasModified *bool) error {
 	// Normalize key for comparison
 	normalizedKey := strings.ToLower(strings.ReplaceAll(key, "-", "_"))
@@ -350,36 +352,36 @@ func (p *FrontmatterParser) SerializeFrontmatter(meta *DocumentMetadata, content
 
 	// Write core fields
 	if !meta.UUID.IsZero() {
-		buf.WriteString(fmt.Sprintf("uuid: %s\n", meta.UUID.String()))
+		fmt.Fprintf(&buf, "uuid: %s\n", meta.UUID.String())
 	}
 	if meta.Name != "" {
-		buf.WriteString(fmt.Sprintf("title: %s\n", meta.Name))
+		fmt.Fprintf(&buf, "title: %s\n", meta.Name)
 	}
 	if len(meta.Tags) > 0 {
-		buf.WriteString(fmt.Sprintf("tags: [%s]\n", strings.Join(meta.Tags, ", ")))
+		fmt.Fprintf(&buf, "tags: [%s]\n", strings.Join(meta.Tags, ", "))
 	}
 	if meta.Project != "" {
-		buf.WriteString(fmt.Sprintf("project: %s\n", meta.Project))
+		fmt.Fprintf(&buf, "project: %s\n", meta.Project)
 	}
 	if meta.OwningTeam != "" {
-		buf.WriteString(fmt.Sprintf("owning_team: %s\n", meta.OwningTeam))
+		fmt.Fprintf(&buf, "owning_team: %s\n", meta.OwningTeam)
 	}
 	if meta.WorkflowStatus != "" {
-		buf.WriteString(fmt.Sprintf("workflow_status: %s\n", meta.WorkflowStatus))
+		fmt.Fprintf(&buf, "workflow_status: %s\n", meta.WorkflowStatus)
 	}
 	if !meta.CreatedTime.IsZero() {
-		buf.WriteString(fmt.Sprintf("created: %s\n", meta.CreatedTime.Format("2006-01-02")))
+		fmt.Fprintf(&buf, "created: %s\n", meta.CreatedTime.Format("2006-01-02"))
 	}
 	if !meta.ModifiedTime.IsZero() {
-		buf.WriteString(fmt.Sprintf("updated: %s\n", meta.ModifiedTime.Format("2006-01-02")))
+		fmt.Fprintf(&buf, "updated: %s\n", meta.ModifiedTime.Format("2006-01-02"))
 	}
 	if meta.Owner != nil && meta.Owner.Email != "" {
-		buf.WriteString(fmt.Sprintf("author: %s\n", meta.Owner.Email))
+		fmt.Fprintf(&buf, "author: %s\n", meta.Owner.Email)
 	}
 
 	// Write extended metadata
 	for key, value := range meta.ExtendedMetadata {
-		buf.WriteString(fmt.Sprintf("%s: %v\n", key, value))
+		fmt.Fprintf(&buf, "%s: %v\n", key, value)
 	}
 
 	buf.WriteString("---\n\n")

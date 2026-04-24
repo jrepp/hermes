@@ -503,18 +503,18 @@ func (doc *PRD) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 	reqs = append(reqs, cellReqs...)
 	var statusStartIndex, statusEndIndex int
 	switch strings.ToLower(doc.Status) {
-	case "in review":
+	case inReviewStatus:
 		fallthrough
 	case statusInReview:
 		statusStartIndex = 14
 		statusEndIndex = 23
-	case "approved":
+	case approvedStatus:
 		statusStartIndex = 26
 		statusEndIndex = 34
-	case "obsolete":
+	case obsoleteStatus:
 		statusStartIndex = 37
 		statusEndIndex = 45
-	case "wip":
+	case wipLowerStatus:
 		fallthrough
 	default:
 		// Default to "WIP" for all unknown statuses.
@@ -680,7 +680,7 @@ func (doc *PRD) ReplaceHeader(fileID, baseURL string, isDraft bool, provider wor
 	docURLString := docURL.String()
 	docURLString = strings.TrimRight(docURLString, "/")
 	if isDraft {
-		docURLString += "?draft=true"
+		docURLString += draftQueryParam
 	}
 	cellReqs, _ = createTextCellRequests(
 		"NOTE",

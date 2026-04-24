@@ -13,8 +13,10 @@ import (
 type IndexType string
 
 const (
+	// IndexTypePublished is the published document index.
 	IndexTypePublished IndexType = "published"
-	IndexTypeDrafts    IndexType = "drafts"
+	// IndexTypeDrafts is the draft document index.
+	IndexTypeDrafts IndexType = "drafts"
 )
 
 // IndexCommand indexes a document in the search provider.

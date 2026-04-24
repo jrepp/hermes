@@ -1,3 +1,4 @@
+// Package instance provides instance functionality.
 package instance
 
 import (
@@ -21,7 +22,7 @@ var (
 
 // Initialize sets up the Hermes instance identity.
 // This should be called once at startup before any other database operations.
-func Initialize(ctx context.Context, db *gorm.DB, cfg *config.Config, logger hclog.Logger) error {
+func Initialize(_ context.Context, db *gorm.DB, cfg *config.Config, logger hclog.Logger) error {
 	currentInstanceMu.Lock()
 	defer currentInstanceMu.Unlock()
 

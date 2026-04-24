@@ -140,6 +140,8 @@ func (di *DocumentIndexer) indexDocument(ctx context.Context, docID string, isDr
 
 // workspaceDocumentToSearchDocument converts a workspace.Document to search.Document.
 // This extracts metadata and content into the format expected by the search provider.
+//
+//nolint:gocognit // many fields to map
 func workspaceDocumentToSearchDocument(doc *workspace.Document) *search.Document {
 	searchDoc := &search.Document{
 		ObjectID:     doc.ID,

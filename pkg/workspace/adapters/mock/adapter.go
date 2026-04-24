@@ -316,6 +316,8 @@ func (a *Adapter) SearchPeople(email, _ string) ([]*people.Person, error) {
 
 // SearchDirectory performs advanced directory search with query strings and filters.
 // For the mock adapter, this searches people by matching the query against names and emails.
+//
+//nolint:gocognit // search logic with multiple filter options
 func (a *Adapter) SearchDirectory(opts workspace.PeopleSearchOptions) ([]*people.Person, error) {
 	// Simple implementation: return all people if query is empty, otherwise filter by query
 	results := []*people.Person{}
@@ -376,6 +378,7 @@ func (a *Adapter) GetSubfolder(parentID, name string) (string, error) {
 	return folderID, nil
 }
 
+// CreateFolder creates a new folder in the mock workspace.
 func (a *Adapter) CreateFolder(name, parentID string) (*drive.File, error) {
 	folderID := fmt.Sprintf("folder-%s-%d", name, len(a.Files))
 	file := &drive.File{
@@ -395,6 +398,7 @@ func (a *Adapter) CreateFolder(name, parentID string) (*drive.File, error) {
 	return file, nil
 }
 
+// CreateShortcut creates a shortcut to another file in the mock workspace.
 func (a *Adapter) CreateShortcut(targetID, parentID string) (*drive.File, error) {
 	shortcutID := fmt.Sprintf("shortcut-%s-%d", targetID, len(a.Files))
 	file := &drive.File{
@@ -629,7 +633,7 @@ func (a *Adapter) UpdateDocumentContent(fileID, content string) error {
 
 // CompareContent is a stub implementation of the RFC-084 ContentProvider interface.
 // Returns a basic comparison that indicates content is different if provider IDs differ.
-func (a *Adapter) CompareContent(ctx context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
+func (a *Adapter) CompareContent(_ context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
 	content1, ok1 := a.FileContents[providerID1]
 	content2, ok2 := a.FileContents[providerID2]
 
@@ -657,88 +661,108 @@ func (a *Adapter) CompareContent(ctx context.Context, providerID1, providerID2 s
 
 // RFC-084 DocumentProvider stub implementations (minimal to satisfy interface)
 
-func (a *Adapter) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+// GetDocument retrieves a document by provider ID.
+func (a *Adapter) GetDocument(_ context.Context, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: GetDocument")
 }
 
-func (a *Adapter) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
+// GetDocumentByUUID retrieves a document by UUID.
+func (a *Adapter) GetDocumentByUUID(_ context.Context, _ docid.UUID) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: GetDocumentByUUID")
 }
 
-func (a *Adapter) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+// CreateDocument creates a new document from a template.
+func (a *Adapter) CreateDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: CreateDocument")
 }
 
-func (a *Adapter) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+// CreateDocumentWithUUID creates a document with an explicit UUID.
+func (a *Adapter) CreateDocumentWithUUID(_ context.Context, _ docid.UUID, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: CreateDocumentWithUUID")
 }
 
-func (a *Adapter) UpdateDocument(ctx context.Context, providerID string, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+// UpdateDocument updates a document's metadata.
+func (a *Adapter) UpdateDocument(_ context.Context, _ string, _ *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: UpdateDocument")
 }
 
-func (a *Adapter) DeleteDocument(ctx context.Context, providerID string) error {
+// DeleteDocument deletes a document.
+func (a *Adapter) DeleteDocument(_ context.Context, _ string) error {
 	return fmt.Errorf("not implemented: DeleteDocument")
 }
 
-func (a *Adapter) ListDocuments(ctx context.Context, folderID string, recursive bool) ([]*workspace.DocumentMetadata, error) {
+// ListDocuments lists documents in a folder.
+func (a *Adapter) ListDocuments(_ context.Context, _ string, _ bool) ([]*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: ListDocuments")
 }
 
-func (a *Adapter) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+// RegisterDocument registers a document with the mock provider.
+func (a *Adapter) RegisterDocument(_ context.Context, _ *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: RegisterDocument")
 }
 
-func (a *Adapter) CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+// CopyDocument copies a document.
+func (a *Adapter) CopyDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: CopyDocument")
 }
 
-func (a *Adapter) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+// MoveDocument moves a document to a different folder.
+func (a *Adapter) MoveDocument(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: MoveDocument")
 }
 
-func (a *Adapter) RenameDocument(ctx context.Context, providerID, newName string) (*workspace.DocumentMetadata, error) {
+// RenameDocument renames a document.
+func (a *Adapter) RenameDocument(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented: RenameDocument")
 }
 
 // RFC-084 ContentProvider stub implementations (beyond CompareContent)
 
-func (a *Adapter) GetContent(ctx context.Context, providerID string) (*workspace.DocumentContent, error) {
+// GetContent retrieves document content.
+func (a *Adapter) GetContent(_ context.Context, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented: GetContent")
 }
 
-func (a *Adapter) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentContent, error) {
+// GetContentByUUID retrieves content by document UUID.
+func (a *Adapter) GetContentByUUID(_ context.Context, _ docid.UUID) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented: GetContentByUUID")
 }
 
-func (a *Adapter) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+// UpdateContent updates document content.
+func (a *Adapter) UpdateContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented: UpdateContent")
 }
 
-func (a *Adapter) GetContentBatch(ctx context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
+// GetContentBatch retrieves content for multiple documents.
+func (a *Adapter) GetContentBatch(_ context.Context, _ []string) ([]*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented: GetContentBatch")
 }
 
 // RFC-084 RevisionTrackingProvider stub implementations
 
-func (a *Adapter) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+// GetRevision retrieves a revision by ID.
+func (a *Adapter) GetRevision(_ context.Context, _, _ string) (*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented: GetRevision")
 }
 
-func (a *Adapter) ListRevisions(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+// ListRevisions lists revisions for a document.
+func (a *Adapter) ListRevisions(_ context.Context, _ string, _ int) ([]*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented: ListRevisions")
 }
 
-func (a *Adapter) GetCurrentRevision(ctx context.Context, providerID string) (*workspace.BackendRevision, error) {
+// GetCurrentRevision retrieves the current revision.
+func (a *Adapter) GetCurrentRevision(_ context.Context, _ string) (*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented: GetCurrentRevision")
 }
 
 // RFC-084 metadata methods
 
+// Name returns the adapter name.
 func (a *Adapter) Name() string {
 	return "mock"
 }
 
+// ProviderType returns the adapter provider type.
 func (a *Adapter) ProviderType() string {
 	return "mock"
 }

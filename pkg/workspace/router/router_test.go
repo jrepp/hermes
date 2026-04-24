@@ -27,7 +27,7 @@ func newMockProvider(name string) *mockProvider {
 	}
 }
 
-func (m *mockProvider) GetDocumentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) GetDocumentByUUID(_ context.Context, uuid docid.UUID) (*workspace.DocumentMetadata, error) {
 	if m.shouldFail {
 		return nil, fmt.Errorf("mock provider %s: intentional failure", m.name)
 	}
@@ -45,143 +45,143 @@ func (m *mockProvider) AddDocument(uuid docid.UUID, doc *workspace.DocumentMetad
 }
 
 // Stub implementations for other required interfaces
-func (m *mockProvider) GetDocument(ctx context.Context, providerID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) GetDocument(_ context.Context, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CreateDocument(ctx context.Context, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CreateDocumentWithUUID(ctx context.Context, uuid docid.UUID, templateID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateDocumentWithUUID(_ context.Context, _ docid.UUID, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RegisterDocument(ctx context.Context, doc *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) RegisterDocument(_ context.Context, _ *workspace.DocumentMetadata) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CopyDocument(ctx context.Context, srcProviderID, destFolderID, name string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CopyDocument(_ context.Context, _, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) MoveDocument(ctx context.Context, providerID, destFolderID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) MoveDocument(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RenameDocument(ctx context.Context, providerID, newName string) error {
+func (m *mockProvider) RenameDocument(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) DeleteDocument(ctx context.Context, providerID string) error {
+func (m *mockProvider) DeleteDocument(_ context.Context, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CreateFolder(ctx context.Context, name, parentID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateFolder(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetSubfolder(ctx context.Context, parentID, name string) (string, error) {
+func (m *mockProvider) GetSubfolder(_ context.Context, _, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetContent(ctx context.Context, providerID string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContent(_ context.Context, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContentByUUID(_ context.Context, _ docid.UUID) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) UpdateContent(ctx context.Context, providerID string, content string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) UpdateContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetContentBatch(ctx context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContentBatch(_ context.Context, _ []string) ([]*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CompareContent(ctx context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
+func (m *mockProvider) CompareContent(_ context.Context, _, _ string) (*workspace.ContentComparison, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetRevisionHistory(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+func (m *mockProvider) GetRevisionHistory(_ context.Context, _ string, _ int) ([]*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+func (m *mockProvider) GetRevision(_ context.Context, _, _ string) (*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetRevisionContent(ctx context.Context, providerID, revisionID string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetRevisionContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) KeepRevisionForever(ctx context.Context, providerID, revisionID string) error {
+func (m *mockProvider) KeepRevisionForever(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*workspace.RevisionInfo, error) {
+func (m *mockProvider) GetAllDocumentRevisions(_ context.Context, _ docid.UUID) ([]*workspace.RevisionInfo, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ShareDocument(ctx context.Context, providerID, email, role string) error {
+func (m *mockProvider) ShareDocument(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+func (m *mockProvider) ShareDocumentWithDomain(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+func (m *mockProvider) ListPermissions(_ context.Context, _ string) ([]*workspace.FilePermission, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+func (m *mockProvider) RemovePermission(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+func (m *mockProvider) UpdatePermission(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
+func (m *mockProvider) SearchPeople(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) GetPerson(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) GetPersonByUnifiedID(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ResolveIdentity(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) ResolveIdentity(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+func (m *mockProvider) ListTeams(_ context.Context, _, _ string, _ int64) ([]*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+func (m *mockProvider) GetTeam(_ context.Context, _ string) (*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+func (m *mockProvider) GetUserTeams(_ context.Context, _ string) ([]*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+func (m *mockProvider) GetTeamMembers(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+func (m *mockProvider) SendEmail(_ context.Context, _ []string, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+func (m *mockProvider) SendEmailWithTemplate(_ context.Context, _ []string, _ string, _ map[string]any) error {
 	return fmt.Errorf("not implemented")
 }
 

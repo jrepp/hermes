@@ -15,7 +15,7 @@ type MockKeywordSearcher struct {
 	delay   time.Duration
 }
 
-func (m *MockKeywordSearcher) Search(ctx context.Context, query string, limit int) ([]KeywordSearchResult, error) {
+func (m *MockKeywordSearcher) Search(_ context.Context, _ string, _ int) ([]KeywordSearchResult, error) {
 	if m.delay > 0 {
 		time.Sleep(m.delay)
 	}

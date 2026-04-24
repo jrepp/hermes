@@ -1,3 +1,4 @@
+// Package canary provides canary functionality.
 package canary
 
 import (
@@ -18,6 +19,7 @@ import (
 	searchmeilisearch "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 )
 
+// Command implements the canary CLI command.
 type Command struct {
 	*base.Command
 
@@ -25,10 +27,12 @@ type Command struct {
 	flagSearchBackend string
 }
 
+// Synopsis returns a short description.
 func (c *Command) Synopsis() string {
 	return "Run canary test to validate database and search connectivity"
 }
 
+// Help returns the full help text.
 func (c *Command) Help() string {
 	return `Usage: hermes canary [options]
 
@@ -55,6 +59,7 @@ func (c *Command) Help() string {
 `
 }
 
+// Flags returns the flag set.
 func (c *Command) Flags() *base.FlagSet {
 	f := base.NewFlagSet(flag.NewFlagSet("canary", flag.ExitOnError))
 
@@ -70,6 +75,8 @@ func (c *Command) Flags() *base.FlagSet {
 	return f
 }
 
+// Run executes the command.
+//
 //nolint:gocognit,gocyclo // 10-step smoke test is easier to follow inline.
 func (c *Command) Run(args []string) int {
 	f := c.Flags()

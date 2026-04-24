@@ -18,7 +18,7 @@ type BenchmarkEmbeddingsGenerator struct {
 	dimensions int
 }
 
-func (m *BenchmarkEmbeddingsGenerator) GenerateEmbeddings(ctx context.Context, text string, model string, dimensions int) ([]float64, error) {
+func (m *BenchmarkEmbeddingsGenerator) GenerateEmbeddings(_ context.Context, text, _ string, dimensions int) ([]float64, error) {
 	// Generate deterministic embeddings based on text length
 	// This allows consistent benchmarking without external API calls
 	embedding := make([]float64, dimensions)

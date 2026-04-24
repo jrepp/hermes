@@ -1,3 +1,4 @@
+// Package consumer provides consumer functionality.
 package consumer
 
 import (

@@ -1,3 +1,4 @@
+// Package multiprovider provides multi-provider workspace routing.
 package multiprovider
 
 import (

@@ -95,14 +95,14 @@ func TestAdapter_Interfaces(t *testing.T) {
 	if docIndex == nil {
 		t.Error("DocumentIndex() returned nil")
 	}
-	var _ hermessearch.DocumentIndex = docIndex
+	var _ hermessearch.DocumentIndex = docIndex //nolint:staticcheck // intentional interface assertion
 
 	// Verify DraftIndex returns correct interface
 	draftIndex := adapter.DraftIndex()
 	if draftIndex == nil {
 		t.Error("DraftIndex() returned nil")
 	}
-	var _ hermessearch.DraftIndex = draftIndex
+	var _ hermessearch.DraftIndex = draftIndex //nolint:staticcheck // intentional interface check
 }
 
 func TestDocumentIndex_BasicOperations(t *testing.T) {

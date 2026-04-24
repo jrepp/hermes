@@ -1,3 +1,4 @@
+// Package projectconfig provides projectconfig functionality.
 package projectconfig
 
 import (
@@ -32,11 +33,12 @@ func LoadConfig(configPath string) (*Config, error) {
 	// For MVP, manually load known project files
 	// TODO: Implement full HCL parsing with import statement support
 	projectFiles := []string{
-		filepath.Join(configDir, "projects/testing.hcl"),
-		filepath.Join(configDir, "projects/docs.hcl"),
+		filepath.Join(configDir, "projects", "testing.hcl"),
+		filepath.Join(configDir, "projects", "docs.hcl"),
 	}
 
 	for _, projectFile := range projectFiles {
+		//nolint:gosec // G703: projectFile is constructed from config, not user input
 		if _, err := os.Stat(projectFile); os.IsNotExist(err) {
 			continue // Skip non-existent files
 		}
@@ -159,7 +161,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		configPath = "./testing/projects.hcl"
 	}
 
-	// Check if file exists
+	//nolint:gosec // G703: configPath is from env/config, not direct user input
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("config file not found: %s", configPath)
 	}

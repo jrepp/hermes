@@ -191,14 +191,14 @@ This RFC proposes a storage abstraction layer for Hermes.
 		require.NoError(t, err, "Failed to create original document")
 
 		// Copy document
-		copy, err := docStorage.CopyDocument(ctx, original.ID, "copy-dest", "Copied Doc")
+		docCopy, err := docStorage.CopyDocument(ctx, original.ID, "copy-dest", "Copied Doc")
 		require.NoError(t, err, "Failed to copy document")
 
 		// Verify copy
-		assert.NotEqual(t, original.ID, copy.ID, "Copy should have different ID")
-		assert.Equal(t, "Copied Doc", copy.Name)
-		assert.Equal(t, "copy-dest", copy.ParentFolderID)
-		assert.Equal(t, original.Content, copy.Content, "Content should be copied")
+		assert.NotEqual(t, original.ID, docCopy.ID, "Copy should have different ID")
+		assert.Equal(t, "Copied Doc", docCopy.Name)
+		assert.Equal(t, "copy-dest", docCopy.ParentFolderID)
+		assert.Equal(t, original.Content, docCopy.Content, "Content should be copied")
 	})
 }
 

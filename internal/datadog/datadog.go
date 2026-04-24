@@ -15,7 +15,7 @@ type Config struct {
 	Enabled        bool
 }
 
-// New creates an instance of Datadog configuration.
+// NewConfig creates an instance of Datadog configuration.
 //
 //nolint:gocognit // Environment fallback and config override logic is clearer inline.
 func NewConfig(cfg config.Config) *Config {

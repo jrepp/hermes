@@ -1,3 +1,4 @@
+// Package featureflags provides feature flag evaluation logic.
 package featureflags
 
 import (
@@ -10,11 +11,7 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
 )
 
-// FeatureFlagsObj is a record in Algolia
-// with "featureFlags" as object ID and
-// a map of each feature flag with a
-// set of user emails that should have
-// access to the flag
+//nolint:revive // FeatureFlagsObj name is intentional for clarity in Algolia records
 type FeatureFlagsObj struct {
 	FeatureFlagUserEmails map[string][]string `json:"featureFlagUserEmails"`
 	ObjectID              string              `json:"objectID,omitempty"`
@@ -24,8 +21,7 @@ type FeatureFlagsObj struct {
 func SetAndToggle(
 	flags *config.FeatureFlags,
 	a *algolia.Client,
-	h string,
-	email string,
+	h, email string,
 	log hclog.Logger) map[string]bool {
 	featureFlags := make(map[string]bool)
 
@@ -33,20 +29,17 @@ func SetAndToggle(
 		for _, j := range flags.FeatureFlag {
 			// Check if "Enabled" is set to enable
 			// the feature flag
-			if j.Enabled != nil {
+			switch {
+			case j.Enabled != nil:
 				// If "Enabled" is set to true,
 				// feature flag is set to true.
 				// Otherwise, it's set to false.
-				if *j.Enabled {
-					featureFlags[j.Name] = true
-				} else {
-					featureFlags[j.Name] = false
-				}
-			} else if j.Percentage == 0 {
+				featureFlags[j.Name] = *j.Enabled
+			case j.Percentage == 0:
 				// When percentage is set to 0,
 				// the feature flag will remain disabled.
 				featureFlags[j.Name] = false
-			} else if j.Percentage != 0 {
+			default:
 				// If the percentage is provided in the config
 				// the feature flag may be toggled.
 				featureFlags[j.Name] = toggleFlagPercentage(
@@ -80,6 +73,7 @@ func SetAndToggle(
 // This function is based on: https://hashi.co/3O2JwTK
 func toggleFlagPercentage(s string, p int) bool {
 	h := fnv.New32()
+	//nolint:gosec // G104: error from writing to hash is always nil for fnv
 	h.Write([]byte(s))
 	percent := h.Sum32() % 100
 	return int(percent) <= p
@@ -87,7 +81,7 @@ func toggleFlagPercentage(s string, p int) bool {
 
 // toggleFlagEmail toggles a feature flag
 // using user email
-func toggleFlagEmail(a *algolia.Client, flag string, email string, log hclog.Logger) bool {
+func toggleFlagEmail(a *algolia.Client, flag, email string, log hclog.Logger) bool {
 	// Return false if algolia client is nil (e.g., when using Meilisearch)
 	if a == nil {
 		return false

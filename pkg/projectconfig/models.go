@@ -1,3 +1,4 @@
+// Package projectconfig provides projectconfig functionality.
 package projectconfig
 
 import (
@@ -133,7 +134,7 @@ func (c *Config) ListProjects() []string {
 func (c *Config) GetActiveProjects() []*Project {
 	active := make([]*Project, 0)
 	for _, project := range c.Projects {
-		if project.Status == "active" {
+		if project.Status == ProviderStateActive {
 			active = append(active, project)
 		}
 	}
@@ -345,7 +346,9 @@ func (c *Config) GetActiveProjectSummaries() []*ProjectSummary {
 		}
 	}
 	return summaries
-} // ResolveWorkspacePath resolves the full workspace path for a provider
+}
+
+// ResolveWorkspacePath resolves the full workspace path for a provider
 func (p *Provider) ResolveWorkspacePath(basePath string) string {
 	if p.WorkspacePath == "" {
 		return basePath

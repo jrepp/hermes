@@ -1,3 +1,4 @@
+// Package links provides link/redirect data operations.
 package links
 
 import (
@@ -46,9 +47,11 @@ func SaveDocumentRedirectDetails(
 	return nil
 }
 
+// DeleteDocumentRedirectDetailsLegacy removes redirect details for a legacy document.
+//
 // Deprecated: DeleteDocumentRedirectDetailsLegacy is deprecated. Use DeleteDocumentRedirectDetails with search.Provider.
 func DeleteDocumentRedirectDetailsLegacy(
-	algo *algolia.Client, id string, docType string, docNumString string) error {
+	algo *algolia.Client, _ string, docType string, docNumString string) error {
 
 	if docNumString != "" && docType != "" {
 		objectID := getObjectID(docType, docNumString)
@@ -65,6 +68,8 @@ func DeleteDocumentRedirectDetailsLegacy(
 	return nil
 }
 
+// SaveDocumentRedirectDetailsLegacy stores redirect details for a legacy document.
+//
 // Deprecated: SaveDocumentRedirectDetailsLegacy is deprecated. Use SaveDocumentRedirectDetails with search.Provider.
 func SaveDocumentRedirectDetailsLegacy(
 	algo *algolia.Client, id string, docType string, docNumString string) error {

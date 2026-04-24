@@ -1,3 +1,4 @@
+// Package indexer provides indexer functionality.
 package indexer
 
 import "context"

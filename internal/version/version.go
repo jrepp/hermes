@@ -1,10 +1,12 @@
+// Package version provides version functionality.
 package version
 
 import (
 	"runtime/debug"
 )
 
-const Version = "1.0.0"
+// Version is the current Hermes version.
+const Version = "0.5.0"
 
 // GetVersion returns
 // the version number

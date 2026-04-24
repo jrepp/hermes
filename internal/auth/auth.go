@@ -1,3 +1,4 @@
+// Package auth provides auth functionality.
 package auth
 
 import (

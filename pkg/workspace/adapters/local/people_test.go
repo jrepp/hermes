@@ -86,7 +86,7 @@ func TestPeopleService_GetUser(t *testing.T) {
 			usersJSON, err := json.Marshal(tt.usersData)
 			require.NoError(t, err)
 			usersPath := adapter.basePath + "/users.json"
-			require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0644))
+			require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0o644))
 
 			peopleSvc := &peopleService{
 				adapter: adapter,
@@ -120,7 +120,7 @@ func TestPeopleService_GetUser_MissingFile(t *testing.T) {
 func TestPeopleService_GetUser_MalformedJSON(t *testing.T) {
 	adapter := createTestAdapterForPeople(t)
 	usersPath := adapter.basePath + "/users.json"
-	require.NoError(t, afero.WriteFile(adapter.fs, usersPath, []byte("invalid json {["), 0644))
+	require.NoError(t, afero.WriteFile(adapter.fs, usersPath, []byte("invalid json {["), 0o644))
 
 	peopleSvc := &peopleService{
 		adapter: adapter,
@@ -201,7 +201,7 @@ func TestPeopleService_SearchUsers(t *testing.T) {
 			usersJSON, err := json.Marshal(usersData)
 			require.NoError(t, err)
 			usersPath := adapter.basePath + "/users.json"
-			require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0644))
+			require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0o644))
 
 			peopleSvc := &peopleService{
 				adapter: adapter,
@@ -211,16 +211,17 @@ func TestPeopleService_SearchUsers(t *testing.T) {
 			users, err := peopleSvc.SearchUsers(context.Background(), tt.query, nil)
 			require.NoError(t, err)
 
-			if tt.wantMinSize > 0 {
+			switch {
+			case tt.wantMinSize > 0:
 				assert.GreaterOrEqual(t, len(users), tt.wantMinSize)
-			} else if len(tt.wantEmails) > 0 {
+			case len(tt.wantEmails) > 0:
 				assert.Equal(t, len(tt.wantEmails), len(users))
 				emails := make([]string, len(users))
 				for i, u := range users {
 					emails[i] = u.Email
 				}
 				assert.ElementsMatch(t, tt.wantEmails, emails)
-			} else {
+			default:
 				assert.Empty(t, users)
 			}
 		})
@@ -281,7 +282,7 @@ func TestPeopleService_GetUserPhoto(t *testing.T) {
 			usersJSON, err := json.Marshal(usersData)
 			require.NoError(t, err)
 			usersPath := adapter.basePath + "/users.json"
-			require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0644))
+			require.NoError(t, afero.WriteFile(adapter.fs, usersPath, usersJSON, 0o644))
 
 			peopleSvc := &peopleService{
 				adapter: adapter,

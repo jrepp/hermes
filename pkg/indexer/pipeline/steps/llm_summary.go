@@ -1,3 +1,4 @@
+// Package steps provides steps functionality.
 package steps
 
 import (
@@ -330,6 +331,7 @@ type MockWorkspaceProvider struct {
 	Error   error             // Error to return (if set)
 }
 
+// GetDocumentContent returns mock document content.
 func (m *MockWorkspaceProvider) GetDocumentContent(fileID string) (string, error) {
 	if m.Error != nil {
 		return "", m.Error

@@ -1,3 +1,4 @@
+// Package indexer provides indexer functionality.
 package indexer
 
 import (
@@ -273,10 +274,7 @@ func refreshDocumentHeader(
 
 	// If the document was created through Hermes and has a status of "WIP", it
 	// is a document draft.
-	isDraft := false
-	if doc.AppCreated && doc.Status == "WIP" {
-		isDraft = true
-	}
+	isDraft := doc.AppCreated && doc.Status == "WIP"
 
 	// Replace document header.
 	if err := doc.ReplaceHeader(

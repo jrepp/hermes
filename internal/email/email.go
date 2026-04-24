@@ -1,3 +1,4 @@
+// Package email provides email functionality.
 package email
 
 import (
@@ -22,11 +23,13 @@ type emailSender interface {
 	SendEmail(to []string, from, subject, body string) error
 }
 
+// User represents an email user.
 type User struct {
 	EmailAddress string
 	Name         string
 }
 
+// DocumentApprovedEmailData holds data for document approval emails.
 type DocumentApprovedEmailData struct {
 	DocumentApprover         User
 	BaseURL                  string
@@ -42,6 +45,7 @@ type DocumentApprovedEmailData struct {
 	DocumentNonApproverCount int
 }
 
+// NewOwnerEmailData holds data for new owner notification emails.
 type NewOwnerEmailData struct {
 	NewDocumentOwner    User
 	OldDocumentOwner    User
@@ -56,6 +60,7 @@ type NewOwnerEmailData struct {
 	CurrentYear         int
 }
 
+// ReviewRequestedEmailData holds data for review request emails.
 type ReviewRequestedEmailData struct {
 	BaseURL             string
 	DocumentOwner       string
@@ -69,6 +74,7 @@ type ReviewRequestedEmailData struct {
 	CurrentYear         int
 }
 
+// SubscriberDocumentPublishedEmailData holds data for subscriber publication emails.
 type SubscriberDocumentPublishedEmailData struct {
 	BaseURL           string
 	DocumentOwner     string
@@ -80,32 +86,7 @@ type SubscriberDocumentPublishedEmailData struct {
 	CurrentYear       int
 }
 
-type ContributorAddedEmailData struct {
-	BaseURL             string
-	CurrentYear         int
-	DocumentOwner       string
-	DocumentShortName   string
-	DocumentTitle       string
-	DocumentType        string
-	DocumentStatus      string
-	DocumentStatusClass string
-	DocumentURL         string
-	Product             string
-}
-
-type StakeholderAddedEmailData struct {
-	BaseURL             string
-	CurrentYear         int
-	DocumentOwner       string
-	DocumentShortName   string
-	DocumentTitle       string
-	DocumentType        string
-	DocumentStatus      string
-	DocumentStatusClass string
-	DocumentURL         string
-	Product             string
-}
-
+// SendDocumentApprovedEmail sends a document approval notification.
 func SendDocumentApprovedEmail(
 	data DocumentApprovedEmailData,
 	to []string,
@@ -168,6 +149,7 @@ func SendDocumentApprovedEmail(
 	return err
 }
 
+// SendNewOwnerEmail sends a new owner notification.
 func SendNewOwnerEmail(
 	data NewOwnerEmailData,
 	to []string,
@@ -226,6 +208,7 @@ func SendNewOwnerEmail(
 	return err
 }
 
+// SendReviewRequestedEmail sends a review request notification.
 func SendReviewRequestedEmail(
 	d ReviewRequestedEmailData,
 	to []string,
@@ -270,6 +253,7 @@ func SendReviewRequestedEmail(
 	return err
 }
 
+// SendSubscriberDocumentPublishedEmail sends a publication notification to subscribers.
 func SendSubscriberDocumentPublishedEmail(
 	d SubscriberDocumentPublishedEmailData,
 	to []string,
