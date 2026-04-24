@@ -36,14 +36,14 @@ func (DocumentRevisionOutbox) TableName() string {
 	return "document_revision_outbox"
 }
 
-// RevisionEventType constants
+// RevisionEventType constants for revision outbox events.
 const (
 	RevisionEventCreated = "revision.created"
 	RevisionEventUpdated = "revision.updated"
 	RevisionEventDeleted = "revision.deleted"
 )
 
-// OutboxStatus constants
+// OutboxStatus constants for revision outbox entry status.
 const (
 	OutboxStatusPending   = "pending"
 	OutboxStatusPublished = "published"
@@ -130,7 +130,7 @@ func NewRevisionOutboxEntry(revision *DocumentRevision, eventType string, payloa
 	}, nil
 }
 
-// FindPendingEntries retrieves pending outbox entries for publishing.
+// FindPendingOutboxEntries retrieves pending outbox entries for publishing.
 // Uses SELECT FOR UPDATE SKIP LOCKED for concurrent processing.
 func FindPendingOutboxEntries(db *gorm.DB, limit int) ([]DocumentRevisionOutbox, error) {
 	var entries []DocumentRevisionOutbox
@@ -193,7 +193,7 @@ func DeleteOldPublishedEntries(db *gorm.DB, olderThan time.Duration) (int64, err
 	return result.RowsAffected, result.Error
 }
 
-// GetByIdempotentKey retrieves an outbox entry by its idempotent key.
+// GetOutboxByIdempotentKey retrieves an outbox entry by its idempotent key.
 // Used to check if an event was already published.
 func GetOutboxByIdempotentKey(db *gorm.DB, key string) (*DocumentRevisionOutbox, error) {
 	var entry DocumentRevisionOutbox
@@ -204,7 +204,7 @@ func GetOutboxByIdempotentKey(db *gorm.DB, key string) (*DocumentRevisionOutbox,
 	return &entry, nil
 }
 
-// GetFailedEntries retrieves failed outbox entries for manual review/retry.
+// GetFailedOutboxEntries retrieves failed outbox entries for manual review/retry.
 func GetFailedOutboxEntries(db *gorm.DB, limit int) ([]DocumentRevisionOutbox, error) {
 	var entries []DocumentRevisionOutbox
 	err := db.
@@ -216,7 +216,7 @@ func GetFailedOutboxEntries(db *gorm.DB, limit int) ([]DocumentRevisionOutbox, e
 	return entries, err
 }
 
-// CountByStatus returns the count of entries for a given status.
+// CountOutboxByStatus returns the count of entries for a given status.
 func CountOutboxByStatus(db *gorm.DB, status string) (int64, error) {
 	var count int64
 	err := db.Model(&DocumentRevisionOutbox{}).

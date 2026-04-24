@@ -27,6 +27,7 @@ type Project struct {
 // ProjectStatus is the status of the project.
 type ProjectStatus int
 
+// ProjectStatus values.
 const (
 	UnspecifiedProjectStatus ProjectStatus = iota
 	ActiveProjectStatus
@@ -42,10 +43,12 @@ var (
 	}
 )
 
+// String returns the string representation of the project status.
 func (s ProjectStatus) String() string {
 	return projectStatusStrings[s]
 }
 
+// ParseProjectStatusString parses a string into a ProjectStatus.
 func ParseProjectStatusString(s string) (ProjectStatus, bool) {
 	// Reverse keys and values of strings map.
 	m := make(map[string]ProjectStatus, len(projectStatusStrings))

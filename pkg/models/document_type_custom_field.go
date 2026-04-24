@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// DocumentTypeCustomField is a model for a custom field on a document type.
 type DocumentTypeCustomField struct {
 	gorm.Model
 	Name           string
@@ -17,8 +18,10 @@ type DocumentTypeCustomField struct {
 	ReadOnly       bool
 }
 
+// DocumentTypeCustomFieldType represents the type of a document type custom field.
 type DocumentTypeCustomFieldType int
 
+// Document type custom field type constants.
 const (
 	UnspecifiedDocumentTypeCustomFieldType DocumentTypeCustomFieldType = iota
 	StringDocumentTypeCustomFieldType

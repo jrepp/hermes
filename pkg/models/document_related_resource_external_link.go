@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// DocumentRelatedResourceExternalLink is a model for an external link related resource on a document.
 type DocumentRelatedResourceExternalLink struct {
 	gorm.Model
 	Name            string                  `gorm:"default:null;not null"`
@@ -14,8 +15,10 @@ type DocumentRelatedResourceExternalLink struct {
 	RelatedResource DocumentRelatedResource `gorm:"polymorphic:RelatedResource"`
 }
 
+// DocumentRelatedResourceExternalLinks is a slice of external link related resources.
 type DocumentRelatedResourceExternalLinks []DocumentRelatedResourceExternalLink
 
+// Create creates an external link related resource in database db.
 func (rr *DocumentRelatedResourceExternalLink) Create(db *gorm.DB) error {
 	// Preload RelatedResource.Document.
 	if rr.RelatedResource.DocumentID == 0 {
@@ -39,6 +42,7 @@ func (rr *DocumentRelatedResourceExternalLink) Create(db *gorm.DB) error {
 		Error
 }
 
+// Get retrieves an external link related resource from database db.
 func (rr *DocumentRelatedResourceExternalLink) Get(db *gorm.DB) error {
 	return db.
 		Preload(clause.Associations).

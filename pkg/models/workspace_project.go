@@ -164,7 +164,7 @@ func (wp *WorkspaceProject) GetByName(db *gorm.DB, name string) error {
 		Error
 }
 
-// GetByInstanceAndName retrieves a workspace project by instance UUID and name (composite key).
+// GetWorkspaceProjectByInstanceAndName retrieves a workspace project by instance UUID and name (composite key).
 func GetWorkspaceProjectByInstanceAndName(db *gorm.DB, instanceUUID uuid.UUID, name string) (*WorkspaceProject, error) {
 	var project WorkspaceProject
 	err := db.Where("instance_uuid = ? AND name = ?", instanceUUID, name).
@@ -175,7 +175,7 @@ func GetWorkspaceProjectByInstanceAndName(db *gorm.DB, instanceUUID uuid.UUID, n
 	return &project, nil
 }
 
-// GetByProjectUUID retrieves a workspace project by its project UUID.
+// GetWorkspaceProjectByUUID retrieves a workspace project by its project UUID.
 func GetWorkspaceProjectByUUID(db *gorm.DB, projectUUID uuid.UUID) (*WorkspaceProject, error) {
 	var project WorkspaceProject
 	err := db.Where("project_uuid = ?", projectUUID).
@@ -186,7 +186,7 @@ func GetWorkspaceProjectByUUID(db *gorm.DB, projectUUID uuid.UUID) (*WorkspacePr
 	return &project, nil
 }
 
-// GetByGlobalProjectID retrieves a workspace project by global project ID.
+// GetWorkspaceProjectByGlobalID retrieves a workspace project by global project ID.
 func GetWorkspaceProjectByGlobalID(db *gorm.DB, globalProjectID string) (*WorkspaceProject, error) {
 	var project WorkspaceProject
 	err := db.Where("global_project_id = ?", globalProjectID).
@@ -239,20 +239,19 @@ func (wp *WorkspaceProject) Upsert(db *gorm.DB) error {
 	// Try to find existing project
 	existing := &WorkspaceProject{}
 	err := existing.GetByName(db, wp.Name)
-	if err == nil {
-		// Update existing
+	switch err {
+	case nil:
 		wp.ID = existing.ID
 		wp.CreatedAt = existing.CreatedAt
 		return wp.Update(db)
-	} else if err == gorm.ErrRecordNotFound {
-		// Create new
+	case gorm.ErrRecordNotFound:
 		return wp.Create(db)
+	default:
+		return fmt.Errorf("error checking for existing project: %w", err)
 	}
-
-	return fmt.Errorf("error checking for existing project: %w", err)
 }
 
-// GetAllActive retrieves all active workspace projects.
+// GetAllActiveWorkspaceProjects retrieves all active workspace projects.
 func GetAllActiveWorkspaceProjects(db *gorm.DB) ([]WorkspaceProject, error) {
 	var projects []WorkspaceProject
 	err := db.

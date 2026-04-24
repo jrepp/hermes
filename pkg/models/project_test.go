@@ -21,29 +21,29 @@ func TestProject(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a project without a Creator", func(t *testing.T) {
-			assert, _ := assert.New(t), require.New(t)
+			assertT, _ := assert.New(t), require.New(t)
 			p := Project{
 				Title: "Title1",
 			}
 			err := p.Create(db)
-			assert.Error(err)
-			assert.Empty(p.ID)
+			assertT.Error(err)
+			assertT.Empty(p.ID)
 		})
 
 		t.Run("Create a project without a Title", func(t *testing.T) {
-			assert, _ := assert.New(t), require.New(t)
+			assertT, _ := assert.New(t), require.New(t)
 			p := Project{
 				Creator: User{
 					EmailAddress: "a@a.com",
 				},
 			}
 			err := p.Create(db)
-			assert.Error(err)
-			assert.Empty(p.ID)
+			assertT.Error(err)
+			assertT.Empty(p.ID)
 		})
 
 		t.Run("Create a minimal project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Creator: User{
 					EmailAddress: "a@a.com",
@@ -51,35 +51,35 @@ func TestProject(t *testing.T) {
 				Title: "Title1",
 			}
 			err := p.Create(db)
-			require.NoError(err)
-			assert.Equal("a@a.com", p.Creator.EmailAddress)
-			assert.EqualValues(1, p.Creator.ID)
-			assert.EqualValues(1, p.CreatorID)
-			assert.EqualValues(1, p.ID)
-			assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("Title1", p.Title)
+			requireT.NoError(err)
+			assertT.Equal("a@a.com", p.Creator.EmailAddress)
+			assertT.EqualValues(1, p.Creator.ID)
+			assertT.EqualValues(1, p.CreatorID)
+			assertT.EqualValues(1, p.ID)
+			assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("Title1", p.Title)
 		})
 
 		t.Run("Get the project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{}
 
 			err := p.Get(db, 1)
-			require.NoError(err)
-			assert.Equal("a@a.com", p.Creator.EmailAddress)
-			assert.EqualValues(1, p.Creator.ID)
-			assert.EqualValues(1, p.CreatorID)
-			assert.EqualValues(1, p.ID)
-			assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("Title1", p.Title)
+			requireT.NoError(err)
+			assertT.Equal("a@a.com", p.Creator.EmailAddress)
+			assertT.EqualValues(1, p.Creator.ID)
+			assertT.EqualValues(1, p.CreatorID)
+			assertT.EqualValues(1, p.ID)
+			assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("Title1", p.Title)
 		})
 
 		t.Run("Update the project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Model: gorm.Model{
 					ID: 1,
@@ -88,36 +88,36 @@ func TestProject(t *testing.T) {
 			}
 
 			err := p.Update(db)
-			require.NoError(err)
-			assert.Equal("a@a.com", p.Creator.EmailAddress)
-			assert.EqualValues(1, p.Creator.ID)
-			assert.EqualValues(1, p.CreatorID)
-			assert.EqualValues(1, p.ID)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.NotEqualf(p.ProjectCreatedAt, p.ProjectModifiedAt,
+			requireT.NoError(err)
+			assertT.Equal("a@a.com", p.Creator.EmailAddress)
+			assertT.EqualValues(1, p.Creator.ID)
+			assertT.EqualValues(1, p.CreatorID)
+			assertT.EqualValues(1, p.ID)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.NotEqualf(p.ProjectCreatedAt, p.ProjectModifiedAt,
 				"ProjectModifiedAt should not be equal to ProjectCreatedAt")
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("UpdatedTitle1", p.Title)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("UpdatedTitle1", p.Title)
 		})
 
 		t.Run("Get the project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{}
 
 			err := p.Get(db, 1)
-			require.NoError(err)
-			assert.Equal("a@a.com", p.Creator.EmailAddress)
-			assert.EqualValues(1, p.Creator.ID)
-			assert.EqualValues(1, p.CreatorID)
-			assert.EqualValues(1, p.ID)
-			assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("UpdatedTitle1", p.Title)
+			requireT.NoError(err)
+			assertT.Equal("a@a.com", p.Creator.EmailAddress)
+			assertT.EqualValues(1, p.Creator.ID)
+			assertT.EqualValues(1, p.CreatorID)
+			assertT.EqualValues(1, p.ID)
+			assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("UpdatedTitle1", p.Title)
 		})
 
 		t.Run("Update a project that doesn't exist", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Model: gorm.Model{
 					ID: 10,
@@ -126,11 +126,11 @@ func TestProject(t *testing.T) {
 			}
 
 			err := p.Update(db)
-			require.Error(err)
+			requireT.Error(err)
 		})
 
 		t.Run("Create a second project with all fields", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Creator: User{
 					EmailAddress: "b@b.com",
@@ -140,44 +140,44 @@ func TestProject(t *testing.T) {
 				Title:       "Title2",
 			}
 			err := p.Create(db)
-			require.NoError(err)
-			assert.Equal("b@b.com", p.Creator.EmailAddress)
-			assert.EqualValues(2, p.Creator.ID)
-			assert.EqualValues(2, p.CreatorID)
-			assert.EqualValues(2, p.ID)
-			require.NotNil(p.Description)
-			assert.Equal("Description2", *p.Description)
-			require.NotNil(p.JiraIssueID)
-			assert.Equal("JiraIssueID2", *p.JiraIssueID)
-			assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("Title2", p.Title)
+			requireT.NoError(err)
+			assertT.Equal("b@b.com", p.Creator.EmailAddress)
+			assertT.EqualValues(2, p.Creator.ID)
+			assertT.EqualValues(2, p.CreatorID)
+			assertT.EqualValues(2, p.ID)
+			requireT.NotNil(p.Description)
+			assertT.Equal("Description2", *p.Description)
+			requireT.NotNil(p.JiraIssueID)
+			assertT.Equal("JiraIssueID2", *p.JiraIssueID)
+			assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("Title2", p.Title)
 		})
 
 		t.Run("Get the second project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{}
 
 			err := p.Get(db, 2)
-			require.NoError(err)
-			assert.Equal("b@b.com", p.Creator.EmailAddress)
-			assert.EqualValues(2, p.Creator.ID)
-			assert.EqualValues(2, p.CreatorID)
-			assert.EqualValues(2, p.ID)
-			require.NotNil(p.Description)
-			assert.Equal("Description2", *p.Description)
-			require.NotNil(p.JiraIssueID)
-			assert.Equal("JiraIssueID2", *p.JiraIssueID)
-			assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("Title2", p.Title)
+			requireT.NoError(err)
+			assertT.Equal("b@b.com", p.Creator.EmailAddress)
+			assertT.EqualValues(2, p.Creator.ID)
+			assertT.EqualValues(2, p.CreatorID)
+			assertT.EqualValues(2, p.ID)
+			requireT.NotNil(p.Description)
+			assertT.Equal("Description2", *p.Description)
+			requireT.NotNil(p.JiraIssueID)
+			assertT.Equal("JiraIssueID2", *p.JiraIssueID)
+			assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("Title2", p.Title)
 		})
 
 		t.Run("Update the second project to remove optional fields",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := Project{
 					Model: gorm.Model{
 						ID: 2,
@@ -187,43 +187,43 @@ func TestProject(t *testing.T) {
 				}
 
 				err := p.Update(db)
-				require.NoError(err)
-				assert.Equal("b@b.com", p.Creator.EmailAddress)
-				assert.EqualValues(2, p.Creator.ID)
-				assert.EqualValues(2, p.CreatorID)
-				assert.EqualValues(2, p.ID)
-				require.NotNil(p.Description)
-				assert.Equal("", *p.Description)
-				require.NotNil(p.JiraIssueID)
-				assert.Equal("", *p.JiraIssueID)
-				assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-				assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-				assert.Equal(ActiveProjectStatus, p.Status)
-				assert.Equal("Title2", p.Title)
+				requireT.NoError(err)
+				assertT.Equal("b@b.com", p.Creator.EmailAddress)
+				assertT.EqualValues(2, p.Creator.ID)
+				assertT.EqualValues(2, p.CreatorID)
+				assertT.EqualValues(2, p.ID)
+				requireT.NotNil(p.Description)
+				assertT.Equal("", *p.Description)
+				requireT.NotNil(p.JiraIssueID)
+				assertT.Equal("", *p.JiraIssueID)
+				assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+				assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+				assertT.Equal(ActiveProjectStatus, p.Status)
+				assertT.Equal("Title2", p.Title)
 			})
 
 		t.Run("Get the second project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{}
 
 			err := p.Get(db, 2)
-			require.NoError(err)
-			assert.Equal("b@b.com", p.Creator.EmailAddress)
-			assert.EqualValues(2, p.Creator.ID)
-			assert.EqualValues(2, p.CreatorID)
-			assert.EqualValues(2, p.ID)
-			require.NotNil(p.Description)
-			assert.Equal("", *p.Description)
-			require.NotNil(p.JiraIssueID)
-			assert.Equal("", *p.JiraIssueID)
-			assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("Title2", p.Title)
+			requireT.NoError(err)
+			assertT.Equal("b@b.com", p.Creator.EmailAddress)
+			assertT.EqualValues(2, p.Creator.ID)
+			assertT.EqualValues(2, p.CreatorID)
+			assertT.EqualValues(2, p.ID)
+			requireT.NotNil(p.Description)
+			assertT.Equal("", *p.Description)
+			requireT.NotNil(p.JiraIssueID)
+			assertT.Equal("", *p.JiraIssueID)
+			assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("Title2", p.Title)
 		})
 
 		t.Run("Update the second project again", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Model: gorm.Model{
 					ID: 2,
@@ -234,39 +234,39 @@ func TestProject(t *testing.T) {
 			}
 
 			err := p.Update(db)
-			require.NoError(err)
-			assert.Equal("b@b.com", p.Creator.EmailAddress)
-			assert.EqualValues(2, p.Creator.ID)
-			assert.EqualValues(2, p.CreatorID)
-			assert.EqualValues(2, p.ID)
-			require.NotNil(p.Description)
-			assert.Equal("UpdatedDescription2", *p.Description)
-			require.NotNil(p.JiraIssueID)
-			assert.Equal("UpdatedJiraIssueID2", *p.JiraIssueID)
-			assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("UpdatedTitle2", p.Title)
+			requireT.NoError(err)
+			assertT.Equal("b@b.com", p.Creator.EmailAddress)
+			assertT.EqualValues(2, p.Creator.ID)
+			assertT.EqualValues(2, p.CreatorID)
+			assertT.EqualValues(2, p.ID)
+			requireT.NotNil(p.Description)
+			assertT.Equal("UpdatedDescription2", *p.Description)
+			requireT.NotNil(p.JiraIssueID)
+			assertT.Equal("UpdatedJiraIssueID2", *p.JiraIssueID)
+			assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("UpdatedTitle2", p.Title)
 		})
 
 		t.Run("Get the second project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{}
 
 			err := p.Get(db, 2)
-			require.NoError(err)
-			assert.Equal("b@b.com", p.Creator.EmailAddress)
-			assert.EqualValues(2, p.Creator.ID)
-			assert.EqualValues(2, p.CreatorID)
-			assert.EqualValues(2, p.ID)
-			require.NotNil(p.Description)
-			assert.Equal("UpdatedDescription2", *p.Description)
-			require.NotNil(p.JiraIssueID)
-			assert.Equal("UpdatedJiraIssueID2", *p.JiraIssueID)
-			assert.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
-			assert.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
-			assert.Equal(ActiveProjectStatus, p.Status)
-			assert.Equal("UpdatedTitle2", p.Title)
+			requireT.NoError(err)
+			assertT.Equal("b@b.com", p.Creator.EmailAddress)
+			assertT.EqualValues(2, p.Creator.ID)
+			assertT.EqualValues(2, p.CreatorID)
+			assertT.EqualValues(2, p.ID)
+			requireT.NotNil(p.Description)
+			assertT.Equal("UpdatedDescription2", *p.Description)
+			requireT.NotNil(p.JiraIssueID)
+			assertT.Equal("UpdatedJiraIssueID2", *p.JiraIssueID)
+			assertT.WithinDuration(time.Now(), p.ProjectCreatedAt, 1*time.Second)
+			assertT.WithinDuration(time.Now(), p.ProjectModifiedAt, 1*time.Second)
+			assertT.Equal(ActiveProjectStatus, p.Status)
+			assertT.Equal("UpdatedTitle2", p.Title)
 		})
 	})
 }
@@ -282,27 +282,27 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create documents", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID1",
 				DocumentType: DocumentType{
@@ -313,7 +313,7 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 				},
 			}
 			err := d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			d = Document{
 				GoogleFileID: "GoogleFileID2",
@@ -325,7 +325,7 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 				},
 			}
 			err = d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			d = Document{
 				GoogleFileID: "GoogleFileID3",
@@ -337,11 +337,11 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 				},
 			}
 			err = d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a project", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Creator: User{
 					EmailAddress: "a@a.com",
@@ -349,12 +349,12 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 				Title: "Title1",
 			}
 			err := p.Create(db)
-			require.NoError(err)
-			require.EqualValues(1, p.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(1, p.ID)
 		})
 
 		t.Run("Add external link related resources", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 
 			rr := ProjectRelatedResourceExternalLink{
 				RelatedResource: ProjectRelatedResource{
@@ -365,7 +365,7 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 				URL:  "URL1",
 			}
 			err := rr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			rr = ProjectRelatedResourceExternalLink{
 				RelatedResource: ProjectRelatedResource{
@@ -376,7 +376,7 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 				URL:  "URL2",
 			}
 			err = rr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			rr = ProjectRelatedResourceExternalLink{
 				RelatedResource: ProjectRelatedResource{
@@ -387,20 +387,20 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 				URL:  "URL3",
 			}
 			err = rr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Get the project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{}
 
 			err := p.Get(db, 1)
-			require.NoError(err)
-			assert.Len(p.RelatedResources, 3)
+			requireT.NoError(err)
+			assertT.Len(p.RelatedResources, 3)
 		})
 
 		t.Run("Replace related resources", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Model: gorm.Model{
 					ID: 1,
@@ -438,36 +438,36 @@ func TestProjectReplaceRelatedResources(t *testing.T) {
 					},
 				},
 			)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Get the project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{}
 
 			err := p.Get(db, 1)
-			require.NoError(err)
-			assert.Len(p.RelatedResources, 3)
+			requireT.NoError(err)
+			assertT.Len(p.RelatedResources, 3)
 		})
 
 		t.Run("Get typed related resources", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Model: gorm.Model{
 					ID: 1,
 				},
 			}
 			elrrs, hdrrs, err := p.GetRelatedResources(db)
-			require.NoError(err)
-			require.Len(elrrs, 1)
-			assert.Equal("Name4", elrrs[0].Name)
-			assert.Equal("URL4", elrrs[0].URL)
-			assert.Equal(1, elrrs[0].RelatedResource.SortOrder)
-			require.Len(hdrrs, 2)
-			assert.Equal("GoogleFileID1", hdrrs[0].Document.GoogleFileID)
-			assert.Equal(2, hdrrs[0].RelatedResource.SortOrder)
-			assert.Equal("GoogleFileID3", hdrrs[1].Document.GoogleFileID)
-			assert.Equal(3, hdrrs[1].RelatedResource.SortOrder)
+			requireT.NoError(err)
+			requireT.Len(elrrs, 1)
+			assertT.Equal("Name4", elrrs[0].Name)
+			assertT.Equal("URL4", elrrs[0].URL)
+			assertT.Equal(1, elrrs[0].RelatedResource.SortOrder)
+			requireT.Len(hdrrs, 2)
+			assertT.Equal("GoogleFileID1", hdrrs[0].Document.GoogleFileID)
+			assertT.Equal(2, hdrrs[0].RelatedResource.SortOrder)
+			assertT.Equal("GoogleFileID3", hdrrs[1].Document.GoogleFileID)
+			assertT.Equal(3, hdrrs[1].RelatedResource.SortOrder)
 		})
 	})
 }

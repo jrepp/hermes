@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// DocumentGroupReview represents a document review by a group.
+//
 //nolint:govet // Keep ORM field grouping readable; alignment churn is low value here.
 type DocumentGroupReview struct {
 	DocumentID uint `gorm:"primaryKey"`
@@ -20,7 +22,7 @@ type DocumentGroupReview struct {
 	Group      Group
 }
 
-// DocumentReviews is a slice of document reviews.
+// DocumentGroupReviews is a slice of document group reviews.
 type DocumentGroupReviews []DocumentGroupReview
 
 // BeforeSave is a hook to find or create associations before saving.

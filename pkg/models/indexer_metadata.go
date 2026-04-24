@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// Indexer is a model for indexer metadata.
+// IndexerMetadata is a model for indexer metadata.
 type IndexerMetadata struct {
 	LastFullIndexAt time.Time
 	gorm.Model

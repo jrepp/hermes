@@ -27,12 +27,14 @@ type User struct {
 	RecentlyViewedProjects []Project `gorm:"many2many:recently_viewed_projects;"`
 }
 
+// RecentlyViewedDoc tracks a user's recently viewed document.
 type RecentlyViewedDoc struct {
 	ViewedAt   time.Time
 	UserID     int `gorm:"primaryKey"`
 	DocumentID int `gorm:"primaryKey"`
 }
 
+// RecentlyViewedProject tracks a user's recently viewed project.
 type RecentlyViewedProject struct {
 	ViewedAt  time.Time
 	UserID    int `gorm:"primaryKey"`

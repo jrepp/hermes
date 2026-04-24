@@ -19,27 +19,27 @@ func TestDocumentFileRevisionwModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID1",
 				DocumentType: DocumentType{
@@ -50,12 +50,12 @@ func TestDocumentFileRevisionwModel(t *testing.T) {
 				},
 			}
 			err := d.Create(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
 		})
 
 		t.Run("Create a file revision", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			fr := DocumentFileRevision{
 				Document: Document{
 					GoogleFileID: "GoogleFileID1",
@@ -64,22 +64,23 @@ func TestDocumentFileRevisionwModel(t *testing.T) {
 				Name:           "Name1",
 			}
 			err := fr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Find file revisions for the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			var frs DocumentFileRevisions
 			err := frs.Find(db, Document{GoogleFileID: "GoogleFileID1"})
-			require.NoError(err)
-			require.Len(frs, 1)
-			assert.EqualValues(1, frs[0].DocumentID)
-			assert.Equal("FileRevisionID1", frs[0].FileRevisionID)
-			assert.Equal("Name1", frs[0].Name)
+			requireT.NoError(err)
+			requireT.Len(frs, 1)
+			assertT.EqualValues(1, frs[0].DocumentID)
+			assertT.Equal(
+				"GoogleDriveFileRevisionID1", frs[0].GoogleDriveFileRevisionID)
+			assertT.Equal("Name1", frs[0].Name)
 		})
 
 		t.Run("Create a second file revision", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			fr := DocumentFileRevision{
 				Document: Document{
 					GoogleFileID: "GoogleFileID1",
@@ -88,21 +89,23 @@ func TestDocumentFileRevisionwModel(t *testing.T) {
 				Name:           "Name2",
 			}
 			err := fr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Find file revisions for the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			var frs DocumentFileRevisions
 			err := frs.Find(db, Document{GoogleFileID: "GoogleFileID1"})
-			require.NoError(err)
-			require.Len(frs, 2)
-			assert.EqualValues(1, frs[0].DocumentID)
-			assert.Equal("FileRevisionID1", frs[0].FileRevisionID)
-			assert.Equal("Name1", frs[0].Name)
-			assert.EqualValues(1, frs[1].DocumentID)
-			assert.Equal("FileRevisionID2", frs[1].FileRevisionID)
-			assert.Equal("Name2", frs[1].Name)
+			requireT.NoError(err)
+			requireT.Len(frs, 2)
+			assertT.EqualValues(1, frs[0].DocumentID)
+			assertT.Equal(
+				"GoogleDriveFileRevisionID1", frs[0].GoogleDriveFileRevisionID)
+			assertT.Equal("Name1", frs[0].Name)
+			assertT.EqualValues(1, frs[1].DocumentID)
+			assertT.Equal(
+				"GoogleDriveFileRevisionID2", frs[1].GoogleDriveFileRevisionID)
+			assertT.Equal("Name2", frs[1].Name)
 		})
 	})
 }

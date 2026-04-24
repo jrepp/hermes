@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// ProjectRelatedResourceExternalLink is a model for an external link related resource on a project.
 type ProjectRelatedResourceExternalLink struct {
 	gorm.Model
 	Name            string                 `gorm:"default:null;not null"`
@@ -15,8 +16,10 @@ type ProjectRelatedResourceExternalLink struct {
 	RelatedResource ProjectRelatedResource `gorm:"polymorphic:RelatedResource"`
 }
 
+// ProjectRelatedResourceExternalLinks is a slice of external link related resources.
 type ProjectRelatedResourceExternalLinks []ProjectRelatedResourceExternalLink
 
+// Create creates an external link related resource for a project in database db.
 func (rr *ProjectRelatedResourceExternalLink) Create(db *gorm.DB) error {
 	// Validate required fields.
 	if err := validation.ValidateStruct(&rr.RelatedResource,
@@ -53,6 +56,7 @@ func (rr *ProjectRelatedResourceExternalLink) Create(db *gorm.DB) error {
 		Error
 }
 
+// Get retrieves an external link related resource for a project from database db.
 func (rr *ProjectRelatedResourceExternalLink) Get(db *gorm.DB) error {
 	return db.
 		Preload(clause.Associations).

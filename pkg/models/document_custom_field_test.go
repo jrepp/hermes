@@ -270,7 +270,7 @@ func TestUpsertStringDocumentCustomField(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			got := UpsertStringDocumentCustomField(
 				c.documentCustomFields,
 				c.documentTypeName,
@@ -278,14 +278,14 @@ func TestUpsertStringDocumentCustomField(t *testing.T) {
 				c.customFieldValue,
 			)
 
-			require.Len(got, len(c.wantDocumentCustomFields))
+			requireT.Len(got, len(c.wantDocumentCustomFields))
 			for i := range got {
-				assert.Equal(c.wantDocumentCustomFields[i].Value, got[i].Value)
-				assert.Equal(
+				assertT.Equal(c.wantDocumentCustomFields[i].Value, got[i].Value)
+				assertT.Equal(
 					c.wantDocumentCustomFields[i].DocumentTypeCustomField.Name,
 					got[i].DocumentTypeCustomField.Name,
 				)
-				assert.Equal(
+				assertT.Equal(
 					c.documentTypeName,
 					got[i].DocumentTypeCustomField.DocumentType.Name,
 				)
@@ -558,7 +558,7 @@ func TestUpsertStringSliceDocumentCustomField(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 
 			got, err := UpsertStringSliceDocumentCustomField(
 				c.documentCustomFields,
@@ -568,16 +568,16 @@ func TestUpsertStringSliceDocumentCustomField(t *testing.T) {
 			)
 
 			if c.shouldErr {
-				require.Error(err)
+				requireT.Error(err)
 			}
-			require.Len(got, len(c.wantDocumentCustomFields))
+			requireT.Len(got, len(c.wantDocumentCustomFields))
 			for i := range got {
-				assert.Equal(c.wantDocumentCustomFields[i].Value, got[i].Value)
-				assert.Equal(
+				assertT.Equal(c.wantDocumentCustomFields[i].Value, got[i].Value)
+				assertT.Equal(
 					c.wantDocumentCustomFields[i].DocumentTypeCustomField.Name,
 					got[i].DocumentTypeCustomField.Name,
 				)
-				assert.Equal(
+				assertT.Equal(
 					c.documentTypeName,
 					got[i].DocumentTypeCustomField.DocumentType.Name,
 				)

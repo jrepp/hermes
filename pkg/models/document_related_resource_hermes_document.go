@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// DocumentRelatedResourceHermesDocument is a model for a Hermes document related resource on a document.
+//
 //nolint:govet // Keep ORM field grouping readable; alignment churn is low value here.
 type DocumentRelatedResourceHermesDocument struct {
 	gorm.Model
@@ -14,6 +16,7 @@ type DocumentRelatedResourceHermesDocument struct {
 	Document        Document
 }
 
+// Create creates a Hermes document related resource in database db.
 func (rr *DocumentRelatedResourceHermesDocument) Create(db *gorm.DB) error {
 	// Preload Document.
 	if rr.DocumentID == 0 {

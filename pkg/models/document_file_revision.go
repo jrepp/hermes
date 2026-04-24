@@ -80,6 +80,7 @@ func (frs *DocumentFileRevisions) Find(db *gorm.DB, doc Document) error {
 		Error
 }
 
+// Get retrieves a file revision from database db.
 func (fr *DocumentFileRevision) Get(db *gorm.DB) error {
 	// Preload Document.
 	if fr.DocumentID == 0 {

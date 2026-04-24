@@ -19,47 +19,47 @@ func TestGroupModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create first group", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := Group{
 				EmailAddress: "a@a.com",
 			}
 			err := u.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, u.ID)
-			assert.Equal("a@a.com", u.EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(1, u.ID)
+			assertT.Equal("a@a.com", u.EmailAddress)
 		})
 
 		t.Run("Get first group using FirstOrCreate", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := Group{
 				EmailAddress: "a@a.com",
 			}
 			err := u.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, u.ID)
-			assert.Equal("a@a.com", u.EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(1, u.ID)
+			assertT.Equal("a@a.com", u.EmailAddress)
 		})
 
 		t.Run("Create second group", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := Group{
 				EmailAddress: "b@b.com",
 			}
 			err := u.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(2, u.ID)
-			assert.Equal("b@b.com", u.EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(2, u.ID)
+			assertT.Equal("b@b.com", u.EmailAddress)
 		})
 
 		t.Run("Get second group using FirstOrCreate", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := Group{
 				EmailAddress: "b@b.com",
 			}
 			err := u.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(2, u.ID)
-			assert.Equal("b@b.com", u.EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(2, u.ID)
+			assertT.Equal("b@b.com", u.EmailAddress)
 		})
 	})
 }

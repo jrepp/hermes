@@ -96,7 +96,7 @@ func (de *DocumentEmbedding) BeforeCreate(_ *gorm.DB) error {
 	return nil
 }
 
-// GetByDocumentID retrieves embeddings for a document.
+// GetEmbeddingsByDocumentID retrieves embeddings for a document.
 func GetEmbeddingsByDocumentID(db *gorm.DB, documentID string) ([]DocumentEmbedding, error) {
 	var embeddings []DocumentEmbedding
 	err := db.Where("document_id = ?", documentID).
@@ -108,7 +108,7 @@ func GetEmbeddingsByDocumentID(db *gorm.DB, documentID string) ([]DocumentEmbedd
 	return embeddings, nil
 }
 
-// GetByDocumentUUID retrieves embeddings for a document UUID.
+// GetEmbeddingsByDocumentUUID retrieves embeddings for a document UUID.
 func GetEmbeddingsByDocumentUUID(db *gorm.DB, documentUUID uuid.UUID) ([]DocumentEmbedding, error) {
 	var embeddings []DocumentEmbedding
 	err := db.Where("document_uuid = ?", documentUUID).
@@ -120,7 +120,7 @@ func GetEmbeddingsByDocumentUUID(db *gorm.DB, documentUUID uuid.UUID) ([]Documen
 	return embeddings, nil
 }
 
-// GetByDocumentIDAndModel retrieves embeddings for a specific document and model.
+// GetEmbeddingByDocumentIDAndModel retrieves an embedding for a specific document and model.
 func GetEmbeddingByDocumentIDAndModel(db *gorm.DB, documentID, model string, chunkIndex *int) (*DocumentEmbedding, error) {
 	var embedding DocumentEmbedding
 	query := db.Where("document_id = ? AND model = ?", documentID, model)
@@ -138,7 +138,7 @@ func GetEmbeddingByDocumentIDAndModel(db *gorm.DB, documentID, model string, chu
 	return &embedding, nil
 }
 
-// GetByRevisionID retrieves embeddings for a specific revision.
+// GetEmbeddingsByRevisionID retrieves embeddings for a specific revision.
 func GetEmbeddingsByRevisionID(db *gorm.DB, revisionID int) ([]DocumentEmbedding, error) {
 	var embeddings []DocumentEmbedding
 	err := db.Where("revision_id = ?", revisionID).
@@ -155,7 +155,7 @@ func (de *DocumentEmbedding) MatchesContentHash(hash string) bool {
 	return de.ContentHash == hash
 }
 
-// DeleteByDocumentID removes all embeddings for a document.
+// DeleteEmbeddingsByDocumentID removes all embeddings for a document.
 func DeleteEmbeddingsByDocumentID(db *gorm.DB, documentID string) (int64, error) {
 	result := db.Where("document_id = ?", documentID).Delete(&DocumentEmbedding{})
 	return result.RowsAffected, result.Error

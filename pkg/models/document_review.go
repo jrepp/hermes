@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// DocumentReview represents a document review by a user.
+//
 //nolint:govet // Keep ORM field grouping readable; alignment churn is low value here.
 type DocumentReview struct {
 	DocumentID uint `gorm:"primaryKey"`
@@ -21,8 +23,10 @@ type DocumentReview struct {
 	User       User
 }
 
+// DocumentReviewStatus represents the status of a document review.
 type DocumentReviewStatus int
 
+// Document review status constants.
 const (
 	UnspecifiedDocumentReviewStatus DocumentReviewStatus = iota
 	ApprovedDocumentReviewStatus

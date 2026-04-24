@@ -15,7 +15,7 @@ func TestUserModel(t *testing.T) {
 	}
 
 	t.Run("FirstOrCreate", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 		db, tearDownTest := setupTest(t, dsn)
 		defer tearDownTest(t)
 
@@ -24,36 +24,36 @@ func TestUserModel(t *testing.T) {
 			EmailAddress: "a@a.com",
 		}
 		err := u.FirstOrCreate(db)
-		require.NoError(err)
-		assert.EqualValues(1, u.ID)
-		assert.Equal("a@a.com", u.EmailAddress)
+		requireT.NoError(err)
+		assertT.EqualValues(1, u.ID)
+		assertT.Equal("a@a.com", u.EmailAddress)
 
 		// Get the user using FirstOrCreate.
 		get := User{
 			EmailAddress: "a@a.com",
 		}
 		err = get.FirstOrCreate(db)
-		require.NoError(err)
-		assert.EqualValues(1, get.ID)
-		assert.Equal("a@a.com", get.EmailAddress)
+		requireT.NoError(err)
+		assertT.EqualValues(1, get.ID)
+		assertT.Equal("a@a.com", get.EmailAddress)
 
 		// Create a second user.
 		u2 := User{
 			EmailAddress: "b@b.com",
 		}
 		err = u2.FirstOrCreate(db)
-		require.NoError(err)
-		assert.EqualValues(2, u2.ID)
-		assert.Equal("b@b.com", u2.EmailAddress)
+		requireT.NoError(err)
+		assertT.EqualValues(2, u2.ID)
+		assertT.Equal("b@b.com", u2.EmailAddress)
 
 		// Get the second user using FirstOrCreate.
 		get2 := User{
 			EmailAddress: "b@b.com",
 		}
 		err = get2.FirstOrCreate(db)
-		require.NoError(err)
-		assert.EqualValues(2, get2.ID)
-		assert.Equal("b@b.com", get2.EmailAddress)
+		requireT.NoError(err)
+		assertT.EqualValues(2, get2.ID)
+		assertT.Equal("b@b.com", get2.EmailAddress)
 	})
 
 	t.Run("Upsert", func(t *testing.T) {
@@ -61,40 +61,40 @@ func TestUserModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create user", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := User{
 				EmailAddress: "a@a.com",
 			}
 			err := u.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, u.ID)
-			assert.Empty(u.RecentlyViewedDocs)
-			assert.Equal("a@a.com", u.EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(1, u.ID)
+			assertT.Empty(u.RecentlyViewedDocs)
+			assertT.Equal("a@a.com", u.EmailAddress)
 		})
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		var doc1 Document
 		t.Run("Create document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			doc1 = Document{
 				GoogleFileID: "fileID1",
 				DocumentType: DocumentType{
@@ -105,40 +105,40 @@ func TestUserModel(t *testing.T) {
 				},
 			}
 			err := doc1.Create(db)
-			require.NoError(err)
-			assert.EqualValues(1, doc1.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(1, doc1.ID)
 		})
 
 		t.Run(
 			"Update user to add the document as a recently viewed document",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				u := User{
 					EmailAddress:       "a@a.com",
 					RecentlyViewedDocs: []Document{doc1},
 				}
 				err := u.Upsert(db)
-				require.NoError(err)
-				require.Equal(1, len(u.RecentlyViewedDocs))
-				assert.EqualValues(1, u.RecentlyViewedDocs[0].ID)
-				assert.Equal("fileID1", u.RecentlyViewedDocs[0].GoogleFileID)
+				requireT.NoError(err)
+				requireT.Equal(1, len(u.RecentlyViewedDocs))
+				assertT.EqualValues(1, u.RecentlyViewedDocs[0].ID)
+				assertT.Equal("fileID1", u.RecentlyViewedDocs[0].GoogleFileID)
 			})
 
 		t.Run("Get the user and verify it was updated", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := User{
 				EmailAddress: "a@a.com",
 			}
 			err := u.Get(db)
-			require.NoError(err)
-			require.Equal(1, len(u.RecentlyViewedDocs))
-			assert.EqualValues(1, u.RecentlyViewedDocs[0].ID)
-			assert.Equal("fileID1", u.RecentlyViewedDocs[0].GoogleFileID)
+			requireT.NoError(err)
+			requireT.Equal(1, len(u.RecentlyViewedDocs))
+			assertT.EqualValues(1, u.RecentlyViewedDocs[0].ID)
+			assertT.Equal("fileID1", u.RecentlyViewedDocs[0].GoogleFileID)
 		})
 
 		var doc2 Document
 		t.Run("Create another document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			doc2 = Document{
 				GoogleFileID: "fileID2",
 				DocumentType: DocumentType{
@@ -149,13 +149,13 @@ func TestUserModel(t *testing.T) {
 				},
 			}
 			err := doc2.Create(db)
-			require.NoError(err)
-			assert.EqualValues(2, doc2.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(2, doc2.ID)
 		})
 
 		t.Run("Update user to add both documents as recently viewed documents",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				u := User{
 					EmailAddress: "a@a.com",
 					RecentlyViewedDocs: []Document{
@@ -168,32 +168,32 @@ func TestUserModel(t *testing.T) {
 					},
 				}
 				err := u.Upsert(db)
-				require.NoError(err)
-				require.Equal(2, len(u.RecentlyViewedDocs))
-				assert.EqualValues(1, u.RecentlyViewedDocs[0].ID)
-				assert.Equal("fileID1", u.RecentlyViewedDocs[0].GoogleFileID)
-				assert.EqualValues(2, u.RecentlyViewedDocs[1].ID)
-				assert.Equal("fileID2", u.RecentlyViewedDocs[1].GoogleFileID)
+				requireT.NoError(err)
+				requireT.Equal(2, len(u.RecentlyViewedDocs))
+				assertT.EqualValues(1, u.RecentlyViewedDocs[0].ID)
+				assertT.Equal("fileID1", u.RecentlyViewedDocs[0].GoogleFileID)
+				assertT.EqualValues(2, u.RecentlyViewedDocs[1].ID)
+				assertT.Equal("fileID2", u.RecentlyViewedDocs[1].GoogleFileID)
 			})
 
 		t.Run("Get the user and verify it was updated", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := User{
 				EmailAddress: "a@a.com",
 			}
 			err := u.Get(db)
-			require.NoError(err)
-			require.Equal(2, len(u.RecentlyViewedDocs))
-			assert.EqualValues(1, u.RecentlyViewedDocs[0].ID)
-			assert.Equal("fileID1", u.RecentlyViewedDocs[0].GoogleFileID)
-			assert.EqualValues(2, u.RecentlyViewedDocs[1].ID)
-			assert.Equal("fileID2", u.RecentlyViewedDocs[1].GoogleFileID)
+			requireT.NoError(err)
+			requireT.Equal(2, len(u.RecentlyViewedDocs))
+			assertT.EqualValues(1, u.RecentlyViewedDocs[0].ID)
+			assertT.Equal("fileID1", u.RecentlyViewedDocs[0].GoogleFileID)
+			assertT.EqualValues(2, u.RecentlyViewedDocs[1].ID)
+			assertT.Equal("fileID2", u.RecentlyViewedDocs[1].GoogleFileID)
 		})
 
 		t.Run(
 			"Update user to only have the second document in recently viewed documents",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				u := User{
 					EmailAddress: "a@a.com",
 					RecentlyViewedDocs: []Document{
@@ -203,22 +203,22 @@ func TestUserModel(t *testing.T) {
 					},
 				}
 				err := u.Upsert(db)
-				require.NoError(err)
-				require.Equal(1, len(u.RecentlyViewedDocs))
-				assert.EqualValues(2, u.RecentlyViewedDocs[0].ID)
-				assert.Equal("fileID2", u.RecentlyViewedDocs[0].GoogleFileID)
+				requireT.NoError(err)
+				requireT.Equal(1, len(u.RecentlyViewedDocs))
+				assertT.EqualValues(2, u.RecentlyViewedDocs[0].ID)
+				assertT.Equal("fileID2", u.RecentlyViewedDocs[0].GoogleFileID)
 			})
 
 		t.Run("Get the user and verify it was updated", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := User{
 				EmailAddress: "a@a.com",
 			}
 			err := u.Get(db)
-			require.NoError(err)
-			require.Equal(1, len(u.RecentlyViewedDocs))
-			assert.EqualValues(2, u.RecentlyViewedDocs[0].ID)
-			assert.Equal("fileID2", u.RecentlyViewedDocs[0].GoogleFileID)
+			requireT.NoError(err)
+			requireT.Equal(1, len(u.RecentlyViewedDocs))
+			assertT.EqualValues(2, u.RecentlyViewedDocs[0].ID)
+			assertT.Equal("fileID2", u.RecentlyViewedDocs[0].GoogleFileID)
 		})
 	})
 
@@ -227,20 +227,20 @@ func TestUserModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create user", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := User{
 				EmailAddress: "a@a.com",
 			}
 			err := u.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, u.ID)
-			assert.Empty(u.RecentlyViewedDocs)
-			assert.Equal("a@a.com", u.EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(1, u.ID)
+			assertT.Empty(u.RecentlyViewedDocs)
+			assertT.Equal("a@a.com", u.EmailAddress)
 		})
 
 		var proj1 Project
 		t.Run("Create a project", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			proj1 = Project{
 				Creator: User{
 					EmailAddress: "a@a.com",
@@ -248,35 +248,35 @@ func TestUserModel(t *testing.T) {
 				Title: "Title1",
 			}
 			err := proj1.Create(db)
-			require.NoError(err)
-			assert.EqualValues(1, proj1.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(1, proj1.ID)
 		})
 
 		t.Run(
 			"Update user to add the project as a recently viewed project",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				u := User{
 					EmailAddress:           "a@a.com",
 					RecentlyViewedProjects: []Project{proj1},
 				}
 				err := u.Upsert(db)
-				require.NoError(err)
-				require.Len(u.RecentlyViewedProjects, 1)
-				assert.EqualValues(1, u.RecentlyViewedProjects[0].ID)
-				assert.Equal("Title1", u.RecentlyViewedProjects[0].Title)
+				requireT.NoError(err)
+				requireT.Len(u.RecentlyViewedProjects, 1)
+				assertT.EqualValues(1, u.RecentlyViewedProjects[0].ID)
+				assertT.Equal("Title1", u.RecentlyViewedProjects[0].Title)
 			})
 
 		t.Run("Get the user and verify it was updated", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := User{
 				EmailAddress: "a@a.com",
 			}
 			err := u.Get(db)
-			require.NoError(err)
-			require.Len(u.RecentlyViewedProjects, 1)
-			assert.EqualValues(1, u.RecentlyViewedProjects[0].ID)
-			assert.Equal("Title1", u.RecentlyViewedProjects[0].Title)
+			requireT.NoError(err)
+			requireT.Len(u.RecentlyViewedProjects, 1)
+			assertT.EqualValues(1, u.RecentlyViewedProjects[0].ID)
+			assertT.Equal("Title1", u.RecentlyViewedProjects[0].Title)
 		})
 	})
 
@@ -285,52 +285,52 @@ func TestUserModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create user", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := User{
 				EmailAddress: "a@a.com",
 			}
 			err := u.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, u.ID)
-			assert.Empty(u.RecentlyViewedDocs)
-			assert.Equal("a@a.com", u.EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(1, u.ID)
+			assertT.Empty(u.RecentlyViewedDocs)
+			assertT.Equal("a@a.com", u.EmailAddress)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
-			require.EqualValues(1, p.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(1, p.ID)
 		})
 
 		t.Run("Create a second product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product2",
 				Abbreviation: "P2",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
-			require.EqualValues(2, p.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(2, p.ID)
 		})
 
 		t.Run("Get the user without any product subscriptions", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			u := User{
 				EmailAddress: "a@a.com",
 			}
 			err := u.Get(db)
-			require.NoError(err)
-			assert.Len(u.ProductSubscriptions, 0)
+			requireT.NoError(err)
+			assertT.Len(u.ProductSubscriptions, 0)
 		})
 
 		t.Run("Update user to subscribe to the second product",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				u := User{
 					EmailAddress: "a@a.com",
 					ProductSubscriptions: []Product{
@@ -340,28 +340,28 @@ func TestUserModel(t *testing.T) {
 					},
 				}
 				err := u.Upsert(db)
-				require.NoError(err)
-				require.Equal(1, len(u.ProductSubscriptions))
-				assert.EqualValues(2, u.ProductSubscriptions[0].ID)
-				assert.Equal("Product2", u.ProductSubscriptions[0].Name)
+				requireT.NoError(err)
+				requireT.Equal(1, len(u.ProductSubscriptions))
+				assertT.EqualValues(2, u.ProductSubscriptions[0].ID)
+				assertT.Equal("Product2", u.ProductSubscriptions[0].Name)
 			})
 
 		t.Run("Verify with a Get",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				u := User{
 					EmailAddress: "a@a.com",
 				}
 				err := u.Get(db)
-				require.NoError(err)
-				require.Equal(1, len(u.ProductSubscriptions))
-				assert.EqualValues(2, u.ProductSubscriptions[0].ID)
-				assert.Equal("Product2", u.ProductSubscriptions[0].Name)
+				requireT.NoError(err)
+				requireT.Equal(1, len(u.ProductSubscriptions))
+				assertT.EqualValues(2, u.ProductSubscriptions[0].ID)
+				assertT.Equal("Product2", u.ProductSubscriptions[0].Name)
 			})
 
 		t.Run("Update user to also subscribe to the first product",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				u := User{
 					EmailAddress: "a@a.com",
 					ProductSubscriptions: []Product{
@@ -374,17 +374,17 @@ func TestUserModel(t *testing.T) {
 					},
 				}
 				err := u.Upsert(db)
-				require.NoError(err)
-				require.Equal(2, len(u.ProductSubscriptions))
-				assert.EqualValues(1, u.ProductSubscriptions[0].ID)
-				assert.Equal("Product1", u.ProductSubscriptions[0].Name)
-				assert.EqualValues(2, u.ProductSubscriptions[1].ID)
-				assert.Equal("Product2", u.ProductSubscriptions[1].Name)
+				requireT.NoError(err)
+				requireT.Equal(2, len(u.ProductSubscriptions))
+				assertT.EqualValues(1, u.ProductSubscriptions[0].ID)
+				assertT.Equal("Product1", u.ProductSubscriptions[0].Name)
+				assertT.EqualValues(2, u.ProductSubscriptions[1].ID)
+				assertT.Equal("Product2", u.ProductSubscriptions[1].Name)
 			})
 
 		t.Run("Update user to only subscribe to the first product",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				u := User{
 					EmailAddress: "a@a.com",
 					ProductSubscriptions: []Product{
@@ -394,10 +394,10 @@ func TestUserModel(t *testing.T) {
 					},
 				}
 				err := u.Upsert(db)
-				require.NoError(err)
-				require.Equal(1, len(u.ProductSubscriptions))
-				assert.EqualValues(1, u.ProductSubscriptions[0].ID)
-				assert.Equal("Product1", u.ProductSubscriptions[0].Name)
+				requireT.NoError(err)
+				requireT.Equal(1, len(u.ProductSubscriptions))
+				assertT.EqualValues(1, u.ProductSubscriptions[0].ID)
+				assertT.Equal("Product1", u.ProductSubscriptions[0].Name)
 			})
 	})
 }

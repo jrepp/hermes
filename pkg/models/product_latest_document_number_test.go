@@ -21,35 +21,35 @@ func TestProductLatestDocumentNumber(t *testing.T) {
 		t.Run(
 			"Get latest product document number which won't exist yet (should error)",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 				p := ProductLatestDocumentNumber{}
 				err := p.Get(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		var product Product
 		t.Run("Create a product", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			product = Product{
 				Name:         "product1",
 				Abbreviation: "TEST",
 			}
 			err := product.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, product.ID)
-			assert.Equal("product1", product.Name)
-			assert.Equal("TEST", product.Abbreviation)
+			requireT.NoError(err)
+			assertT.EqualValues(1, product.ID)
+			assertT.Equal("product1", product.Name)
+			assertT.Equal("TEST", product.Abbreviation)
 		})
 
 		t.Run(
 			"Try to upsert a new latest product document number with only a product",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 				p := ProductLatestDocumentNumber{
 					Product: product,
 				}
 				err := p.Upsert(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		// Try to upsert a new latest product document number with only a product
@@ -58,44 +58,44 @@ func TestProductLatestDocumentNumber(t *testing.T) {
 			"Try to upsert a new latest product document number with only a product"+
 				"and latest document number",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 				p := ProductLatestDocumentNumber{
 					Product:              product,
 					LatestDocumentNumber: 5,
 				}
 				err := p.Upsert(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		var docType DocumentType
 		t.Run("Create a document type", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			docType = DocumentType{
 				Name:     "RFC",
 				LongName: "Request For Comments",
 			}
 			err := docType.FirstOrCreate(db)
-			require.NoError(err)
-			assert.NotEmpty(docType.ID)
-			assert.Equal("RFC", docType.Name)
-			assert.Equal("Request For Comments", docType.LongName)
+			requireT.NoError(err)
+			assertT.NotEmpty(docType.ID)
+			assertT.Equal("RFC", docType.Name)
+			assertT.Equal("Request For Comments", docType.LongName)
 		})
 
 		t.Run("Try to upsert a new latest product document number without a latest"+
 			" document number",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 				p := ProductLatestDocumentNumber{
 					DocumentType: docType,
 					Product:      product,
 				}
 				err := p.Upsert(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Insert by upserting a new latest product document number",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := ProductLatestDocumentNumber{
 					DocumentType: DocumentType{
 						Name: "RFC",
@@ -106,17 +106,17 @@ func TestProductLatestDocumentNumber(t *testing.T) {
 					},
 				}
 				err := p.Upsert(db)
-				require.NoError(err)
-				assert.NotEmpty(p.DocumentTypeID)
-				assert.Equal("RFC", p.DocumentType.Name)
-				assert.Equal("Request For Comments", p.DocumentType.LongName)
-				assert.EqualValues(1, p.ProductID)
-				assert.Equal("product1", p.Product.Name)
-				assert.Equal(5, p.LatestDocumentNumber)
+				requireT.NoError(err)
+				assertT.NotEmpty(p.DocumentTypeID)
+				assertT.Equal("RFC", p.DocumentType.Name)
+				assertT.Equal("Request For Comments", p.DocumentType.LongName)
+				assertT.EqualValues(1, p.ProductID)
+				assertT.Equal("product1", p.Product.Name)
+				assertT.Equal(5, p.LatestDocumentNumber)
 			})
 
 		t.Run("Get the latest product document number", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := ProductLatestDocumentNumber{
 				DocumentType: DocumentType{
 					Name: "RFC",
@@ -126,18 +126,18 @@ func TestProductLatestDocumentNumber(t *testing.T) {
 				},
 			}
 			err := p.Get(db)
-			require.NoError(err)
-			assert.NotEmpty(p.DocumentTypeID)
-			assert.Equal("RFC", p.DocumentType.Name)
-			assert.Equal("Request For Comments", p.DocumentType.LongName)
-			assert.EqualValues(1, p.ProductID)
-			assert.Equal("product1", p.Product.Name)
-			assert.Equal(5, p.LatestDocumentNumber)
+			requireT.NoError(err)
+			assertT.NotEmpty(p.DocumentTypeID)
+			assertT.Equal("RFC", p.DocumentType.Name)
+			assertT.Equal("Request For Comments", p.DocumentType.LongName)
+			assertT.EqualValues(1, p.ProductID)
+			assertT.Equal("product1", p.Product.Name)
+			assertT.Equal(5, p.LatestDocumentNumber)
 		})
 
 		t.Run("Update by upserting a latest product document number",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := ProductLatestDocumentNumber{
 					DocumentType: DocumentType{
 						Name: "RFC",
@@ -148,17 +148,17 @@ func TestProductLatestDocumentNumber(t *testing.T) {
 					},
 				}
 				err := p.Upsert(db)
-				require.NoError(err)
-				assert.NotEmpty(p.DocumentTypeID)
-				assert.Equal("RFC", p.DocumentType.Name)
-				assert.Equal("Request For Comments", p.DocumentType.LongName)
-				assert.EqualValues(1, p.ProductID)
-				assert.Equal("product1", p.Product.Name)
-				assert.Equal(10, p.LatestDocumentNumber)
+				requireT.NoError(err)
+				assertT.NotEmpty(p.DocumentTypeID)
+				assertT.Equal("RFC", p.DocumentType.Name)
+				assertT.Equal("Request For Comments", p.DocumentType.LongName)
+				assertT.EqualValues(1, p.ProductID)
+				assertT.Equal("product1", p.Product.Name)
+				assertT.Equal(10, p.LatestDocumentNumber)
 			})
 
 		t.Run("Get the latest product document number", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			p := ProductLatestDocumentNumber{
 				DocumentType: DocumentType{
 					Name: "RFC",
@@ -168,20 +168,20 @@ func TestProductLatestDocumentNumber(t *testing.T) {
 				},
 			}
 			err := p.Get(db)
-			require.NoError(err)
-			assert.NotEmpty(p.DocumentTypeID)
-			assert.Equal("RFC", p.DocumentType.Name)
-			assert.Equal("Request For Comments", p.DocumentType.LongName)
-			assert.EqualValues(1, p.ProductID)
-			assert.Equal("product1", p.Product.Name)
-			assert.Equal(10, p.LatestDocumentNumber)
+			requireT.NoError(err)
+			assertT.NotEmpty(p.DocumentTypeID)
+			assertT.Equal("RFC", p.DocumentType.Name)
+			assertT.Equal("Request For Comments", p.DocumentType.LongName)
+			assertT.EqualValues(1, p.ProductID)
+			assertT.Equal("product1", p.Product.Name)
+			assertT.Equal(10, p.LatestDocumentNumber)
 		})
 
 		t.Run(
 			"Insert by upserting a new latest product document number with a "+
 				"document type and product that both don't exist yet",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := ProductLatestDocumentNumber{
 					DocumentType: DocumentType{
 						Name:     "NEW",
@@ -194,13 +194,13 @@ func TestProductLatestDocumentNumber(t *testing.T) {
 					},
 				}
 				err := p.Upsert(db)
-				require.NoError(err)
-				assert.NotEmpty(p.DocumentTypeID)
-				assert.Equal("NEW", p.DocumentType.Name)
-				assert.EqualValues(2, p.ProductID)
-				assert.Equal("New Product", p.Product.Name)
-				assert.Equal("NP", p.Product.Abbreviation)
-				assert.Equal(1, p.LatestDocumentNumber)
+				requireT.NoError(err)
+				assertT.NotEmpty(p.DocumentTypeID)
+				assertT.Equal("NEW", p.DocumentType.Name)
+				assertT.EqualValues(2, p.ProductID)
+				assertT.Equal("New Product", p.Product.Name)
+				assertT.Equal("NP", p.Product.Abbreviation)
+				assertT.Equal(1, p.LatestDocumentNumber)
 			})
 	})
 }

@@ -33,7 +33,7 @@ func (DocumentRevisionPipelineExecution) TableName() string {
 	return "document_revision_pipeline_executions"
 }
 
-// PipelineStatus constants
+// PipelineStatus constants for pipeline execution status.
 const (
 	PipelineStatusPending   = "pending"   // Not yet started
 	PipelineStatusRunning   = "running"   // Currently executing
@@ -42,7 +42,7 @@ const (
 	PipelineStatusPartial   = "partial"   // Some steps succeeded, some failed
 )
 
-// StepStatus constants for individual step results
+// StepStatus constants for individual step results.
 const (
 	StepStatusSuccess = "success"
 	StepStatusFailed  = "failed"

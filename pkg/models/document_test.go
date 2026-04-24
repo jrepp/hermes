@@ -18,15 +18,15 @@ func TestDocumentModel(t *testing.T) {
 	}
 
 	t.Run("Create and Get", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 		db, tearDownTest := setupTest(t, dsn)
 		defer tearDownTest(t)
 
 		// Try to create an empty document (should error).
 		d := Document{}
 		err := d.Create(db)
-		assert.Error(err)
-		assert.Empty(d.ID)
+		assertT.Error(err)
+		assertT.Empty(d.ID)
 
 		// Create a document type.
 		dt := DocumentType{
@@ -48,7 +48,7 @@ func TestDocumentModel(t *testing.T) {
 			},
 		}
 		err = dt.FirstOrCreate(db)
-		require.NoError(err)
+		requireT.NoError(err)
 
 		// Create a product.
 		p := Product{
@@ -56,7 +56,7 @@ func TestDocumentModel(t *testing.T) {
 			Abbreviation: "P1",
 		}
 		err = p.FirstOrCreate(db)
-		require.NoError(err)
+		requireT.NoError(err)
 
 		// Create a first document with all fields.
 		d = Document{
@@ -110,66 +110,66 @@ func TestDocumentModel(t *testing.T) {
 		// Create test function because we're going to reuse this for testing Get()
 		// afterwards.
 		testDoc1 := func(d Document) {
-			require.NoError(err)
-			assert.NotEmpty(d.ID)
+			requireT.NoError(err)
+			assertT.NotEmpty(d.ID)
 
 			// GoogleFileID.
-			assert.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("fileID1", d.GoogleFileID)
 
 			// Approvers.
-			require.Len(d.Approvers, 2)
-			assert.NotEmpty(d.Approvers[0].ID)
-			assert.Equal("a@approver.com", d.Approvers[0].EmailAddress)
-			assert.NotEmpty(d.Approvers[1].ID)
-			assert.Equal("b@approver.com", d.Approvers[1].EmailAddress)
+			requireT.Len(d.Approvers, 2)
+			assertT.NotEmpty(d.Approvers[0].ID)
+			assertT.Equal("a@approver.com", d.Approvers[0].EmailAddress)
+			assertT.NotEmpty(d.Approvers[1].ID)
+			assertT.Equal("b@approver.com", d.Approvers[1].EmailAddress)
 
 			// Contributors.
-			require.Equal(2, len(d.Contributors))
-			assert.NotEmpty(d.Contributors[0].ID)
-			assert.Equal("a@contributor.com", d.Contributors[0].EmailAddress)
-			assert.NotEmpty(d.Contributors[1].ID)
-			assert.Equal("b@contributor.com", d.Contributors[1].EmailAddress)
+			requireT.Equal(2, len(d.Contributors))
+			assertT.NotEmpty(d.Contributors[0].ID)
+			assertT.Equal("a@contributor.com", d.Contributors[0].EmailAddress)
+			assertT.NotEmpty(d.Contributors[1].ID)
+			assertT.Equal("b@contributor.com", d.Contributors[1].EmailAddress)
 
 			// CustomFields.
-			require.Len(d.CustomFields, 1)
-			assert.Equal("string value 1", d.CustomFields[0].Value)
+			requireT.Len(d.CustomFields, 1)
+			assertT.Equal("string value 1", d.CustomFields[0].Value)
 
 			// DocumentCreatedAt.
-			assert.WithinDuration(
+			assertT.WithinDuration(
 				time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC), d.DocumentCreatedAt, 0)
 
 			// DocumentModifiedAt.
-			assert.WithinDuration(
+			assertT.WithinDuration(
 				time.Date(2003, 1, 1, 0, 0, 0, 0, time.UTC), d.DocumentModifiedAt, 0)
 
 			// DocumentNumber.
-			assert.Equal(1, d.DocumentNumber)
+			assertT.Equal(1, d.DocumentNumber)
 
 			// DocumentType.
-			assert.NotEmpty(d.DocumentType.ID)
-			assert.Equal("DT1", d.DocumentType.Name)
-			assert.Equal("DocumentType1", d.DocumentType.LongName)
+			assertT.NotEmpty(d.DocumentType.ID)
+			assertT.Equal("DT1", d.DocumentType.Name)
+			assertT.Equal("DocumentType1", d.DocumentType.LongName)
 
 			// Imported.
-			assert.Equal(true, d.Imported)
+			assertT.Equal(true, d.Imported)
 
 			// Owner.
-			assert.NotEmpty(d.Owner.ID)
-			assert.Equal("a@owner.com", d.Owner.EmailAddress)
+			assertT.NotEmpty(d.Owner.ID)
+			assertT.Equal("a@owner.com", d.Owner.EmailAddress)
 
 			// Product.
-			assert.NotEmpty(d.Product.ID)
-			assert.Equal("Product1", d.Product.Name)
-			assert.Equal("P1", d.Product.Abbreviation)
+			assertT.NotEmpty(d.Product.ID)
+			assertT.Equal("Product1", d.Product.Name)
+			assertT.Equal("P1", d.Product.Abbreviation)
 
 			// Status.
-			assert.Equal(InReviewDocumentStatus, d.Status)
+			assertT.Equal(InReviewDocumentStatus, d.Status)
 
 			// Summary.
-			assert.Equal("test summary", *d.Summary)
+			assertT.Equal("test summary", *d.Summary)
 
 			// Title.
-			assert.Equal("test title", d.Title)
+			assertT.Equal("test title", d.Title)
 		}
 		testDoc1(d)
 
@@ -191,8 +191,8 @@ func TestDocumentModel(t *testing.T) {
 			},
 		}
 		err = d.Create(db)
-		require.Error(err)
-		assert.Empty(d.ID)
+		requireT.Error(err)
+		assertT.Empty(d.ID)
 
 		// Create a second (minimal) document.
 		d = Document{
@@ -205,21 +205,21 @@ func TestDocumentModel(t *testing.T) {
 			},
 		}
 		err = d.Create(db)
-		require.NoError(err)
-		assert.NotEmpty(d.ID)
+		requireT.NoError(err)
+		assertT.NotEmpty(d.ID)
 
 		// Get the second document.
 		get = Document{
 			GoogleFileID: "fileID2",
 		}
 		err = get.Get(db)
-		require.NoError(err)
-		assert.NotEmpty(get.ID)
-		assert.Equal("fileID2", get.GoogleFileID)
-		assert.NotEmpty(get.DocumentType.ID)
-		assert.Equal("DT1", get.DocumentType.Name)
-		assert.NotEmpty(get.Product.ID)
-		assert.Equal("Product1", get.Product.Name)
+		requireT.NoError(err)
+		assertT.NotEmpty(get.ID)
+		assertT.Equal("fileID2", get.GoogleFileID)
+		assertT.NotEmpty(get.DocumentType.ID)
+		assertT.Equal("DT1", get.DocumentType.Name)
+		assertT.NotEmpty(get.Product.ID)
+		assertT.Equal("Product1", get.Product.Name)
 	})
 
 	t.Run("create two documents by Upsert and verify with Get",
@@ -228,27 +228,27 @@ func TestDocumentModel(t *testing.T) {
 			defer tearDownTest(t)
 
 			t.Run("Create a document type", func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 				dt := DocumentType{
 					Name:     "DT1",
 					LongName: "DocumentType1",
 				}
 				err := dt.FirstOrCreate(db)
-				require.NoError(err)
+				requireT.NoError(err)
 			})
 
 			t.Run("Create a product", func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 				p := Product{
 					Name:         "Product1",
 					Abbreviation: "P1",
 				}
 				err := p.FirstOrCreate(db)
-				require.NoError(err)
+				requireT.NoError(err)
 			})
 
 			t.Run("Create a document by upserting", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				d := Document{
 					GoogleFileID: "fileID1",
 					DocumentType: DocumentType{
@@ -259,19 +259,19 @@ func TestDocumentModel(t *testing.T) {
 					},
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.NotEmpty(d.DocumentType.ID)
-				assert.Equal("DT1", d.DocumentType.Name)
-				assert.Equal("DocumentType1", d.DocumentType.LongName)
-				assert.NotEmpty(d.Product.ID)
-				assert.Equal("Product1", d.Product.Name)
-				assert.Equal("P1", d.Product.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, d.ID)
+				assertT.Equal("fileID1", d.GoogleFileID)
+				assertT.NotEmpty(d.DocumentType.ID)
+				assertT.Equal("DT1", d.DocumentType.Name)
+				assertT.Equal("DocumentType1", d.DocumentType.LongName)
+				assertT.NotEmpty(d.Product.ID)
+				assertT.Equal("Product1", d.Product.Name)
+				assertT.Equal("P1", d.Product.Abbreviation)
 			})
 
 			t.Run("Create a second document by upserting", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				d := Document{
 					GoogleFileID: "fileID2",
 					DocumentType: DocumentType{
@@ -282,49 +282,49 @@ func TestDocumentModel(t *testing.T) {
 					},
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(2, d.ID)
-				assert.Equal("fileID2", d.GoogleFileID)
-				assert.NotEmpty(d.DocumentType.ID)
-				assert.Equal("DT1", d.DocumentType.Name)
-				assert.Equal("DocumentType1", d.DocumentType.LongName)
-				assert.NotEmpty(d.Product.ID)
-				assert.Equal("Product1", d.Product.Name)
-				assert.Equal("P1", d.Product.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, d.ID)
+				assertT.Equal("fileID2", d.GoogleFileID)
+				assertT.NotEmpty(d.DocumentType.ID)
+				assertT.Equal("DT1", d.DocumentType.Name)
+				assertT.Equal("DocumentType1", d.DocumentType.LongName)
+				assertT.NotEmpty(d.Product.ID)
+				assertT.Equal("Product1", d.Product.Name)
+				assertT.Equal("P1", d.Product.Abbreviation)
 			})
 
 			t.Run("Verify first document with a Get", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				d := Document{
 					GoogleFileID: "fileID1",
 				}
 				err := d.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.NotEmpty(d.DocumentType.ID)
-				assert.Equal("DT1", d.DocumentType.Name)
-				assert.Equal("DocumentType1", d.DocumentType.LongName)
-				assert.NotEmpty(d.Product.ID)
-				assert.Equal("Product1", d.Product.Name)
-				assert.Equal("P1", d.Product.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, d.ID)
+				assertT.Equal("fileID1", d.GoogleFileID)
+				assertT.NotEmpty(d.DocumentType.ID)
+				assertT.Equal("DT1", d.DocumentType.Name)
+				assertT.Equal("DocumentType1", d.DocumentType.LongName)
+				assertT.NotEmpty(d.Product.ID)
+				assertT.Equal("Product1", d.Product.Name)
+				assertT.Equal("P1", d.Product.Abbreviation)
 			})
 
 			t.Run("Verify second document with a Get", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				d := Document{
 					GoogleFileID: "fileID2",
 				}
 				err := d.Get(db)
-				require.NoError(err)
-				assert.EqualValues(2, d.ID)
-				assert.Equal("fileID2", d.GoogleFileID)
-				assert.NotEmpty(d.DocumentType.ID)
-				assert.Equal("DT1", d.DocumentType.Name)
-				assert.Equal("DocumentType1", d.DocumentType.LongName)
-				assert.NotEmpty(d.Product.ID)
-				assert.Equal("Product1", d.Product.Name)
-				assert.Equal("P1", d.Product.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, d.ID)
+				assertT.Equal("fileID2", d.GoogleFileID)
+				assertT.NotEmpty(d.DocumentType.ID)
+				assertT.Equal("DT1", d.DocumentType.Name)
+				assertT.Equal("DocumentType1", d.DocumentType.LongName)
+				assertT.NotEmpty(d.Product.ID)
+				assertT.Equal("Product1", d.Product.Name)
+				assertT.Equal("P1", d.Product.Abbreviation)
 			})
 		})
 
@@ -333,28 +333,28 @@ func TestDocumentModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a document without contributors by upserting",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				d := Document{
 					GoogleFileID: "fileID1",
 					DocumentType: DocumentType{
@@ -367,14 +367,14 @@ func TestDocumentModel(t *testing.T) {
 					},
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.Empty(d.Contributors)
+				requireT.NoError(err)
+				assertT.EqualValues(1, d.ID)
+				assertT.Equal("fileID1", d.GoogleFileID)
+				assertT.Empty(d.Contributors)
 			})
 
 		t.Run("Add two contributors by upserting", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 				Contributors: []*User{
@@ -387,34 +387,34 @@ func TestDocumentModel(t *testing.T) {
 				},
 			}
 			err := d.Upsert(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			require.Len(d.Contributors, 2)
-			assert.NotEmpty(d.Contributors[0].ID)
-			assert.Equal("a@contributor.com", d.Contributors[0].EmailAddress)
-			assert.NotEmpty(d.Contributors[1].ID)
-			assert.Equal("b@contributor.com", d.Contributors[1].EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			requireT.Len(d.Contributors, 2)
+			assertT.NotEmpty(d.Contributors[0].ID)
+			assertT.Equal("a@contributor.com", d.Contributors[0].EmailAddress)
+			assertT.NotEmpty(d.Contributors[1].ID)
+			assertT.Equal("b@contributor.com", d.Contributors[1].EmailAddress)
 		})
 
 		t.Run("Verify with Get", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			require.Len(d.Contributors, 2)
-			assert.NotEmpty(d.Contributors[0].ID)
-			assert.Equal("a@contributor.com", d.Contributors[0].EmailAddress)
-			assert.NotEmpty(d.Contributors[1].ID)
-			assert.Equal("b@contributor.com", d.Contributors[1].EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			requireT.Len(d.Contributors, 2)
+			assertT.NotEmpty(d.Contributors[0].ID)
+			assertT.Equal("a@contributor.com", d.Contributors[0].EmailAddress)
+			assertT.NotEmpty(d.Contributors[1].ID)
+			assertT.Equal("b@contributor.com", d.Contributors[1].EmailAddress)
 		})
 
 		t.Run("Update to only the second contributor", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 				Contributors: []*User{
@@ -424,19 +424,19 @@ func TestDocumentModel(t *testing.T) {
 				},
 			}
 			err := d.Upsert(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			require.Equal(1, len(d.Contributors))
-			assert.NotEmpty(d.Contributors[0].ID)
-			assert.Equal("b@contributor.com", d.Contributors[0].EmailAddress)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			requireT.Equal(1, len(d.Contributors))
+			assertT.NotEmpty(d.Contributors[0].ID)
+			assertT.Equal("b@contributor.com", d.Contributors[0].EmailAddress)
 		})
 	})
 
 	/*
 		// TODO: should we allow owner upsert here?
 				t.Run("Create a document by Upsert", func(t *testing.T) {
-					assert, require := assert.New(t), require.New(t)
+					assertT, requireT := assert.New(t), require.New(t)
 					d := Document{
 						GoogleFileID: "fileID1",
 						DocumentType: DocumentType{
@@ -452,26 +452,26 @@ func TestDocumentModel(t *testing.T) {
 						},
 					}
 					err := d.Upsert(db)
-					require.NoError(err)
-					assert.EqualValues(1, d.ID)
-					assert.Equal("fileID1", d.GoogleFileID)
-					assert.Equal("a@a.com", d.Owner.EmailAddress)
+					requireT.NoError(err)
+					assertT.EqualValues(1, d.ID)
+					assertT.Equal("fileID1", d.GoogleFileID)
+					assertT.Equal("a@a.com", d.Owner.EmailAddress)
 				})
 
 				t.Run("Get the document", func(t *testing.T) {
-					assert, require := assert.New(t), require.New(t)
+					assertT, requireT := assert.New(t), require.New(t)
 					d := Document{
 						GoogleFileID: "fileID1",
 					}
 					err := d.Get(db)
-					require.NoError(err)
-					assert.EqualValues(1, d.ID)
-					assert.Equal("fileID1", d.GoogleFileID)
-					assert.Equal("a@a.com", d.Owner.EmailAddress)
+					requireT.NoError(err)
+					assertT.EqualValues(1, d.ID)
+					assertT.Equal("fileID1", d.GoogleFileID)
+					assertT.Equal("a@a.com", d.Owner.EmailAddress)
 				})
 
 				t.Run("Update the Owner field by Upsert", func(t *testing.T) {
-					assert, require := assert.New(t), require.New(t)
+					assertT, requireT := assert.New(t), require.New(t)
 					d := Document{
 						GoogleFileID: "fileID1",
 						Owner: &User{
@@ -479,26 +479,26 @@ func TestDocumentModel(t *testing.T) {
 						},
 					}
 					err := d.Upsert(db)
-					require.NoError(err)
-					assert.EqualValues(1, d.ID)
-					assert.Equal("fileID1", d.GoogleFileID)
-					assert.Equal("b@b.com", d.Owner.EmailAddress)
+					requireT.NoError(err)
+					assertT.EqualValues(1, d.ID)
+					assertT.Equal("fileID1", d.GoogleFileID)
+					assertT.Equal("b@b.com", d.Owner.EmailAddress)
 				})
 
 				t.Run("Get the document after upserting", func(t *testing.T) {
-					assert, require := assert.New(t), require.New(t)
+					assertT, requireT := assert.New(t), require.New(t)
 					d := Document{
 						GoogleFileID: "fileID1",
 					}
 					err := d.Get(db)
-					require.NoError(err)
-					assert.EqualValues(1, d.ID)
-					assert.Equal("fileID1", d.GoogleFileID)
-					assert.Equal("b@b.com", d.Owner.EmailAddress)
+					requireT.NoError(err)
+					assertT.EqualValues(1, d.ID)
+					assertT.Equal("fileID1", d.GoogleFileID)
+					assertT.Equal("b@b.com", d.Owner.EmailAddress)
 				})
 
 				t.Run("Update the Owner field back to first value by Upsert", func(t *testing.T) {
-					assert, require := assert.New(t), require.New(t)
+					assertT, requireT := assert.New(t), require.New(t)
 					d := Document{
 						GoogleFileID: "fileID1",
 						Owner: &User{
@@ -506,22 +506,22 @@ func TestDocumentModel(t *testing.T) {
 						},
 					}
 					err := d.Upsert(db)
-					require.NoError(err)
-					assert.EqualValues(1, d.ID)
-					assert.Equal("fileID1", d.GoogleFileID)
-					assert.Equal("a@a.com", d.Owner.EmailAddress)
+					requireT.NoError(err)
+					assertT.EqualValues(1, d.ID)
+					assertT.Equal("fileID1", d.GoogleFileID)
+					assertT.Equal("a@a.com", d.Owner.EmailAddress)
 				})
 
 				t.Run("Get the document after upserting", func(t *testing.T) {
-					assert, require := assert.New(t), require.New(t)
+					assertT, requireT := assert.New(t), require.New(t)
 					d := Document{
 						GoogleFileID: "fileID1",
 					}
 					err := d.Get(db)
-					require.NoError(err)
-					assert.EqualValues(1, d.ID)
-					assert.Equal("fileID1", d.GoogleFileID)
-					assert.Equal("a@a.com", d.Owner.EmailAddress)
+					requireT.NoError(err)
+					assertT.EqualValues(1, d.ID)
+					assertT.Equal("fileID1", d.GoogleFileID)
+					assertT.Equal("a@a.com", d.Owner.EmailAddress)
 				})
 			})
 	*/
@@ -531,27 +531,27 @@ func TestDocumentModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a document by Upsert", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				Approvers: []*User{
 					{
@@ -573,73 +573,73 @@ func TestDocumentModel(t *testing.T) {
 				Summary: &[]string{"summary1"}[0],
 			}
 			err := d.Upsert(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("summary1", *d.Summary)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("summary1", *d.Summary)
 		})
 
 		t.Run("Get the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("summary1", *d.Summary)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("summary1", *d.Summary)
 		})
 
 		t.Run("Update the Summary field by Upsert", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 				Summary:      &[]string{"summary2"}[0],
 			}
 			err := d.Upsert(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("summary2", *d.Summary)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("summary2", *d.Summary)
 		})
 
 		t.Run("Get the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("summary2", *d.Summary)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("summary2", *d.Summary)
 		})
 
 		t.Run("Update the Summary field to an empty string by Upsert",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				d := Document{
 					GoogleFileID: "fileID1",
 					Summary:      &[]string{""}[0],
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("fileID1", d.GoogleFileID)
-				assert.Equal("", *d.Summary)
+				requireT.NoError(err)
+				assertT.EqualValues(1, d.ID)
+				assertT.Equal("fileID1", d.GoogleFileID)
+				assertT.Equal("", *d.Summary)
 			})
 
 		t.Run("Get the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("", *d.Summary)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("", *d.Summary)
 		})
 	})
 
@@ -648,27 +648,27 @@ func TestDocumentModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a document by Upsert", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 				DocumentType: DocumentType{
@@ -680,40 +680,40 @@ func TestDocumentModel(t *testing.T) {
 				},
 			}
 			err := d.Upsert(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("Product1", d.Product.Name)
-			assert.Equal("P1", d.Product.Abbreviation)
-			assert.EqualValues(1, d.Product.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("Product1", d.Product.Name)
+			assertT.Equal("P1", d.Product.Abbreviation)
+			assertT.EqualValues(1, d.Product.ID)
 		})
 
 		t.Run("Get the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("Product1", d.Product.Name)
-			assert.Equal("P1", d.Product.Abbreviation)
-			assert.EqualValues(1, d.Product.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("Product1", d.Product.Name)
+			assertT.Equal("P1", d.Product.Abbreviation)
+			assertT.EqualValues(1, d.Product.ID)
 		})
 
 		t.Run("Create a second product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product2",
 				Abbreviation: "P2",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Update the Product field by Upsert", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 				Product: Product{
@@ -721,26 +721,26 @@ func TestDocumentModel(t *testing.T) {
 				},
 			}
 			err := d.Upsert(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("Product2", d.Product.Name)
-			assert.Equal("P2", d.Product.Abbreviation)
-			assert.EqualValues(2, d.Product.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("Product2", d.Product.Name)
+			assertT.Equal("P2", d.Product.Abbreviation)
+			assertT.EqualValues(2, d.Product.ID)
 		})
 
 		t.Run("Get the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("fileID1", d.GoogleFileID)
-			assert.Equal("Product2", d.Product.Name)
-			assert.Equal("P2", d.Product.Abbreviation)
-			assert.EqualValues(2, d.Product.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("fileID1", d.GoogleFileID)
+			assertT.Equal("Product2", d.Product.Name)
+			assertT.Equal("P2", d.Product.Abbreviation)
+			assertT.EqualValues(2, d.Product.ID)
 		})
 	})
 
@@ -749,18 +749,18 @@ func TestDocumentModel(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a document type custom field",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 
 				d := DocumentTypeCustomField{
 					Name: "CustomStringField",
@@ -770,22 +770,22 @@ func TestDocumentModel(t *testing.T) {
 					Type: StringDocumentTypeCustomFieldType,
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
+				requireT.NoError(err)
 			})
 
 		t.Run("Create a second document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT2",
 				LongName: "DocumentType2",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a custom field for the second document type",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 
 				d := DocumentTypeCustomField{
 					Name: "CustomStringFieldDT2",
@@ -795,21 +795,21 @@ func TestDocumentModel(t *testing.T) {
 					Type: StringDocumentTypeCustomFieldType,
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
+				requireT.NoError(err)
 			})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a document using Upsert", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 				Approvers: []*User{
@@ -839,30 +839,30 @@ func TestDocumentModel(t *testing.T) {
 				},
 			}
 			err := d.Upsert(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			require.Len(d.CustomFields, 1)
-			assert.Equal("CustomStringFieldDT2",
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			requireT.Len(d.CustomFields, 1)
+			assertT.Equal("CustomStringFieldDT2",
 				d.CustomFields[0].DocumentTypeCustomField.Name)
-			assert.Equal("DT2",
+			assertT.Equal("DT2",
 				d.CustomFields[0].DocumentTypeCustomField.DocumentType.Name)
-			assert.Equal("string value 1", d.CustomFields[0].Value)
+			assertT.Equal("string value 1", d.CustomFields[0].Value)
 		})
 
 		t.Run("Get the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "fileID1",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			require.Len(d.CustomFields, 1)
-			assert.Equal("CustomStringFieldDT2",
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			requireT.Len(d.CustomFields, 1)
+			assertT.Equal("CustomStringFieldDT2",
 				d.CustomFields[0].DocumentTypeCustomField.Name)
-			assert.Equal("DT2",
+			assertT.Equal("DT2",
 				d.CustomFields[0].DocumentTypeCustomField.DocumentType.Name)
-			assert.Equal("string value 1", d.CustomFields[0].Value)
+			assertT.Equal("string value 1", d.CustomFields[0].Value)
 		})
 	})
 
@@ -872,28 +872,28 @@ func TestDocumentModel(t *testing.T) {
 			defer tearDownTest(t)
 
 			t.Run("Create a document type", func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 				dt := DocumentType{
 					Name:     "DT1",
 					LongName: "DocumentType1",
 				}
 				err := dt.FirstOrCreate(db)
-				require.NoError(err)
+				requireT.NoError(err)
 			})
 
 			t.Run("Create a product", func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name:         "Product1",
 					Abbreviation: "P1",
 				}
 				err := p.FirstOrCreate(db)
-				require.NoError(err)
+				requireT.NoError(err)
 			})
 
 			t.Run("Create a document", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				d := Document{
 					GoogleFileID: "GoogleFileID1",
@@ -906,30 +906,30 @@ func TestDocumentModel(t *testing.T) {
 					Status: WIPDocumentStatus,
 				}
 				err := d.Create(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
+				requireT.NoError(err)
+				assertT.EqualValues(1, d.ID)
 			})
 
 			t.Run("Get the document", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				d := Document{
 					GoogleFileID: "GoogleFileID1",
 				}
 				err := d.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.False(d.DeletedAt.Valid)
+				requireT.NoError(err)
+				assertT.EqualValues(1, d.ID)
+				assertT.False(d.DeletedAt.Valid)
 			})
 
 			t.Run("Delete a document", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				d := Document{
 					GoogleFileID: "GoogleFileID1",
 				}
 				err := d.Delete(db)
-				require.NoError(err)
-				assert.True(d.DeletedAt.Valid)
+				requireT.NoError(err)
+				assertT.True(d.DeletedAt.Valid)
 			})
 		})
 }
@@ -943,37 +943,37 @@ func TestGetLatestProductNumber(t *testing.T) {
 	defer tearDownTest(t)
 
 	t.Run("Create a document type", func(t *testing.T) {
-		_, require := assert.New(t), require.New(t)
+		_, requireT := assert.New(t), require.New(t)
 
 		dt := DocumentType{
 			Name:     "DT1",
 			LongName: "DocumentType1",
 		}
 		err := dt.FirstOrCreate(db)
-		require.NoError(err)
+		requireT.NoError(err)
 	})
 
 	t.Run("Create a product", func(t *testing.T) {
-		_, require := assert.New(t), require.New(t)
+		_, requireT := assert.New(t), require.New(t)
 
 		p := Product{
 			Name:         "Product1",
 			Abbreviation: "P1",
 		}
 		err := p.FirstOrCreate(db)
-		require.NoError(err)
+		requireT.NoError(err)
 	})
 
 	t.Run("Get latest product number without any documents", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 
 		num, err := GetLatestProductNumber(db, "DT1", "Product1")
-		require.NoError(err)
-		assert.Equal(0, num)
+		requireT.NoError(err)
+		assertT.Equal(0, num)
 	})
 
 	t.Run("Create a document", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 
 		d := Document{
 			GoogleFileID: "fileID1",
@@ -986,20 +986,20 @@ func TestGetLatestProductNumber(t *testing.T) {
 			DocumentNumber: 4,
 		}
 		err := d.Create(db)
-		require.NoError(err)
-		assert.EqualValues(1, d.ID)
+		requireT.NoError(err)
+		assertT.EqualValues(1, d.ID)
 	})
 
 	t.Run("Get latest product number", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 
 		num, err := GetLatestProductNumber(db, "DT1", "Product1")
-		require.NoError(err)
-		assert.Equal(4, num)
+		requireT.NoError(err)
+		assertT.Equal(4, num)
 	})
 
 	t.Run("Create another document", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 
 		d := Document{
 			GoogleFileID: "fileID2",
@@ -1012,32 +1012,32 @@ func TestGetLatestProductNumber(t *testing.T) {
 			DocumentNumber: 42,
 		}
 		err := d.Create(db)
-		require.NoError(err)
-		assert.EqualValues(2, d.ID)
+		requireT.NoError(err)
+		assertT.EqualValues(2, d.ID)
 	})
 
 	t.Run("Get latest product number", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 
 		num, err := GetLatestProductNumber(db, "DT1", "Product1")
-		require.NoError(err)
-		assert.Equal(42, num)
+		requireT.NoError(err)
+		assertT.Equal(42, num)
 	})
 
 	t.Run("Create a second document type", func(t *testing.T) {
-		_, require := assert.New(t), require.New(t)
+		_, requireT := assert.New(t), require.New(t)
 
 		dt := DocumentType{
 			Name:     "DT2",
 			LongName: "DocumentType2",
 		}
 		err := dt.FirstOrCreate(db)
-		require.NoError(err)
+		requireT.NoError(err)
 	})
 
 	t.Run("Create a document of the same product and second document type",
 		func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 
 			d := Document{
 				GoogleFileID: "fileID3",
@@ -1050,16 +1050,16 @@ func TestGetLatestProductNumber(t *testing.T) {
 				DocumentNumber: 2,
 			}
 			err := d.Create(db)
-			require.NoError(err)
-			assert.EqualValues(3, d.ID)
+			requireT.NoError(err)
+			assertT.EqualValues(3, d.ID)
 		})
 
 	t.Run("Get latest product number", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 
 		num, err := GetLatestProductNumber(db, "DT2", "Product1")
-		require.NoError(err)
-		assert.Equal(2, num)
+		requireT.NoError(err)
+		assertT.Equal(2, num)
 	})
 }
 
@@ -1074,27 +1074,27 @@ func TestDocumentGetProjects(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create documents", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID1",
 				DocumentType: DocumentType{
@@ -1105,8 +1105,8 @@ func TestDocumentGetProjects(t *testing.T) {
 				},
 			}
 			err := d.Create(db)
-			require.NoError(err)
-			require.EqualValues(1, d.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(1, d.ID)
 
 			d = Document{
 				GoogleFileID: "GoogleFileID2",
@@ -1118,8 +1118,8 @@ func TestDocumentGetProjects(t *testing.T) {
 				},
 			}
 			err = d.Create(db)
-			require.NoError(err)
-			require.EqualValues(2, d.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(2, d.ID)
 
 			d = Document{
 				GoogleFileID: "GoogleFileID3",
@@ -1131,12 +1131,12 @@ func TestDocumentGetProjects(t *testing.T) {
 				},
 			}
 			err = d.Create(db)
-			require.NoError(err)
-			require.EqualValues(3, d.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(3, d.ID)
 		})
 
 		t.Run("Create projects", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Creator: User{
 					EmailAddress: "a@a.com",
@@ -1144,8 +1144,8 @@ func TestDocumentGetProjects(t *testing.T) {
 				Title: "Title1",
 			}
 			err := p.Create(db)
-			require.NoError(err)
-			require.EqualValues(1, p.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(1, p.ID)
 
 			p = Project{
 				Creator: User{
@@ -1154,8 +1154,8 @@ func TestDocumentGetProjects(t *testing.T) {
 				Title: "Title2",
 			}
 			err = p.Create(db)
-			require.NoError(err)
-			require.EqualValues(2, p.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(2, p.ID)
 
 			p = Project{
 				Creator: User{
@@ -1164,12 +1164,12 @@ func TestDocumentGetProjects(t *testing.T) {
 				Title: "Title3",
 			}
 			err = p.Create(db)
-			require.NoError(err)
-			require.EqualValues(3, p.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(3, p.ID)
 		})
 
 		t.Run("Replace related resources for project 1", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Model: gorm.Model{
 					ID: 1,
@@ -1198,11 +1198,11 @@ func TestDocumentGetProjects(t *testing.T) {
 					},
 				},
 			)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Replace related resources for project 2", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Model: gorm.Model{
 					ID: 2,
@@ -1249,11 +1249,11 @@ func TestDocumentGetProjects(t *testing.T) {
 					},
 				},
 			)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Replace related resources for project 3", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Model: gorm.Model{
 					ID: 3,
@@ -1291,43 +1291,43 @@ func TestDocumentGetProjects(t *testing.T) {
 					},
 				},
 			)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Get projects for document 1", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID1",
 			}
 			projs, err := d.GetProjects(db)
-			require.NoError(err)
-			require.Len(projs, 3)
-			assert.Equal("Title1", projs[0].Title)
-			assert.Equal("Title2", projs[1].Title)
-			assert.Equal("Title3", projs[2].Title)
+			requireT.NoError(err)
+			requireT.Len(projs, 3)
+			assertT.Equal("Title1", projs[0].Title)
+			assertT.Equal("Title2", projs[1].Title)
+			assertT.Equal("Title3", projs[2].Title)
 		})
 
 		t.Run("Get projects for document 2", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID2",
 			}
 			projs, err := d.GetProjects(db)
-			require.NoError(err)
-			require.Len(projs, 1)
-			assert.Equal("Title2", projs[0].Title)
+			requireT.NoError(err)
+			requireT.Len(projs, 1)
+			assertT.Equal("Title2", projs[0].Title)
 		})
 
 		t.Run("Get projects for document 3", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID3",
 			}
 			projs, err := d.GetProjects(db)
-			require.NoError(err)
-			require.Len(projs, 2)
-			assert.Equal("Title2", projs[0].Title)
-			assert.Equal("Title3", projs[1].Title)
+			requireT.NoError(err)
+			requireT.Len(projs, 2)
+			assertT.Equal("Title2", projs[0].Title)
+			assertT.Equal("Title3", projs[1].Title)
 		})
 	})
 }
@@ -1343,27 +1343,27 @@ func TestDocumentReplaceRelatedResources(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create documents", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID1",
 				DocumentType: DocumentType{
@@ -1374,7 +1374,7 @@ func TestDocumentReplaceRelatedResources(t *testing.T) {
 				},
 			}
 			err := d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			d = Document{
 				GoogleFileID: "GoogleFileID2",
@@ -1386,7 +1386,7 @@ func TestDocumentReplaceRelatedResources(t *testing.T) {
 				},
 			}
 			err = d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			d = Document{
 				GoogleFileID: "GoogleFileID3",
@@ -1398,11 +1398,11 @@ func TestDocumentReplaceRelatedResources(t *testing.T) {
 				},
 			}
 			err = d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Add external link related resources", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 
 			rr := DocumentRelatedResourceExternalLink{
 				RelatedResource: DocumentRelatedResource{
@@ -1415,7 +1415,7 @@ func TestDocumentReplaceRelatedResources(t *testing.T) {
 				URL:  "URL1",
 			}
 			err := rr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			rr = DocumentRelatedResourceExternalLink{
 				RelatedResource: DocumentRelatedResource{
@@ -1428,7 +1428,7 @@ func TestDocumentReplaceRelatedResources(t *testing.T) {
 				URL:  "URL2",
 			}
 			err = rr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			rr = DocumentRelatedResourceExternalLink{
 				RelatedResource: DocumentRelatedResource{
@@ -1441,21 +1441,21 @@ func TestDocumentReplaceRelatedResources(t *testing.T) {
 				URL:  "URL3",
 			}
 			err = rr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Get the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID2",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.Len(d.RelatedResources, 3)
+			requireT.NoError(err)
+			assertT.Len(d.RelatedResources, 3)
 		})
 
 		t.Run("Replace related resources", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID2",
 			}
@@ -1497,35 +1497,35 @@ func TestDocumentReplaceRelatedResources(t *testing.T) {
 					},
 				},
 			)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Get the document", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID2",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.Len(d.RelatedResources, 3)
+			requireT.NoError(err)
+			assertT.Len(d.RelatedResources, 3)
 		})
 
 		t.Run("Get typed related resources", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID2",
 			}
 			elrrs, hdrrs, err := d.GetRelatedResources(db)
-			require.NoError(err)
-			assert.Len(elrrs, 1)
-			assert.Equal("Name4", elrrs[0].Name)
-			assert.Equal("URL4", elrrs[0].URL)
-			assert.Equal(1, elrrs[0].RelatedResource.SortOrder)
-			assert.Len(hdrrs, 2)
-			assert.Equal("GoogleFileID1", hdrrs[0].Document.GoogleFileID)
-			assert.Equal(2, hdrrs[0].RelatedResource.SortOrder)
-			assert.Equal("GoogleFileID3", hdrrs[1].Document.GoogleFileID)
-			assert.Equal(3, hdrrs[1].RelatedResource.SortOrder)
+			requireT.NoError(err)
+			assertT.Len(elrrs, 1)
+			assertT.Equal("Name4", elrrs[0].Name)
+			assertT.Equal("URL4", elrrs[0].URL)
+			assertT.Equal(1, elrrs[0].RelatedResource.SortOrder)
+			assertT.Len(hdrrs, 2)
+			assertT.Equal("GoogleFileID1", hdrrs[0].Document.GoogleFileID)
+			assertT.Equal(2, hdrrs[0].RelatedResource.SortOrder)
+			assertT.Equal("GoogleFileID3", hdrrs[1].Document.GoogleFileID)
+			assertT.Equal(3, hdrrs[1].RelatedResource.SortOrder)
 		})
 	})
 }

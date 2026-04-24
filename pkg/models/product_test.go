@@ -20,196 +20,196 @@ func TestProductModel(t *testing.T) {
 
 		t.Run("Get a product before any exist",
 			func(t *testing.T) {
-				require := require.New(t)
+				requireT := require.New(t)
 
 				p := Product{
 					Name: "Product1",
 				}
 				err := p.Get(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Create a first product", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, p.ID)
-			assert.Equal("Product1", p.Name)
-			assert.Equal("P1", p.Abbreviation)
+			requireT.NoError(err)
+			assertT.EqualValues(1, p.ID)
+			assertT.Equal("Product1", p.Name)
+			assertT.Equal("P1", p.Abbreviation)
 		})
 
 		t.Run("Get a product without any name",
 			func(t *testing.T) {
-				require := require.New(t)
+				requireT := require.New(t)
 
 				p := Product{}
 				err := p.Get(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Create a second product", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 
 			p := Product{
 				Name:         "Product2",
 				Abbreviation: "P2",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(2, p.ID)
-			assert.Equal("Product2", p.Name)
-			assert.Equal("P2", p.Abbreviation)
+			requireT.NoError(err)
+			assertT.EqualValues(2, p.ID)
+			assertT.Equal("Product2", p.Name)
+			assertT.Equal("P2", p.Abbreviation)
 		})
 
 		t.Run("Get the first product by name using FirstOrCreate",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name: "Product1",
 				}
 				err := p.FirstOrCreate(db)
-				require.NoError(err)
-				assert.EqualValues(1, p.ID)
-				assert.Equal("Product1", p.Name)
-				assert.Equal("P1", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, p.ID)
+				assertT.Equal("Product1", p.Name)
+				assertT.Equal("P1", p.Abbreviation)
 			})
 
 		t.Run("Get the first product by name using Get",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name: "Product1",
 				}
 				err := p.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, p.ID)
-				assert.Equal("Product1", p.Name)
-				assert.Equal("P1", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, p.ID)
+				assertT.Equal("Product1", p.Name)
+				assertT.Equal("P1", p.Abbreviation)
 			})
 
 		t.Run("Get the first product by lowercase name using FirstOrCreate",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name: "Product1",
 				}
 				err := p.FirstOrCreate(db)
-				require.NoError(err)
-				assert.EqualValues(1, p.ID)
-				assert.Equal("Product1", p.Name)
-				assert.Equal("P1", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, p.ID)
+				assertT.Equal("Product1", p.Name)
+				assertT.Equal("P1", p.Abbreviation)
 			})
 
 		t.Run("Get the first product by lowercase name using Get",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name: "Product1",
 				}
 				err := p.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, p.ID)
-				assert.Equal("Product1", p.Name)
-				assert.Equal("P1", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, p.ID)
+				assertT.Equal("Product1", p.Name)
+				assertT.Equal("P1", p.Abbreviation)
 			})
 
 		t.Run("Get the second product by name using FirstOrCreate",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name: "Product2",
 				}
 				err := p.FirstOrCreate(db)
-				require.NoError(err)
-				assert.EqualValues(2, p.ID)
-				assert.Equal("Product2", p.Name)
-				assert.Equal("P2", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, p.ID)
+				assertT.Equal("Product2", p.Name)
+				assertT.Equal("P2", p.Abbreviation)
 			})
 
 		t.Run("Get the second product by name using Get",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name: "Product2",
 				}
 				err := p.Get(db)
-				require.NoError(err)
-				assert.EqualValues(2, p.ID)
-				assert.Equal("Product2", p.Name)
-				assert.Equal("P2", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, p.ID)
+				assertT.Equal("Product2", p.Name)
+				assertT.Equal("P2", p.Abbreviation)
 			})
 
 		t.Run("Get the first product by name and abbreviation using FirstOrCreate",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name:         "Product1",
 					Abbreviation: "P1",
 				}
 				err := p.FirstOrCreate(db)
-				require.NoError(err)
-				assert.EqualValues(1, p.ID)
-				assert.Equal("Product1", p.Name)
-				assert.Equal("P1", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, p.ID)
+				assertT.Equal("Product1", p.Name)
+				assertT.Equal("P1", p.Abbreviation)
 			})
 
 		t.Run("Get the first product by name and abbreviation using Get",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name:         "Product1",
 					Abbreviation: "P1",
 				}
 				err := p.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, p.ID)
-				assert.Equal("Product1", p.Name)
-				assert.Equal("P1", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, p.ID)
+				assertT.Equal("Product1", p.Name)
+				assertT.Equal("P1", p.Abbreviation)
 			})
 
 		t.Run(
 			"Get the second product by name and wrong abbreviation using FirstOrCreate",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name:         "Product2",
 					Abbreviation: "P1",
 				}
 				err := p.FirstOrCreate(db)
-				require.NoError(err)
-				assert.EqualValues(2, p.ID)
-				assert.Equal("Product2", p.Name)
-				assert.Equal("P2", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, p.ID)
+				assertT.Equal("Product2", p.Name)
+				assertT.Equal("P2", p.Abbreviation)
 			})
 
 		t.Run(
 			"Get the second product by name and wrong abbreviation using Get",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				p := Product{
 					Name:         "Product2",
 					Abbreviation: "P1",
 				}
 				err := p.Get(db)
-				require.NoError(err)
-				assert.EqualValues(2, p.ID)
-				assert.Equal("Product2", p.Name)
-				assert.Equal("P2", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, p.ID)
+				assertT.Equal("Product2", p.Name)
+				assertT.Equal("P2", p.Abbreviation)
 			})
 	})
 
@@ -219,26 +219,26 @@ func TestProductModel(t *testing.T) {
 
 		t.Run("Create a product with an empty string for name",
 			func(t *testing.T) {
-				require := require.New(t)
+				requireT := require.New(t)
 
 				p := Product{
 					Name:         "",
 					Abbreviation: "EMPTYSTRING",
 				}
 				err := p.FirstOrCreate(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Create a product with an empty string for abbreviation",
 			func(t *testing.T) {
-				require := require.New(t)
+				requireT := require.New(t)
 
 				p := Product{
 					Name:         "Product",
 					Abbreviation: "",
 				}
 				err := p.FirstOrCreate(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 	})
 
@@ -248,78 +248,78 @@ func TestProductModel(t *testing.T) {
 			defer tearDownTest(t)
 
 			t.Run("Create a product using Upsert", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := Product{
 					Name:         "Product1",
 					Abbreviation: "P1",
 				}
 				err := p.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, p.ID)
-				assert.Equal("Product1", p.Name)
-				assert.Equal("P1", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, p.ID)
+				assertT.Equal("Product1", p.Name)
+				assertT.Equal("P1", p.Abbreviation)
 			})
 
 			t.Run("Create a second product using Upsert", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := Product{
 					Name:         "Product2",
 					Abbreviation: "P2",
 				}
 				err := p.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(2, p.ID)
-				assert.Equal("Product2", p.Name)
-				assert.Equal("P2", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, p.ID)
+				assertT.Equal("Product2", p.Name)
+				assertT.Equal("P2", p.Abbreviation)
 			})
 
 			t.Run("Verify first product using Get", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := Product{
 					Name: "Product1",
 				}
 				err := p.Get(db)
-				require.NoError(err)
-				assert.EqualValues(1, p.ID)
-				assert.Equal("Product1", p.Name)
-				assert.Equal("P1", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(1, p.ID)
+				assertT.Equal("Product1", p.Name)
+				assertT.Equal("P1", p.Abbreviation)
 			})
 
 			t.Run("Verify second product using Get", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := Product{
 					Name: "Product2",
 				}
 				err := p.Get(db)
-				require.NoError(err)
-				assert.EqualValues(2, p.ID)
-				assert.Equal("Product2", p.Name)
-				assert.Equal("P2", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, p.ID)
+				assertT.Equal("Product2", p.Name)
+				assertT.Equal("P2", p.Abbreviation)
 			})
 
 			t.Run("Update the second product using Upsert", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := Product{
 					Name:         "Product2",
 					Abbreviation: "P2U",
 				}
 				err := p.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(2, p.ID)
-				assert.Equal("Product2", p.Name)
-				assert.Equal("P2U", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, p.ID)
+				assertT.Equal("Product2", p.Name)
+				assertT.Equal("P2U", p.Abbreviation)
 			})
 
 			t.Run("Verify second product after update using Get", func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 				p := Product{
 					Name: "Product2",
 				}
 				err := p.Get(db)
-				require.NoError(err)
-				assert.EqualValues(2, p.ID)
-				assert.Equal("Product2", p.Name)
-				assert.Equal("P2U", p.Abbreviation)
+				requireT.NoError(err)
+				assertT.EqualValues(2, p.ID)
+				assertT.Equal("Product2", p.Name)
+				assertT.Equal("P2U", p.Abbreviation)
 			})
 		})
 }

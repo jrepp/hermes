@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// DocumentCustomField is a model for a custom field value on a document.
 type DocumentCustomField struct {
 	Value                     string
 	DocumentTypeCustomField   DocumentTypeCustomField
@@ -36,6 +37,7 @@ func (d *DocumentCustomField) BeforeSave(tx *gorm.DB) error {
 	return nil
 }
 
+// Create creates a document custom field in database db.
 func (d *DocumentCustomField) Create(db *gorm.DB) error {
 	return db.
 		Omit(clause.Associations).
@@ -43,6 +45,7 @@ func (d *DocumentCustomField) Create(db *gorm.DB) error {
 		Error
 }
 
+// Upsert updates or inserts a document custom field in database db.
 func (d *DocumentCustomField) Upsert(db *gorm.DB) error {
 	return db.
 		Where(DocumentCustomField{

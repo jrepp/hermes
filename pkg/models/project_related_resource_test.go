@@ -21,27 +21,27 @@ func TestProjectRelatedResource(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create a document type", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			dt := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := dt.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a product", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Product{
 				Name:         "Product1",
 				Abbreviation: "P1",
 			}
 			err := p.FirstOrCreate(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create documents", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			d := Document{
 				GoogleFileID: "GoogleFileID1",
 				DocumentType: DocumentType{
@@ -52,7 +52,7 @@ func TestProjectRelatedResource(t *testing.T) {
 				},
 			}
 			err := d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			d = Document{
 				GoogleFileID: "GoogleFileID2",
@@ -64,7 +64,7 @@ func TestProjectRelatedResource(t *testing.T) {
 				},
 			}
 			err = d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 
 			d = Document{
 				GoogleFileID: "GoogleFileID3",
@@ -76,11 +76,11 @@ func TestProjectRelatedResource(t *testing.T) {
 				},
 			}
 			err = d.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Create a project", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 			p := Project{
 				Creator: User{
 					EmailAddress: "a@a.com",
@@ -88,14 +88,14 @@ func TestProjectRelatedResource(t *testing.T) {
 				Title: "Title1",
 			}
 			err := p.Create(db)
-			require.NoError(err)
-			require.EqualValues(1, p.ID)
+			requireT.NoError(err)
+			requireT.EqualValues(1, p.ID)
 		})
 
 		t.Run(
 			"Try to add related resource without an associated typed related resource",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 
 				rr := ProjectRelatedResource{
 					Project: Project{
@@ -109,11 +109,11 @@ func TestProjectRelatedResource(t *testing.T) {
 					Omit(clause.Associations).
 					Create(&rr).
 					Error
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Add external link related resource", func(t *testing.T) {
-			_, require := assert.New(t), require.New(t)
+			_, requireT := assert.New(t), require.New(t)
 
 			rr := ProjectRelatedResourceExternalLink{
 				RelatedResource: ProjectRelatedResource{
@@ -128,12 +128,12 @@ func TestProjectRelatedResource(t *testing.T) {
 				URL:  "URL1",
 			}
 			err := rr.Create(db)
-			require.NoError(err)
+			requireT.NoError(err)
 		})
 
 		t.Run("Add external link related resource with same SortOrder",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 
 				rr := ProjectRelatedResourceExternalLink{
 					RelatedResource: ProjectRelatedResource{
@@ -148,12 +148,12 @@ func TestProjectRelatedResource(t *testing.T) {
 					URL:  "URL2",
 				}
 				err := rr.Create(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Add another external link related resource using ProjectID",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 
 				rr := ProjectRelatedResourceExternalLink{
 					RelatedResource: ProjectRelatedResource{
@@ -164,12 +164,12 @@ func TestProjectRelatedResource(t *testing.T) {
 					URL:  "URL2",
 				}
 				err := rr.Create(db)
-				require.NoError(err)
+				requireT.NoError(err)
 			})
 
 		t.Run("Add Hermes document related resource with same SortOrder",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 
 				rr := ProjectRelatedResourceHermesDocument{
 					RelatedResource: ProjectRelatedResource{
@@ -185,12 +185,12 @@ func TestProjectRelatedResource(t *testing.T) {
 					},
 				}
 				err := rr.Create(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Add Hermes document related resource",
 			func(t *testing.T) {
-				_, require := assert.New(t), require.New(t)
+				_, requireT := assert.New(t), require.New(t)
 
 				rr := ProjectRelatedResourceHermesDocument{
 					RelatedResource: ProjectRelatedResource{
@@ -206,7 +206,7 @@ func TestProjectRelatedResource(t *testing.T) {
 					},
 				}
 				err := rr.Create(db)
-				require.NoError(err)
+				requireT.NoError(err)
 			})
 	})
 }

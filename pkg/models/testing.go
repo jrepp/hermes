@@ -31,6 +31,7 @@ func setupTest(t *testing.T, dsn string) (
 		// TODO: add back and make configurable.
 		// err := test.DropTestDatabase(dsn, dbName)
 		// require.NoError(t, err)
+		//nolint:gosec // dbName is test-controlled, not user input
 		log.Printf("would have dropped test database %q here", dbName)
 	}
 }

@@ -92,7 +92,7 @@ func (ds *DocumentSummary) BeforeCreate(_ *gorm.DB) error {
 	return nil
 }
 
-// GetLatestByDocumentID retrieves the most recent summary for a document.
+// GetLatestSummaryByDocumentID retrieves the most recent summary for a document.
 func GetLatestSummaryByDocumentID(db *gorm.DB, documentID string) (*DocumentSummary, error) {
 	var summary DocumentSummary
 	err := db.Where("document_id = ?", documentID).
@@ -104,7 +104,7 @@ func GetLatestSummaryByDocumentID(db *gorm.DB, documentID string) (*DocumentSumm
 	return &summary, nil
 }
 
-// GetLatestByUUID retrieves the most recent summary for a document UUID.
+// GetLatestSummaryByUUID retrieves the most recent summary for a document UUID.
 func GetLatestSummaryByUUID(db *gorm.DB, documentUUID uuid.UUID) (*DocumentSummary, error) {
 	var summary DocumentSummary
 	err := db.Where("document_uuid = ?", documentUUID).
@@ -116,7 +116,7 @@ func GetLatestSummaryByUUID(db *gorm.DB, documentUUID uuid.UUID) (*DocumentSumma
 	return &summary, nil
 }
 
-// GetByDocumentIDAndModel retrieves a summary for a specific document and model.
+// GetSummaryByDocumentIDAndModel retrieves a summary for a specific document and model.
 func GetSummaryByDocumentIDAndModel(db *gorm.DB, documentID, model string) (*DocumentSummary, error) {
 	var summary DocumentSummary
 	err := db.Where("document_id = ? AND model = ?", documentID, model).

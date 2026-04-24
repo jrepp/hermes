@@ -48,7 +48,7 @@ func (dr *DocumentRevision) BeforeCreate(_ *gorm.DB) error {
 	return nil
 }
 
-// GetByUUID retrieves all revisions for a document UUID.
+// GetRevisionsByUUID retrieves all revisions for a document UUID.
 func GetRevisionsByUUID(db *gorm.DB, documentUUID uuid.UUID) ([]DocumentRevision, error) {
 	var revisions []DocumentRevision
 	err := db.Where("document_uuid = ?", documentUUID).
@@ -57,7 +57,7 @@ func GetRevisionsByUUID(db *gorm.DB, documentUUID uuid.UUID) ([]DocumentRevision
 	return revisions, err
 }
 
-// GetByDocumentID retrieves a revision by provider-specific document ID.
+// GetRevisionByDocumentID retrieves a revision by provider-specific document ID.
 func GetRevisionByDocumentID(db *gorm.DB, providerType, documentID string) (*DocumentRevision, error) {
 	var revision DocumentRevision
 	err := db.Where("provider_type = ? AND document_id = ?", providerType, documentID).
@@ -77,7 +77,7 @@ func GetActiveRevisions(db *gorm.DB, documentUUID uuid.UUID) ([]DocumentRevision
 	return revisions, err
 }
 
-// GetByContentHash finds revisions with the same content hash.
+// GetRevisionsByContentHash finds revisions with the same content hash.
 // Useful for detecting duplicate content or unchanged documents.
 func GetRevisionsByContentHash(db *gorm.DB, contentHash string) ([]DocumentRevision, error) {
 	var revisions []DocumentRevision

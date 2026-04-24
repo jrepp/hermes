@@ -17,15 +17,15 @@ func TestIndexerMetadata(t *testing.T) {
 	}
 
 	t.Run("Get and Upsert", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 		db, tearDownTest := setupTest(t, dsn)
 		defer tearDownTest(t)
 
 		// Get metadata, which won't exist yet (should error).
 		l := IndexerMetadata{}
 		err := l.Get(db)
-		require.Error(err)
-		require.ErrorIs(gorm.ErrRecordNotFound, err)
+		requireT.Error(err)
+		requireT.ErrorIs(gorm.ErrRecordNotFound, err)
 
 		// Insert metadata using upsert.
 		time1 := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -33,16 +33,16 @@ func TestIndexerMetadata(t *testing.T) {
 			LastFullIndexAt: time1,
 		}
 		err = l.Upsert(db)
-		require.NoError(err)
-		assert.EqualValues(1, l.ID)
-		assert.Equal(time1, l.LastFullIndexAt)
+		requireT.NoError(err)
+		assertT.EqualValues(1, l.ID)
+		assertT.Equal(time1, l.LastFullIndexAt)
 
 		// Get metadata.
 		l = IndexerMetadata{}
 		err = l.Get(db)
-		require.NoError(err)
-		assert.EqualValues(1, l.ID)
-		assert.Equal(time1, l.LastFullIndexAt.UTC())
+		requireT.NoError(err)
+		assertT.EqualValues(1, l.ID)
+		assertT.Equal(time1, l.LastFullIndexAt.UTC())
 
 		// Update metadata using upsert.
 		time2 := time.Date(2002, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -50,15 +50,15 @@ func TestIndexerMetadata(t *testing.T) {
 			LastFullIndexAt: time2,
 		}
 		err = l.Upsert(db)
-		require.NoError(err)
-		assert.EqualValues(1, l.ID)
-		assert.Equal(time2, l.LastFullIndexAt.UTC())
+		requireT.NoError(err)
+		assertT.EqualValues(1, l.ID)
+		assertT.Equal(time2, l.LastFullIndexAt.UTC())
 
 		// Get metadata.
 		l = IndexerMetadata{}
 		err = l.Get(db)
-		require.NoError(err)
-		assert.EqualValues(1, l.ID)
-		assert.Equal(time2, l.LastFullIndexAt.UTC())
+		requireT.NoError(err)
+		assertT.EqualValues(1, l.ID)
+		assertT.Equal(time2, l.LastFullIndexAt.UTC())
 	})
 }

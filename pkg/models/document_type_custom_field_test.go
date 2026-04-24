@@ -20,7 +20,7 @@ func TestDocumentTypeCustomFieldModel(t *testing.T) {
 
 		t.Run("Get a document type custom field before any exist",
 			func(t *testing.T) {
-				require := require.New(t)
+				requireT := require.New(t)
 
 				d := DocumentTypeCustomField{
 					Name: "CustomField1",
@@ -29,34 +29,34 @@ func TestDocumentTypeCustomFieldModel(t *testing.T) {
 					},
 				}
 				err := d.Get(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Upsert an empty document type custom field",
 			func(t *testing.T) {
-				require := require.New(t)
+				requireT := require.New(t)
 
 				p := DocumentTypeCustomField{}
 				err := p.Upsert(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Create a document type", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
 			}
 			err := d.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("DT1", d.Name)
-			assert.Equal("DocumentType1", d.LongName)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("DT1", d.Name)
+			assertT.Equal("DocumentType1", d.LongName)
 		})
 
 		t.Run("Create a first document type custom field using Upsert",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				d := DocumentTypeCustomField{
 					Name: "CustomField1",
@@ -66,26 +66,26 @@ func TestDocumentTypeCustomFieldModel(t *testing.T) {
 					Type: StringDocumentTypeCustomFieldType,
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("CustomField1", d.Name)
-				require.NotNil(d.DocumentType)
-				assert.EqualValues(1, d.DocumentType.ID)
-				assert.Equal("DT1", d.DocumentType.Name)
+				requireT.NoError(err)
+				assertT.EqualValues(1, d.ID)
+				assertT.Equal("CustomField1", d.Name)
+				requireT.NotNil(d.DocumentType)
+				assertT.EqualValues(1, d.DocumentType.ID)
+				assertT.Equal("DT1", d.DocumentType.Name)
 			})
 
 		t.Run("Get an empty document type custom field",
 			func(t *testing.T) {
-				require := require.New(t)
+				requireT := require.New(t)
 
 				p := DocumentTypeCustomField{}
 				err := p.Get(db)
-				require.Error(err)
+				requireT.Error(err)
 			})
 
 		t.Run("Upsert the first document type custom field with no changes",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				d := DocumentTypeCustomField{
 					Name: "CustomField1",
@@ -95,18 +95,18 @@ func TestDocumentTypeCustomFieldModel(t *testing.T) {
 					Type: StringDocumentTypeCustomFieldType,
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(1, d.ID)
-				assert.Equal("CustomField1", d.Name)
-				require.NotNil(d.DocumentType)
-				assert.EqualValues(1, d.DocumentType.ID)
-				assert.Equal("DT1", d.DocumentType.Name)
+				requireT.NoError(err)
+				assertT.EqualValues(1, d.ID)
+				assertT.Equal("CustomField1", d.Name)
+				requireT.NotNil(d.DocumentType)
+				assertT.EqualValues(1, d.DocumentType.ID)
+				assertT.Equal("DT1", d.DocumentType.Name)
 			})
 
 		t.Run("Create a second document type custom field (same document type) "+
 			"using Upsert",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				d := DocumentTypeCustomField{
 					Name: "CustomField2",
@@ -116,31 +116,31 @@ func TestDocumentTypeCustomFieldModel(t *testing.T) {
 					Type: StringDocumentTypeCustomFieldType,
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(2, d.ID)
-				assert.Equal("CustomField2", d.Name)
-				require.NotNil(d.DocumentType)
-				assert.EqualValues(1, d.DocumentType.ID)
-				assert.Equal("DT1", d.DocumentType.Name)
+				requireT.NoError(err)
+				assertT.EqualValues(2, d.ID)
+				assertT.Equal("CustomField2", d.Name)
+				requireT.NotNil(d.DocumentType)
+				assertT.EqualValues(1, d.DocumentType.ID)
+				assertT.Equal("DT1", d.DocumentType.Name)
 			})
 
 		t.Run("Create a second document type", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := DocumentType{
 				Name:     "DT2",
 				LongName: "DocumentType2",
 			}
 			err := d.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(2, d.ID)
-			assert.Equal("DT2", d.Name)
-			assert.Equal("DocumentType2", d.LongName)
+			requireT.NoError(err)
+			assertT.EqualValues(2, d.ID)
+			assertT.Equal("DT2", d.Name)
+			assertT.Equal("DocumentType2", d.LongName)
 		})
 
 		t.Run("Create a third document type custom field (same name) "+
 			"using Upsert",
 			func(t *testing.T) {
-				assert, require := assert.New(t), require.New(t)
+				assertT, requireT := assert.New(t), require.New(t)
 
 				d := DocumentTypeCustomField{
 					Name: "CustomField1",
@@ -150,12 +150,12 @@ func TestDocumentTypeCustomFieldModel(t *testing.T) {
 					Type: StringDocumentTypeCustomFieldType,
 				}
 				err := d.Upsert(db)
-				require.NoError(err)
-				assert.EqualValues(3, d.ID)
-				assert.Equal("CustomField1", d.Name)
-				require.NotNil(d.DocumentType)
-				assert.EqualValues(2, d.DocumentType.ID)
-				assert.Equal("DT2", d.DocumentType.Name)
+				requireT.NoError(err)
+				assertT.EqualValues(3, d.ID)
+				assertT.Equal("CustomField1", d.Name)
+				requireT.NotNil(d.DocumentType)
+				assertT.EqualValues(2, d.DocumentType.ID)
+				assertT.Equal("DT2", d.DocumentType.Name)
 			})
 	})
 }

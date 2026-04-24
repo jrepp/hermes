@@ -17,7 +17,7 @@ func TestIndexerFolder(t *testing.T) {
 	}
 
 	t.Run("Get and Upsert", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 		db, tearDownTest := setupTest(t, dsn)
 		defer tearDownTest(t)
 
@@ -26,8 +26,8 @@ func TestIndexerFolder(t *testing.T) {
 			GoogleDriveID: "ID1",
 		}
 		err := l.Get(db)
-		require.Error(err)
-		require.ErrorIs(err, gorm.ErrRecordNotFound)
+		requireT.Error(err)
+		requireT.ErrorIs(err, gorm.ErrRecordNotFound)
 
 		// Insert folder using Upsert.
 		time1 := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -36,20 +36,20 @@ func TestIndexerFolder(t *testing.T) {
 			LastIndexedAt: time1,
 		}
 		err = l.Upsert(db)
-		require.NoError(err)
-		assert.EqualValues(1, l.ID)
-		assert.Equal("ID1", l.GoogleDriveID)
-		assert.Equal(time1, l.LastIndexedAt)
+		requireT.NoError(err)
+		assertT.EqualValues(1, l.ID)
+		assertT.Equal("ID1", l.GoogleDriveID)
+		assertT.Equal(time1, l.LastIndexedAt)
 
 		// Get folder.
 		l = IndexerFolder{
 			GoogleDriveID: "ID1",
 		}
 		err = l.Get(db)
-		require.NoError(err)
-		assert.EqualValues(1, l.ID)
-		assert.Equal("ID1", l.GoogleDriveID)
-		assert.Equal(time1, l.LastIndexedAt.UTC())
+		requireT.NoError(err)
+		assertT.EqualValues(1, l.ID)
+		assertT.Equal("ID1", l.GoogleDriveID)
+		assertT.Equal(time1, l.LastIndexedAt.UTC())
 
 		// Insert another folder using Upsert.
 		time2 := time.Date(2002, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -58,20 +58,20 @@ func TestIndexerFolder(t *testing.T) {
 			LastIndexedAt: time2,
 		}
 		err = l.Upsert(db)
-		require.NoError(err)
-		assert.EqualValues(2, l.ID)
-		assert.Equal("ID2", l.GoogleDriveID)
-		assert.Equal(time2, l.LastIndexedAt.UTC())
+		requireT.NoError(err)
+		assertT.EqualValues(2, l.ID)
+		assertT.Equal("ID2", l.GoogleDriveID)
+		assertT.Equal(time2, l.LastIndexedAt.UTC())
 
 		// Get folder.
 		l = IndexerFolder{
 			GoogleDriveID: "ID2",
 		}
 		err = l.Get(db)
-		require.NoError(err)
-		assert.EqualValues(2, l.ID)
-		assert.Equal("ID2", l.GoogleDriveID)
-		assert.Equal(time2, l.LastIndexedAt.UTC())
+		requireT.NoError(err)
+		assertT.EqualValues(2, l.ID)
+		assertT.Equal("ID2", l.GoogleDriveID)
+		assertT.Equal(time2, l.LastIndexedAt.UTC())
 
 		// Update the second folder using Upsert.
 		time3 := time.Date(2003, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -80,19 +80,19 @@ func TestIndexerFolder(t *testing.T) {
 			LastIndexedAt: time3,
 		}
 		err = l.Upsert(db)
-		require.NoError(err)
-		assert.EqualValues(2, l.ID)
-		assert.Equal("ID2", l.GoogleDriveID)
-		assert.Equal(time3, l.LastIndexedAt.UTC())
+		requireT.NoError(err)
+		assertT.EqualValues(2, l.ID)
+		assertT.Equal("ID2", l.GoogleDriveID)
+		assertT.Equal(time3, l.LastIndexedAt.UTC())
 
 		// Get folder.
 		l = IndexerFolder{
 			GoogleDriveID: "ID2",
 		}
 		err = l.Get(db)
-		require.NoError(err)
-		assert.EqualValues(2, l.ID)
-		assert.Equal("ID2", l.GoogleDriveID)
-		assert.Equal(time3, l.LastIndexedAt.UTC())
+		requireT.NoError(err)
+		assertT.EqualValues(2, l.ID)
+		assertT.Equal("ID2", l.GoogleDriveID)
+		assertT.Equal(time3, l.LastIndexedAt.UTC())
 	})
 }

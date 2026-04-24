@@ -16,7 +16,7 @@ func TestDocumentType(t *testing.T) {
 	}
 
 	t.Run("FirstOrCreate and Get", func(t *testing.T) {
-		assert, require := assert.New(t), require.New(t)
+		assertT, requireT := assert.New(t), require.New(t)
 		db, tearDownTest := setupTest(t, dsn)
 		defer tearDownTest(t)
 
@@ -25,8 +25,8 @@ func TestDocumentType(t *testing.T) {
 			Name: "DT1",
 		}
 		err := d.Get(db)
-		require.Error(err)
-		require.ErrorIs(gorm.ErrRecordNotFound, err)
+		requireT.Error(err)
+		requireT.ErrorIs(gorm.ErrRecordNotFound, err)
 
 		// Create a document type.
 		d = DocumentType{
@@ -34,20 +34,20 @@ func TestDocumentType(t *testing.T) {
 			LongName: "DocumentType1",
 		}
 		err = d.FirstOrCreate(db)
-		require.NoError(err)
-		assert.EqualValues(1, d.ID)
-		assert.Equal("DT1", d.Name)
-		assert.Equal("DocumentType1", d.LongName)
+		requireT.NoError(err)
+		assertT.EqualValues(1, d.ID)
+		assertT.Equal("DT1", d.Name)
+		assertT.Equal("DocumentType1", d.LongName)
 
 		// Get the document type.
 		d = DocumentType{
 			Name: "DT1",
 		}
 		err = d.Get(db)
-		require.NoError(err)
-		assert.EqualValues(1, d.ID)
-		assert.Equal("DT1", d.Name)
-		assert.Equal("DocumentType1", d.LongName)
+		requireT.NoError(err)
+		assertT.EqualValues(1, d.ID)
+		assertT.Equal("DT1", d.Name)
+		assertT.Equal("DocumentType1", d.LongName)
 
 		// Create another document type.
 		d = DocumentType{
@@ -55,32 +55,32 @@ func TestDocumentType(t *testing.T) {
 			LongName: "DocumentType2",
 		}
 		err = d.FirstOrCreate(db)
-		require.NoError(err)
-		assert.EqualValues(2, d.ID)
-		assert.Equal("DT2", d.Name)
-		assert.Equal("DocumentType2", d.LongName)
+		requireT.NoError(err)
+		assertT.EqualValues(2, d.ID)
+		assertT.Equal("DT2", d.Name)
+		assertT.Equal("DocumentType2", d.LongName)
 
 		// Get the document type.
 		d = DocumentType{
 			Name: "DT2",
 		}
 		err = d.Get(db)
-		require.NoError(err)
-		assert.EqualValues(2, d.ID)
-		assert.Equal("DT2", d.Name)
-		assert.Equal("DocumentType2", d.LongName)
+		requireT.NoError(err)
+		assertT.EqualValues(2, d.ID)
+		assertT.Equal("DT2", d.Name)
+		assertT.Equal("DocumentType2", d.LongName)
 
 		// Get all document types.
 		ds := DocumentTypes{}
 		err = ds.GetAll(db)
-		require.NoError(err)
-		require.Len(ds, 2)
-		assert.EqualValues(1, ds[0].ID)
-		assert.Equal("DT1", ds[0].Name)
-		assert.Equal("DocumentType1", ds[0].LongName)
-		assert.EqualValues(2, ds[1].ID)
-		assert.Equal("DT2", ds[1].Name)
-		assert.Equal("DocumentType2", ds[1].LongName)
+		requireT.NoError(err)
+		requireT.Len(ds, 2)
+		assertT.EqualValues(1, ds[0].ID)
+		assertT.Equal("DT1", ds[0].Name)
+		assertT.Equal("DocumentType1", ds[0].LongName)
+		assertT.EqualValues(2, ds[1].ID)
+		assertT.Equal("DT2", ds[1].Name)
+		assertT.Equal("DocumentType2", ds[1].LongName)
 	})
 
 	t.Run("FirstOrCreate with custom fields", func(t *testing.T) {
@@ -88,7 +88,7 @@ func TestDocumentType(t *testing.T) {
 		defer tearDownTest(t)
 
 		t.Run("Create document type", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := DocumentType{
 				Name:     "DT1",
 				LongName: "DocumentType1",
@@ -108,36 +108,36 @@ func TestDocumentType(t *testing.T) {
 				},
 			}
 			err := d.FirstOrCreate(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("DT1", d.Name)
-			assert.Equal("DocumentType1", d.LongName)
-			require.Len(d.CustomFields, 3)
-			assert.Equal("CustomStringField", d.CustomFields[0].Name)
-			assert.Equal(StringDocumentTypeCustomFieldType, d.CustomFields[0].Type)
-			assert.Equal("CustomPersonField", d.CustomFields[1].Name)
-			assert.Equal(PersonDocumentTypeCustomFieldType, d.CustomFields[1].Type)
-			assert.Equal("CustomPeopleField", d.CustomFields[2].Name)
-			assert.Equal(PeopleDocumentTypeCustomFieldType, d.CustomFields[2].Type)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("DT1", d.Name)
+			assertT.Equal("DocumentType1", d.LongName)
+			requireT.Len(d.CustomFields, 3)
+			assertT.Equal("CustomStringField", d.CustomFields[0].Name)
+			assertT.Equal(StringDocumentTypeCustomFieldType, d.CustomFields[0].Type)
+			assertT.Equal("CustomPersonField", d.CustomFields[1].Name)
+			assertT.Equal(PersonDocumentTypeCustomFieldType, d.CustomFields[1].Type)
+			assertT.Equal("CustomPeopleField", d.CustomFields[2].Name)
+			assertT.Equal(PeopleDocumentTypeCustomFieldType, d.CustomFields[2].Type)
 		})
 
 		t.Run("Get document type", func(t *testing.T) {
-			assert, require := assert.New(t), require.New(t)
+			assertT, requireT := assert.New(t), require.New(t)
 			d := DocumentType{
 				Name: "DT1",
 			}
 			err := d.Get(db)
-			require.NoError(err)
-			assert.EqualValues(1, d.ID)
-			assert.Equal("DT1", d.Name)
-			assert.Equal("DocumentType1", d.LongName)
-			require.Len(d.CustomFields, 3)
-			assert.Equal("CustomStringField", d.CustomFields[0].Name)
-			assert.Equal(StringDocumentTypeCustomFieldType, d.CustomFields[0].Type)
-			assert.Equal("CustomPersonField", d.CustomFields[1].Name)
-			assert.Equal(PersonDocumentTypeCustomFieldType, d.CustomFields[1].Type)
-			assert.Equal("CustomPeopleField", d.CustomFields[2].Name)
-			assert.Equal(PeopleDocumentTypeCustomFieldType, d.CustomFields[2].Type)
+			requireT.NoError(err)
+			assertT.EqualValues(1, d.ID)
+			assertT.Equal("DT1", d.Name)
+			assertT.Equal("DocumentType1", d.LongName)
+			requireT.Len(d.CustomFields, 3)
+			assertT.Equal("CustomStringField", d.CustomFields[0].Name)
+			assertT.Equal(StringDocumentTypeCustomFieldType, d.CustomFields[0].Type)
+			assertT.Equal("CustomPersonField", d.CustomFields[1].Name)
+			assertT.Equal(PersonDocumentTypeCustomFieldType, d.CustomFields[1].Type)
+			assertT.Equal("CustomPeopleField", d.CustomFields[2].Name)
+			assertT.Equal(PeopleDocumentTypeCustomFieldType, d.CustomFields[2].Type)
 		})
 	})
 }

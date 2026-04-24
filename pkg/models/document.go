@@ -52,6 +52,7 @@ type Documents []Document
 // "Approved", "Obsolete").
 type DocumentStatus int
 
+// Document status constants.
 const (
 	UnspecifiedDocumentStatus DocumentStatus = iota
 	WIPDocumentStatus
@@ -716,15 +717,15 @@ func (d *Document) GetDocumentUUID() docid.UUID {
 }
 
 // SetDocumentUUID sets the document UUID.
-func (d *Document) SetDocumentUUID(uuid docid.UUID) {
-	d.DocumentUUID = &uuid
+func (d *Document) SetDocumentUUID(docUUID docid.UUID) {
+	d.DocumentUUID = &docUUID
 }
 
 // GetByUUID retrieves a document by its UUID.
-func (d *Document) GetByUUID(db *gorm.DB, uuid docid.UUID) error {
+func (d *Document) GetByUUID(db *gorm.DB, docUUID docid.UUID) error {
 	return db.
 		Preload(clause.Associations).
-		Where("document_uuid = ?", uuid).
+		Where("document_uuid = ?", docUUID).
 		First(&d).
 		Error
 }
@@ -733,8 +734,8 @@ func (d *Document) GetByUUID(db *gorm.DB, uuid docid.UUID) error {
 // Tries UUID first (preferred), falls back to GoogleFileID for backward compatibility.
 func (d *Document) GetByGoogleFileIDOrUUID(db *gorm.DB, id string) error {
 	// Try parsing as UUID first
-	if uuid, err := docid.ParseUUID(id); err == nil {
-		if err := d.GetByUUID(db, uuid); err == nil {
+	if parsedUUID, err := docid.ParseUUID(id); err == nil {
+		if err := d.GetByUUID(db, parsedUUID); err == nil {
 			return nil
 		}
 		// UUID parse succeeded but no document found, fall through to GoogleFileID

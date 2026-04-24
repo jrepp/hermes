@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// ProjectRelatedResourceHermesDocument is a model for a Hermes document related resource on a project.
+//
 //nolint:govet // Keep ORM field grouping readable; alignment churn is low value here.
 type ProjectRelatedResourceHermesDocument struct {
 	gorm.Model
@@ -15,6 +17,7 @@ type ProjectRelatedResourceHermesDocument struct {
 	Document        Document
 }
 
+// Create creates a Hermes document related resource for a project in database db.
 func (rr *ProjectRelatedResourceHermesDocument) Create(db *gorm.DB) error {
 	// Validate required fields.
 	if err := validation.ValidateStruct(&rr.RelatedResource,
