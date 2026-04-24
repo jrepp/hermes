@@ -81,49 +81,6 @@ func TestCompleteIntegration_DocumentLifecycle(t *testing.T) {
 	// - WithDocument() -> use WithDocument() with different signature
 
 	// Temporarily disabled workspace setup - test will focus on API layer
-	/*
-		rfcTemplateID := suite.Config.DocumentTypes.DocumentType[0].Template
-		// Old Adapter code:
-		mockWorkspace.WithFile(rfcTemplateID, "RFC Template", "application/vnd.google-apps.document").
-			WithFileContent(rfcTemplateID, "# RFC Template\n\n## Summary\n").
-			WithDocument(rfcTemplateID, &docs.Document{
-				DocumentId: rfcTemplateID,
-				Title:      "RFC Template",
-				Body: &docs.Body{
-					Content: []*docs.StructuralElement{
-						{
-							Paragraph: &docs.Paragraph{
-								Elements: []*docs.ParagraphElement{
-									{TextRun: &docs.TextRun{Content: "RFC Template\n"}},
-								},
-							},
-						},
-					},
-				},
-			})
-
-		// Create PRD template file (if we add more document types later)
-		prdTemplateID := suite.Config.DocumentTypes.DocumentType[1].Template
-		if prdTemplateID != rfcTemplateID {
-			mockWorkspace.WithFile(prdTemplateID, "PRD Template", "application/vnd.google-apps.document").
-				WithFileContent(prdTemplateID, "# PRD Template\n\n## Overview\n").
-				WithDocument(prdTemplateID, &docs.Document{
-					DocumentId: prdTemplateID,
-					Title:      "PRD Template",
-					Body: &docs.Body{
-						Content: []*docs.StructuralElement{
-							{
-								Paragraph: &docs.Paragraph{
-									Elements: []*docs.ParagraphElement{
-										{TextRun: &docs.TextRun{Content: "PRD Template\n"}},
-									},
-								},
-							},
-						},
-					},
-				})
-		}
-	*/
 
 	// Note: Template IDs are already set in suite.Config.DocumentTypes, no need to update
 	// Create server with all dependencies injected
@@ -521,25 +478,6 @@ func TestCompleteIntegration_MultiUserScenario(t *testing.T) {
 	// mockWorkspace := suite.WorkspaceProvider.(*mock.FakeAdapter)
 	// rfcTemplateID := suite.Config.DocumentTypes.DocumentType[0].Template
 	// Temporarily disabled - FakeAdapter uses different setup methods
-	/*
-		mockWorkspace.WithFile(rfcTemplateID, "RFC Template", "application/vnd.google-apps.document").
-			WithFileContent(rfcTemplateID, "# RFC Template\n").
-			WithDocument(rfcTemplateID, &docs.Document{
-				DocumentId: rfcTemplateID,
-				Title:      "RFC Template",
-				Body: &docs.Body{
-					Content: []*docs.StructuralElement{
-						{
-							Paragraph: &docs.Paragraph{
-								Elements: []*docs.ParagraphElement{
-									{TextRun: &docs.TextRun{Content: "RFC Template\n"}},
-								},
-							},
-						},
-					},
-				},
-			})
-	*/
 
 	// Create multiple users
 	alice := fixtures.NewUser().WithEmail("alice@hashicorp.com").Create(t, suite.DB)

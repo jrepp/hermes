@@ -58,7 +58,7 @@ func TestFullPipelineWithDocsInternal(t *testing.T) {
 		// Try to detect repo root
 		cwd, err := os.Getwd()
 		require.NoError(t, err, "Failed to get working directory")
-		repoRoot = filepath.Join(cwd, "../../..")
+		repoRoot = filepath.Join(cwd, "..", "..", "..")
 	}
 
 	docsPath := filepath.Join(repoRoot, "docs-internal")
@@ -284,7 +284,7 @@ func TestPipelineWithSingleDocument(t *testing.T) {
 	if repoRoot == "" {
 		cwd, err := os.Getwd()
 		require.NoError(t, err)
-		repoRoot = filepath.Join(cwd, "../../..")
+		repoRoot = filepath.Join(cwd, "..", "..", "..")
 	}
 
 	docsPath := filepath.Join(repoRoot, "docs-internal")
@@ -293,7 +293,7 @@ func TestPipelineWithSingleDocument(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	workspace := workspaceAdapter.DocumentStorage()
+	ws := workspaceAdapter.DocumentStorage()
 
 	aiProvider, err := ollama.NewProvider(&ollama.Config{
 		BaseURL:        ollamaBaseURL,
@@ -305,7 +305,7 @@ func TestPipelineWithSingleDocument(t *testing.T) {
 
 	// Find README.md in docs-internal
 	readmePath := "README.md"
-	docs, err := workspace.ListDocuments(ctx, "", nil)
+	docs, err := ws.ListDocuments(ctx, "", nil)
 	require.NoError(t, err, "Failed to list documents")
 
 	var readmeDoc *indexer.DocumentContext
@@ -313,7 +313,7 @@ func TestPipelineWithSingleDocument(t *testing.T) {
 		if doc.Name == readmePath {
 			readmeDoc = &indexer.DocumentContext{
 				Document:       doc,
-				SourceProvider: workspace,
+				SourceProvider: ws,
 				StartTime:      time.Now(),
 			}
 			break
@@ -543,59 +543,59 @@ func (n *noOpDocumentStorage) UpdateDocument(_ context.Context, id string, _ *wo
 	return &workspace.Document{ID: id}, nil
 }
 
-func (n *noOpDocumentStorage) DeleteDocument(ctx context.Context, id string) error {
+func (n *noOpDocumentStorage) DeleteDocument(_ context.Context, _ string) error {
 	return nil
 }
 
-func (n *noOpDocumentStorage) ListDocuments(ctx context.Context, folderID string, opts *workspace.ListOptions) ([]*workspace.Document, error) {
+func (n *noOpDocumentStorage) ListDocuments(_ context.Context, _ string, _ *workspace.ListOptions) ([]*workspace.Document, error) {
 	return nil, nil
 }
 
-func (n *noOpDocumentStorage) GetDocumentContent(ctx context.Context, id string) (string, error) {
+func (n *noOpDocumentStorage) GetDocumentContent(_ context.Context, _ string) (string, error) {
 	return "", nil
 }
 
-func (n *noOpDocumentStorage) UpdateDocumentContent(ctx context.Context, id string, content string) error {
+func (n *noOpDocumentStorage) UpdateDocumentContent(_ context.Context, _, _ string) error {
 	return nil
 }
 
-func (n *noOpDocumentStorage) ReplaceTextInDocument(ctx context.Context, id string, replacements map[string]string) error {
+func (n *noOpDocumentStorage) ReplaceTextInDocument(_ context.Context, _ string, _ map[string]string) error {
 	return nil
 }
 
-func (n *noOpDocumentStorage) CopyDocument(ctx context.Context, sourceID, destFolderID, name string) (*workspace.Document, error) {
+func (n *noOpDocumentStorage) CopyDocument(_ context.Context, _, _, _ string) (*workspace.Document, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (n *noOpDocumentStorage) MoveDocument(ctx context.Context, docID, destFolderID string) error {
+func (n *noOpDocumentStorage) MoveDocument(_ context.Context, _, _ string) error {
 	return nil
 }
 
-func (n *noOpDocumentStorage) CreateFolder(ctx context.Context, name, parentID string) (*workspace.Folder, error) {
+func (n *noOpDocumentStorage) CreateFolder(_ context.Context, _, _ string) (*workspace.Folder, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (n *noOpDocumentStorage) GetFolder(ctx context.Context, id string) (*workspace.Folder, error) {
+func (n *noOpDocumentStorage) GetFolder(_ context.Context, id string) (*workspace.Folder, error) {
 	return nil, workspace.NotFoundError("folder", id)
 }
 
-func (n *noOpDocumentStorage) ListFolders(ctx context.Context, parentID string) ([]*workspace.Folder, error) {
+func (n *noOpDocumentStorage) ListFolders(_ context.Context, _ string) ([]*workspace.Folder, error) {
 	return nil, nil
 }
 
-func (n *noOpDocumentStorage) GetSubfolder(ctx context.Context, parentID, name string) (*workspace.Folder, error) {
+func (n *noOpDocumentStorage) GetSubfolder(_ context.Context, _, name string) (*workspace.Folder, error) {
 	return nil, workspace.NotFoundError("folder", name)
 }
 
-func (n *noOpDocumentStorage) ListRevisions(ctx context.Context, docID string) ([]*workspace.Revision, error) {
+func (n *noOpDocumentStorage) ListRevisions(_ context.Context, _ string) ([]*workspace.Revision, error) {
 	return nil, nil
 }
 
-func (n *noOpDocumentStorage) GetRevision(ctx context.Context, docID, revisionID string) (*workspace.Revision, error) {
+func (n *noOpDocumentStorage) GetRevision(_ context.Context, _, revisionID string) (*workspace.Revision, error) {
 	return nil, workspace.NotFoundError("revision", revisionID)
 }
 
-func (n *noOpDocumentStorage) GetLatestRevision(ctx context.Context, docID string) (*workspace.Revision, error) {
+func (n *noOpDocumentStorage) GetLatestRevision(_ context.Context, _ string) (*workspace.Revision, error) {
 	return nil, workspace.NotFoundError("revision", "latest")
 }
 
@@ -609,7 +609,7 @@ func (c *SimpleTransformCommand) Name() string {
 	return "simple-transform"
 }
 
-func (c *SimpleTransformCommand) Execute(ctx context.Context, doc *indexer.DocumentContext) error {
+func (c *SimpleTransformCommand) Execute(_ context.Context, doc *indexer.DocumentContext) error {
 	if c.Logger == nil {
 		c.Logger = hclog.NewNullLogger()
 	}

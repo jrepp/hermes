@@ -277,7 +277,7 @@ func (pc *PrerequisiteChecker) checkMigrationTables(ctx context.Context, db *sql
 }
 
 // checkMinioBucket verifies MinIO bucket exists and versioning is enabled.
-func (pc *PrerequisiteChecker) checkMinioBucket(ctx context.Context) {
+func (pc *PrerequisiteChecker) checkMinioBucket(_ context.Context) {
 	pc.t.Helper()
 	pc.t.Log("Checking MinIO bucket...")
 

@@ -76,30 +76,30 @@ func TestMigrationE2E(t *testing.T) {
 
 	// Phase 1: Database Prerequisites
 	t.Run("Phase1_DatabasePrerequisites", func(t *testing.T) {
-		testDatabasePrerequisites(t, ctx, db)
+		testDatabasePrerequisites(ctx, t, db)
 	})
 
 	// Phase 2: Provider Registration
 	var sourceProviderID, destProviderID int64
 	t.Run("Phase2_ProviderRegistration", func(t *testing.T) {
-		sourceProviderID, destProviderID = testProviderRegistration(t, ctx, db)
+		sourceProviderID, destProviderID = testProviderRegistration(ctx, t, db)
 	})
 
 	// Phase 3: Create Test Documents
 	var testDocuments []testDocument
 	t.Run("Phase3_CreateTestDocuments", func(t *testing.T) {
-		testDocuments = createTestDocuments(t, ctx, logger)
+		testDocuments = createTestDocuments(t)
 	})
 
 	// Phase 4: Migration Job Creation
 	var jobID int64
 	t.Run("Phase4_MigrationJobCreation", func(t *testing.T) {
-		jobID = testMigrationJobCreation(t, ctx, db, sourceProviderID, destProviderID, testDocuments)
+		jobID = testMigrationJobCreation(ctx, t, db, sourceProviderID, destProviderID, testDocuments)
 	})
 
 	// Phase 5: Queue Documents for Migration
 	t.Run("Phase5_QueueDocuments", func(t *testing.T) {
-		testQueueDocuments(t, ctx, db, jobID, testDocuments)
+		testQueueDocuments(ctx, t, db, jobID, testDocuments)
 	})
 
 	// Phase 6: Start Migration Job
@@ -114,12 +114,12 @@ func TestMigrationE2E(t *testing.T) {
 
 	// Phase 8: Verify Migration Results
 	t.Run("Phase8_VerifyMigrationResults", func(t *testing.T) {
-		testVerifyMigrationResults(t, ctx, db, logger, jobID, testDocuments)
+		testVerifyMigrationResults(ctx, t, db, logger, jobID, testDocuments)
 	})
 
 	// Phase 9: Progress Tracking
 	t.Run("Phase9_ProgressTracking", func(t *testing.T) {
-		testProgressTracking(t, ctx, db, jobID)
+		testProgressTracking(ctx, t, db, jobID)
 	})
 
 	// Phase 9b: Strong Signal Validation (NEW)
@@ -129,12 +129,12 @@ func TestMigrationE2E(t *testing.T) {
 
 	// Phase 10: Cleanup
 	t.Run("Phase10_Cleanup", func(t *testing.T) {
-		testCleanup(t, ctx, db, jobID, sourceProviderID, destProviderID)
+		testCleanup(ctx, t, db, jobID, sourceProviderID, destProviderID)
 	})
 }
 
 // testDatabasePrerequisites verifies database-specific prerequisites.
-func testDatabasePrerequisites(t *testing.T, ctx context.Context, db *sql.DB) {
+func testDatabasePrerequisites(ctx context.Context, t *testing.T, db *sql.DB) {
 	t.Log("=== Phase 1: Database Prerequisites ===")
 
 	// Verify all migration-related tables exist
@@ -169,7 +169,7 @@ func testDatabasePrerequisites(t *testing.T, ctx context.Context, db *sql.DB) {
 }
 
 // testProviderRegistration creates source and destination providers in the database.
-func testProviderRegistration(t *testing.T, ctx context.Context, db *sql.DB) (sourceID, destID int64) {
+func testProviderRegistration(ctx context.Context, t *testing.T, db *sql.DB) (sourceID, destID int64) {
 	t.Log("=== Phase 2: Provider Registration ===")
 
 	// Clean up any existing test providers
@@ -246,12 +246,12 @@ type testDocument struct {
 }
 
 // createTestDocuments creates test documents in memory (mock source).
-func createTestDocuments(t *testing.T, ctx context.Context, logger hclog.Logger) []testDocument {
+func createTestDocuments(t *testing.T) []testDocument {
 	t.Log("=== Phase 3: Create Test Documents ===")
 
 	docs := make([]testDocument, 5)
 	for i := 0; i < 5; i++ {
-		uuid := docid.NewUUID()
+		docUUID := docid.NewUUID()
 		content := fmt.Sprintf("# Test Migration Document %d\n\nThis is test document number %d created at %s.\n\nContent for migration testing with RFC-089.",
 			i+1, i+1, time.Now().Format(time.RFC3339))
 
@@ -259,14 +259,14 @@ func createTestDocuments(t *testing.T, ctx context.Context, logger hclog.Logger)
 		hash := computeContentHash(content)
 
 		docs[i] = testDocument{
-			UUID:       uuid,
-			ProviderID: uuid.String(), // Mock provider uses UUID as provider ID
+			UUID:       docUUID,
+			ProviderID: docUUID.String(),
 			Name:       fmt.Sprintf("Test Migration Doc %d", i+1),
 			Content:    content,
 			Hash:       hash,
 		}
 
-		t.Logf("✓ Created test document %d (UUID: %s, Hash: %s)", i+1, uuid.String()[:8]+"...", hash[:8]+"...")
+		t.Logf("✓ Created test document %d (UUID: %s, Hash: %s)", i+1, docUUID.String()[:8]+"...", hash[:8]+"...")
 	}
 
 	t.Logf("✅ Created %d test documents", len(docs))
@@ -274,7 +274,7 @@ func createTestDocuments(t *testing.T, ctx context.Context, logger hclog.Logger)
 }
 
 // testMigrationJobCreation creates a migration job in the database.
-func testMigrationJobCreation(t *testing.T, ctx context.Context, db *sql.DB, sourceID, destID int64, docs []testDocument) int64 {
+func testMigrationJobCreation(ctx context.Context, t *testing.T, db *sql.DB, sourceID, destID int64, docs []testDocument) int64 {
 	t.Log("=== Phase 4: Migration Job Creation ===")
 
 	jobName := fmt.Sprintf("e2e-test-migration-%s", uuid.New().String()[:8])
@@ -301,7 +301,7 @@ func testMigrationJobCreation(t *testing.T, ctx context.Context, db *sql.DB, sou
 }
 
 // testQueueDocuments queues documents for migration using the transactional outbox pattern.
-func testQueueDocuments(t *testing.T, ctx context.Context, db *sql.DB, jobID int64, docs []testDocument) {
+func testQueueDocuments(ctx context.Context, t *testing.T, db *sql.DB, jobID int64, docs []testDocument) {
 	t.Log("=== Phase 5: Queue Documents ===")
 
 	for i, doc := range docs {
@@ -520,7 +520,7 @@ checkResults:
 }
 
 // testVerifyMigrationResults verifies documents were correctly migrated to S3.
-func testVerifyMigrationResults(t *testing.T, ctx context.Context, db *sql.DB, logger hclog.Logger, jobID int64, docs []testDocument) {
+func testVerifyMigrationResults(ctx context.Context, t *testing.T, db *sql.DB, logger hclog.Logger, jobID int64, docs []testDocument) {
 	t.Log("=== Phase 8: Verify Migration Results ===")
 
 	// Create S3 adapter to verify documents
@@ -581,7 +581,7 @@ func testVerifyMigrationResults(t *testing.T, ctx context.Context, db *sql.DB, l
 }
 
 // testProgressTracking verifies migration progress tracking.
-func testProgressTracking(t *testing.T, ctx context.Context, db *sql.DB, jobID int64) {
+func testProgressTracking(ctx context.Context, t *testing.T, db *sql.DB, jobID int64) {
 	t.Log("=== Phase 9: Progress Tracking ===")
 
 	// Check job status
@@ -704,7 +704,7 @@ func testStrongSignalValidation(ctx context.Context, t *testing.T, db *sql.DB, l
 }
 
 // testCleanup cleans up test data from the database.
-func testCleanup(t *testing.T, ctx context.Context, db *sql.DB, jobID, sourceID, destID int64) {
+func testCleanup(ctx context.Context, t *testing.T, db *sql.DB, jobID, sourceID, destID int64) {
 	t.Log("=== Phase 10: Cleanup ===")
 
 	// Delete outbox events
@@ -785,129 +785,129 @@ func (m *mockProvider) RenameDocument(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CreateFolder(ctx context.Context, name, parentID string) (*workspace.DocumentMetadata, error) {
+func (m *mockProvider) CreateFolder(_ context.Context, _, _ string) (*workspace.DocumentMetadata, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetSubfolder(ctx context.Context, parentID, name string) (string, error) {
+func (m *mockProvider) GetSubfolder(_ context.Context, _, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
 // ContentProvider interface
-func (m *mockProvider) GetContent(ctx context.Context, providerID string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContent(_ context.Context, providerID string) (*workspace.DocumentContent, error) {
 	if content, ok := m.content[providerID]; ok {
 		return content, nil
 	}
 	return nil, fmt.Errorf("content not found: %s", providerID)
 }
 
-func (m *mockProvider) GetContentByUUID(ctx context.Context, uuid docid.UUID) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContentByUUID(_ context.Context, docUUID docid.UUID) (*workspace.DocumentContent, error) {
 	for _, content := range m.content {
-		if content.UUID == uuid {
+		if content.UUID == docUUID {
 			return content, nil
 		}
 	}
-	return nil, fmt.Errorf("content not found for UUID: %s", uuid.String())
+	return nil, fmt.Errorf("content not found for UUID: %s", docUUID.String())
 }
 
-func (m *mockProvider) UpdateContent(ctx context.Context, providerID, content string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) UpdateContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetContentBatch(ctx context.Context, providerIDs []string) ([]*workspace.DocumentContent, error) {
+func (m *mockProvider) GetContentBatch(_ context.Context, _ []string) ([]*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CompareContent(ctx context.Context, providerID1, providerID2 string) (*workspace.ContentComparison, error) {
+func (m *mockProvider) CompareContent(_ context.Context, _, _ string) (*workspace.ContentComparison, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // RevisionTrackingProvider interface
-func (m *mockProvider) GetRevisionHistory(ctx context.Context, providerID string, limit int) ([]*workspace.BackendRevision, error) {
+func (m *mockProvider) GetRevisionHistory(_ context.Context, _ string, _ int) ([]*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetRevision(ctx context.Context, providerID, revisionID string) (*workspace.BackendRevision, error) {
+func (m *mockProvider) GetRevision(_ context.Context, _, _ string) (*workspace.BackendRevision, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetRevisionContent(ctx context.Context, providerID, revisionID string) (*workspace.DocumentContent, error) {
+func (m *mockProvider) GetRevisionContent(_ context.Context, _, _ string) (*workspace.DocumentContent, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) CompareRevisions(ctx context.Context, providerID, revisionID1, revisionID2 string) (*workspace.ContentComparison, error) {
+func (m *mockProvider) CompareRevisions(_ context.Context, _, _, _ string) (*workspace.ContentComparison, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) KeepRevisionForever(ctx context.Context, providerID, revisionID string) error {
+func (m *mockProvider) KeepRevisionForever(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetAllDocumentRevisions(ctx context.Context, uuid docid.UUID) ([]*workspace.RevisionInfo, error) {
+func (m *mockProvider) GetAllDocumentRevisions(_ context.Context, _ docid.UUID) ([]*workspace.RevisionInfo, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // PermissionProvider interface (stubs)
-func (m *mockProvider) ShareDocument(ctx context.Context, providerID, email, role string) error {
+func (m *mockProvider) ShareDocument(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ShareDocumentWithDomain(ctx context.Context, providerID, domain, role string) error {
+func (m *mockProvider) ShareDocumentWithDomain(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ListPermissions(ctx context.Context, providerID string) ([]*workspace.FilePermission, error) {
+func (m *mockProvider) ListPermissions(_ context.Context, _ string) ([]*workspace.FilePermission, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) RemovePermission(ctx context.Context, providerID, permissionID string) error {
+func (m *mockProvider) RemovePermission(_ context.Context, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) UpdatePermission(ctx context.Context, providerID, permissionID, newRole string) error {
+func (m *mockProvider) UpdatePermission(_ context.Context, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
 // PeopleProvider interface (stubs)
-func (m *mockProvider) SearchPeople(ctx context.Context, query string) ([]*workspace.UserIdentity, error) {
+func (m *mockProvider) SearchPeople(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetPerson(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) GetPerson(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetPersonByUnifiedID(ctx context.Context, unifiedID string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) GetPersonByUnifiedID(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) ResolveIdentity(ctx context.Context, email string) (*workspace.UserIdentity, error) {
+func (m *mockProvider) ResolveIdentity(_ context.Context, _ string) (*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // TeamProvider interface (stubs)
-func (m *mockProvider) ListTeams(ctx context.Context, domain, query string, maxResults int64) ([]*workspace.Team, error) {
+func (m *mockProvider) ListTeams(_ context.Context, _, _ string, _ int64) ([]*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetTeam(ctx context.Context, teamID string) (*workspace.Team, error) {
+func (m *mockProvider) GetTeam(_ context.Context, _ string) (*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetUserTeams(ctx context.Context, userEmail string) ([]*workspace.Team, error) {
+func (m *mockProvider) GetUserTeams(_ context.Context, _ string) ([]*workspace.Team, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) GetTeamMembers(ctx context.Context, teamID string) ([]*workspace.UserIdentity, error) {
+func (m *mockProvider) GetTeamMembers(_ context.Context, _ string) ([]*workspace.UserIdentity, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
 // NotificationProvider interface (stubs)
-func (m *mockProvider) SendEmail(ctx context.Context, to []string, from, subject, body string) error {
+func (m *mockProvider) SendEmail(_ context.Context, _ []string, _, _, _ string) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockProvider) SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error {
+func (m *mockProvider) SendEmailWithTemplate(_ context.Context, _ []string, _ string, _ map[string]any) error {
 	return fmt.Errorf("not implemented")
 }
 

@@ -131,6 +131,8 @@ func (b *DocumentBuilder) Build() *models.Document {
 }
 
 // Create saves the document to the database and returns it.
+//
+//nolint:gocognit,gocyclo // builder create logic with multiple optional associations
 func (b *DocumentBuilder) Create(t *testing.T, db *gorm.DB) *models.Document {
 	// Look up document type by name if set
 	if b.doc.DocumentType.Name != "" {

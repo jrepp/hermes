@@ -1,5 +1,7 @@
 //go:build integration
+// +build integration
 
+// Package workspace provides integration tests for workspace operations.
 package workspace
 
 import (

@@ -108,8 +108,7 @@ func NewIntegrationSuite(t *testing.T, opts ...Option) *IntegrationSuite {
 	}
 
 	// Setup server
-	err = suite.setupServer()
-	require.NoError(t, err, "Failed to setup server")
+	suite.setupServer()
 
 	// Create client
 	suite.Client = NewClient(suite.Server.URL, t)

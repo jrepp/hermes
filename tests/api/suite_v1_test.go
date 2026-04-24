@@ -65,10 +65,10 @@ func testV1Products(t *testing.T) {
 			{Name: "Vault", Abbreviation: "VLT"},
 		}
 
-		for _, p := range products {
-			err := p.FirstOrCreate(suite.DB)
+		for i := range products {
+			err := products[i].FirstOrCreate(suite.DB)
 			if err != nil {
-				t.Fatalf("Failed to create product %s: %v", p.Name, err)
+				t.Fatalf("Failed to create product %s: %v", products[i].Name, err)
 			}
 		}
 
@@ -85,25 +85,23 @@ func testV1Products(t *testing.T) {
 		}
 
 		// Verify specific products - indexed by product name, not abbreviation
-		for _, p := range products {
-			prodData, ok := result[p.Name].(map[string]interface{})
+		for i := range products {
+			prodData, ok := result[products[i].Name].(map[string]interface{})
 			if !ok {
-				t.Errorf("Product %s not found in response", p.Name)
+				t.Errorf("Product %s not found in response", products[i].Name)
 				continue
 			}
 
-			// Verify abbreviation
-			if abbr, ok := prodData["abbreviation"].(string); !ok || abbr != p.Abbreviation {
-				t.Errorf("Product %s: expected abbreviation %s, got %v", p.Name, p.Abbreviation, prodData["abbreviation"])
+			if abbr, ok := prodData["abbreviation"].(string); !ok || abbr != products[i].Abbreviation {
+				t.Errorf("Product %s: expected abbreviation %s, got %v", products[i].Name, products[i].Abbreviation, prodData["abbreviation"])
 			}
 
-			// Verify perDocTypeData exists and is a map
 			if perDocTypeData, ok := prodData["perDocTypeData"]; !ok {
-				t.Errorf("Product %s: perDocTypeData missing", p.Name)
+				t.Errorf("Product %s: perDocTypeData missing", products[i].Name)
 			} else if perDocTypeData == nil {
-				t.Errorf("Product %s: perDocTypeData is nil", p.Name)
+				t.Errorf("Product %s: perDocTypeData is nil", products[i].Name)
 			} else if _, ok := perDocTypeData.(map[string]interface{}); !ok {
-				t.Errorf("Product %s: perDocTypeData is not a map, got %T", p.Name, perDocTypeData)
+				t.Errorf("Product %s: perDocTypeData is not a map, got %T", products[i].Name, perDocTypeData)
 			}
 		}
 	})

@@ -411,12 +411,11 @@ func (suite *ProviderTestSuite) TestSearchPeople(t *testing.T) {
 	t.Run("SearchPeople_Success", func(t *testing.T) {
 		email := "john.doe@example.com"
 
-		people, err := provider.SearchPeople(email, "emailAddresses,names,photos")
+		peopleResults, err := provider.SearchPeople(email, "emailAddresses,names,photos")
 		require.NoError(t, err)
 
-		// May return empty list or populated list depending on setup
-		if len(people) > 0 {
-			person := people[0]
+		if len(peopleResults) > 0 {
+			person := peopleResults[0]
 			assert.NotNil(t, person)
 			// Verify fields requested are present
 			if len(person.EmailAddresses) > 0 {
@@ -433,21 +432,20 @@ func (suite *ProviderTestSuite) TestSearchPeople(t *testing.T) {
 	})
 
 	t.Run("SearchPeople_NonExistent", func(t *testing.T) {
-		people, err := provider.SearchPeople("nonexistent@example.com", "emailAddresses")
+		peopleResults, err := provider.SearchPeople("nonexistent@example.com", "emailAddresses")
 		// Should return empty list, not error
 		require.NoError(t, err)
-		assert.Empty(t, people)
+		assert.Empty(t, peopleResults)
 	})
 
 	t.Run("SearchPeople_WithPhotos", func(t *testing.T) {
 		email := "user.with.photo@example.com"
 
-		people, err := provider.SearchPeople(email, "photos")
+		peopleResults, err := provider.SearchPeople(email, "photos")
 		require.NoError(t, err)
 
-		if len(people) > 0 {
-			// If person exists, photos field should be populated if available
-			_ = people[0].Photos
+		if len(peopleResults) > 0 {
+			_ = peopleResults[0].Photos
 		}
 	})
 }

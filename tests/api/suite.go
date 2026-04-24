@@ -113,10 +113,7 @@ func NewSuite(t *testing.T, opts ...Option) *Suite {
 	}
 
 	// Create test server
-	if err := suite.setupServer(); err != nil {
-		suite.Cleanup()
-		t.Fatalf("Failed to setup server: %v", err)
-	}
+	suite.setupServer()
 
 	// Create test client
 	suite.Client = NewClient(suite.Server.URL, suite.T)
@@ -250,8 +247,9 @@ func (s *Suite) seedDatabase(db *gorm.DB) error {
 		{Name: "PRD", LongName: "Product Requirements Document"},
 		{Name: "FRD", LongName: "Feature Requirements Document"},
 	}
-	for _, dt := range docTypes {
-		if err := db.Create(&dt).Error; err != nil {
+	for i := range docTypes {
+		dt := &docTypes[i]
+		if err := db.Create(dt).Error; err != nil {
 			return fmt.Errorf("failed to create document type %s: %w", dt.Name, err)
 		}
 	}
@@ -269,7 +267,7 @@ func (s *Suite) seedDatabase(db *gorm.DB) error {
 }
 
 // setupServer creates the test HTTP server.
-func (s *Suite) setupServer() error {
+func (s *Suite) setupServer() {
 	//FIXME: v1 API handlers still use Algolia and GWService directly - need to migrate them
 	// Note: Products handler has been migrated to use database instead of Algolia
 	// TODO: Migrate remaining v1 handlers (drafts, reviews) to use SearchProvider
@@ -302,8 +300,6 @@ func (s *Suite) setupServer() error {
 	s.cleanupFuncs = append(s.cleanupFuncs, func() {
 		s.Server.Close()
 	})
-
-	return nil
 }
 
 // Cleanup tears down the test environment.
@@ -359,23 +355,23 @@ func (m *mockSearchProvider) Healthy(_ context.Context) error {
 
 type mockDocumentIndex struct{}
 
-func (m *mockDocumentIndex) Index(ctx context.Context, doc *search.Document) error {
+func (m *mockDocumentIndex) Index(_ context.Context, _ *search.Document) error {
 	return nil
 }
 
-func (m *mockDocumentIndex) IndexBatch(ctx context.Context, docs []*search.Document) error {
+func (m *mockDocumentIndex) IndexBatch(_ context.Context, _ []*search.Document) error {
 	return nil
 }
 
-func (m *mockDocumentIndex) Delete(ctx context.Context, docID string) error {
+func (m *mockDocumentIndex) Delete(_ context.Context, _ string) error {
 	return nil
 }
 
-func (m *mockDocumentIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
+func (m *mockDocumentIndex) DeleteBatch(_ context.Context, _ []string) error {
 	return nil
 }
 
-func (m *mockDocumentIndex) Search(ctx context.Context, query *search.SearchQuery) (*search.SearchResult, error) {
+func (m *mockDocumentIndex) Search(_ context.Context, query *search.SearchQuery) (*search.SearchResult, error) {
 	return &search.SearchResult{
 		Hits:       []*search.Document{},
 		TotalHits:  0,
@@ -387,37 +383,37 @@ func (m *mockDocumentIndex) Search(ctx context.Context, query *search.SearchQuer
 	}, nil
 }
 
-func (m *mockDocumentIndex) GetObject(ctx context.Context, docID string) (*search.Document, error) {
+func (m *mockDocumentIndex) GetObject(_ context.Context, _ string) (*search.Document, error) {
 	return nil, search.ErrNotFound
 }
 
-func (m *mockDocumentIndex) GetFacets(ctx context.Context, facetNames []string) (*search.Facets, error) {
+func (m *mockDocumentIndex) GetFacets(_ context.Context, _ []string) (*search.Facets, error) {
 	return &search.Facets{}, nil
 }
 
-func (m *mockDocumentIndex) Clear(ctx context.Context) error {
+func (m *mockDocumentIndex) Clear(_ context.Context) error {
 	return nil
 }
 
 type mockDraftIndex struct{}
 
-func (m *mockDraftIndex) Index(ctx context.Context, doc *search.Document) error {
+func (m *mockDraftIndex) Index(_ context.Context, _ *search.Document) error {
 	return nil
 }
 
-func (m *mockDraftIndex) IndexBatch(ctx context.Context, docs []*search.Document) error {
+func (m *mockDraftIndex) IndexBatch(_ context.Context, _ []*search.Document) error {
 	return nil
 }
 
-func (m *mockDraftIndex) Delete(ctx context.Context, docID string) error {
+func (m *mockDraftIndex) Delete(_ context.Context, _ string) error {
 	return nil
 }
 
-func (m *mockDraftIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
+func (m *mockDraftIndex) DeleteBatch(_ context.Context, _ []string) error {
 	return nil
 }
 
-func (m *mockDraftIndex) Search(ctx context.Context, query *search.SearchQuery) (*search.SearchResult, error) {
+func (m *mockDraftIndex) Search(_ context.Context, query *search.SearchQuery) (*search.SearchResult, error) {
 	return &search.SearchResult{
 		Hits:       []*search.Document{},
 		TotalHits:  0,
@@ -429,29 +425,29 @@ func (m *mockDraftIndex) Search(ctx context.Context, query *search.SearchQuery) 
 	}, nil
 }
 
-func (m *mockDraftIndex) GetObject(ctx context.Context, docID string) (*search.Document, error) {
+func (m *mockDraftIndex) GetObject(_ context.Context, _ string) (*search.Document, error) {
 	return nil, search.ErrNotFound
 }
 
-func (m *mockDraftIndex) GetFacets(ctx context.Context, facetNames []string) (*search.Facets, error) {
+func (m *mockDraftIndex) GetFacets(_ context.Context, _ []string) (*search.Facets, error) {
 	return &search.Facets{}, nil
 }
 
-func (m *mockDraftIndex) Clear(ctx context.Context) error {
+func (m *mockDraftIndex) Clear(_ context.Context) error {
 	return nil
 }
 
 type mockProjectIndex struct{}
 
-func (m *mockProjectIndex) Index(ctx context.Context, project map[string]any) error {
+func (m *mockProjectIndex) Index(_ context.Context, _ map[string]any) error {
 	return nil
 }
 
-func (m *mockProjectIndex) Delete(ctx context.Context, projectID string) error {
+func (m *mockProjectIndex) Delete(_ context.Context, _ string) error {
 	return nil
 }
 
-func (m *mockProjectIndex) Search(ctx context.Context, query *search.SearchQuery) (*search.SearchResult, error) {
+func (m *mockProjectIndex) Search(_ context.Context, query *search.SearchQuery) (*search.SearchResult, error) {
 	return &search.SearchResult{
 		Hits:       []*search.Document{},
 		TotalHits:  0,
@@ -463,29 +459,29 @@ func (m *mockProjectIndex) Search(ctx context.Context, query *search.SearchQuery
 	}, nil
 }
 
-func (m *mockProjectIndex) GetObject(ctx context.Context, projectID string) (map[string]any, error) {
+func (m *mockProjectIndex) GetObject(_ context.Context, _ string) (map[string]any, error) {
 	return nil, search.ErrNotFound
 }
 
-func (m *mockProjectIndex) Clear(ctx context.Context) error {
+func (m *mockProjectIndex) Clear(_ context.Context) error {
 	return nil
 }
 
 type mockLinksIndex struct{}
 
-func (m *mockLinksIndex) SaveLink(ctx context.Context, link map[string]string) error {
+func (m *mockLinksIndex) SaveLink(_ context.Context, _ map[string]string) error {
 	return nil
 }
 
-func (m *mockLinksIndex) DeleteLink(ctx context.Context, objectID string) error {
+func (m *mockLinksIndex) DeleteLink(_ context.Context, _ string) error {
 	return nil
 }
 
-func (m *mockLinksIndex) GetLink(ctx context.Context, objectID string) (map[string]string, error) {
+func (m *mockLinksIndex) GetLink(_ context.Context, _ string) (map[string]string, error) {
 	return nil, search.ErrNotFound
 }
 
-func (m *mockLinksIndex) Clear(ctx context.Context) error {
+func (m *mockLinksIndex) Clear(_ context.Context) error {
 	return nil
 }
 

@@ -166,7 +166,7 @@ func TestNotificationTemplateResolution(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test document_approved template
-	context := map[string]any{
+	templateCtx := map[string]any{
 		"DocumentShortName":        "RFC-087",
 		"DocumentTitle":            "Test Document",
 		"ApproverName":             "Alice",
@@ -182,7 +182,7 @@ func TestNotificationTemplateResolution(t *testing.T) {
 		"CurrentYear":              2025,
 	}
 
-	content, err := resolver.Resolve(pkgnotifications.NotificationTypeDocumentApproved, context)
+	content, err := resolver.Resolve(pkgnotifications.NotificationTypeDocumentApproved, templateCtx)
 	require.NoError(t, err)
 
 	// Verify subject

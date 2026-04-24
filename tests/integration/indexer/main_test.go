@@ -203,11 +203,11 @@ func checkOllamaAvailable(baseURL string) bool {
 }
 
 // checkOllamaModels verifies required models are available
-func checkOllamaModels(baseURL string, models []string) error {
+func checkOllamaModels(baseURL string, modelNames []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	for _, model := range models {
+	for _, model := range modelNames {
 		// Try to get model info (Ollama /api/show endpoint)
 		reqBody := fmt.Sprintf(`{"name":%q}`, model)
 		req, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/api/show",

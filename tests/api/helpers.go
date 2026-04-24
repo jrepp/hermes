@@ -109,8 +109,8 @@ func ParallelWithTransaction(t *testing.T, db *gorm.DB, name string, fn func(*te
 	})
 }
 
-// TestHelpers_WithTransaction demonstrates the transaction helper.
-func TestHelpers_WithTransaction(t *testing.T) {
+// TestHelpersWithTransaction demonstrates the transaction helper.
+func TestHelpersWithTransaction(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping in short mode")
 	}
@@ -143,8 +143,8 @@ func TestHelpers_WithTransaction(t *testing.T) {
 	})
 }
 
-// TestHelpers_ParallelWithTransaction demonstrates parallel transaction tests.
-func TestHelpers_ParallelWithTransaction(t *testing.T) {
+// TestHelpersParallelWithTransaction demonstrates parallel transaction tests.
+func TestHelpersParallelWithTransaction(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping in short mode")
 	}

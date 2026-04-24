@@ -202,8 +202,9 @@ func (s *MainTestSuite) seedDatabase() {
 		{Name: "PRD", LongName: "Product Requirements Document"},
 		{Name: "FRD", LongName: "Feature Requirements Document"},
 	}
-	for _, dt := range docTypes {
-		if err := s.DB.Create(&dt).Error; err != nil {
+	for i := range docTypes {
+		dt := &docTypes[i]
+		if err := s.DB.Create(dt).Error; err != nil {
 			s.T.Fatalf("Failed to create document type %s: %v", dt.Name, err)
 		}
 	}
@@ -219,8 +220,9 @@ func (s *MainTestSuite) seedDatabase() {
 			Abbreviation: "INFRA",
 		},
 	}
-	for _, p := range products {
-		if err := s.DB.Create(&p).Error; err != nil {
+	for i := range products {
+		p := &products[i]
+		if err := s.DB.Create(p).Error; err != nil {
 			s.T.Fatalf("Failed to create product %s: %v", p.Name, err)
 		}
 	}

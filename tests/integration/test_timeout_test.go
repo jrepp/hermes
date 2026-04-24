@@ -92,7 +92,7 @@ func TestTimeoutWatchdog_AllowsProgressingTest(t *testing.T) {
 	completed := false
 
 	// Test with short timeout to verify it completes normally
-	WithTimeout(t, 2*time.Second, 200*time.Millisecond, func(ctx context.Context, progress func(string)) {
+	WithTimeout(t, 2*time.Second, 200*time.Millisecond, func(_ context.Context, progress func(string)) {
 		// Simulate a test that consistently makes progress
 		for i := 0; i < 5; i++ {
 			progress("Working on step")
