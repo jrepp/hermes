@@ -44,11 +44,14 @@ import (
 //   | NOTE: This document is managed by Hermes...                                 |
 //   |-----------------------------------------------------------------------------|
 
-func (doc *Document) ReplaceHeader(
+// ReplaceHeader replaces the header section of a Google Doc with current document metadata.
+//
+//nolint:gocognit,gocyclo // header replacement is inherently sequential
+func (d *Document) ReplaceHeader(
 	baseURL string, isDraft bool, provider workspace.Provider) error {
 
 	// Get doc.
-	d, err := provider.GetDoc(doc.ObjectID)
+	gdoc, err := provider.GetDoc(d.ObjectID)
 	if err != nil {
 		return fmt.Errorf("error getting doc: %w", err)
 	}
@@ -61,7 +64,7 @@ func (doc *Document) ReplaceHeader(
 		t                *docs.Table
 		headerTableFound bool
 	)
-	elems := d.Body.Content
+	elems := gdoc.Body.Content
 	for _, e := range elems {
 		if e.Table != nil {
 			t = e.Table
@@ -94,7 +97,7 @@ func (doc *Document) ReplaceHeader(
 				},
 			},
 		}
-		_, err = provider.UpdateDoc(doc.ObjectID, req.Requests)
+		_, err = provider.UpdateDoc(d.ObjectID, req.Requests)
 		if err != nil {
 			return fmt.Errorf("error deleting existing header: %w", err)
 		}
@@ -103,7 +106,7 @@ func (doc *Document) ReplaceHeader(
 	// Calculate number of rows in the header table.
 	// The number of custom field rows is the number of custom fields divided by
 	// two and rounded up to the nearest integer.
-	customFieldRows := math.Ceil(float64(len(doc.CustomFields)) / float64(2))
+	customFieldRows := math.Ceil(float64(len(d.CustomFields)) / float64(2))
 	tableRows := 9 + int64(customFieldRows)
 
 	// Insert new header table.
@@ -120,19 +123,19 @@ func (doc *Document) ReplaceHeader(
 			},
 		},
 	}
-	_, err = provider.UpdateDoc(doc.ObjectID, req.Requests)
+	_, err = provider.UpdateDoc(d.ObjectID, req.Requests)
 	if err != nil {
 		return fmt.Errorf("error inserting header table: %w", err)
 	}
 
 	// Get doc again after inserting the header table.
-	d, err = provider.GetDoc(doc.ObjectID)
+	gdoc, err = provider.GetDoc(d.ObjectID)
 	if err != nil {
 		return fmt.Errorf("error getting doc after inserting header table: %w", err)
 	}
 
 	// Find new table index.
-	elems = d.Body.Content
+	elems = gdoc.Body.Content
 	for _, e := range elems {
 		if e.Table != nil {
 			startIndex = e.StartIndex
@@ -383,7 +386,7 @@ func (doc *Document) ReplaceHeader(
 			},
 		},
 	}
-	_, err = provider.UpdateDoc(doc.ObjectID, req.Requests)
+	_, err = provider.UpdateDoc(d.ObjectID, req.Requests)
 	if err != nil {
 		return fmt.Errorf("error applying formatting to header table: %w", err)
 	}
@@ -398,7 +401,7 @@ func (doc *Document) ReplaceHeader(
 
 	// Title cell.
 	pos = int(startIndex) + 3
-	titleText := fmt.Sprintf("[%s] %s: %s", doc.DocType, doc.DocNumber, doc.Title)
+	titleText := fmt.Sprintf("[%s] %s: %s", d.DocType, d.DocNumber, d.Title)
 	reqs = append(reqs,
 		[]*docs.Request{
 			{
@@ -439,7 +442,7 @@ func (doc *Document) ReplaceHeader(
 	pos += len(titleText) + 5
 
 	// Summary cell.
-	summaryText := fmt.Sprintf("Summary: %s", doc.Summary)
+	summaryText := fmt.Sprintf("Summary: %s", d.Summary)
 	reqs = append(reqs,
 		[]*docs.Request{
 			{
@@ -491,7 +494,7 @@ func (doc *Document) ReplaceHeader(
 
 	// Created cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Created", doc.Created, int64(pos))
+		"Created", d.Created, int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 2
 
@@ -500,10 +503,8 @@ func (doc *Document) ReplaceHeader(
 		"Status", "WIP | In-Review | Approved | Obsolete", int64(pos))
 	reqs = append(reqs, cellReqs...)
 	var statusStartIndex, statusEndIndex int
-	switch strings.ToLower(doc.Status) {
-	case "in review":
-		fallthrough
-	case "in-review":
+	switch strings.ToLower(d.Status) {
+	case "in review", "in-review":
 		statusStartIndex = 14
 		statusEndIndex = 23
 	case "approved":
@@ -512,8 +513,6 @@ func (doc *Document) ReplaceHeader(
 	case "obsolete":
 		statusStartIndex = 37
 		statusEndIndex = 45
-	case "wip":
-		fallthrough
 	default:
 		// Default to "WIP" for all unknown statuses.
 		statusStartIndex = 8
@@ -558,32 +557,33 @@ func (doc *Document) ReplaceHeader(
 
 	// Product cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Product", doc.Product, int64(pos))
+		"Product", d.Product, int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 2
 
 	// Owner cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Owner", doc.Owners[0], int64(pos))
+		"Owner", d.Owners[0], int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 3
 
 	// Contributors cell.
 	cellReqs, cellLength = createTextCellRequests(
-		"Contributors", strings.Join(doc.Contributors, ", "), int64(pos))
+		"Contributors", strings.Join(d.Contributors, ", "), int64(pos))
 	reqs = append(reqs, cellReqs...)
 	pos += cellLength + 2
 
 	// Approvers cell.
 	// Build approvers slice with a check next to reviewers who have approved.
 	// Approver groups are listed first.
-	approvers := doc.ApproverGroups
-	for _, approver := range doc.Approvers {
-		if helpers.StringSliceContains(doc.ApprovedBy, approver) {
+	approvers := d.ApproverGroups
+	for _, approver := range d.Approvers {
+		switch {
+		case helpers.StringSliceContains(d.ApprovedBy, approver):
 			approvers = append(approvers, "✅ "+approver)
-		} else if helpers.StringSliceContains(doc.ChangesRequestedBy, approver) {
+		case helpers.StringSliceContains(d.ChangesRequestedBy, approver):
 			approvers = append(approvers, "❌ "+approver)
-		} else {
+		default:
 			approvers = append(approvers, approver)
 		}
 	}
@@ -593,7 +593,7 @@ func (doc *Document) ReplaceHeader(
 	pos += cellLength + 3
 
 	// Custom fields.
-	for i, cf := range doc.CustomFields {
+	for i, cf := range d.CustomFields {
 		switch cf.Type {
 		case "PEOPLE":
 			cfVal := []string{}
@@ -641,9 +641,7 @@ func (doc *Document) ReplaceHeader(
 				// TODO: Don't hardcode these custom fields and instead create something
 				// like a "HERMES_DOCUMENT" custom field type.
 				switch cf.DisplayName {
-				case "PRD":
-					fallthrough
-				case "RFC":
+				case "PRD", "RFC":
 					cellReqs, cellLength = createTextCellRequests(
 						cf.DisplayName, cf.DisplayName, int64(pos))
 					reqs = append(reqs, cellReqs...)
@@ -687,7 +685,7 @@ func (doc *Document) ReplaceHeader(
 
 			// Add 3 more if this is the last custom field (to move the position to
 			// the next row).
-			if i == len(doc.CustomFields)-1 {
+			if i == len(d.CustomFields)-1 {
 				pos += 3
 			}
 		} else {
@@ -723,7 +721,7 @@ func (doc *Document) ReplaceHeader(
 	if err != nil {
 		return fmt.Errorf("error parsing base URL: %w", err)
 	}
-	docURL.Path = path.Join(docURL.Path, "document", doc.ObjectID)
+	docURL.Path = path.Join(docURL.Path, "document", d.ObjectID)
 	docURLString := docURL.String()
 	docURLString = strings.TrimRight(docURLString, "/")
 	if isDraft {
@@ -771,14 +769,14 @@ func (doc *Document) ReplaceHeader(
 	// pos is no longer needed after this point
 
 	// Do the batch update.
-	_, err = provider.UpdateDoc(doc.ObjectID, reqs)
+	_, err = provider.UpdateDoc(d.ObjectID, reqs)
 	if err != nil {
 		return fmt.Errorf("error populating table: %w", err)
 	}
 
 	// Rename file with new title.
 	err = provider.RenameFile(
-		doc.ObjectID, fmt.Sprintf("[%s] %s", doc.DocNumber, doc.Title))
+		d.ObjectID, fmt.Sprintf("[%s] %s", d.DocNumber, d.Title))
 	if err != nil {
 		return fmt.Errorf("error renaming file with new title: %w", err)
 	}

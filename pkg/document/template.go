@@ -88,10 +88,11 @@ func NewTemplateDataFromDocument(doc *Document) TemplateData {
 		fieldNameLower := strings.ToLower(field.DisplayName)
 		switch fieldNameLower {
 		case "stakeholders":
-			if values, ok := field.Value.([]string); ok {
-				stakeholders = strings.Join(values, ", ")
-			} else if val, ok := field.Value.(string); ok {
-				stakeholders = val
+			switch v := field.Value.(type) {
+			case []string:
+				stakeholders = strings.Join(v, ", ")
+			case string:
+				stakeholders = v
 			}
 		case "current version", "currentversion":
 			if val, ok := field.Value.(string); ok {

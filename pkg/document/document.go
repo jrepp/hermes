@@ -55,6 +55,7 @@ type Document struct {
 	AppCreated           bool                          `json:"appCreated,omitempty"`
 }
 
+// CustomDocTypeField represents a custom field definition for a document type.
 type CustomDocTypeField struct {
 	// DisplayName is the display name of the custom document-type field.
 	DisplayName string `json:"displayName"`
@@ -65,6 +66,7 @@ type CustomDocTypeField struct {
 	Type string `json:"type"`
 }
 
+// CustomField represents a custom field value on a document.
 type CustomField struct {
 	Value       any
 	Name        string `json:"name"`
@@ -73,6 +75,8 @@ type CustomField struct {
 }
 
 // NewFromAlgoliaObject creates a document from a document Algolia object.
+//
+//nolint:gocognit,gocyclo // large Algolia-to-Go struct mapping
 func NewFromAlgoliaObject(
 	in map[string]any, docTypes []*config.DocumentType) (*Document, error) {
 
@@ -171,6 +175,8 @@ func NewFromAlgoliaObject(
 }
 
 // NewFromDatabaseModel creates a document from a document database model.
+//
+//nolint:gocyclo // maps many DB fields to document struct
 func NewFromDatabaseModel(
 	model models.Document,
 	reviews models.DocumentReviews,
@@ -198,8 +204,10 @@ func NewFromDatabaseModel(
 	doc.AppCreated = !model.Imported
 
 	// ApprovedBy, Approvers, ChangesRequestedBy.
-	var approvedBy, approvers, changesRequestedBy []string
-	for _, r := range reviews {
+	var approvedBy, changesRequestedBy []string
+	approvers := make([]string, 0, len(reviews))
+	for i := range reviews {
+		r := &reviews[i]
 		approvers = append(approvers, r.User.EmailAddress)
 
 		switch r.Status {
@@ -214,14 +222,15 @@ func NewFromDatabaseModel(
 	doc.ChangesRequestedBy = changesRequestedBy
 
 	// ApproverGroups.
-	var approverGroups []string
-	for _, r := range groupReviews {
+	approverGroups := make([]string, 0, len(groupReviews))
+	for i := range groupReviews {
+		r := &groupReviews[i]
 		approverGroups = append(approverGroups, r.Group.EmailAddress)
 	}
 	doc.ApproverGroups = approverGroups
 
 	// Contributors.
-	contributors := []string{}
+	contributors := make([]string, 0, len(model.Contributors))
 	for _, c := range model.Contributors {
 		contributors = append(contributors, c.EmailAddress)
 	}
@@ -235,7 +244,8 @@ func NewFromDatabaseModel(
 
 	// CustomEditableFields.
 	customEditableFields := make(map[string]CustomDocTypeField)
-	for _, c := range model.DocumentType.CustomFields {
+	for i := range model.DocumentType.CustomFields {
+		c := &model.DocumentType.CustomFields[i]
 		var cType string
 		switch c.Type {
 		case models.PeopleDocumentTypeCustomFieldType:
@@ -281,8 +291,9 @@ func NewFromDatabaseModel(
 
 	// FileRevisions.
 	fileRevisions := make(map[string]string)
-	for _, fr := range model.FileRevisions {
-		fileRevisions[fr.FileRevisionID] = fr.Name
+	for i := range model.FileRevisions {
+		fr := &model.FileRevisions[i]
+		fileRevisions[fr.GoogleDriveFileRevisionID] = fr.Name
 	}
 	doc.FileRevisions = fileRevisions
 
@@ -346,12 +357,12 @@ func (d Document) ToAlgoliaObject(
 
 	// Convert to Algolia object by marshaling to JSON and unmarshaling back.
 	var obj map[string]any
-	if bytes, err := json.Marshal(d); err != nil {
+	bytes, err := json.Marshal(d)
+	if err != nil {
 		return nil, fmt.Errorf("error marshaling document object to JSON: %w", err)
-	} else {
-		if err := json.Unmarshal(bytes, &obj); err != nil {
-			return nil, fmt.Errorf("error unmarshaling JSON to object: %w", err)
-		}
+	}
+	if err := json.Unmarshal(bytes, &obj); err != nil {
+		return nil, fmt.Errorf("error unmarshaling JSON to object: %w", err)
 	}
 
 	// Set custom fields.
@@ -363,8 +374,9 @@ func (d Document) ToAlgoliaObject(
 }
 
 // ToDatabaseModels converts a document to a document and document reviews
-// database records. useSharePoint controls which file ID field is populated:
-// true → FileID (SharePoint), false → GoogleFileID (Google).
+// database records.
+//
+//nolint:gocognit,gocyclo // maps many document fields to DB models
 func (d Document) ToDatabaseModels(
 	docTypes []*config.DocumentType, products []*config.Product,
 	useSharePoint bool,
@@ -504,9 +516,7 @@ func (d Document) ToDatabaseModels(
 	switch strings.ToLower(d.Status) {
 	case "wip":
 		doc.Status = models.WIPDocumentStatus
-	case "in review":
-		fallthrough
-	case "in-review":
+	case "in review", "in-review":
 		doc.Status = models.InReviewDocumentStatus
 	case "approved":
 		doc.Status = models.ApprovedDocumentStatus
@@ -561,6 +571,9 @@ func (d Document) ToDatabaseModels(
 	return doc, reviews, nil
 }
 
+// UpsertCustomField adds or updates a custom field value.
+//
+//nolint:gocognit,gocyclo // handles multiple custom field types
 func (d *Document) UpsertCustomField(cf CustomField) error {
 	// Build new document CustomFields.
 	var newCFs []CustomField
@@ -618,10 +631,12 @@ func (d *Document) UpsertCustomField(cf CustomField) error {
 	return nil
 }
 
+// DeleteFileRevision removes a file revision from the document.
 func (d *Document) DeleteFileRevision(revisionID string) {
 	delete(d.FileRevisions, revisionID)
 }
 
+// SetFileRevision adds or updates a file revision on the document.
 func (d *Document) SetFileRevision(revisionID, revisionName string) {
 	if d.FileRevisions == nil {
 		d.FileRevisions = map[string]string{
@@ -632,38 +647,39 @@ func (d *Document) SetFileRevision(revisionID, revisionName string) {
 	}
 }
 
+// GetStringValue extracts a string value from a map by key.
 func GetStringValue(in map[string]any, key string) (string, error) {
-	if v, ok := in[key]; ok {
-		if v, ok := v.(string); ok {
-			return v, nil
-		} else {
-			return "", fmt.Errorf("wrong type for key %q, want string", key)
-		}
-	} else {
+	v, ok := in[key]
+	if !ok {
 		return "", fmt.Errorf("key %q not found", key)
 	}
+	sv, ok := v.(string)
+	if !ok {
+		return "", fmt.Errorf("wrong type for key %q, want string", key)
+	}
+	return sv, nil
 }
 
+// GetStringSliceValue extracts a string slice value from a map by key.
 func GetStringSliceValue(in map[string]any, key string) ([]string, error) {
 	ret := []string{}
-	if v, ok := in[key]; ok {
-		if reflect.TypeOf(v).Kind() == reflect.Slice {
-			slice, ok := v.([]any)
-			if !ok {
-				return nil, fmt.Errorf("wrong type for key %q, want []string", key)
-			}
-			for _, vv := range slice {
-				if vv, ok := vv.(string); ok {
-					ret = append(ret, vv)
-				} else {
-					return nil, fmt.Errorf("wrong type for key %q, want []string", key)
-				}
-			}
-			return ret, nil
+	v, ok := in[key]
+	if !ok {
+		return nil, fmt.Errorf("key %q not found", key)
+	}
+	if reflect.TypeOf(v).Kind() != reflect.Slice {
+		return nil, fmt.Errorf("wrong type for key %q, want []string", key)
+	}
+	slice, ok := v.([]any)
+	if !ok {
+		return nil, fmt.Errorf("wrong type for key %q, want []string", key)
+	}
+	for _, vv := range slice {
+		if vv, ok := vv.(string); ok {
+			ret = append(ret, vv)
 		} else {
 			return nil, fmt.Errorf("wrong type for key %q, want []string", key)
 		}
-	} else {
-		return nil, fmt.Errorf("key %q not found", key)
 	}
+	return ret, nil
 }
