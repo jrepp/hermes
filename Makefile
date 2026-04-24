@@ -13,10 +13,13 @@ fmt: ## Format all Go code
 	@echo "✓ Code formatted"
 
 .PHONY: lint
-lint: ## Run linters (gofmt, go vet)
-	@echo "Running linters..."
+lint: ## Run full repo lint (golangci-lint, go vet, syntax check)
+	@echo "Running full repo lint..."
 	@./scripts/validate-go-syntax.sh
-	@echo "✓ Linting complete"
+	@go vet ./...
+	@command -v golangci-lint > /dev/null 2>&1 || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@golangci-lint run --timeout=5m ./...
+	@echo "✓ Lint complete"
 
 .PHONY: complexity
 complexity: ## Run complexity analysis
