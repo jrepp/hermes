@@ -109,7 +109,7 @@ Comprehensive 8-section guide covering TypeScript setup, component development, 
 
 **Frontend (Ember.js)**:
 - MEMO-010 (Ember Dev Server)
-- ADR-001, ADR-006, ADR-029, ADR-032, ADR-036 (Frontend decisions)
+- ADR-001, ADR-029, ADR-032 (Frontend decisions); MEMO-124, MEMO-125 (demoted from ADR-036, ADR-006)
 
 **Database & Persistence**:
 - RFC-051 (Outbox Design), RFC-080 (Document Sync)
