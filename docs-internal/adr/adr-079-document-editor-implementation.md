@@ -1,145 +1,54 @@
 ---
 id: adr-079
-deciders: Hermes Team
+title: Provider-Aware Document Editor
+date: 2025-10-08
+type: ADR
+subtype: Frontend Architecture
+decision_type: Frontend Architecture
+status: Accepted
+tags: ['document-editor', 'workspace', 'frontend']
+related: ['ADR-071', 'ADR-073']
 created: 2025-10-08
-author: Hermes Team
+deciders: Hermes Team
 project_id: hermes
 doc_uuid: ab8a1733-0037-4010-9c43-9b3772bff37b
-status: Implemented
-title: "Document Editor Implementation"
-date: 2025-10-08
-type: RFC
-subtype: Feature Implementation
-tags: [document-editor, feature, implementation, workspace]
-related:
-  - RFC-047
-  - RFC-051
 ---
+# Provider-Aware Document Editor
 
-# Document Editor Implementation
+> The document editor branches at runtime on the active workspace provider, published as **`workspace_provider` ("google" | "local")** on `GET /api/v2/web/config`. Google documents render in an iframe (read-only here, edited in Google Docs). Local documents use a text editor backed by **`GET/PUT /api/v2/documents/:id/content`**. PUT is allowed **only** for the local workspace; Google PUT returns **501 Not Implemented**.
 
 ## Context
 
-Hermes supports both Google Workspace (iframe embedding) and local workspace (file-based storage). The document editor must seamlessly adapt between these providers at runtime, providing appropriate UI for each workspace type.
+ADR-071 established a local-filesystem workspace alongside Google Workspace, and ADR-073 abstracted both behind `workspace.Provider`. The frontend editor still has to render and edit documents, but the two providers have fundamentally different editing models (rich-text in Google Docs vs. plain Markdown on disk). A single one-size-fits-all editor would either block local editing or pretend Google editing happens in-app when it does not.
 
-## Architecture
+## Decision
 
-### Workspace Detection
+- **Backend signaling:** add `workspace_provider` ("google" | "local") to `GET /api/v2/web/config` so the frontend can branch without sniffing.
+- **Content endpoints (`internal/api/v2/document_content.go`):**
+  - `GET /api/v2/documents/:id/content` — returns plain text for both providers (Google extracts text from the Docs API).
+  - `PUT /api/v2/documents/:id/content` — local only; authorized to **owner and contributors**; rejects with **423 Locked** if the document is locked; reindexing happens asynchronously via the indexer; Google requests return **501 Not Implemented**.
+- **Frontend (`web/app/components/document/`):** branches on `configSvc.config.workspace_provider`. Google → iframe + "Open in New Tab". Local → read-only `<pre>` with **Edit Document**, switching to a textarea with **Save Changes / Discard Changes**.
+- **Status codes for PUT:** 200, 400, 403, 404, 423, 501.
 
-**Backend** (`web/web.go`):
-- Added `workspace_provider` field to `/api/v2/web/config`
-- Returns `"local"` or `"google"` based on runtime configuration
-- Enables frontend to select appropriate editor UI
+## Consequences
 
-### Document Content API
+### Positive
+- One component, two coherent UXs; users get the editor that matches the underlying store.
+- Local editing has explicit authorization, locking, and async reindex semantics — no silent overwrites.
+- Returning 501 (not 403/404) for Google PUT is honest about the capability and surfaces the limitation cleanly.
 
-**New Endpoint** (`internal/api/v2/document_content.go`):
+### Negative
+- Two UI branches to keep in sync as document features grow.
+- Local edits trigger eventual-consistency reindexing; users can briefly see stale search results after a save.
 
-**GET `/api/v2/documents/:id/content`**:
-- Retrieves document content as plain text
-- Local: Uses `DocumentStorage().GetDocumentContent()`
-- Google: Extracts text from Google Docs API structure
-- Returns: `{"content": "document text..."}`
+## Alternatives Considered
 
-**PUT `/api/v2/documents/:id/content`**:
-- Updates document content (local workspace only)
-- Authorization: Owner and contributors only
-- Validates document not locked before editing
-- Google workspace: Returns 501 Not Implemented
-- Re-indexing via background indexer (async)
-- Status codes: 200 OK, 400 Bad Request, 403 Forbidden, 404 Not Found, 423 Locked, 501 Not Implemented
-
-### Frontend Components
-
-**Config Service** (`web/app/services/config.ts`):
-- Added `workspace_provider: "google" | "local"` property
-- Default: `"google"`
-- Loaded from `/api/v2/web/config` at startup
-
-**Document Component** (`web/app/components/document/index.ts`):
-
-**State Management**:
-
-```typescript
-@tracked documentContent = "";      // Textarea content
-@tracked isLoadingContent = false;  // Loading state
-@tracked isSavingContent = false;   // Saving state
-@tracked isEditMode = false;        // Edit vs read-only
-
-```
-
-**Computed Properties**:
-
-```typescript
-get isLocalWorkspace() {
-  return this.configSvc.config.workspace_provider === "local";
-}
-
-get isGoogleWorkspace() {
-  return this.configSvc.config.workspace_provider === "google";
-}
-```
-
-**Actions**:
-- `enterEditMode()` - Load content, show editor
-- `saveContent()` - PUT to `/api/v2/documents/:id/content`
-- `discardChanges()` - Reset and return to read-only
-- `navigateToDocument()` - Open in new tab (Google only)
-
-### Template Structure
-
-```hbs
-{{#if this.isGoogleWorkspace}}
-  {{! Google Docs iframe embed }}
-  <iframe src={{googleDocUrl}} />
-{{else if this.isLocalWorkspace}}
-  {{#if this.isEditMode}}
-    {{! Text editor with save/discard buttons }}
-    <textarea>{{this.documentContent}}</textarea>
-    <button {{on "click" this.saveContent}}>Save</button>
-    <button {{on "click" this.discardChanges}}>Discard</button>
-  {{else}}
-    {{! Read-only view with edit button }}
-    <pre>{{this.documentContent}}</pre>
-    <button {{on "click" this.enterEditMode}}>Edit Document</button>
-  {{/if}}
-{{/if}}
-
-```
-
-## User Experience
-
-### Google Workspace
-- Document embedded in iframe
-- Editing happens in Google Docs
-- "Open in New Tab" button for full Google Docs experience
-
-### Local Workspace
-- **Read Mode**: Pre-formatted text display with "Edit Document" button
-- **Edit Mode**: Large textarea with "Save Changes" and "Discard Changes" buttons
-- Loading/saving states with visual feedback
-- Flash messages for success/error notifications
-- Navigation to dashboard on discard
-
-## Security
-
-- Authorization checks: Owner and contributors only
-- Document lock validation before editing
-- Google workspace editing disabled (read-only via iframe)
-- Session-based authentication required
-
-## Implementation Status
-
-✅ Backend workspace detection
-✅ Document content GET/PUT endpoints
-✅ Frontend config service integration
-✅ Smart document component (Google/local)
-✅ Text editor UI for local workspace
-✅ Authorization and locking checks
-✅ Error handling and user feedback
+- **Build a rich-text editor for both providers:** Major scope, and would still not match Google Docs' collaboration features; unjustifiable for the local case.
+- **Read-only everywhere; require external editing:** Defeats the point of the local-workspace path (ADR-071) which exists to enable local edits.
+- **Have the frontend probe capabilities per-document:** Extra round trips for information the backend already knows from configuration.
 
 ## References
 
-- Source: `DOCUMENT_EDITOR_implementation.md`
-- Related: `LOCAL_WORKSPACE_SETUP_SUMMARY.md`, `DOCUMENT_CONTENT_API_VALIDATION_SUMMARY.md`
-
+- `internal/api/v2/document_content.go`, `web/web.go`
+- `web/app/components/document/`, `web/app/services/config.ts`
+- ADR-071 (local workspace), ADR-073 (provider abstraction)

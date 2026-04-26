@@ -1,155 +1,64 @@
 ---
 id: adr-080
-deciders: Hermes Team
+title: Backend-Mediated Search and Runtime Auth Header Selection
+date: 2025-10-06
+type: ADR
+subtype: Frontend Architecture
+decision_type: Frontend Architecture
+status: Accepted
+tags: ['search', 'authentication', 'frontend', 'algolia', 'meilisearch']
+related: ['ADR-073', 'ADR-075', 'ADR-076']
 created: 2025-10-06
-author: Hermes Team
+deciders: Hermes Team
 project_id: hermes
 doc_uuid: 890ca48f-ff1b-4290-a371-0622eda66de7
-status: Implemented
-title: "Search and Authentication Refactoring"
-date: 2025-10-06
-type: RFC
-subtype: Architecture Refactoring
-tags: [refactoring, search, authentication, architecture]
-related:
-  - RFC-007
-  - RFC-009
 ---
+# Backend-Mediated Search and Runtime Auth Header Selection
 
-# Search and Authentication Refactoring
+> The frontend **never holds search-provider credentials**. All search traffic goes through the backend at **`/1/indexes/*`** in every environment, regardless of whether the backend is fronting Algolia or Meilisearch. The frontend selects its auth header at runtime from `auth_provider` on `GET /api/v2/web/config`: **`Hermes-Google-Access-Token`** for Google, **`Authorization: Bearer <jwt>`** for Okta and Dex.
 
 ## Context
 
-The system had two architectural issues:
-1. Frontend made environment-dependent Algolia API calls (development: direct, production: proxied)
-2. Authentication hardcoded to assume Google OAuth or Okta, without Dex support or runtime selection
+Two prior compromises were causing real problems:
 
-## Part 1: Backend-Only Search
+1. **Search:** The frontend talked directly to Algolia in development and proxied through the backend in production. Dev builds therefore required `ALGOLIA_APP_ID` / `ALGOLIA_SEARCH_API_KEY`, behavior diverged between environments, and Docker setups failed without real Algolia credentials.
+2. **Auth headers:** Frontend code assumed Google or Okta and hard-coded which header to use. There was no path for Dex (ADR-072, ADR-078) and no runtime flexibility.
 
-### Problem
-- Development builds required Algolia credentials (`ALGOLIA_APP_ID`, `ALGOLIA_SEARCH_API_KEY`)
-- Inconsistent behavior between environments
-- Complexity in frontend search client configuration
+Both problems pushed environment-specific logic and secrets into the frontend bundle, which is the wrong place for either.
 
-### Solution
-**All environments now proxy search through backend at `/1/indexes/*`**
+## Decision
 
-**Changes**:
-- `web/app/services/algolia.ts`: Always use proxy, removed environment branching
-- `web/config/environment.js`: Removed Algolia credential env vars
-- `web/mirage/algolia/hosts.ts`: Mock backend proxy instead of Algolia hosts
-- Added auth header selection based on provider
+**1. Backend-mediated search in all environments.**
+- The frontend always calls `/1/indexes/*` on the backend (`web/app/services/algolia.ts`); the per-environment branch and the build-time Algolia env vars in `web/config/environment.js` are removed.
+- The backend's `search.Provider` (ADR-073) decides whether to delegate to Algolia or Meilisearch (ADR-075). The frontend cannot tell the difference.
+- Mirage mocks the backend proxy endpoints, not Algolia hosts.
 
-**Benefits**:
-✅ No build-time Algolia credentials needed
-✅ Consistent behavior across environments
-✅ Better security (credentials only on backend)
-✅ Simpler testing (mock single endpoint)
-✅ Docker-friendly (no real credentials needed)
+**2. Runtime auth header selection.**
+- Backend publishes the active provider as `auth_provider` (and any needed provider-specific fields, e.g. `dex_issuer_url`, `dex_client_id`) on `GET /api/v2/web/config`.
+- `web/app/services/fetch.ts` chooses the header at request time:
+  - `google` → `Hermes-Google-Access-Token: <token>`
+  - `okta` | `dex` → `Authorization: Bearer <jwt>`
+- One bundle ships for every provider; no rebuild required to switch.
 
-## Part 2: Multi-Provider Authentication
+## Consequences
 
-### Problem
-- System assumed Google OAuth or Okta only
-- No Dex support for acceptance testing
-- No runtime provider selection
+### Positive
+- No search credentials in the browser; revocation, rate-limiting, and provider swaps are all server-side concerns.
+- Identical search behavior across dev, CI, and production (modulo Algolia↔Meilisearch differences, which are bounded by `search.Provider`).
+- Adding an OIDC provider is "publish a new `auth_provider` value and add a backend adapter" — no frontend conditional explosion.
+- Docker Compose works without real Algolia or Google OAuth env vars.
 
-### Solution
-**Runtime auth provider detection with Google/Okta/Dex support**
+### Negative
+- Backend becomes the single point of failure / latency for search; the proxy must be performant.
+- The frontend depends on `/api/v2/web/config` early in startup; auth-aware services must wait for it.
 
-**Backend** (`web/web.go`):
+## Alternatives Considered
 
-```go
-// Detect provider from config
-authProvider := "google" // default
-if cfg.Dex != nil && !cfg.Dex.Disabled {
-    authProvider = "dex"
-} else if cfg.Okta != nil && !cfg.Okta.Disabled {
-    authProvider = "okta"
-}
-
-// Add to ConfigResponse
-AuthProvider: authProvider,
-DexIssuerURL: ...,  // if Dex
-DexClientID: ...,   // if Dex
-
-```
-
-**Frontend** (`web/app/services/fetch.ts`):
-
-```typescript
-// Select auth header format based on provider
-if (authProvider === "google") {
-  headers["Hermes-Google-Access-Token"] = token;
-} else if (authProvider === "dex" || authProvider === "okta") {
-  headers["Authorization"] = `Bearer ${token}`;
-}
-```
-
-**Benefits**:
-✅ Runtime provider selection
-✅ Dex support for acceptance testing
-✅ Future-proof for new OIDC providers
-✅ No build changes (same bundle for any provider)
-✅ Type-safe header format per provider
-
-## Configuration Examples
-
-### Dex (Testing)
-
-```hcl
-dex {
-  issuer_url    = "http://localhost:5556/dex"
-  client_id     = "hermes-test"
-  client_secret = "test-secret"
-  redirect_url  = "http://localhost:4200/callback"
-}
-
-```
-
-Web build: No `GOOGLE_OAUTH2_CLIENT_ID` needed!
-
-### Google OAuth (Production)
-
-```hcl
-google_workspace {
-  oauth2 {
-    client_id = "123456-abc.apps.googleusercontent.com"
-    hd        = "hashicorp.com"
-  }
-}
-```
-
-## Docker Testing Impact
-
-**Before**:
-
-```yaml
-# Required env vars - fails if missing
-HERMES_WEB_ALGOLIA_APP_ID: "${ALGOLIA_APP_ID}"
-HERMES_WEB_ALGOLIA_SEARCH_API_KEY: "${ALGOLIA_API_KEY}"
-HERMES_WEB_GOOGLE_OAUTH2_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
-
-```
-
-**After**:
-
-```yaml
-# All optional! ✅
-HERMES_WEB_GOOGLE_OAUTH2_CLIENT_ID: ""  # Empty if using Dex
-```
-
-## Implementation Status
-
-✅ Backend-only search proxy
-✅ Removed Algolia build credentials
-✅ Multi-provider auth detection
-✅ Provider-based header selection
-✅ OIDC reauthentication flow
-✅ Backward compatible with existing deployments
+- **Keep direct-to-Algolia in dev:** Fast for dev but reproduces the credential-leak and dev/prod divergence the team just fixed.
+- **Build-time provider selection:** Requires a separate bundle per environment; cuts off the runtime override (ADR-077) and per-tenant flexibility.
 
 ## References
 
-- Source: `SEARCH_AND_AUTH_REFACTORING.md`
-- Related: `WEB_EXTERNAL_DEPENDENCIES_ANALYSIS.md`, `AUTH_ARCHITECTURE_DIAGRAMS.md`
-
+- `web/app/services/algolia.ts`, `web/app/services/fetch.ts`, `web/config/environment.js`
+- `web/web.go` (config response), `web/mirage/algolia/hosts.ts`
+- ADR-073 (provider abstraction), ADR-075 (Meilisearch), ADR-076 (multi-provider auth)

@@ -1,93 +1,52 @@
 ---
 id: adr-077
-deciders: Hermes Team
+title: Auth Provider CLI and Environment Override
+date: 2025-10-06
+type: ADR
+subtype: Configuration
+decision_type: Configuration
+status: Accepted
+tags: ['authentication', 'configuration', 'cli', 'dex', 'okta', 'google']
+related: ['ADR-073', 'ADR-076', 'ADR-086']
 created: 2025-10-06
-author: Hermes Team
+deciders: Hermes Team
 project_id: hermes
 doc_uuid: 4dddc960-f32b-436f-aaa7-6a9b9e7dcdb4
-status: Implemented
-title: "Auth Provider Command-Line Selection"
-date: 2025-10-06
-type: RFC
-subtype: Configuration
-tags: [authentication, configuration, cli, dex, okta, google]
-related:
-  - RFC-007
-  - RFC-020
 ---
+# Auth Provider CLI and Environment Override
 
-# Auth Provider Command-Line Selection
+> The auth provider can be selected explicitly via the **`-auth-provider`** CLI flag or **`HERMES_AUTH_PROVIDER`** environment variable, taking precedence over the HCL `providers.auth` setting. Valid values: `google`, `okta`, `dex`. Precedence is **flag > env > config**.
 
 ## Context
 
-Hermes auto-selects authentication providers based on config file presence using priority order (Dex → Okta → Google). For testing, debugging, CI/CD, and multi-provider setups, explicit provider selection is needed without modifying configuration files.
+By default Hermes auto-selects an auth provider from HCL config (ADR-086) using the priority Dex → Okta → Google. That works for static deployments but is awkward for testing matrices, CI pipelines that switch providers per stage, and local debugging where you want to force a specific provider without editing config files.
 
-## Proposal
+## Decision
 
-Add command-line flag and environment variable for explicit auth provider selection:
+Add a single explicit override that short-circuits the config-driven selection and takes effect before provider initialization.
 
-```bash
-# Flag
-hermes server -auth-provider=dex
+- **CLI flag:** `hermes server -auth-provider=dex`
+- **Env var:** `HERMES_AUTH_PROVIDER=dex` (read when the flag is empty)
+- **Precedence:** CLI flag > environment variable > HCL config auto-selection.
+- **Behavior:** Selecting a provider sets `disabled = false` for it and `disabled = true` for the others; an invalid value is a startup error, and the selection source (flag vs env) is logged.
 
-# Environment variable
-export HERMES_AUTH_PROVIDER=dex
-hermes server -config=config.hcl
+## Consequences
 
-```
+### Positive
+- CI stages and Docker Compose files can pin a provider with one variable, no config rewrite.
+- Local debugging can switch providers per invocation without touching version-controlled config.
+- Explicit and observable — the chosen provider and its source are logged at startup.
 
-**Options**: `dex`, `okta`, `google`
-**Priority**: Command-line flag > Environment variable > Config file auto-selection
+### Negative
+- A third precedence layer to remember (flag, env, config); contributors must know the order.
+- Easy to leave `HERMES_AUTH_PROVIDER` set in a shell and be confused later; surfaced only via startup logs.
 
-## Behavior
+## Alternatives Considered
 
-When provider explicitly selected:
-1. Disables other providers (sets `disabled=true`)
-2. Enables selected provider (`disabled=false`)
-3. Logs selection source (flag/env)
-4. Validates provider name (error on invalid)
-
-## Use Cases
-
-**Acceptance Testing**:
-
-```yaml
-# testing/docker-compose.yml
-services:
-  hermes:
-    environment:
-      HERMES_AUTH_PROVIDER: dex
-```
-
-**Local Development**:
-
-```bash
-# Switch between providers quickly
-./hermes server -config=config.hcl -auth-provider=dex
-./hermes server -config=config.hcl -auth-provider=google
-
-```
-
-**CI/CD Pipeline**:
-
-```bash
-# Different stages use different providers
-export HERMES_AUTH_PROVIDER=dex    # dev
-export HERMES_AUTH_PROVIDER=okta   # staging
-export HERMES_AUTH_PROVIDER=google # prod
-```
-
-## Implementation
-
-**File**: `internal/cmd/commands/server/server.go`
-
-- Added `flagAuthProvider string` field to Command
-- Added flag parsing: `cmd.flagAuthProvider = f.String("auth-provider", "", "...")`
-- Added environment variable fallback: `os.Getenv("HERMES_AUTH_PROVIDER")`
-- Added provider selection logic in `applyAuthProviderSelection()`
+- **Config edits only:** Honest but painful for short-lived overrides and CI matrices.
+- **Per-provider toggle env vars (`HERMES_DEX_DISABLED=false`, etc.):** Combinatorially messy and easy to misconfigure (two providers enabled at once).
 
 ## References
 
-- Source: `AUTH_PROVIDER_SELECTION.md`
-- Related: `AUTH_ARCHITECTURE_DIAGRAMS.md`, `DEX_AUTHENTICATION.md`
-
+- `internal/cmd/commands/server/server.go` — `flagAuthProvider`, `applyAuthProviderSelection()`
+- ADR-073 (provider abstraction), ADR-076 (multi-provider auth), ADR-086 (HCL config)

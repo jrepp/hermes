@@ -1,126 +1,58 @@
 ---
 id: adr-078
-deciders: Hermes Team
+title: Dex OIDC Backend Implementation
+date: 2025-10-01
+type: ADR
+subtype: Authentication
+decision_type: Authentication
+status: Accepted
+tags: ['authentication', 'dex', 'oidc']
+related: ['ADR-072', 'ADR-073', 'ADR-076']
 created: 2025-10-01
-author: Hermes Team
+deciders: Hermes Team
 project_id: hermes
 doc_uuid: e6956bd2-999d-433b-9021-0779a9f5b4ce
-status: Implemented
-title: "Dex OIDC Authentication Implementation"
-date: 2025-10
-type: RFC
-subtype: Implementation
-tags: [authentication, dex, oidc, implementation]
-related:
-  - RFC-007
-  - RFC-009
 ---
+# Dex OIDC Backend Implementation
 
-# Dex OIDC Authentication Implementation
+> The Dex auth path implements `auth.Provider` in **`pkg/auth/adapters/dex/`** and is wired into the standard backend OIDC endpoints — `GET /auth/login`, `GET /auth/callback`, `GET /auth/logout`. Sessions are issued as **HttpOnly + Secure + SameSite=Lax** cookies by `DexSessionProvider` in `internal/auth/auth.go`. Two stack profiles exist: integration tests (port `5556`, client `hermes-integration`) and the testing Compose stack (port `5557`, client `hermes-acceptance`).
 
 ## Context
 
-Hermes requires local authentication capability for development, testing, and CI/CD without dependency on external OAuth providers (Google, Okta). Dex provides OpenID Connect (OIDC) identity provider with static password authentication.
+ADR-072 chose Dex as the local OIDC provider. This ADR records how the Hermes side of that integration is built: which packages own the adapter and the session, which HTTP endpoints participate in the flow, and how the integration vs acceptance configurations stay isolated from each other (per the +1-port convention in ADR-070).
 
-## Architecture
+## Decision
 
-### Components
+- **Adapter:** `pkg/auth/adapters/dex/` — implements `auth.Provider` (ADR-073), validates OIDC ID tokens, and extracts the user email from claims.
+- **HTTP endpoints (`internal/api/auth.go`):**
+  - `GET /auth/login` — start OIDC authorization flow.
+  - `GET /auth/callback` — exchange code, issue session cookie.
+  - `GET /auth/logout` — clear session.
+- **Session:** `DexSessionProvider` in `internal/auth/auth.go` — cookie-based, HttpOnly + Secure + SameSite=Lax (consistent with ADR-076).
+- **Profiles:**
+  - **Integration** (`docker-compose.yml`): Dex on `5556` HTTP / `5558` telemetry, client `hermes-integration`, issuer `http://localhost:5556/dex`.
+  - **Acceptance** (`testing/docker-compose.yml`): Dex on `5557` / `5559`, client `hermes-acceptance`, issuer `http://dex:5557/dex` (in-network).
+- **Frontend:** `web/app/routes/authenticated.ts` performs a `HEAD /api/v2/me` check and redirects to `/auth/login?redirect=<url>` if unauthenticated; the dev proxy (`web/server/index.js`) forwards `/auth/*` and `/api/*` to the backend so the Ember router does not intercept them.
+- **Test users:** `test@hermes.local` / `password`, `admin@hermes.local` / `password` (defined in Dex static-password connector, ADR-072).
 
-1. **Dex Server** (`ghcr.io/dexidp/dex:v2.41.1`)
-   - Docker container
-   - Static password connector
-   - OIDC endpoints
+## Consequences
 
-2. **Dex Auth Adapter** (`pkg/auth/adapters/dex/`)
-   - Implements `auth.Provider` interface
-   - Validates OIDC ID tokens
-   - Extracts user email from claims
+### Positive
+- Dex slots into the same `auth.Provider` and session-cookie machinery as Okta; no special-case handler code.
+- Integration and acceptance profiles cannot collide (different ports, different client IDs/secrets).
+- Frontend auth gating and dev proxying are uniform across providers.
 
-3. **Backend Endpoints** (`internal/api/auth.go`)
-   - `GET /auth/login` - Initiates OIDC flow
-   - `GET /auth/callback` - Handles OAuth callback
-   - `GET /auth/logout` - Clears session
+### Negative
+- Two Dex configurations to keep in sync as flows evolve.
+- Dev proxy must explicitly forward `/auth/*` — easy to forget when adding new auth endpoints.
 
-4. **Session Management** (`internal/auth/auth.go`)
-   - `DexSessionProvider` - Cookie-based auth
-   - HttpOnly, Secure, SameSite=Lax cookies
+## Alternatives Considered
 
-### Authentication Priority
-
-```text
-1. Dex (if configured and enabled)
-2. Okta (if configured and enabled)
-3. Google (default fallback)
-
-```
-
-## Deployment Configurations
-
-### Integration Testing (`docker-compose.yml`)
-
-**Purpose**: Infrastructure for Go integration tests
-
-```yaml
-Port: 5556 (HTTP), 5558 (telemetry)
-Issuer: http://localhost:5556/dex
-Client ID: hermes-integration
-Client Secret: ZXhhbXBsZS1hcHAtc2VjcmV0
-```
-
-### Acceptance Testing (`testing/docker-compose.yml`)
-
-**Purpose**: Full-stack containerized environment
-
-```yaml
-Port: 5557 (HTTP), 5559 (telemetry) # non-conflicting
-Issuer: http://dex:5557/dex (internal)
-Client ID: hermes-acceptance
-Client Secret: YWNjZXB0YW5jZS1hcHAtc2VjcmV0
-
-```
-
-### Configuration
-
-```hcl
-profile "testing" {
-  dex {
-    disabled      = false
-    issuer_url    = "http://dex:5557/dex"
-    client_id     = "hermes-acceptance"
-    client_secret = "YWNjZXB0YW5jZS1hcHAtc2VjcmV0"
-    redirect_url  = "http://localhost:8001/auth/callback"
-  }
-}
-```
-
-## Frontend Integration
-
-**Authentication Check** (`web/app/routes/authenticated.ts`):
-- HEAD request to `/api/v2/me`
-- Redirect to `/auth/login?redirect=<url>` if unauthenticated
-- Preserves original URL for post-login redirect
-
-**Proxy Middleware** (`web/server/index.js`):
-- Proxies `/auth/*` and `/api/*` to backend
-- Prevents Ember router interception
-
-## Test Users
-
-Static password connector provides:
-- `test@hermes.local` / `password`
-- `admin@hermes.local` / `password`
-
-## Implementation Status
-
-✅ Backend endpoints (login, callback, logout)
-✅ Session-based authentication
-✅ Frontend authentication check
-✅ Docker Compose configurations
-✅ Integration test support
-✅ Acceptance test support
+- **Single Dex profile shared by integration and acceptance:** Causes port conflicts and cross-test interference; the +1 offset (ADR-070) exists exactly to prevent this.
+- **Token-in-`localStorage` instead of session cookies:** Inconsistent with the rest of the OIDC story (ADR-076) and reopens XSS exfiltration risk.
 
 ## References
 
-- Source: `DEX_AUTHENTICATION.md`, `DEX_AUTHENTICATION_implementation.md`
-- Related: `AUTH_ARCHITECTURE_DIAGRAMS.md`, `SESSION_AUTHENTICATION_FIX.md`
-
+- `pkg/auth/adapters/dex/`, `internal/api/auth.go`, `internal/auth/auth.go`
+- `testing/dex-config.yaml`, `testing/docker-compose.yml`
+- ADR-072 (Dex selection), ADR-073 (provider abstraction), ADR-076 (multi-provider auth)
