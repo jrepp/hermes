@@ -1,0 +1,26 @@
+project:
+  id: hermes
+  name: Hermes
+  description: Documentation for Hermes backend, frontend, and operations
+
+structure:
+  adr_dir: ../docs-internal/adr
+  memo_dir: ../docs-internal/memo
+  rfc_dir: ../docs-internal/rfc
+
+  # Keep legacy ADR/RFC/MEMO filenames (uppercase) untouched for now.
+  # Scanning paths remain relative to docs-cms, so '..' is required.
+  document_folders:
+    - ../docs-internal/adr
+    - ../docs-internal/memo
+    - ../docs-internal/rfc
+
+metadata:
+  created: "2026-04-24"
+  maintainers:
+    - Hermes Team
+  purpose: Canonical documentation project layout for validation and indexing
+
+validation:
+  readability:
+    enabled: false
