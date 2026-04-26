@@ -22,7 +22,7 @@ An ADR records a **decision with ongoing force** — a rule, pattern, or constra
 | Decision Type | Example |
 |---------------|---------|
 | **Architectural Pattern** | Provider abstraction (ADR-073), V2 handler shape (ADR-081), `withTimeout()` policy (ADR-065) |
-| **Configuration Choice** | HCL over YAML/JSON (ADR-086), version-pinning policy (ADR-029) |
+| **Configuration Choice** | HCL over YAML/JSON (ADR-086) |
 | **Integration / Boundary** | Split server vs migrate binaries (ADR-083), `pkg/docid` identity (ADR-082) |
 | **Bug Workaround** | Should rarely become an ADR — prefer a memo. Only promote when the workaround imposes a *lasting* contract on other code. |
 
@@ -30,8 +30,8 @@ If a write-up is "we hit bug X and fixed it by changing line Y," it belongs in `
 
 ## Quick Stats
 
-- **Total ADRs**: 22 (006, 036, 084 demoted to memos; 081/082/085 narrative migrated to RFCs, tight ADRs retained)
-- **Categories**: Frontend (4), Auth (4), Provider/Storage (6), Search (3), Config (2), Infra/Tooling (2)
+- **Total ADRs**: 21 (006, 029, 036, 084 demoted to memos; 081/082/085 narrative migrated to RFCs, tight ADRs retained)
+- **Categories**: Frontend (3), Auth (4), Provider/Storage (6), Search (3), Config (2), Infra/Tooling (2)
 - **Date Range**: October 2025 – April 2026
 
 ## Cross-Cutting Principles
@@ -57,7 +57,6 @@ These principles recur across multiple ADRs and govern new design work. Cite the
 | `server.Server` as the single DI container for V2 handlers (`func Handler(srv *server.Server) http.Handler`) | 081 |
 | Error wrapping with `errors.Is` against typed sentinels (`search.ErrNotFound`, `workspace.ErrNotFound`) | 073, 081 |
 | Environment-agnostic `base_url` for OAuth; OAuth `redirect_uri` always backend, then redirect to frontend | 048 |
-| Intentional dependency-version pinning where the ecosystem forces a mismatch (`ember-power-select` 8.x + `ember-concurrency` 2.x) | 029 |
 
 ## Index by Category
 
@@ -66,7 +65,6 @@ These principles recur across multiple ADRs and govern new design work. Cite the
 | ID | Title | Type | Status | Decision |
 |----|-------|------|--------|----------|
 | [001](adr-001-stay-with-classic-ember-build.md) | Stay with Classic Ember Build | Architectural Pattern | Accepted | Keep Ember CLI/Broccoli; defer Embroider+Vite migration. |
-| [029](adr-029-ember-concurrency-version-pinning-policy.md) | Ember Concurrency Version Pinning Policy | Configuration Choice | Accepted | `ember-power-select` 8.x + `ember-concurrency` 2.x version mismatch is intentional. |
 | [032](adr-032-direct-fetch-for-singleton-endpoints.md) | Direct fetch() for Singleton API Endpoints | Architectural Pattern | Accepted | Singleton endpoints (e.g. `/me`) use direct `fetch()` with `credentials: "include"`, not `store.findAll()`. |
 | [065](adr-065-frontend-async-timeout-policy.md) | Frontend Async Timeout & Fallback Policy | Architectural Pattern | Accepted | Wrap every async API call in `withTimeout()` with a graceful fallback; no infinite spinners. |
 
@@ -117,6 +115,7 @@ These principles recur across multiple ADRs and govern new design work. Cite the
 | Was | Now | Reason |
 |-----|-----|--------|
 | ADR-006 (Animated Components Fix) | [MEMO-125](../memo/memo-125-ember-animated-stub-components.md) | Scoped to one ecosystem migration; no general pattern. |
+| ADR-029 (Ember Concurrency Version Pinning Policy) | [MEMO-128](../memo/memo-128-ember-concurrency-power-select-incompatibility.md) | ADRs should not pin specific package versions; the rule belongs in `package.json`. |
 | ADR-036 (Fix Location Type) | [MEMO-124](../memo/memo-124-fix-ember-location-type.md) | One-line config fix; no ongoing constraint. |
 | ADR-084 (Multi-Provider Auth Diagrams) | [MEMO-126](../memo/memo-126-multi-provider-auth-diagrams.md) | Diagrams are reference material, not a decision; ADR-076 owns the rule. |
 | ADR-083 investigation log | [MEMO-127](../memo/memo-127-sqlite-driver-conflict-investigation.md) | Incident narrative belongs in a memo; the rule lives in the tight ADR-083. |

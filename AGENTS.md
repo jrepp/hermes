@@ -39,7 +39,6 @@ These are project-wide commitments. Cite the ADR when you invoke them; flag cont
 - `locationType` is `history`. (MEMO-124)
 - Every async API call is wrapped in `withTimeout()` with a graceful fallback; no infinite spinners. (ADR-065, "Frontend Async Timeout & Fallback Policy")
 - Use `data-test-*` selectors for tests/automation. (ADR-074)
-- Dropdowns: `ember-power-select` 8.x with `ember-concurrency` 2.x (intentional version mismatch — see ADR-029, "Ember Concurrency Version Pinning Policy", before "fixing" it).
 - `/me` and other singleton endpoints are fetched directly with `fetch()` and `credentials: "include"`, not via `store.findAll()`. (ADR-032, "Direct fetch() for Singleton API Endpoints")
 
 **Testing & Local Iteration**
