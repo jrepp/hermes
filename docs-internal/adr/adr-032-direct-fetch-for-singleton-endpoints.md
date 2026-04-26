@@ -1,55 +1,52 @@
 ---
 id: adr-032
-title: Direct fetch() for Singleton API Endpoints
+title: "Direct fetch() for Singleton API Endpoints"
+status: Accepted
+decision_type: Architectural Pattern
+created: 2025-10-08
+deciders: Hermes Team
+author: Hermes Team
+project_id: hermes
+doc_uuid: a2cf1e6f-ea7a-4f13-8ee6-00c5a130e5fc
 date: 2025-10-08
 type: ADR
 subtype: Frontend Decision
-decision_type: Architectural Pattern
-status: Accepted
-tags: ['ember', 'frontend', 'ember-data', 'fetch', 'authentication']
-related: ['RFC-020', 'RFC-007']
-created: 2026-04-24
-deciders: Hermes Team
-project_id: hermes
-doc_uuid: a2cf1e6f-ea7a-4f13-8ee6-00c5a130e5fc
+tags: [ember, frontend, ember-data, fetch, authentication]
+related:
+  - ADR-076
+  - ADR-065
 ---
-# Direct fetch() for Singleton API Endpoints
 
-**Decision Type**: Architectural Pattern (frontend data-loading rule)
+# ADR-032: Direct fetch() for Singleton API Endpoints
+
+> Singleton API endpoints (`/me`, `/config`, …) are fetched with `fetch(url, { credentials: "include" })` and manually inserted into the Ember Data store via `peekRecord` + `createRecord` / `setProperties`. Do not use `store.findAll()` or `store.queryRecord()` for endpoints that return a single object rather than an array.
 
 ## Context
 
-After switching from HEAD to GET for the `/me` endpoint, the application crashed with:
+`store.findAll("me")` expects an array response. `/api/v2/me` returns a single object, which crashes the Ember Data adapter:
 
-``` text
+```text
 TypeError: Cannot read properties of undefined (reading 'request')
     at StoreService.request
     at StoreService.findAll
     at AuthenticatedUserService.loadInfo
-
 ```
 
-**Root Causes**:
+A second issue surfaced at the same time: `ApplicationAdapter.headers` unconditionally accessed `session.data.authenticated.access_token`, which is `undefined` for cookie-based auth (Dex), causing a crash before any request was made.
 
-1. **API Response Mismatch**: `store.findAll("me")` expects array response, but `/api/v2/me` returns single object
-2. **Unsafe Header Access**: ApplicationAdapter unconditionally accessed `session.data.authenticated.access_token` which is undefined for Dex (cookie-based auth)
+Both problems trace to the same root: trying to push singleton endpoints through Ember Data's collection-shaped pipeline.
 
 ## Decision
 
-Replace Ember Data's `store.findAll()` with direct `fetch()` call and manual store management.
-
-**Implementation**:
-
-1. **Direct Fetch** (`web/app/services/authenticated-user.ts`):
+1. **Singleton endpoints use `fetch()` directly** with `credentials: "include"` so session cookies (Dex) and bearer tokens (Google) both work:
 
    ```typescript
    const response = await fetch(`/api/${this.configSvc.config.api_version}/me`, {
      method: "GET",
-     credentials: "include", // Include session cookies
+     credentials: "include",
    });
    const data = await response.json();
 
-   // Manually create/update person record
    let person = this.store.peekRecord("person", data.email);
    if (!person) {
      person = this.store.createRecord("person", { /* data */ });
@@ -58,7 +55,7 @@ Replace Ember Data's `store.findAll()` with direct `fetch()` call and manual sto
    }
    ```
 
-2. **Safe Header Access** (`web/app/adapters/application.ts`):
+2. **`ApplicationAdapter.headers` uses optional chaining** and returns an empty object when no token is present:
 
    ```typescript
    get headers() {
@@ -66,79 +63,24 @@ Replace Ember Data's `store.findAll()` with direct `fetch()` call and manual sto
      if (!accessToken) return {};
      return { "Hermes-Google-Access-Token": accessToken };
    }
-
    ```
 
 ## Consequences
 
 ### Positive
-- ✅ Works with single-object `/me` response
-- ✅ No dependency on Ember Data RequestManager API
-- ✅ Explicit control over record lifecycle
-- ✅ Works for all auth providers (Google, Okta, Dex)
-- ✅ No crashes on undefined session data
-- ✅ Proper separation of concerns (fetch vs store management)
+- Works for all auth providers (Google bearer token, Okta/Dex session cookie).
+- No crashes when session data is undefined.
+- Explicit, debuggable record lifecycle.
+- No dependency on Ember Data's RequestManager configuration for single-object responses.
 
 ### Negative
-- ❌ Bypasses Ember Data conventions
-- ❌ Manual store record management required
-- ❌ Less declarative than `store.findAll()`
-- ❌ Duplicates some Ember Data logic
+- Bypasses Ember Data conventions for these endpoints.
+- Manual store-record management duplicates a small amount of Ember Data logic.
+- Less declarative than `store.findAll()`.
 
 ## Alternatives Considered
 
-1. **Change backend to return array**
-   - ❌ Wrong semantics (`/me` is singular resource)
-   - ❌ Would break other consumers
-
-2. **Use store.findRecord() instead**
-   - ❌ Requires backend to support `/api/v2/me/:id` endpoint
-   - ❌ Still requires proper RequestManager setup
-
-3. **Configure RequestManager for single-object responses**
-   - ❌ Complex Ember Data configuration
-   - ❌ Overkill for single endpoint
-
-4. **Use store.queryRecord()**
-   - ❌ Still expects Ember Data conventions
-   - ❌ Doesn't match our API structure
-
-## Implementation Details
-
-**Why `credentials: "include"`**:
-- Required for Dex session cookies
-- Ensures cookies sent with cross-origin requests
-- Works for all auth methods
-
-**Why Manual Store Management**:
-- Person record needs to exist for other components
-- `peekRecord()` checks if record already in store
-- `createRecord()` adds to store without API call
-- `setProperties()` updates existing record
-
-**Header Safety Pattern**:
-- Optional chaining (`?.`) prevents crashes
-- Empty object returned for cookie-based auth
-- Token header only sent when available
-
-## Verification
-
-✅ User info loads correctly after authentication
-✅ Person record created in store
-✅ No "undefined reading 'request'" errors
-✅ Works with Dex (cookie auth)
-✅ Works with Google (token auth)
-✅ Dashboard displays user name and picture
-
-## Future Considerations
-
-- Consider creating custom Ember Data serializer for `/me` endpoint
-- Evaluate if other endpoints need similar treatment
-- Document pattern for team (when to bypass Ember Data)
-- Monitor Ember Data updates for better single-object support
-
-## References
-
-- Source: `EMBER_DATA_STORE_ERROR_FIX_2025_10_08.md`
-- Related: `DEX_AUTHENTICATION_implementation.md`, `SESSION_AUTHENTICATION_FIX.md`
-
+- **Change backend to return an array** — wrong semantics; `/me` is a singular resource.
+- **`store.findRecord("me", id)`** — requires a backend `/me/:id` endpoint that doesn't exist semantically.
+- **Configure RequestManager for single-object responses** — overkill for one endpoint.
+- **`store.queryRecord()`** — still expects Ember Data conventions and a `query` shape.

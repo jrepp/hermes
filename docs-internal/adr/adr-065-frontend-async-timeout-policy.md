@@ -1,171 +1,81 @@
 ---
 id: adr-065
-title: Frontend Async Timeout & Fallback Policy
+title: "Frontend Async Timeout & Fallback Policy"
+status: Accepted
+decision_type: Architectural Pattern
+created: 2025-10-08
+deciders: Hermes Team
+author: Hermes Team
+project_id: hermes
+doc_uuid: 82333dc0-a780-4bef-817f-207916917ecb
 date: 2025-10-08
 type: ADR
 subtype: Frontend Decision
-decision_type: Architectural Pattern
-status: Accepted
-tags: ['frontend', 'promise', 'timeout', 'resilience', 'graceful-degradation']
-related: ['memo/001', 'memo/075']
-created: 2026-04-24
-deciders: Hermes Team
-project_id: hermes
-doc_uuid: 82333dc0-a780-4bef-817f-207916917ecb
+tags: [frontend, promise, timeout, resilience, graceful-degradation]
+related:
+  - ADR-032
 ---
-# Frontend Async Timeout & Fallback Policy
 
-**Decision Type**: Architectural Pattern (binding rule for all frontend async API calls)
+# ADR-065: Frontend Async Timeout & Fallback Policy
 
-Every async API call in the frontend is wrapped in `withTimeout()` with a
-graceful fallback. The triggering bug (admin dashboard hanging on a 401)
-established this as a project-wide rule.
+> Every async API call in the Hermes frontend is wrapped in `withTimeout()` (or `withTimeoutAndFallback()`) with a graceful fallback. No frontend code may `await` an unbounded promise. UI components must render with partial data on failure rather than show an infinite spinner.
 
 ## Context
 
-Admin user authentication succeeded but dashboard showed loading spinner indefinitely. Root cause: API requests returning 401 Unauthorized caused promises to hang without timeout or error handling. The `store.maybeFetchPeople.perform()` task would wait forever for responses that never completed.
+After a successful admin login, the dashboard hung on a loading spinner indefinitely. Root cause: `store.maybeFetchPeople.perform()` awaited a promise tied to API requests that returned `401` and never resolved. The frontend had no timeout protection, so the failed task hung forever and blocked the entire dashboard render.
 
-**Impact**: Application unusable when API endpoints fail or timeout - no user feedback, just infinite loading.
+This pattern was found in many places (`Promise.all` in routes, `task.perform()` in services). Without a project-wide rule, every new async call risks reintroducing the bug.
 
 ## Decision
 
-Implement comprehensive timeout and error handling throughout frontend to prevent indefinite hangs.
+1. **No unbounded `await`s in the frontend.** Every API call, task, or `Promise.all` is wrapped in one of the helpers in `web/app/utils/promise-timeout.ts`:
+   - `withTimeout(promise, ms, label)` — rejects on timeout.
+   - `withTimeoutAndFallback(promise, ms, fallback, label)` — resolves to `fallback` on timeout or error.
+   - `withTimeoutError(promise, ms)` — throws a typed `TimeoutError` (for debugging).
 
-**Components**:
+2. **Default budgets:**
+   - Person/group API requests: **15 s** (typical <1 s; allow slow network).
+   - Search operations: **30 s** (multiple backend calls).
+   - `maybeFetchPeople`-style aggregations / `Promise.all` over batched fetches: **30 s**.
 
-1. **Promise Timeout Utility** (`web/app/utils/promise-timeout.ts`):
-   - `withTimeout()` - Wraps promises with configurable timeout
-   - `withTimeoutAndFallback()` - Returns fallback value on timeout/error
-   - `withTimeoutError()` - Throws TimeoutError for debugging
-   - Default: 30 seconds (configurable per use case)
+3. **Failure mode is graceful degradation, not crash.** On timeout or error:
+   - Render with an empty list / placeholder records, never block the page.
+   - Log via the standard service logger (`🔄`/`📡`/`📬`/`✅`/`⚠️`/`❌` markers) so failures are diagnosable in the console.
+   - Critical paths (dashboard `Promise.all`, route models) catch and return empty arrays so the route can still render.
 
-2. **Store Service** (`web/app/services/_store.ts`):
-   - 15-second timeouts for person/group API requests
-   - Comprehensive logging for debugging
-   - Non-throwing error handling (placeholder records on failure)
+4. **Pattern (canonical):**
 
-3. **LatestDocs Service** (`web/app/services/latest-docs.ts`):
-   - 30-second timeout for search operations
-   - 30-second timeout for maybeFetchPeople calls
-   - Try-catch with error state handling
-
-4. **RecentlyViewed Service** (`web/app/services/recently-viewed.ts`):
-   - 30-second timeout for maybeFetchPeople calls
-
-5. **Dashboard Route** (`web/app/routes/authenticated/dashboard.ts`):
-   - Wrapped Promise.all in try-catch
-   - Returns empty array on error (allows page render)
-   - Non-critical error handling
-
-## Implementation
-
-**Before** (hangs forever):
-
-```typescript
-await this.store.maybeFetchPeople.perform(documents);
-
-```
-
-**After** (fails gracefully):
-
-```typescript
-await withTimeout(
-  this.store.maybeFetchPeople.perform(documents),
-  30000,
-  'Fetching people for documents'
-);
-```
-
-**Timeout Configuration**:
-- **Person/Group API**: 15s (usually < 1s, allows for slow network)
-- **Search Operations**: 30s (multiple backend calls, Algolia typically fast)
-- **Fetch People Tasks**: 30s (parallel Promise.all aggregation)
+   ```typescript
+   await withTimeout(
+     this.store.maybeFetchPeople.perform(documents),
+     30000,
+     'Fetching people for documents'
+   );
+   ```
 
 ## Consequences
 
 ### Positive
-- ✅ No infinite loading states
-- ✅ Graceful degradation on API failures
-- ✅ Comprehensive error logging
-- ✅ Page renders with available data
-- ✅ Better user experience (shows errors, continues)
-- ✅ Prevents cascade failures
+- No infinite spinners. The UI always reaches a rendered state.
+- Failures are visible (logs) but not fatal (page renders).
+- Cascade failures are bounded — a slow downstream cannot lock the dashboard.
 
 ### Negative
-- ❌ Adds timeout configuration complexity
-- ❌ May timeout on legitimately slow operations
-- ❌ Requires tuning per endpoint/operation
-- ❌ More error handling code
-
-## Error Handling Strategy
-
-**Non-Critical Errors** (degraded experience):
-- Person/group API failures → Create placeholder records
-- Recently viewed failures → Show empty widget
-- Latest docs failures → Show empty list
-
-**Critical Errors** (prevent cascade):
-- Dashboard Promise.all failure → Return empty array
-- Search service failures → Set empty state, throw error
-
-**User Experience**:
-- Before: Infinite spinner, no feedback, unusable
-- After: Logs error, continues rendering, shows available data
+- Per-endpoint timeout values must be tuned and maintained.
+- Legitimately slow operations may time out; budgets need occasional adjustment.
+- More boilerplate around every async call site.
 
 ## Alternatives Considered
 
-1. **Global timeout for all promises**
-   - ❌ One size doesn't fit all operations
-   - ❌ Some operations legitimately take longer
+- **Single global timeout for all promises** — rejected: one budget doesn't fit search vs. people-lookup vs. document fetches.
+- **Retry instead of timeout** — rejected: still requires an outer timeout to bound total wait; doesn't address hangs.
+- **Backend-only request timeouts** — rejected: doesn't help with network failures, dropped connections, or 401-without-body responses.
 
-2. **Retry logic instead of timeout**
-   - ❌ Still needs timeout to prevent infinite retries
-   - ❌ More complex, may not solve root cause
+## Operational Notes
 
-3. **Backend request timeout enforcement**
-   - ❌ Doesn't help with network issues
-   - ❌ Frontend still needs client-side protection
-
-4. **Remove problematic features**
-   - ❌ Loses functionality
-   - ❌ Doesn't address underlying architecture issue
-
-## Logging Added
-
-All services now log:
-- `🔄 Starting task...` - Task initiated
-- `📡 Fetching...` - API request sent
-- `📬 Response received` - API response arrived
-- `✅ Complete` - Task successful
-- `⚠️ Failed to fetch` - Non-critical error
-- `❌ Error` - Critical error
-
-## Verification
-
-✅ Dashboard loads even with API failures
-✅ Timeouts trigger after configured duration
-✅ Error handlers catch and log failures
-✅ Fallback states applied (empty arrays, placeholders)
-✅ UI renders without hangs
-✅ Logs provide debugging information
-
-## Future Considerations
-
-- Track timeout errors in production logs
-- Alert on high timeout rates (backend issues)
-- Monitor error rates in promise utilities
-- Consider circuit breaker pattern for repeated failures
-- Evaluate other `Promise.all` locations for similar fixes
-
-**Locations to Check**:
-- `web/app/routes/authenticated.ts` line 101
-- `web/app/routes/authenticated/projects/project.ts` line 39
-- `web/app/routes/authenticated/results.ts` lines 91, 118
-- `web/app/components/inputs/people-select.ts` line 236
-- `web/app/components/header/toolbar.ts` line 290
+- Track timeout-error rates in production logs; a sudden rise indicates backend regression.
+- Known additional sites that still need auditing: `web/app/routes/authenticated.ts`, `web/app/routes/authenticated/projects/project.ts`, `web/app/routes/authenticated/results.ts`, `web/app/components/inputs/people-select.ts`, `web/app/components/header/toolbar.ts`.
 
 ## References
 
-- Source: `PROMISE_TIMEOUT_HANG_FIX_2025_10_08.md`
-- Related: `ADMIN_LOGIN_HANG_ROOT_CAUSE_2025_10_08.md`, `ROOT_CAUSE_MAYBEFETCHPEOPLE_HANG_2025_10_08.md`
-
+- Code: `web/app/utils/promise-timeout.ts`, `web/app/services/_store.ts`, `web/app/services/latest-docs.ts`, `web/app/services/recently-viewed.ts`, `web/app/routes/authenticated/dashboard.ts`.

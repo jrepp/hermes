@@ -1,130 +1,68 @@
 ---
 id: adr-029
-title: Ember Concurrency Version Pinning Policy
+title: "Ember Concurrency Version Pinning Policy"
+status: Accepted
+decision_type: Configuration Choice
+created: 2025-10-08
+deciders: Hermes Team
+author: Hermes Team
+project_id: hermes
+doc_uuid: daffd0f1-bd26-4fea-b25f-766b4ebd95e2
 date: 2025-10-08
 type: ADR
 subtype: Dependency Decision
-decision_type: Configuration Choice
-status: Accepted
-tags: ['ember', 'dependencies', 'concurrency', 'compatibility', 'upgrade']
-related: ['MEMO-125', 'RFC-034']
-created: 2026-04-24
-deciders: Hermes Team
-project_id: hermes
-doc_uuid: daffd0f1-bd26-4fea-b25f-766b4ebd95e2
+tags: [ember, dependencies, ember-concurrency, ember-power-select]
+related:
+  - ADR-001
+  - MEMO-125
 ---
-# Ember Concurrency Version Pinning Policy
 
-**Decision Type**: Configuration Choice (intentional dependency-version mismatch)
+# ADR-029: Ember Concurrency Version Pinning Policy
+
+> Use `ember-power-select` 8.x with `ember-concurrency` 2.x. This is an intentional version mismatch — do not "fix" it by upgrading `ember-concurrency` to 3.x.
 
 ## Context
 
-`ember-power-select` 8.x requires `ember-concurrency` 3.x and imports from:
+`ember-power-select` 8.x declares a peer dependency on `ember-concurrency` 3.x and its precompiled dist files import from a private path:
 
 ```javascript
 import { buildTask } from 'ember-concurrency/async-arrow-runtime';
-
 ```
 
-However, `ember-concurrency` 3.x does NOT export `async-arrow-runtime` at root level - it's a private module at `addon/-private/async-arrow-runtime.js`.
+`ember-concurrency` 3.x does not export `async-arrow-runtime` at the root — it lives at `addon/-private/async-arrow-runtime.js`. Ember's module resolution does not honor webpack aliases, manual `node_modules` shims, or `ember-cli-build.js` aliases for addon resolution. Downgrading `ember-power-select` to 7.x produces SASS import errors with Ember 6.x.
 
-**Root Cause**:
-- `ember-power-select` 8.11.0 has precompiled dist files with hard-coded import paths
-- `ember-concurrency` 3.1.1 doesn't expose `async-arrow-runtime` as public export
-- Ember's module resolution doesn't respect webpack aliases
-- Downgrading to `ember-power-select` 7.x causes SASS import errors
+Hermes uses only basic dropdown features; the missing `async-arrow-runtime` import is required only for advanced features Hermes does not use.
 
 ## Decision
 
-Use `ember-power-select` 8.x with `ember-concurrency` 2.x (intentional version mismatch).
+Pin `ember-power-select` to `^8.11.0` and `ember-concurrency` to `^2.3.7`:
 
 ```bash
 yarn up ember-power-select@^8.11.0 ember-concurrency@^2.3.7
 ```
 
-**Rationale**:
-- Creates version mismatch warning but works in practice
-- `async-arrow-runtime` import only used for advanced features
-- Basic dropdown functionality (what Hermes needs) doesn't require it
-- Temporary workaround until upstream fixes export path
+This produces a peer-dependency warning in the console; it is expected and intentional. Do not "fix" the warning by upgrading `ember-concurrency` to 3.x — it will break dropdown rendering at runtime.
 
 ## Consequences
 
 ### Positive
-- ✅ Dropdowns work correctly
-- ✅ No build errors
-- ✅ Compatible with Ember 6.x
-- ✅ Quick fix unblocks development
+- Dropdowns render and function correctly under Ember 6.x.
+- No build errors; document creation, project selection, and product/area selection all work.
 
 ### Negative
-- ❌ Version mismatch warning in console
-- ❌ Potential issues if using advanced `ember-power-select` features
-- ❌ Technical debt (not a proper long-term solution)
-- ❌ May break on future `ember-power-select` updates
+- A peer-dependency mismatch warning appears in the console.
+- Advanced `ember-power-select` features that depend on `async-arrow-runtime` are unavailable (Hermes does not use them).
+- Future `ember-power-select` releases may break the workaround.
 
 ## Alternatives Considered
 
-1. **Upgrade ember-concurrency to 3.x**
-   - ❌ Module resolution fails (async-arrow-runtime not exported)
+- **Upgrade `ember-concurrency` to 3.x** — fails at runtime: `async-arrow-runtime` is not exported.
+- **Manual `node_modules` shim** — Ember addon resolution ignores it.
+- **Webpack alias in `ember-cli-build.js`** — Ember addon resolution ignores it.
+- **Patch `ember-power-select` dist file in place** — lost on `yarn install`; would need `patch-package` automation.
+- **Downgrade to `ember-power-select` 7.x** — SASS import errors with Ember 6.x.
+- **Switch to a different dropdown library** — large UI rewrite for marginal benefit.
 
-2. **Manual module shim**
-   - ❌ Created `node_modules/ember-concurrency/async-arrow-runtime.js`
-   - ❌ Doesn't affect Ember addon module resolution
+## Long-Term Path
 
-3. **Webpack alias in ember-cli-build.js**
-   - ❌ Doesn't affect Ember's addon resolution system
-
-4. **Patch ember-power-select dist file**
-   - ❌ Lost on `yarn install`, requires automation
-
-5. **Downgrade to ember-power-select 7.x**
-   - ❌ SASS import errors with Ember 6.x
-
-6. **Skip dropdowns temporarily**
-   - ❌ Blocks essential document creation functionality
-
-## Long-Term Solutions
-
-1. **Wait for upstream fix**: `ember-power-select` fixes export path
-2. **Use patch-package**: Automatically patch on install
-
-   ```bash
-   npm install -g patch-package
-   npx patch-package ember-power-select
-
-   ```
-
-3. **Fork and fix**: Maintain our own fork
-4. **Different dropdown library**: Switch to alternative component
-
-## Verification
-
-✅ Dropdowns render correctly
-✅ Product/area selection works
-✅ Document creation functional
-✅ No runtime errors
-⚠️ Console shows version mismatch warning (expected)
-
-## Implementation
-
-**Package Versions**:
-- `ember-power-select`: ^8.11.0
-- `ember-concurrency`: ^2.3.7
-
-**Impact**:
-- All dropdown components functional
-- Document creation flow working
-- Project selection working
-
-## Future Work
-
-- Monitor `ember-power-select` releases for proper fix
-- Consider implementing `patch-package` automation
-- Evaluate alternative dropdown libraries
-- Document workaround for team awareness
-
-## References
-
-- Source: `EMBER_CONCURRENCY_COMPATIBILITY_ISSUE.md`
-- Related: `ANIMATED_COMPONENTS_FIX_2025_10_08.md`, `EMBER_UPGRADE_STRATEGY.md`
-
+Re-evaluate when `ember-power-select` upstream fixes the export path, or when a Hermes feature requires `ember-concurrency` 3.x (in which case `patch-package` or a fork becomes the path forward).
