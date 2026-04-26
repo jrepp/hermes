@@ -1,7 +1,7 @@
 ---
 id: rfc-095
 title: "Document Identification System (DocID)"
-status: Implemented (Phase 1)
+status: Implemented
 created: 2025-10-26
 author: Hermes Team
 project_id: hermes

@@ -1,7 +1,7 @@
 ---
 id: rfc-096
 title: "Database Deltas and Stateless Indexer"
-status: Implemented (Phase 1)
+status: Implemented
 created: 2025-10-24
 author: Hermes Team
 project_id: hermes

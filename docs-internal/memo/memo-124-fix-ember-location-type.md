@@ -6,9 +6,10 @@ type: Memo
 subtype: Configuration Note
 status: Accepted
 tags: ['ember', 'configuration', 'routing', 'location-type']
-related: ['ADR-001', 'RFC-034']
+related: ['ADR-001']
 supersedes: ADR-036
 created: 2026-04-24
+author: Hermes Team
 deciders: Hermes Team
 project_id: hermes
 doc_uuid: f1cf2017-f977-4461-8b3a-2630c42f118e

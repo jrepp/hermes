@@ -6,9 +6,10 @@ type: Memo
 subtype: Frontend Migration Note
 status: Accepted
 tags: ['ember', 'frontend', 'animation', 'components', 'migration']
-related: ['ADR-001', 'ADR-029', 'RFC-034']
+related: ['ADR-001', 'ADR-029']
 supersedes: ADR-006
 created: 2026-04-24
+author: Hermes Team
 deciders: Hermes Team
 project_id: hermes
 doc_uuid: 5c56e57d-1dd7-49fe-9b2e-2e5b63bb792d
