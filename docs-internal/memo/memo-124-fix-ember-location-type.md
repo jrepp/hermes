@@ -1,18 +1,24 @@
 ---
-id: adr-036
-title: Fix Location Type
+id: memo-124
+title: "Fix: Ember locationType auto -> history"
 date: 2025-10-07
-type: ADR
-subtype: Configuration Decision
+type: Memo
+subtype: Configuration Note
 status: Accepted
 tags: ['ember', 'configuration', 'routing', 'location-type']
-related: ['RFC-034']
+related: ['ADR-001', 'RFC-034']
+supersedes: ADR-036
 created: 2026-04-24
 deciders: Hermes Team
 project_id: hermes
 doc_uuid: f1cf2017-f977-4461-8b3a-2630c42f118e
 ---
-# Fix Location Type
+# MEMO-124: Fix - Ember locationType auto -> history
+
+> Demoted from ADR-036. This is a one-line configuration fix with no ongoing
+> architectural constraint beyond "do not switch back to `auto`" -- which is
+> implicit in Ember 6.x removing the option. Kept as a memo for historical
+> reference. The Ember build-system policy lives in ADR-001.
 
 ## Context
 

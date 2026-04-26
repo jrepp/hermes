@@ -1,18 +1,25 @@
 ---
-id: adr-006
-title: Animated Components Fix
+id: memo-125
+title: ember-animated Passthrough Stub Components
 date: 2025-10-08
-type: ADR
-subtype: Frontend Decision
+type: Memo
+subtype: Frontend Migration Note
 status: Accepted
 tags: ['ember', 'frontend', 'animation', 'components', 'migration']
-related: ['RFC-034']
+related: ['ADR-001', 'ADR-029', 'RFC-034']
+supersedes: ADR-006
 created: 2026-04-24
 deciders: Hermes Team
 project_id: hermes
 doc_uuid: 5c56e57d-1dd7-49fe-9b2e-2e5b63bb792d
 ---
-# Animated Components Fix
+# MEMO-125: ember-animated Passthrough Stub Components
+
+> Demoted from ADR-006. The decision is scoped to the in-flight ember-animated
+> -> Ember 6.x migration (a single ecosystem upgrade) and does not encode a
+> general "stub components instead of restoring the addon" pattern that
+> applies elsewhere. Captured as a migration memo; the broader Ember
+> build-system stance is in ADR-001.
 
 ## Context
 
