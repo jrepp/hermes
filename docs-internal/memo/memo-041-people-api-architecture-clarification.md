@@ -1,9 +1,8 @@
 ---
 id: memo-041
 title: People API Architecture Clarification - No Database Table Needed
-date: 2025-10-09
 status: Final
-tags: [architecture, people, workspace, local, google]
+tags: [architecture, google, local, people, workspace]
 related: [TODO-015, TODO-014, ADR-007, ADR-009]
 created: 2026-04-24
 deciders: Hermes Team

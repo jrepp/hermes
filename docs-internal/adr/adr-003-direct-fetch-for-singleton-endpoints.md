@@ -8,10 +8,9 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: a2cf1e6f-ea7a-4f13-8ee6-00c5a130e5fc
-date: 2025-10-08
 type: ADR
 subtype: Frontend Decision
-tags: [ember, frontend, ember-data, fetch, authentication]
+tags: [authentication, ember, ember-data, fetch, frontend]
 related: [ADR-012, ADR-005]
 ---
 

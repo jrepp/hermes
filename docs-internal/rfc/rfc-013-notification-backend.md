@@ -11,7 +11,7 @@ document-number: RFC-013
 title: Multi-Backend Notification System with Message Queues
 authors: [system]
 modified: 2025-11-13T00:00:00Z
-tags: [rfc, notifications, architecture, messaging, redpanda]
+tags: [architecture, messaging, notifications, redpanda, rfc]
 ---
 
 # RFC-013: Multi-Backend Notification System with Message Queues

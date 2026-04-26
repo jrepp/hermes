@@ -6,10 +6,10 @@ project_id: hermes
 doc_uuid: e5776445-4e4b-4dac-8eb5-b8b64405cf99
 status: Proposed
 title: Multi-Provider Architecture with Automatic Pass-Through and Document Synchronization
-date: 2025-11-11
 type: RFC
 subtype: Implementation
-tags: [multi-provider, pass-through, federation, synchronization, uuid-merging, identity-joining]
+tags: [federation, identity-joining, multi-provider, pass-through, synchronization,
+  uuid-merging]
 related: [RFC-010, RFC-012, RFC-021]
 ---
 

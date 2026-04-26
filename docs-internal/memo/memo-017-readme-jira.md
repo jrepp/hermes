@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: d823b44f-e514-4454-a167-bff9332347d7
 status: Draft
 title: Jira Integration
+tags: []
 ---
 
 # Jira Integration

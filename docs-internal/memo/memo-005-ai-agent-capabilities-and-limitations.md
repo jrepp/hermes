@@ -5,8 +5,10 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: e8769661-cbba-45b3-8d1e-8b5e27581a05
 status: Draft
-title: "AI Agent Capabilities and Limitations"
+title: AI Agent Capabilities and Limitations
+tags: []
 ---
+
 # AI Agent Capabilities and Limitations
 
 **Date**: October 25, 2025
@@ -236,4 +238,3 @@ Understanding these limitations allows for effective collaboration:
 The goal isn't to make me smarter - it's to structure collaboration so my strengths complement human judgment and vice versa.
 
 **Best metaphor**: I'm a very fast, very thorough junior engineer who never gets tired, but needs a senior engineer to point me in the right direction and tell me when I'm stuck.
-

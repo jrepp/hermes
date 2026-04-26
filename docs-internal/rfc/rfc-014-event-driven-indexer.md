@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: 837e7398-7a9f-44ff-90f6-d6f2a33ba414
 status: Draft
 title: Event-Driven Document Indexer with Pipeline Rulesets
-date: 2025-11-14
 type: RFC
 subtype: Architecture Design
-tags: [indexer, events, pipeline, redpanda, meilisearch, embeddings, llm]
+tags: [embeddings, events, indexer, llm, meilisearch, pipeline, redpanda]
 related: [RFC-005, RFC-008, RFC-013]
 ---
 

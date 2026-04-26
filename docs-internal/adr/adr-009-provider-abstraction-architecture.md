@@ -1,12 +1,11 @@
 ---
 id: adr-009
 title: Provider Abstraction Architecture
-date: 2025-10-09
 type: ADR
 subtype: System Architecture
 decision_type: Architectural Pattern
 status: Accepted
-tags: [architecture, providers, workspace, authentication, search]
+tags: [architecture, authentication, providers, search, workspace]
 related: [ADR-012, ADR-013, ADR-017]
 created: 2026-04-24
 deciders: Hermes Team

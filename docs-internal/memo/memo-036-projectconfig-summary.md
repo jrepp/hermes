@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: de10a30c-15a6-4c92-9ae6-f246de096176
 status: Draft
 title: Project Config Package Implementation Summary
+tags: []
 ---
 
 # Project Config Package Implementation Summary

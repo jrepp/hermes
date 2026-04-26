@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: 04c6abd6-d1e3-4c2f-8503-8ceb1ca529c0
 status: Draft
 title: Document Search Index Outbox Pattern
-date: 2025-10-08
 type: RFC
 subtype: Architecture Design
-tags: [outbox-pattern, search, architecture, design, meilisearch]
+tags: [architecture, design, meilisearch, outbox-pattern, search]
 related: [ADR-007, RFC 026]
 ---
 

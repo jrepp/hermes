@@ -6,6 +6,7 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: 3eb4703f-c5eb-42c0-972e-c2d99d1a4153
 status: Draft
+tags: []
 ---
 
 # RFC-011 Appendix: API Provider Permissions Model

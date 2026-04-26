@@ -1,12 +1,11 @@
 ---
 id: adr-007
 title: Local File Workspace System
-date: 2025-10-09
 type: ADR
 subtype: Backend Architecture
 decision_type: Backend Architecture
 status: Accepted
-tags: [backend, workspace, local-workspace, filesystem]
+tags: [backend, filesystem, local-workspace, workspace]
 related: [ADR-009, ADR-015]
 created: 2026-04-24
 deciders: Hermes Team

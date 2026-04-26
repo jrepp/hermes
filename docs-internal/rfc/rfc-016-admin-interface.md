@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: b57e9754-f7c0-4a45-9fd1-bd8a3e69a1be
 status: Draft
 title: Hermes Admin Interface - Comprehensive Management UI
-date: 2025-11-15
 type: RFC
 subtype: Feature Design
-tags: [admin, ui, identity, migrations, monitoring, analytics]
+tags: [admin, analytics, identity, migrations, monitoring, ui]
 related: [RFC-015, RFC-014, RFC-010, RFC-005]
 ---
 

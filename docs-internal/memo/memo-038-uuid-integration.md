@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: 18aa5221-1699-42fa-bacd-01a655a09c96
 status: Draft
 title: UUID-Based Document Identification - Integration Summary
+tags: []
 ---
 
 # UUID-Based Document Identification - Integration Summary

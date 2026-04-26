@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: 20577e1d-df1c-4923-b846-8fb52bb5a2d9
 status: Draft
 title: Project Config Integration Plan
+tags: []
 ---
 
 # Project Config Integration Plan

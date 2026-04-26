@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: 3815ffef-4c22-4d5b-99c7-3d6810aace1e
 status: Proposed
 title: New Document Types for HashiCorp Documentation
-date: 2025-10-09
 type: RFC
 subtype: Feature Proposal
-tags: [document-types, adr, memo, frd, path, feature-proposal]
+tags: [adr, document-types, feature-proposal, frd, memo, path]
 related: [ADR-009, ADR-007]
 ---
 
@@ -97,7 +96,6 @@ What might we revisit later?
 docType: ADR
 number: 73
 status: accepted
-date: 2025-10-09
 category: system-architecture
 supersedes: [ADR-45]
 supersededBy: null

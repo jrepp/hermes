@@ -1,7 +1,6 @@
 ---
 id: adr-014
 title: Dex OIDC Backend Implementation
-date: 2025-10-01
 type: ADR
 subtype: Authentication
 decision_type: Authentication

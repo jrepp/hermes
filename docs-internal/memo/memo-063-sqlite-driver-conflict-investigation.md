@@ -7,7 +7,7 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: 5fd0862b-40a9-493d-a36f-1ec405eb836d
 type: MEMO
-tags: [sqlite, drivers, dependencies, debugging, history]
+tags: [debugging, dependencies, drivers, history, sqlite]
 supersedes: ADR-019 (investigation log section)
 related: [ADR-019]
 ---

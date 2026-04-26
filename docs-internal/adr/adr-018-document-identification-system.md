@@ -8,9 +8,8 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: 3e7af144-9069-41dc-adca-ba16e6172960
-date: 2025-10-26
 type: ADR
-tags: [document-id, uuid, multi-provider, data-model]
+tags: [data-model, document-id, multi-provider, uuid]
 related: [ADR-009, ADR-017, RFC-021, MEMO-039]
 ---
 

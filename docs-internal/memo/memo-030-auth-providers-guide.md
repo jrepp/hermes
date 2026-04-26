@@ -1,10 +1,9 @@
 ---
 id: memo-030
 title: Authentication Providers Guide
-date: 2025-10-09
 type: Guide
 status: Final
-tags: [authentication, providers, google, okta, dex, configuration]
+tags: [authentication, configuration, dex, google, okta, providers]
 related: [MEMO-007, MEMO-020, RFC-007, RFC-009, ADR-008]
 created: 2025-10-09
 author: Hermes Team

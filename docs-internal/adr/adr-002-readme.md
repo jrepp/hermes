@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: 6c1b6d39-46b6-4705-b1c8-9cf1bc02d281
 status: Accepted
 title: ADR Index (Architectural Decision Records)
+tags: []
 ---
 
 # ADR Index (Architectural Decision Records)

@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: 51518baa-f9b3-418f-8e36-1cc23b37eb3b
 status: Proposed
 title: Outbox Pattern for Document Synchronization
-date: 2025-10-09
 type: RFC
 subtype: Architecture Proposal
-tags: [outbox-pattern, document-sync, architecture, meilisearch, search]
+tags: [architecture, document-sync, meilisearch, outbox-pattern, search]
 related: [ADR-009, ADR-011, ADR-016]
 ---
 

@@ -1,7 +1,6 @@
 ---
 id: memo-034
 title: Root Makefile Quick Start Targets
-date: 2025-10-09
 type: memo
 status: active
 tags: [development, makefile, tooling]

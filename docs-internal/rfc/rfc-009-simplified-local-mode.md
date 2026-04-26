@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: 6c101a02-7e50-4dba-9bcc-44f64d7f56db
 status: Proposed
 title: Simplified Local Mode - Zero-Config Document CMS
-date: 2025-10-26
 type: RFC
 subtype: Architecture
-tags: [local-mode, ux, zero-config, embedded, standalone]
+tags: [embedded, local-mode, standalone, ux, zero-config]
 related: [memo/readme-local-workspace.md, memo/readme-indexer.md, RFC-007]
 ---
 

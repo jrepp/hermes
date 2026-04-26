@@ -8,7 +8,7 @@ project_id: hermes
 doc_uuid: 3e7af144-9069-41dc-adca-ba16e6172960
 type: RFC
 subtype: Architecture
-tags: [document-id, uuid, distributed, multi-provider, migration]
+tags: [distributed, document-id, migration, multi-provider, uuid]
 supersedes: ADR-018 (narrative content)
 related: [ADR-018, RFC-017]
 ---

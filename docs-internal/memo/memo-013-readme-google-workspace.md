@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: ab35a548-4c40-4d74-bdac-7732fef09613
 status: Draft
 title: Google Workspace Setup Guide
+tags: []
 ---
 
 # Google Workspace Setup Guide

@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: a7cb212e-6b0d-4010-9608-3ff72f145bd2
 status: Draft
 title: Ollama Integration for Setup Wizard
+tags: []
 ---
 
 # Ollama Integration for Setup Wizard

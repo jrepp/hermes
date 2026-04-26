@@ -6,6 +6,7 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: 68aea158-5847-4527-8083-0f4fa1f386d6
 status: Draft
+tags: []
 ---
 
 # Simplified Local Mode - Architecture Diagram

@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: 149719d7-8702-4391-b34b-dd6dad24804c
 status: Draft
 title: Meilisearch Setup
+tags: []
 ---
 
 # Meilisearch Setup

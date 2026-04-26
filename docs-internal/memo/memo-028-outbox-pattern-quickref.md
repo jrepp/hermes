@@ -1,10 +1,9 @@
 ---
 id: memo-028
 title: Outbox Pattern Quick Reference
-date: 2025-10-09
 type: Guide
 status: Draft
-tags: [outbox, database, search-index, audit, identity]
+tags: [audit, database, identity, outbox, search-index]
 related: []
 created: 2025-10-09
 author: Hermes Team

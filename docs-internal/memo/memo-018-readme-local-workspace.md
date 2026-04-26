@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: bd1bfbd0-cde2-4113-a038-f27df7a0b8e1
 status: Draft
 title: Local Workspace Provider Setup for Testing Environment
+tags: []
 ---
 
 # Local Workspace Provider Setup for Testing Environment

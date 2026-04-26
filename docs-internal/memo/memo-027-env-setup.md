@@ -1,10 +1,9 @@
 ---
 id: memo-027
 title: Environment Setup Guide
-date: 2025-10-09
 type: Guide
 status: Final
-tags: [setup, environment, credentials, onboarding]
+tags: [credentials, environment, onboarding, setup]
 related: [MEMO-020, MEMO-014]
 created: 2025-10-09
 author: Hermes Team

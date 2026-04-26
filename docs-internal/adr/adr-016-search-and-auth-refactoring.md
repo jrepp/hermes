@@ -1,12 +1,11 @@
 ---
 id: adr-016
 title: Backend-Mediated Search and Runtime Auth Header Selection
-date: 2025-10-06
 type: ADR
 subtype: Frontend Architecture
 decision_type: Frontend Architecture
 status: Accepted
-tags: [search, authentication, frontend, algolia, meilisearch]
+tags: [algolia, authentication, frontend, meilisearch, search]
 related: [ADR-009, ADR-011, ADR-012]
 created: 2025-10-06
 deciders: Hermes Team

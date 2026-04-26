@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: 4d4136dc-22ff-4d54-8fe3-bf232613cdba
 status: Draft
 title: AI Agent Prompt Templates for Software Projects
+tags: []
 ---
 
 # AI Agent Prompt Templates for Software Projects

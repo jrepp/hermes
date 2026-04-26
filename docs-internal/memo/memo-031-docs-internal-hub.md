@@ -1,7 +1,6 @@
 ---
 id: memo-031
 title: Docs Internal - Documentation Hub
-date: 2025-10-09
 type: Guide
 status: Final
 tags: [documentation, index, onboarding]

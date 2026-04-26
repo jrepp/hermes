@@ -1,6 +1,6 @@
 ---
 id: adr-001
-title: "Stay with Classic Ember CLI Build System"
+title: Stay with Classic Ember CLI Build System
 status: Accepted
 decision_type: Build System
 created: 2025-10-10
@@ -8,11 +8,9 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: ab8079d7-5eb8-4aab-8faf-4ca65a24ccb9
-date: 2025-10-10
 type: ADR
-tags: [ember, build, broccoli, embroider]
-related:
-  - MEMO-064
+tags: [broccoli, build, ember, embroider]
+related: [MEMO-064]
 ---
 
 # ADR-001: Stay with Classic Ember CLI Build System

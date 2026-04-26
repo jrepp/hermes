@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: 3ed2450f-3f06-48e3-8bb7-518db18820a9
 status: Draft
 title: Dex OIDC Local Authentication
+tags: []
 ---
 
 # Dex OIDC Local Authentication

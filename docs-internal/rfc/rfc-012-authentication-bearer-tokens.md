@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: 7b0677a9-17a2-4bce-abfa-ddbcbfa0c441
 status: Proposed
 title: Authentication and Bearer Token Management
-date: 2025-11-11
 type: RFC
 subtype: Security
-tags: [authentication, oidc, bearer-tokens, security, delegation]
+tags: [authentication, bearer-tokens, delegation, oidc, security]
 related: [RFC-010, RFC-011, RFC-007]
 ---
 

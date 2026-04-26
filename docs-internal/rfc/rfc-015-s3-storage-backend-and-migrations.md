@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: 3727c043-2d93-477d-b13c-60e27364f8ae
 status: Draft
 title: S3-Compatible Storage Backend and Document Migration System
-date: 2025-11-15
 type: RFC
 subtype: Architecture Design
-tags: [storage, s3, migration, multi-backend, archival, provider]
+tags: [archival, migration, multi-backend, provider, s3, storage]
 related: [RFC-010, RFC-008, RFC-005, RFC-014]
 ---
 

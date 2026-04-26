@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: bd259e44-a5d8-4a7b-a7b1-b4df75161021
 status: Draft
 title: Environment Variables Setup Guide
+tags: []
 ---
 
 # Environment Variables Setup Guide

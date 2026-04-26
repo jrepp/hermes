@@ -6,6 +6,7 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: e6759082-bc35-4e27-93aa-ac7024c95651
 status: Draft
+tags: []
 ---
 
 # RFC-013 Addendum: Critical Fixes and Implementation Details

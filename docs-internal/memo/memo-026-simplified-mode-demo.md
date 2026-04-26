@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: 299b78b3-3e07-4414-842f-7292bbbbcf25
 status: Draft
 title: Simplified Local Mode - Demo
+tags: []
 ---
 
 # Simplified Local Mode - Demo

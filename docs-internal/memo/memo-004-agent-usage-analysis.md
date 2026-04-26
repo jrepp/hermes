@@ -1,13 +1,10 @@
 ---
 id: memo-004
-title: "Agent Usage Analysis"
-date: 2025-10-09
+title: Agent Usage Analysis
 type: Analysis
 status: Final
-tags: [ai-agents, copilot, productivity, best-practices, prompt-engineering]
-related:
-  - MEMO-016
-  - MEMO-016
+tags: [ai-agents, best-practices, copilot, productivity, prompt-engineering]
+related: [MEMO-016, MEMO-016]
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes
@@ -162,4 +159,3 @@ This analysis examines **what worked, what didn't, and what to repeat** in AI-as
 - Full analysis: `docs-internal/AGENT_USAGE_ANALYSIS.md` (1,604 lines)
 - Velocity metrics: MEMO-016
 - Deliverables: MEMO-016
-

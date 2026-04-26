@@ -6,7 +6,6 @@ project_id: hermes
 doc_uuid: 5cb12597-fa84-4bcc-9d5d-6e506ebfad40
 status: Proposed
 title: Local In-Browser Editor for E2E Testing
-date: 2025-10-09
 type: RFC
 subtype: Feature Proposal
 tags: [e2e-testing, local-editor, playwright, testing, workspace]

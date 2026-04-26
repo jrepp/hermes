@@ -8,10 +8,9 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: 82333dc0-a780-4bef-817f-207916917ecb
-date: 2025-10-08
 type: ADR
 subtype: Frontend Decision
-tags: [frontend, promise, timeout, resilience, graceful-degradation]
+tags: [frontend, graceful-degradation, promise, resilience, timeout]
 related: [ADR-003]
 ---
 

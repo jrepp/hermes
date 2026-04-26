@@ -1,11 +1,10 @@
 ---
 id: memo-061
 title: ember-animated Passthrough Stub Components
-date: 2025-10-08
 type: Memo
 subtype: Frontend Migration Note
 status: Accepted
-tags: [ember, frontend, animation, components, migration]
+tags: [animation, components, ember, frontend, migration]
 related: [ADR-001, MEMO-064]
 supersedes: ADR-006
 created: 2026-04-24

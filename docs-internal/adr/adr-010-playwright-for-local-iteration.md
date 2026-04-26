@@ -1,12 +1,11 @@
 ---
 id: adr-010
 title: Playwright Dual Strategy for Local Iteration and CI
-date: 2025-10-09
 type: ADR
 subtype: Development Tooling
 decision_type: Testing Strategy
 status: Accepted
-tags: [playwright, testing, e2e, tooling]
+tags: [e2e, playwright, testing, tooling]
 related: [ADR-006]
 created: 2026-04-24
 deciders: Hermes Team

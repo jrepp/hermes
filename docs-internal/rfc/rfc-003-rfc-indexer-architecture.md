@@ -5,7 +5,8 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: a082cf3d-6c4e-4089-a01d-37c12568ab32
 status: Draft
-title: "RFC: Indexer Architecture and Distributed Document Management"
+title: 'RFC: Indexer Architecture and Distributed Document Management'
+tags: []
 ---
 
 # RFC: Indexer Architecture and Distributed Document Management
@@ -717,4 +718,3 @@ type ProviderAdapter interface {
 
 **Last Updated**: October 26, 2025
 **Status**: Phase 1 Complete ✅, Phases 2-7 Planned ⏳
-

@@ -8,9 +8,8 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: f7e7ed42-06a4-45f6-849f-49060f39c0c9
-date: 2025-10-09
 type: ADR
-tags: [api, provider-abstraction, v2-api, testing, dependency-injection]
+tags: [api, dependency-injection, provider-abstraction, testing, v2-api]
 related: [ADR-009, ADR-011, ADR-016, RFC-020]
 ---
 

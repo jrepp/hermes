@@ -1,10 +1,9 @@
 ---
 id: memo-007
 title: Auth Provider Quick Reference
-date: 2025-10-09
 type: Guide
 status: Final
-tags: [authentication, dex, okta, google, configuration]
+tags: [authentication, configuration, dex, google, okta]
 related: [MEMO-020]
 created: 2025-10-09
 author: Hermes Team

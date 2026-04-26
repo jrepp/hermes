@@ -1,9 +1,8 @@
 ---
-date: 2025-11-15
-title: "RFC-014 Week 2-3 Complete - Embeddings Pipeline"
+title: RFC-014 Week 2-3 Complete - Embeddings Pipeline
 type: milestone
 status: complete
-tags: [rfc-014, embeddings, vector-search, milestone, implementation]
+tags: [embeddings, implementation, milestone, rfc-014, vector-search]
 id: memo-002
 created: 2025-11-15
 author: Hermes Team
@@ -514,4 +513,3 @@ Assumptions:
 **Last Updated**: 2025-11-15 15:00 PST
 **Version**: 1.0
 **Status**: Milestone Complete ✅
-

@@ -1,10 +1,9 @@
 ---
 id: memo-020
 title: Dex Quick Start
-date: 2025-10-09
 type: Guide
 status: Final
-tags: [dex, oidc, authentication, testing]
+tags: [authentication, dex, oidc, testing]
 related: [MEMO-007, MEMO-014]
 created: 2025-10-09
 author: Hermes Team

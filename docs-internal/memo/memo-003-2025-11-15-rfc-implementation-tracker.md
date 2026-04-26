@@ -1,10 +1,9 @@
 ---
-date: 2025-11-15
-title: "RFC Implementation Tracker & Roadmap"
+title: RFC Implementation Tracker & Roadmap
 type: memo
 status: active
 author: Claude Code
-tags: [rfc, roadmap, planning, implementation]
+tags: [implementation, planning, rfc, roadmap]
 id: memo-003
 created: 2025-11-15
 project_id: hermes
@@ -797,4 +796,3 @@ Start with Phase 1 (Migration Dashboard) after RFC-015 API endpoints are complet
 **Last Updated**: 2025-11-15 13:33 PST
 **Version**: 1.0
 **Status**: Active Tracking
-

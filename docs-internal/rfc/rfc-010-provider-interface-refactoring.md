@@ -6,10 +6,9 @@ project_id: hermes
 doc_uuid: 289bc5ce-9111-4656-8f84-11d450b2024f
 status: Proposed
 title: Provider Interface Refactoring - Multi-Backend Document Model
-date: 2025-11-11
 type: RFC
 subtype: Architecture
-tags: [providers, architecture, interfaces, multi-backend, types]
+tags: [architecture, interfaces, multi-backend, providers, types]
 related: [RFC-021, RFC-011, RFC-012, RFC-017]
 ---
 

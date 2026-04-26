@@ -6,6 +6,7 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: 0e72a2a9-19ac-4d83-bd0e-02392e4ea95e
 status: Draft
+tags: []
 ---
 
 # RFC-013 Implementation Status

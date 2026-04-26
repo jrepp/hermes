@@ -3,14 +3,13 @@ id: memo-064
 title: ember-concurrency / ember-power-select Compatibility Notes
 status: Final
 created: 2026-04-26
-date: 2026-04-26
 deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: daffd0f1-bd26-4fea-b25f-766b4ebd95e2
 type: Memo
 subtype: Frontend Compatibility Note
-tags: [ember, dependencies, ember-concurrency, ember-power-select]
+tags: [dependencies, ember, ember-concurrency, ember-power-select]
 related: [ADR-001, MEMO-061]
 supersedes: ADR 029
 ---

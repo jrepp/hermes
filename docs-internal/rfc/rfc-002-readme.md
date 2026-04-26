@@ -5,7 +5,8 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: d5212400-cb04-45ef-afec-161c50c6f587
 status: Draft
-title: "RFC Documents (Request for Comments)"
+title: RFC Documents (Request for Comments)
+tags: []
 ---
 
 # RFC Documents (Request for Comments)

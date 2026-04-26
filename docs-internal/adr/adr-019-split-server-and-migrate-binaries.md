@@ -8,9 +8,8 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: 5fd0862b-40a9-493d-a36f-1ec405eb836d
-date: 2026-04-24
 type: ADR
-tags: [build, binaries, sqlite, postgres, migrations, cgo]
+tags: [binaries, build, cgo, migrations, postgres, sqlite]
 related: [ADR-020, MEMO-063]
 ---
 

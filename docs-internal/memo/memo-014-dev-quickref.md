@@ -1,10 +1,9 @@
 ---
 id: memo-014
 title: Dev Quick Reference
-date: 2025-10-09
 type: Guide
 status: Final
-tags: [development, workflow, docker, ports, debugging]
+tags: [debugging, development, docker, ports, workflow]
 related: [MEMO-029]
 created: 2025-10-09
 author: Hermes Team

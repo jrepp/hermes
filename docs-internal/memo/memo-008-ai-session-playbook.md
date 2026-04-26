@@ -1,7 +1,6 @@
 ---
 id: memo-008
 title: AI Agent Session Playbook
-date: 2025-10-09
 type: Playbook
 status: Living Document
 author: AI Agent Analysis Team

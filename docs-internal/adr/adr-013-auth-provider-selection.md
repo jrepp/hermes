@@ -1,12 +1,11 @@
 ---
 id: adr-013
 title: Auth Provider CLI and Environment Override
-date: 2025-10-06
 type: ADR
 subtype: Configuration
 decision_type: Configuration
 status: Accepted
-tags: [authentication, configuration, cli, dex, okta, google]
+tags: [authentication, cli, configuration, dex, google, okta]
 related: [ADR-009, ADR-012, ADR-021]
 created: 2025-10-06
 deciders: Hermes Team

@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: 1f80098b-75c3-4ef1-b0be-8c4f459d40eb
 status: Draft
 title: Memo Documents
+tags: []
 ---
 
 # Memo Documents

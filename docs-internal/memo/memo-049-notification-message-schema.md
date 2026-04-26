@@ -6,6 +6,7 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: 87f59097-f103-4e68-808f-5d02cacbb10b
 status: Draft
+tags: []
 ---
 
 # RFC-013 Implementation: Message Schema and Templates

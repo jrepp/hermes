@@ -1,10 +1,9 @@
 ---
 id: memo-029
 title: Playwright E2E Agent Guide
-date: 2025-10-09
 type: Guide
 status: Final
-tags: [playwright, e2e-testing, automation, testing, debugging]
+tags: [automation, debugging, e2e-testing, playwright, testing]
 related: [MEMO-014]
 created: 2025-10-09
 author: Hermes Team

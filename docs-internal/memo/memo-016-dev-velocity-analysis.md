@@ -1,10 +1,9 @@
 ---
 id: memo-016
 title: Dev Velocity Analysis
-date: 2025-10-09
 type: Analysis
 status: Final
-tags: [metrics, velocity, productivity, ai-agents, statistics]
+tags: [ai-agents, metrics, productivity, statistics, velocity]
 related: [MEMO-004, MEMO-016]
 created: 2025-10-09
 author: Hermes Team

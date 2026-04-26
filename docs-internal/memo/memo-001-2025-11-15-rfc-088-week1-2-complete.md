@@ -1,9 +1,8 @@
 ---
-date: 2025-11-15
-title: "RFC-014 Weeks 1-2 Complete - LLM Integration"
+title: RFC-014 Weeks 1-2 Complete - LLM Integration
 type: milestone
 status: complete
-tags: [rfc-014, llm, milestone, implementation]
+tags: [implementation, llm, milestone, rfc-014]
 id: memo-001
 created: 2025-11-15
 author: Hermes Team
@@ -424,4 +423,3 @@ The following work is planned for the next phase:
 **Last Updated**: 2025-11-15 14:30 PST
 **Version**: 1.0
 **Status**: Milestone Complete ✅
-

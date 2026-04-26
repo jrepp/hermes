@@ -1,12 +1,11 @@
 ---
 id: adr-012
 title: Multi-Provider Auth Architecture
-date: 2025-10-06
 type: ADR
 subtype: Authentication
 decision_type: Authentication
 status: Accepted
-tags: [authentication, multi-provider, dex, okta, google]
+tags: [authentication, dex, google, multi-provider, okta]
 related: [ADR-009, ADR-013, ADR-014, MEMO-062]
 created: 2025-10-06
 deciders: Hermes Team

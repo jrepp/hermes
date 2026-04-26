@@ -6,6 +6,7 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: 9a613ea5-871f-43ee-bd2b-79f1c6f08788
 status: Draft
+tags: []
 ---
 
 # RFC-014 Release Notes

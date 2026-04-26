@@ -1,12 +1,11 @@
 ---
 id: adr-008
 title: Dex OIDC for Local Development
-date: 2025-10-09
 type: ADR
 subtype: Authentication
 decision_type: Authentication
 status: Accepted
-tags: [authentication, dex, oidc, development]
+tags: [authentication, development, dex, oidc]
 related: [ADR-006, ADR-012, ADR-014]
 created: 2026-04-24
 deciders: Hermes Team

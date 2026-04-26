@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: 52efb638-6bd1-4a22-bbf3-d4a35ad09c41
 status: Draft
 title: Ollama AI Provider - Local Llama on macOS
+tags: []
 ---
 
 # Ollama AI Provider - Local Llama on macOS

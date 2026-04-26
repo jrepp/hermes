@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: fea6703d-6a0f-440d-aa03-3b7cae5825bf
 status: Draft
 title: PostgreSQL Database Setup
+tags: []
 ---
 
 # PostgreSQL Database Setup

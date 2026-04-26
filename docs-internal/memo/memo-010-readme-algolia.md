@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: dbff934e-b32a-484a-b194-e470450ca210
 status: Draft
 title: Algolia Search Setup
+tags: []
 ---
 
 # Algolia Search Setup

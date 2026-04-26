@@ -8,7 +8,7 @@ project_id: hermes
 doc_uuid: c93439fc-9fd8-4e40-8765-c0a279655b3e
 type: RFC
 subtype: Architecture Refactoring
-tags: [database, migrations, postgres, sqlite, indexer, stateless]
+tags: [database, indexer, migrations, postgres, sqlite, stateless]
 supersedes: ADR-020 (narrative content)
 related: [ADR-020, ADR-019, RFC-001]
 ---

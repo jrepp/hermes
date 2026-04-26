@@ -6,6 +6,7 @@ project_id: hermes
 doc_uuid: f6198856-b0ac-48d6-b15b-9aa98b961f50
 status: Draft
 title: UUID-Based Document Identification Migration Guide
+tags: []
 ---
 
 # UUID-Based Document Identification Migration Guide

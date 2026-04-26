@@ -1,12 +1,11 @@
 ---
 id: adr-015
 title: Provider-Aware Document Editor
-date: 2025-10-08
 type: ADR
 subtype: Frontend Architecture
 decision_type: Frontend Architecture
 status: Accepted
-tags: [document-editor, workspace, frontend]
+tags: [document-editor, frontend, workspace]
 related: [ADR-007, ADR-009]
 created: 2025-10-08
 deciders: Hermes Team

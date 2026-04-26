@@ -8,10 +8,9 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: da31eae5-c771-4a30-9541-6c4dbe8d6722
-date: 2025-10-08
 type: ADR
 subtype: Backend Decision
-tags: [backend, auth, oauth, redirect, configuration]
+tags: [auth, backend, configuration, oauth, redirect]
 related: [ADR-012, ADR-013, ADR-014]
 ---
 

@@ -8,9 +8,8 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: c93439fc-9fd8-4e40-8765-c0a279655b3e
-date: 2026-04-24
 type: ADR
-tags: [database, migrations, postgres, sqlite, indexer, stateless]
+tags: [database, indexer, migrations, postgres, sqlite, stateless]
 related: [ADR-019, ADR-017, RFC-022]
 ---
 

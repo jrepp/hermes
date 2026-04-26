@@ -1,7 +1,6 @@
 ---
 id: adr-021
 title: HCL for Per-Project Configuration
-date: 2026-04-24
 type: ADR
 subtype: Configuration
 decision_type: Configuration

@@ -1,12 +1,11 @@
 ---
 id: adr-006
 title: Testing Docker Compose Environment
-date: 2025-10-09
 type: ADR
 subtype: Infrastructure
 decision_type: Infrastructure
 status: Accepted
-tags: [infrastructure, docker, testing, environment]
+tags: [docker, environment, infrastructure, testing]
 related: [ADR-008, ADR-011]
 created: 2026-04-24
 deciders: Hermes Team

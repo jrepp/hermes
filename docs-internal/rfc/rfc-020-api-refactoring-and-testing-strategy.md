@@ -8,7 +8,7 @@ project_id: hermes
 doc_uuid: f7e7ed42-06a4-45f6-849f-49060f39c0c9
 type: RFC
 subtype: Architecture Refactoring
-tags: [refactoring, api, testing, provider-abstraction, v2-api]
+tags: [api, provider-abstraction, refactoring, testing, v2-api]
 supersedes: ADR-017 (narrative content)
 related: [ADR-017, ADR-009, RFC-010, RFC-011]
 ---

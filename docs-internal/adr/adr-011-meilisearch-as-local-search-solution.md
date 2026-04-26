@@ -1,12 +1,11 @@
 ---
 id: adr-011
 title: Meilisearch as Local Search Provider
-date: 2025-10-09
 type: ADR
 subtype: Infrastructure
 decision_type: Infrastructure
 status: Accepted
-tags: [infrastructure, search, meilisearch, algolia]
+tags: [algolia, infrastructure, meilisearch, search]
 related: [ADR-006, ADR-009, ADR-016]
 created: 2026-04-24
 deciders: Hermes Team

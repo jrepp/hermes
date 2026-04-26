@@ -5,7 +5,8 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: 51818a0a-50bf-497f-80b0-4555025530d6
 status: Draft
-title: "RFC: Local Developer Mode with Central Hermes"
+title: 'RFC: Local Developer Mode with Central Hermes'
+tags: []
 ---
 
 # RFC: Local Developer Mode with Central Hermes
@@ -735,4 +736,3 @@ docker run -v /var/hermes:/shared \
 **Considered**: OIDC, mutual TLS, API keys, shared secret
 **Decision**: Token-based with optional OIDC upgrade path
 **Rationale**: Simplest for Docker Compose testing, extensible for production
-

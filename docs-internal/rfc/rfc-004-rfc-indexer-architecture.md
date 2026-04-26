@@ -5,7 +5,8 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: ecbf9292-e976-4b6c-80c4-89a56cc8af29
 status: Draft
-title: "RFC: Indexer Architecture and Design"
+title: 'RFC: Indexer Architecture and Design'
+tags: []
 ---
 
 # RFC: Indexer Architecture and Design
@@ -884,4 +885,3 @@ The Hermes indexer is a **stateless, provider-agnostic document synchronization 
 - Cost optimization
 
 This architecture positions Hermes to support diverse document workflows—from local developer environments to enterprise-scale deployments—with minimal infrastructure complexity.
-
