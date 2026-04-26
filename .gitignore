@@ -89,7 +89,7 @@ test_*.log
 
 # Project workspaces (testing environment)
 /testing/workspaces/*
-!/testing/workspaces/README.md
+!/testing/workspaces/readme.md
 
 # Old testing build artifacts (deprecated, moved to /build)
 /testing/build-artifacts/
