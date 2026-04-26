@@ -74,7 +74,7 @@ adapter, err := meilisearch.NewAdapter(&meilisearch.Config{
 
 ### 5. Updated Documentation
 
-**File:** `tests/integration/README.md`
+**File:** `tests/integration/readme.md`
 
 Comprehensive updates including:
 - Quick start guide
@@ -176,7 +176,7 @@ go test -tags=integration ./tests/integration/search -run TestMeilisearchAdapter
 
 ### Modified
 - `tests/integration/search/meilisearch_adapter_test.go` - Uses fixture instead of localhost
-- `tests/integration/README.md` - Comprehensive documentation updates
+- `tests/integration/readme.md` - Comprehensive documentation updates
 
 ## Dependencies
 

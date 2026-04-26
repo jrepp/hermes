@@ -108,9 +108,9 @@ The following bash scripts remain in `./testing`:
 
 ## Documentation
 
-- **[MIGRATION-TESTING-GO.md](MIGRATION-TESTING-GO.md)** - Go-only testing guide
-- **[README-MIGRATION-TESTS.md](README-MIGRATION-TESTS.md)** - Quick start
-- **[STRONG-SIGNAL-VALIDATION.md](STRONG-SIGNAL-VALIDATION.md)** - Validation details
+- **[migration-testing-go.md](migration-testing-go.md)** - Go-only testing guide
+- **[readme-migration-tests.md](readme-migration-tests.md)** - Quick start
+- **[strong-signal-validation.md](strong-signal-validation.md)** - Validation details
 
 ## Result
 

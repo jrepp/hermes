@@ -214,7 +214,7 @@ To run in CI:
 
 ## Related Documentation
 
-- **Testing Environment**: `../README.md`
-- **Local Workspace Setup**: `../README-local-workspace.md`
+- **Testing Environment**: `../readme.md`
+- **Local Workspace Setup**: `../../docs-internal/memo/README-local-workspace.md`
 - **Dex Authentication**: `../../docs-internal/DEX_QUICK_START.md`
 - **Provider Selection**: `../../docs-internal/PROVIDER_SELECTION.md`

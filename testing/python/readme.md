@@ -629,10 +629,10 @@ print(f"Found {len(results.hits)} custom documents")
 
 ## References
 
-- **hc-hermes Client**: `../python-client/README.md`
+- **hc-hermes Client**: `../python-client/readme.md`
 - **Design Document**: `../docs-internal/DISTRIBUTED_TESTING_PROGRESS.md`
 - **Architecture**: `../docs-internal/DISTRIBUTED_PROJECTS_ARCHITECTURE.md`
-- **Testing Environment**: `../README.md`
+- **Testing Environment**: `../readme.md`
 
 ## License
 

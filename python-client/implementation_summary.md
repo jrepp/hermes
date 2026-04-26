@@ -38,9 +38,9 @@ python-client/
 │   ├── setup.sh
 │   └── pre-commit.sh
 ├── pyproject.toml          # Modern Python packaging
-├── README.md               # Comprehensive documentation
-├── QUICKSTART.md           # Getting started guide
-├── DEVELOPMENT.md          # Development setup
+├── readme.md               # Comprehensive documentation
+├── quickstart.md           # Getting started guide
+├── development.md          # Development setup
 └── .gitignore
 ```
 
@@ -165,9 +165,9 @@ Features:
 
 ### 4. Documentation
 
-- **README.md**: Comprehensive guide with examples
-- **QUICKSTART.md**: Getting started in 5 minutes
-- **DEVELOPMENT.md**: Development setup and contributing
+- **readme.md**: Comprehensive guide with examples
+- **quickstart.md**: Getting started in 5 minutes
+- **development.md**: Development setup and contributing
 - **Docstrings**: All public APIs documented
 - **Type Hints**: 100% coverage
 

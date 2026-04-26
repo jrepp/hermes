@@ -175,7 +175,7 @@ make complexity
    - `make help` - See all commands
 
 **Documentation:**
-- Quick Start: [VALIDATION-QUICK-START.md](/VALIDATION-QUICK-START.md)
+- Quick Start: [validation-quick-start.md](/validation-quick-start.md)
 - Complete Guide: [docs/development/validation-tools.md](/docs/development/validation-tools.md)
 
 ## Files

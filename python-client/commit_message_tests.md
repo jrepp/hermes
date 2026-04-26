@@ -34,8 +34,8 @@ test: add comprehensive test suite for HTTP client and API facades
 - Ran ruff linting: 239 issues found, 83 auto-fixed, 156 style improvements remaining
 - Test execution blocked by Python 3.9 incompatibility (code uses Python 3.10+ union syntax)
 - Created documentation:
-  * PYTHON_VERSION_ISSUE.md - Explains version incompatibility and resolution
-  * TESTING_AND_VALIDATION_SUMMARY.md - Complete testing status and metrics
+  * python_version_issue.md - Explains version incompatibility and resolution
+  * testing_and_validation_summary.md - Complete testing status and metrics
   * setup-venv.sh - Script to recreate venv with Python 3.10+
 - Expected coverage: 78-85% once tests can execute with Python 3.10+
 
@@ -48,8 +48,8 @@ test: add comprehensive test suite for HTTP client and API facades
 - tests/test_http_client.py (~200 lines, 13 tests)
 - tests/test_client_async.py (~150 lines, 11 tests)
 - tests/test_client.py (~80 lines, 5 tests)
-- PYTHON_VERSION_ISSUE.md (documentation)
-- TESTING_AND_VALIDATION_SUMMARY.md (comprehensive status)
+- python_version_issue.md (documentation)
+- testing_and_validation_summary.md (comprehensive status)
 - setup-venv.sh (venv recreation script)
 ```
 
@@ -66,7 +66,7 @@ Created comprehensive test suite with AsyncMock and httpx mocking:
 Verification: Ruff linting passes (83 fixes applied, 156 style improvements available)
 Blocked: Tests require Python 3.10+ (venv has 3.9, code uses X | None syntax)
 
-See TESTING_AND_VALIDATION_SUMMARY.md for complete status and resolution steps.
+See testing_and_validation_summary.md for complete status and resolution steps.
 ```
 
 ## Files Changed Summary
@@ -75,8 +75,8 @@ See TESTING_AND_VALIDATION_SUMMARY.md for complete status and resolution steps.
 A  tests/test_http_client.py                    # 13 tests, ~200 lines
 A  tests/test_client_async.py                   # 11 tests, ~150 lines
 A  tests/test_client.py                         # 5 tests, ~80 lines
-A  PYTHON_VERSION_ISSUE.md                      # Issue documentation
-A  TESTING_AND_VALIDATION_SUMMARY.md            # Complete testing status
+A  python_version_issue.md                      # Issue documentation
+A  testing_and_validation_summary.md            # Complete testing status
 A  setup-venv.sh                                # Venv recreation script
 M  src/hc_hermes/__init__.py                    # Import cleanup (ruff fix)
 M  src/hc_hermes/cli.py                         # Import cleanup (ruff fix)

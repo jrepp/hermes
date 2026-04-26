@@ -767,8 +767,8 @@ Before deploying to production, verify:
 
 - [pgvector Documentation](https://github.com/pgvector/pgvector)
 - [PostgreSQL Performance Tuning](https://www.postgresql.org/docs/current/performance-tips.html)
-- [RFC-088 Query Optimization Analysis](../../docs-internal/rfc/RFC-088-QUERY-OPTIMIZATION-ANALYSIS.md)
-- [API Documentation](../api/SEMANTIC-SEARCH-API.md)
+- [RFC-088 Query Optimization Analysis](../../docs-internal/rfc/rfc-088-query-optimization-analysis.md)
+- [API Documentation](../api/semantic-search-api.md)
 - [Troubleshooting Guide](../guides/troubleshooting.md)
 
 ---

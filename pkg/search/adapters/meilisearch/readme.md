@@ -251,4 +251,4 @@ Expected response:
 
 - [Meilisearch Documentation](https://www.meilisearch.com/docs)
 - [Meilisearch Go SDK](https://github.com/meilisearch/meilisearch-go)
-- [Search Abstraction Design](../../README.md)
+- [Search Abstraction Design](../../readme.md)

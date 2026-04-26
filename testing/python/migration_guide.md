@@ -396,6 +396,6 @@ PYTHONPATH=python:python-client/src python python/scenario_basic.py
 
 ## See Also
 
-- `python/README.md` - Comprehensive Python framework documentation
-- `python/IMPLEMENTATION_SUMMARY.md` - Implementation details
+- `python/readme.md` - Comprehensive Python framework documentation
+- `python/implementation_summary.md` - Implementation details
 - `DISTRIBUTED_TESTING_PROGRESS.md` - Original bash implementation (Phase 1)

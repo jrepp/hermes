@@ -916,7 +916,7 @@ cd testing && ./test-edge-to-central.sh
 
 - [RFC-084: Workspace Provider Interfaces](../../docs-internal/rfc/rfc-084-provider-interface-refactoring.md)
 - [RFC-085: API Provider Remote Delegation](../../docs-internal/rfc/rfc-085-api-provider-remote-delegation.md)
-- [API Provider README](../../pkg/workspace/adapters/api/README.md)
+- [API Provider README](../../pkg/workspace/adapters/api/readme.md)
 - [Validation Tools Documentation](./validation-tools.md)
 
 ## Next Steps

@@ -356,5 +356,5 @@ hclconf check testing/projects.hcl
 
 - [Distributed Projects Architecture](../docs-internal/DISTRIBUTED_PROJECTS_ARCHITECTURE.md)
 - [Config.hcl Documentation](../docs-internal/CONFIG_HCL_DOCUMENTATION.md)
-- [Local Workspace Provider](../docs-internal/memo/README-local-workspace.md)
-- [Google Workspace Provider](../docs-internal/memo/README-google-workspace.md)
+- [Local Workspace Provider](../docs-internal/memo/readme-local-workspace.md)
+- [Google Workspace Provider](../docs-internal/memo/readme-google-workspace.md)

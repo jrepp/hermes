@@ -2,7 +2,7 @@
 
 **Date**: October 24, 2025  
 **Status**: ✅ Complete  
-**Related**: `DISTRIBUTED_TESTING_PROGRESS.md`, `testing/python/README.md`
+**Related**: `DISTRIBUTED_TESTING_PROGRESS.md`, `testing/python/readme.md`
 
 ## Overview
 
@@ -23,8 +23,8 @@ testing/python/
 ├── scenarios.py             # Scenario orchestration (300+ lines)
 ├── pyproject.toml           # Package config with dependencies
 ├── setup.sh                 # Setup script
-├── README.md                # Comprehensive documentation (600+ lines)
-└── QUICKSTART.md            # Quick reference
+├── readme.md                # Comprehensive documentation (600+ lines)
+└── quickstart.md            # Quick reference
 ```
 
 ### 2. Document Generators ✅
@@ -190,8 +190,8 @@ make format-python               # Format with ruff
 ### 9. Documentation ✅
 
 **Files**:
-- `README.md` - Comprehensive guide (600+ lines)
-- `QUICKSTART.md` - Quick reference
+- `readme.md` - Comprehensive guide (600+ lines)
+- `quickstart.md` - Quick reference
 - `setup.sh` - Automated setup
 
 **Coverage**:
@@ -315,8 +315,8 @@ pytest tests/ -v --cov=. --cov-report=html
 **Configuration & Documentation**:
 - `testing/python/pyproject.toml` (60 lines)
 - `testing/python/setup.sh` (60 lines)
-- `testing/python/README.md` (600 lines)
-- `testing/python/QUICKSTART.md` (40 lines)
+- `testing/python/readme.md` (600 lines)
+- `testing/python/quickstart.md` (40 lines)
 
 **Makefile Updates**:
 - `testing/Makefile` (14 new targets, ~50 lines)
@@ -375,9 +375,9 @@ pytest tests/ -v --cov=. --cov-report=html
 ## References
 
 - **Design**: `../docs-internal/DISTRIBUTED_TESTING_PROGRESS.md`
-- **Python Client**: `../python-client/README.md`
-- **Testing Environment**: `../testing/README.md`
-- **Framework Docs**: `testing/python/README.md`
+- **Python Client**: `../python-client/readme.md`
+- **Testing Environment**: `../testing/readme.md`
+- **Framework Docs**: `testing/python/readme.md`
 
 ## Commit Message
 
@@ -427,7 +427,7 @@ testing/python/
   ├── Core: config.py, generators.py, seeding.py, validation.py, scenarios.py
   ├── CLI: scenario_*.py, seed.py, setup.sh
   ├── Tests: tests/{conftest,test_*}.py
-  └── Docs: README.md (600 lines), QUICKSTART.md, pyproject.toml
+  └── Docs: readme.md (600 lines), quickstart.md, pyproject.toml
 
 **Benefits**:
 - Type safety eliminates runtime errors

@@ -154,12 +154,12 @@ All criteria met for the refactoring:
 
 ## 📚 Reports Available
 
-1. **`COVERAGE_REPORT.md`** - Detailed coverage analysis (this file's companion)
+1. **`coverage_report.md`** - Detailed coverage analysis (this file's companion)
 2. **`coverage_unit.html`** - Interactive HTML visualization
 3. **`coverage_unit.out`** - Raw coverage data
-4. **`REFACTORING_SUMMARY.md`** - What changed in the refactor
-5. **`TEST_SEPARATION_GUIDE.md`** - How to write tests
-6. **`QUICKTEST.md`** - Quick verification guide
+4. **`refactoring_summary.md`** - What changed in the refactor
+5. **`test_separation_guide.md`** - How to write tests
+6. **`quicktest.md`** - Quick verification guide
 
 ---
 

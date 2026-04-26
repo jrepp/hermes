@@ -17,7 +17,7 @@ Converted shell-based authentication tests into comprehensive Go integration tes
 **Files Created**:
 - `edge_sync_auth_test.go` - Comprehensive authentication tests
 - `main_test.go` - TestMain setup
-- `README.md` - Complete documentation
+- `readme.md` - Complete documentation
 
 **Test Coverage**: 18+ test scenarios covering:
 - Missing/invalid/empty Authorization headers
@@ -119,8 +119,8 @@ go test -tags=integration ./...  # Direct go test
 |------|-------|---------|
 | `tests/integration/edgesync/edge_sync_auth_test.go` | 615 | Comprehensive integration tests |
 | `tests/integration/edgesync/main_test.go` | 25 | TestMain entry point |
-| `tests/integration/edgesync/README.md` | 450 | Complete test documentation |
-| `docs/development/EDGE-SYNC-TESTING-IMPLEMENTATION.md` | - | This document |
+| `tests/integration/edgesync/readme.md` | 450 | Complete test documentation |
+| `docs/development/edge-sync-testing-implementation.md` | - | This document |
 
 ### Modified
 
@@ -453,10 +453,10 @@ make test-edge-sync || exit 1
 ### Complete Documentation Set
 
 1. **This Document**: Implementation overview and migration guide
-2. **`tests/integration/edgesync/README.md`**: Comprehensive test documentation
+2. **`tests/integration/edgesync/readme.md`**: Comprehensive test documentation
 3. **`testing/create-edge-token.sh`**: Token generation script (updated)
 4. **`docs/development/rfc-085-phase3-authentication.md`**: Authentication implementation
-5. **`docs/development/EDGE-TOKEN-ROTATION-GUIDE.md`**: Token management
+5. **`docs/development/edge-token-rotation-guide.md`**: Token management
 6. **`docs/development/rfc-085-086-completion-summary.md`**: Implementation summary
 
 ## Success Criteria

@@ -1,6 +1,6 @@
 # Python Testing Framework
 
-See [README.md](python/README.md) for comprehensive documentation.
+See [readme.md](python/readme.md) for comprehensive documentation.
 
 ## Quick Start
 
@@ -45,4 +45,4 @@ The bash scripts in `scripts/` are still available but the Python framework is r
 - CI/CD integration
 - Complex validation logic
 
-See `python/README.md` for migration guide and comparison.
+See `python/readme.md` for migration guide and comparison.

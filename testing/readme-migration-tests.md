@@ -39,12 +39,12 @@ That's it! No bash scripts required. The Go tests will:
 - `make db-migrate-test` - Run migrations
 
 **Documentation:**
-- `MIGRATION-TESTING-GO.md` - **Go-only approach guide** (NEW)
-- `MIGRATION-E2E-TESTING.md` - Complete guide (600 lines)
-- `MIGRATION-E2E-QUICKSTART.md` - Quick reference (200 lines)
-- `STRONG-SIGNAL-VALIDATION.md` - Validation docs (450 lines)
-- `VALIDATION-SUMMARY.md` - Validation summary (300 lines)
-- `MIGRATION-TEST-SUMMARY.md` - Implementation summary (250 lines)
+- `migration-testing-go.md` - **Go-only approach guide** (NEW)
+- `migration-e2e-testing.md` - Complete guide (600 lines)
+- `migration-e2e-quickstart.md` - Quick reference (200 lines)
+- `strong-signal-validation.md` - Validation docs (450 lines)
+- `validation-summary.md` - Validation summary (300 lines)
+- `migration-test-summary.md` - Implementation summary (250 lines)
 
 ## Test Architecture
 
@@ -121,12 +121,12 @@ Our validation provides:
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [README-MIGRATION-TESTS.md](README-MIGRATION-TESTS.md) | **You are here** | Everyone |
-| [MIGRATION-E2E-QUICKSTART.md](MIGRATION-E2E-QUICKSTART.md) | Quick commands and common fixes | Developers |
-| [MIGRATION-E2E-TESTING.md](MIGRATION-E2E-TESTING.md) | Complete guide with troubleshooting | Test engineers |
-| [STRONG-SIGNAL-VALIDATION.md](STRONG-SIGNAL-VALIDATION.md) | Validation system documentation | Architects |
-| [VALIDATION-SUMMARY.md](VALIDATION-SUMMARY.md) | Validation quick reference | Reviewers |
-| [MIGRATION-TEST-SUMMARY.md](MIGRATION-TEST-SUMMARY.md) | Implementation details | Contributors |
+| [readme-migration-tests.md](readme-migration-tests.md) | **You are here** | Everyone |
+| [migration-e2e-quickstart.md](migration-e2e-quickstart.md) | Quick commands and common fixes | Developers |
+| [migration-e2e-testing.md](migration-e2e-testing.md) | Complete guide with troubleshooting | Test engineers |
+| [strong-signal-validation.md](strong-signal-validation.md) | Validation system documentation | Architects |
+| [validation-summary.md](validation-summary.md) | Validation quick reference | Reviewers |
+| [migration-test-summary.md](migration-test-summary.md) | Implementation details | Contributors |
 
 ## Running Tests
 
@@ -273,7 +273,7 @@ The Go tests provide automatic error detection with clear remediation steps:
 
 ### More Help
 
-See [MIGRATION-TESTING-GO.md](MIGRATION-TESTING-GO.md) for the Go-only testing guide.
+See [migration-testing-go.md](migration-testing-go.md) for the Go-only testing guide.
 
 ## Key Features
 
@@ -360,10 +360,10 @@ See [MIGRATION-TESTING-GO.md](MIGRATION-TESTING-GO.md) for the Go-only testing g
 
 ## Support
 
-- **Go-only guide:** [MIGRATION-TESTING-GO.md](MIGRATION-TESTING-GO.md) ⭐ **START HERE**
-- **Quick reference:** [MIGRATION-E2E-QUICKSTART.md](MIGRATION-E2E-QUICKSTART.md)
-- **Complete guide:** [MIGRATION-E2E-TESTING.md](MIGRATION-E2E-TESTING.md)
-- **Validation docs:** [STRONG-SIGNAL-VALIDATION.md](STRONG-SIGNAL-VALIDATION.md)
+- **Go-only guide:** [migration-testing-go.md](migration-testing-go.md) ⭐ **START HERE**
+- **Quick reference:** [migration-e2e-quickstart.md](migration-e2e-quickstart.md)
+- **Complete guide:** [migration-e2e-testing.md](migration-e2e-testing.md)
+- **Validation docs:** [strong-signal-validation.md](strong-signal-validation.md)
 - **Issues:** Open GitHub issue with test output
 
 ---

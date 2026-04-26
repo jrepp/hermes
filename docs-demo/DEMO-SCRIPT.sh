@@ -226,9 +226,9 @@ demo3_architecture() {
 
     demo_section "Provider abstraction enables swappable backends"
 
-    if [ -f "$HERMES_ROOT/docs-internal/adr/ADR-073-provider-abstraction-architecture.md" ]; then
-        demo_command "cat docs-internal/adr/ADR-073-provider-abstraction-architecture.md | head -30"
-        cat "$HERMES_ROOT/docs-internal/adr/ADR-073-provider-abstraction-architecture.md" | head -30
+    if [ -f "$HERMES_ROOT/docs-internal/adr/adr-073-provider-abstraction-architecture.md" ]; then
+        demo_command "cat docs-internal/adr/adr-073-provider-abstraction-architecture.md | head -30"
+        cat "$HERMES_ROOT/docs-internal/adr/adr-073-provider-abstraction-architecture.md" | head -30
         echo ""
     else
         demo_info "Provider abstraction documented in ADR-073"
@@ -243,7 +243,7 @@ demo3_architecture() {
 
     demo_section "Document migration pipeline"
 
-    if [ -f "$HERMES_ROOT/docs-internal/rfc/RFC-080-outbox-pattern-document-sync.md" ]; then
+    if [ -f "$HERMES_ROOT/docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md" ]; then
         demo_info "Migration design documented in RFC-080"
         demo_info "• UUID-based document identity (provider-agnostic)"
         demo_info "• Version tracking across providers"

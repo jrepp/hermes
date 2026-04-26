@@ -275,8 +275,8 @@ After successful deployment:
 
 For comprehensive documentation, see:
 
-- **Deployment Guide**: `scripts/deployment/README.md` (13KB)
-- **Summary**: `scripts/deployment/DEPLOYMENT-SUMMARY.md` (11KB)
+- **Deployment Guide**: `scripts/deployment/readme.md` (13KB)
+- **Summary**: `scripts/deployment/deployment-summary.md` (11KB)
 - **API Docs**: `docs/api/SEMANTIC-SEARCH-API.md`
 - **Performance Guide**: `docs/deployment/performance-tuning.md`
 - **Troubleshooting**: `docs/guides/troubleshooting.md`
@@ -290,7 +290,7 @@ If you encounter issues:
 1. Check script output for specific errors
 2. Review logs: `docker-compose logs -f`
 3. Run validation: `./scripts/deployment/phase2-validation.sh`
-4. Check documentation in `scripts/deployment/README.md`
+4. Check documentation in `scripts/deployment/readme.md`
 5. Review RFC-088 docs in `docs-internal/rfc/`
 
 ---

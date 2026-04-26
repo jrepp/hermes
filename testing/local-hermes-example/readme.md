@@ -23,7 +23,7 @@ This example demonstrates how to "vend" Hermes into a local workspace directory 
 │   └── data/                         # Local database (SQLite)
 │       └── hermes.db
 ├── src/                              # Your project source code
-└── README.md
+└── readme.md
 ```
 
 ## Quick Start
@@ -112,7 +112,7 @@ If you want to sync local documents to a central Hermes instance:
 - `config.hcl` - Local Hermes configuration
 - `projects.hcl` - Project definitions
 - `users.json` - Local users (dev mode)
-- `README.md` - This file
+- `readme.md` - This file
 
 ## Next Steps
 

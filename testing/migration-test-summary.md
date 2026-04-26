@@ -26,10 +26,10 @@ Comprehensive, repeatable e2e integration tests have been created for RFC-089 mi
 
 | File | Size | Purpose |
 |------|------|---------|
-| `MIGRATION-E2E-TESTING.md` | ~600 lines | Complete testing guide with troubleshooting |
-| `MIGRATION-E2E-QUICKSTART.md` | ~200 lines | Quick reference and common commands |
-| `STRONG-SIGNAL-VALIDATION.md` | ~450 lines | **Strong signal validation documentation** |
-| `MIGRATION-TEST-SUMMARY.md` | This file | Implementation summary |
+| `migration-e2e-testing.md` | ~600 lines | Complete testing guide with troubleshooting |
+| `migration-e2e-quickstart.md` | ~200 lines | Quick reference and common commands |
+| `strong-signal-validation.md` | ~450 lines | **Strong signal validation documentation** |
+| `migration-test-summary.md` | This file | Implementation summary |
 
 ## Test Architecture
 
@@ -280,13 +280,13 @@ Complete `workspace.WorkspaceProvider` implementation:
 
 ## Documentation
 
-1. **[MIGRATION-E2E-TESTING.md](MIGRATION-E2E-TESTING.md)** - Complete guide
+1. **[migration-e2e-testing.md](migration-e2e-testing.md)** - Complete guide
    - Prerequisites and setup
    - Detailed test coverage
    - Troubleshooting guide
    - CI/CD integration examples
 
-2. **[MIGRATION-E2E-QUICKSTART.md](MIGRATION-E2E-QUICKSTART.md)** - Quick reference
+2. **[migration-e2e-quickstart.md](migration-e2e-quickstart.md)** - Quick reference
    - TL;DR commands
    - Common issues and fixes
    - Manual test execution
@@ -332,8 +332,8 @@ Complete `workspace.WorkspaceProvider` implementation:
 ## Support
 
 For issues or questions:
-- See troubleshooting in [MIGRATION-E2E-TESTING.md](MIGRATION-E2E-TESTING.md)
-- Check [MIGRATION-E2E-QUICKSTART.md](MIGRATION-E2E-QUICKSTART.md) for common commands
+- See troubleshooting in [migration-e2e-testing.md](migration-e2e-testing.md)
+- Check [migration-e2e-quickstart.md](migration-e2e-quickstart.md) for common commands
 - Review test logs for detailed error messages
 
 ---

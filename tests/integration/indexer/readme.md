@@ -396,10 +396,10 @@ jobs:
 
 ## Related Documentation
 
-- [INDEXER_REFACTOR_IMPLEMENTATION.md](../../../docs-internal/INDEXER_REFACTOR_IMPLEMENTATION.md) - Complete implementation guide
-- [README-ollama.md](../../../docs-internal/README-ollama.md) - Ollama provider documentation
-- [README-local-workspace.md](../../../docs-internal/README-local-workspace.md) - Local workspace adapter guide
-- [../README.md](../README.md) - Integration tests overview
+- [INDEXER_REFACTOR_implementation.md](../../../docs-internal/INDEXER_REFACTOR_implementation.md) - Complete implementation guide
+- [README-ollama.md](../../../docs-internal/memo/README-ollama.md) - Ollama provider documentation
+- [README-local-workspace.md](../../../docs-internal/memo/README-local-workspace.md) - Local workspace adapter guide
+- [../readme.md](../readme.md) - Integration tests overview
 
 ## Next Steps
 

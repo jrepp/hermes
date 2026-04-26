@@ -77,7 +77,7 @@ testing/
 │   └── scenario-basic.sh             # E2E test
 ├── fixtures/
 │   ├── rfcs/rfc-template.md          # RFC template
-│   └── prds/PRD-TEMPLATE.md          # PRD template
+│   └── prds/prd-template.md          # PRD template
 └── workspaces/
     ├── testing/                       # TEST project workspace
     │   ├── rfcs/
@@ -187,9 +187,9 @@ curl http://localhost:8001/api/v2/documents/{uuid} | jq
 ## Documentation
 
 - **Full Design**: `DISTRIBUTED_TESTING_ENHANCEMENTS.md`
-- **Implementation**: `IMPLEMENTATION_SUMMARY.md`
-- **Scripts Guide**: `scripts/README.md`
-- **Templates**: `fixtures/README.md`
+- **Implementation**: `implementation_summary.md`
+- **Scripts Guide**: `scripts/readme.md`
+- **Templates**: `fixtures/readme.md`
 - **Architecture**: `../docs-internal/DISTRIBUTED_PROJECTS_ARCHITECTURE.md`
 
 ---

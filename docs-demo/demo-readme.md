@@ -49,7 +49,7 @@ docker compose ps
 
 ### Part 1: The Narrative (3 minutes)
 
-Use `DEMO-NARRATIVE.md` to tell the story:
+Use `demo-narrative.md` to tell the story:
 
 1. **Business Problem** (30 seconds)
    - Cloud dependency for testing
@@ -98,7 +98,7 @@ Use `DEMO-NARRATIVE.md` to tell the story:
 
 ### Part 3: Q&A (10 minutes)
 
-Common questions addressed in `DEMO-NARRATIVE.md`:
+Common questions addressed in `demo-narrative.md`:
 - Why multiple workspace providers?
 - Performance overhead from abstraction?
 - Maturity of local workspace?
@@ -114,7 +114,7 @@ Common questions addressed in `DEMO-NARRATIVE.md`:
 2. **Pre-Build Images**: `cd testing && docker compose pull` to cache images
 3. **Terminal Setup**: Use large font (16-18pt) for visibility
 4. **Browser Setup**: Open localhost:4201 in advance, keep login page ready
-5. **Documentation Ready**: Have DEMO-NARRATIVE.md open for reference
+5. **Documentation Ready**: Have demo-narrative.md open for reference
 
 ### During the Demo
 
@@ -213,11 +213,11 @@ docker compose up -d
 
 ### Share with Stakeholders
 
-1. **Narrative Document**: Email `DEMO-NARRATIVE.md` (comprehensive context)
+1. **Narrative Document**: Email `demo-narrative.md` (comprehensive context)
 2. **ADR-073**: Provider abstraction architecture
 3. **ADR-071**: Local file workspace system
 4. **RFC-080**: Outbox pattern for document sync
-5. **Testing README**: `testing/README.md` for setup details
+5. **Testing README**: `testing/readme.md` for setup details
 
 ### Next Steps Discussion
 
@@ -235,13 +235,13 @@ docker compose up -d
 
 ## Files Reference
 
-- `DEMO-NARRATIVE.md` - Complete presentation script and talking points
+- `demo-narrative.md` - Complete presentation script and talking points
 - `DEMO-SCRIPT.sh` - Automated demo execution script
-- `docs-internal/adr/ADR-071-local-file-workspace-system.md` - Local workspace design
-- `docs-internal/adr/ADR-073-provider-abstraction-architecture.md` - Provider pattern
-- `docs-internal/adr/ADR-075-meilisearch-as-local-search-solution.md` - Search provider
-- `docs-internal/rfc/RFC-080-outbox-pattern-document-sync.md` - Migration design
-- `testing/README.md` - Complete testing environment documentation
+- `docs-internal/adr/adr-071-local-file-workspace-system.md` - Local workspace design
+- `docs-internal/adr/adr-073-provider-abstraction-architecture.md` - Provider pattern
+- `docs-internal/adr/adr-075-meilisearch-as-local-search-solution.md` - Search provider
+- `docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md` - Migration design
+- `testing/readme.md` - Complete testing environment documentation
 - `tests/e2e-playwright/` - E2E test suite
 
 ## Demo Script Commands
@@ -275,10 +275,10 @@ cat workspace_data/drafts/RFC-001-example.md
 ### Demo 3: Architecture
 ```bash
 # Show provider abstraction
-cat ../docs-internal/adr/ADR-073-provider-abstraction-architecture.md | head -50
+cat ../docs-internal/adr/adr-073-provider-abstraction-architecture.md | head -50
 
 # Show migration RFC
-cat ../docs-internal/rfc/RFC-080-outbox-pattern-document-sync.md | head -50
+cat ../docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md | head -50
 ```
 
 ### Demo 4: Testing
@@ -301,7 +301,7 @@ docker compose down
 For questions about the demo:
 - Technical details: See ADRs in `docs-internal/adr/`
 - Architecture decisions: See RFCs in `docs-internal/rfc/`
-- Setup issues: See `testing/README.md`
+- Setup issues: See `testing/readme.md`
 
 ## License
 

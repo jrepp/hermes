@@ -924,7 +924,7 @@ kubectl top pods -l app=hermes-indexer
 
 - [Performance Tuning Guide](../deployment/performance-tuning.md)
 - [Best Practices](./best-practices.md)
-- [API Documentation](../api/SEMANTIC-SEARCH-API.md)
+- [API Documentation](../api/semantic-search-api.md)
 - [Troubleshooting Guide](./troubleshooting.md)
 
 ---

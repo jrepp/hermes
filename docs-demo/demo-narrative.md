@@ -228,7 +228,7 @@ providers {
 # Result: Documents preserved with all metadata
 
 # Show indexer with LLM integration
-cat docs-internal/rfc/RFC-080-outbox-pattern-document-sync.md | head -50
+cat docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md | head -50
 ```
 
 **Explain**:
@@ -285,7 +285,7 @@ npx playwright test --reporter=line
 
 **Show ADR-073: Provider Abstraction Architecture**
 ```bash
-cat docs-internal/adr/ADR-073-provider-abstraction-architecture.md
+cat docs-internal/adr/adr-073-provider-abstraction-architecture.md
 ```
 
 **Highlight**:
@@ -297,7 +297,7 @@ cat docs-internal/adr/ADR-073-provider-abstraction-architecture.md
 
 **Show Migration RFC**:
 ```bash
-cat docs-internal/rfc/RFC-080-outbox-pattern-document-sync.md | head -100
+cat docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md | head -100
 ```
 
 **Key Concepts**:

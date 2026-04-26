@@ -31,7 +31,7 @@
   - `TestModelToSearchDocument` - Tests model conversion
 
 ### 4. Documentation
-- ✅ Created comprehensive `tests/api/README.md` documenting:
+- ✅ Created comprehensive `tests/api/readme.md` documenting:
   - Project structure
   - How to run tests
   - Prerequisites (PostgreSQL, Meilisearch)
@@ -84,7 +84,7 @@
    - Add more fluent methods for common scenarios
 
 ### Long-term (Architectural)
-5. **Refactor API Handlers** (See Known Issues in README.md):
+5. **Refactor API Handlers** (See Known Issues in readme.md):
    - Option A: Create API v2 handlers using search abstraction
    - Option B: Add Algolia test instance to docker-compose
    - Option C: Refactor existing handlers to accept search provider interface
@@ -98,7 +98,7 @@
 ## Files Changed
 
 ### New Files
-- `tests/api/README.md` - Comprehensive documentation
+- `tests/api/readme.md` - Comprehensive documentation
 - `tests/api/integration_test.go` - New integration tests (262 lines)
 
 ### Modified Files

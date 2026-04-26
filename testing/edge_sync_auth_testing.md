@@ -401,7 +401,7 @@ grep -i "auth\|token" /tmp/hermes-server.log
 - **RFC-085**: Multi-Provider Architecture with Document Synchronization
 - **RFC-086**: Authentication and Bearer Token Management
 - **Implementation Guide**: `docs/development/rfc-085-phase3-authentication.md`
-- **Token Rotation Guide**: `docs/development/EDGE-TOKEN-ROTATION-GUIDE.md`
+- **Token Rotation Guide**: `docs/development/edge-token-rotation-guide.md`
 - **API Documentation**: `internal/api/v2/edge_sync.go`
 - **Auth Middleware**: `internal/api/v2/edge_sync_auth.go`
 

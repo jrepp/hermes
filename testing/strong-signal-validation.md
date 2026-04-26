@@ -377,9 +377,9 @@ assert.Equal(t, storedHash, computedHash)
 
 ## Related Documentation
 
-- [MIGRATION-E2E-TESTING.md](MIGRATION-E2E-TESTING.md) - Complete testing guide
-- [MIGRATION-E2E-QUICKSTART.md](MIGRATION-E2E-QUICKSTART.md) - Quick reference
-- [MIGRATION-TEST-SUMMARY.md](MIGRATION-TEST-SUMMARY.md) - Implementation summary
+- [migration-e2e-testing.md](migration-e2e-testing.md) - Complete testing guide
+- [migration-e2e-quickstart.md](migration-e2e-quickstart.md) - Quick reference
+- [migration-test-summary.md](migration-test-summary.md) - Implementation summary
 - [rfc-089-testing-guide.md](rfc-089-testing-guide.md) - API testing guide
 
 ## Summary

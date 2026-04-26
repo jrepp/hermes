@@ -79,7 +79,7 @@ This document summarizes the complete implementation of automated deployment scr
    - Resource limits and requests
    - Health probes
 
-6. **Documentation** (`README.md`)
+6. **Documentation** (`readme.md`)
    - Deployment instructions
    - Scaling guide
    - Monitoring setup
@@ -345,8 +345,8 @@ This document summarizes the complete implementation of automated deployment scr
 
 ```
 scripts/deployment/
-├── README.md                        # Comprehensive deployment guide
-├── DEPLOYMENT-SUMMARY.md            # This file
+├── readme.md                        # Comprehensive deployment guide
+├── deployment-summary.md            # This file
 ├── phase1-database-setup.sh         # Database setup automation
 ├── phase1-config-setup.sh           # Configuration generation
 ├── deploy-docker.sh                 # Docker Compose deployment
@@ -369,7 +369,7 @@ config-production/                   # Phase 1 output
 │   ├── deployment-api.yaml
 │   ├── deployment-indexer.yaml
 │   └── service.yaml
-└── README.md
+└── readme.md
 
 monitoring-config/                   # Phase 3 output
 ├── prometheus/
@@ -382,7 +382,7 @@ monitoring-config/                   # Phase 3 output
 │   ├── datasources/
 │   └── dashboards/
 ├── docker-compose.monitoring.yml
-└── README.md
+└── readme.md
 
 test-results/                        # Phase 2 output
 ├── semantic-basic.json
@@ -596,8 +596,8 @@ With optimizations (content hash, rulesets, caching):
 ## Support & Documentation
 
 ### Deployment Scripts Documentation
-- **Main README**: `scripts/deployment/README.md` (13KB)
-- **This Summary**: `scripts/deployment/DEPLOYMENT-SUMMARY.md`
+- **Main README**: `scripts/deployment/readme.md` (13KB)
+- **This Summary**: `scripts/deployment/deployment-summary.md`
 
 ### RFC-088 Documentation (5360 lines total)
 - API Documentation: `docs/api/SEMANTIC-SEARCH-API.md` (625 lines)
@@ -608,9 +608,9 @@ With optimizations (content hash, rulesets, caching):
 - Troubleshooting: `docs/guides/troubleshooting.md` (1135 lines)
 
 ### Related RFCs
-- RFC-088 Main: `docs-internal/rfc/RFC-088-event-driven-indexer.md`
-- Production Deployment: `docs-internal/rfc/RFC-088-PRODUCTION-DEPLOYMENT.md`
-- Release Notes: `docs-internal/rfc/RFC-088-RELEASE-NOTES.md`
+- RFC-088 Main: `docs-internal/rfc/rfc-088-event-driven-indexer.md`
+- Production Deployment: `docs-internal/rfc/rfc-088-production-deployment.md`
+- Release Notes: `docs-internal/rfc/rfc-088-release-notes.md`
 
 ---
 

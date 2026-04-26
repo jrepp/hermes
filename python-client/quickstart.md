@@ -289,9 +289,9 @@ client = Hermes(config=config)
 
 ## Next Steps
 
-- See [README.md](README.md) for full API documentation
+- See [readme.md](readme.md) for full API documentation
 - Check [examples/](examples/) for more usage examples
-- Read [DEVELOPMENT.md](DEVELOPMENT.md) for contributing guidelines
+- Read [development.md](development.md) for contributing guidelines
 
 ## Support
 

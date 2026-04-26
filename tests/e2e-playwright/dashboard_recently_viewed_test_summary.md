@@ -228,16 +228,16 @@ npx playwright show-report
 
 ## Related Documentation
 
-- [TODO-013: E2E Test Recently Viewed Sidebar](../../../docs-internal/todos/TODO-013-e2e-test-recently-viewed-sidebar.md)
+- [TODO-013: E2E Test Recently Viewed Sidebar](../../../docs-internal/todos/todo-013-e2e-test-recently-viewed-sidebar.md)
 - [Playwright E2E Agent Guide](../PLAYWRIGHT_E2E_AGENT_GUIDE.md)
 - [Dashboard Awaiting Review Test](./dashboard-awaiting-review.spec.ts)
-- [Testing Environment Setup](../../../testing/README.md)
+- [Testing Environment Setup](../../../testing/readme.md)
 
 ## Commit Information
 
 **Prompt Used**:
 ```
-using ./testing do an e2e test to accomplish #file:TODO-013-e2e-test-recently-viewed-sidebar.md
+using ./testing do an e2e test to accomplish #file:todo-013-e2e-test-recently-viewed-sidebar.md
 ```
 
 **AI Implementation Summary**:

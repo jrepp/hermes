@@ -420,9 +420,9 @@ hermes-test scenario basic --token-refresh
 
 ## See Also
 
-- **README.md** - Framework architecture and Python API
-- **OAUTH_AUTOMATION_GUIDE.md** - OAuth token refresh details
-- **testing/scripts/DEPRECATED.md** - Bash→Python migration guide
+- **readme.md** - Framework architecture and Python API
+- **oauth_automation_guide.md** - OAuth token refresh details
+- **testing/scripts/deprecated.md** - Bash→Python migration guide
 - **testing/Makefile** - Automation targets
 - **docs-internal/INDEXER_IMPLEMENTATION_GUIDE.md** - Indexer details
 
@@ -431,5 +431,5 @@ hermes-test scenario basic --token-refresh
 For issues or questions:
 1. Check `hermes-test --help` and subcommand help
 2. Review examples in this guide
-3. Check `testing/python/README.md` for Python API details
+3. Check `testing/python/readme.md` for Python API details
 4. See `docs-internal/` for architecture documentation

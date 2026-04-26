@@ -30,7 +30,7 @@ Successfully separated unit tests from integration tests in the `/tests/api` dir
   - `NewIntegrationSuite()` - creates suite with containerized deps
   - `seedDatabase()` - seeds test data
 
-#### `TEST_SEPARATION_GUIDE.md`
+#### `test_separation_guide.md`
 - Comprehensive guide for using the new test structure
 - Migration instructions
 - Benefits and best practices
@@ -65,7 +65,7 @@ Successfully separated unit tests from integration tests in the `/tests/api` dir
 - Updated `test/api` - runs both unit and integration
 - Added `test/unit`, `test/integration`, updated `test` - project-wide targets
 
-#### `README.md`
+#### `readme.md`
 - Complete rewrite with test separation documentation
 - Running instructions for each test type
 - Writing new tests guide
@@ -299,13 +299,13 @@ ok      github.com/hashicorp-forge/hermes/tests/api     0.468s
 ### Created (3 files)
 - `tests/api/unit_test.go` (237 lines)
 - `tests/api/integration_containers_test.go` (166 lines)
-- `tests/api/TEST_SEPARATION_GUIDE.md` (283 lines)
+- `tests/api/test_separation_guide.md` (283 lines)
 
 ### Modified (7 files)
 - `tests/api/integration_test.go` (added build tag, 8 suite calls changed)
 - `tests/api/documents_test.go` (added build tag, suite call changed)
 - `tests/api/optimized_test.go` (added build tag, 2 suite calls changed)
-- `tests/api/README.md` (complete rewrite, 300+ lines)
+- `tests/api/readme.md` (complete rewrite, 300+ lines)
 - `internal/test/database.go` (added helper function)
 - `Makefile` (added 5 new test targets)
 - `go.mod` (added testcontainers dependencies)
@@ -320,8 +320,8 @@ ok      github.com/hashicorp-forge/hermes/tests/api     0.468s
 ## Documentation
 
 All documentation is complete and includes:
-- `README.md` - Full usage guide with examples
-- `TEST_SEPARATION_GUIDE.md` - Migration and best practices guide
+- `readme.md` - Full usage guide with examples
+- `test_separation_guide.md` - Migration and best practices guide
 - Inline code comments in all new files
 - Makefile target descriptions
 

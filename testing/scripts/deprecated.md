@@ -62,8 +62,8 @@ These scripts are kept for reference but **should not be used** for new work:
 For comprehensive documentation of the Python framework:
 
 - **CLI Help**: `hermes-test --help`
-- **User Guide**: `testing/python/README.md`
-- **OAuth Guide**: `testing/python/OAUTH_AUTOMATION_GUIDE.md`
+- **User Guide**: `testing/python/readme.md`
+- **OAuth Guide**: `testing/python/oauth_automation_guide.md`
 - **API Docs**: Inline docstrings in Python modules
 
 ## Removal Timeline

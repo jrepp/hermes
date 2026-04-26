@@ -8,7 +8,7 @@ This directory contains workspace data for individual projects in the testing en
 workspaces/
 ├── testing/          # TEST project workspace (hermes-testing)
 ├── docs/             # DOCS project workspace (hermes-docs)
-└── README.md         # This file
+└── readme.md         # This file
 ```
 
 ## Container Mapping
@@ -77,4 +77,4 @@ In containerized mode:
 - `testing/projects.hcl` - Global projects configuration
 - `testing/projects/testing.hcl` - TEST project configuration
 - `testing/projects/docs.hcl` - DOCS project configuration
-- `testing/projects/README.md` - Projects configuration guide
+- `testing/projects/readme.md` - Projects configuration guide

@@ -325,8 +325,8 @@ Once fixed, stays fixed:
 |------|-------|---------|
 | `validation_test.go` | ~600 | Validation framework implementation |
 | `migration_e2e_test.go` | +100 | Integration with main test |
-| `STRONG-SIGNAL-VALIDATION.md` | ~450 | Complete documentation |
-| `VALIDATION-SUMMARY.md` | This file | Quick reference |
+| `strong-signal-validation.md` | ~450 | Complete documentation |
+| `validation-summary.md` | This file | Quick reference |
 
 ## Performance
 
@@ -338,9 +338,9 @@ Once fixed, stays fixed:
 
 ## Related Documentation
 
-- [STRONG-SIGNAL-VALIDATION.md](STRONG-SIGNAL-VALIDATION.md) - Complete documentation
-- [MIGRATION-E2E-TESTING.md](MIGRATION-E2E-TESTING.md) - Full testing guide
-- [MIGRATION-TEST-SUMMARY.md](MIGRATION-TEST-SUMMARY.md) - Implementation summary
+- [strong-signal-validation.md](strong-signal-validation.md) - Complete documentation
+- [migration-e2e-testing.md](migration-e2e-testing.md) - Full testing guide
+- [migration-test-summary.md](migration-test-summary.md) - Implementation summary
 
 ## Summary
 

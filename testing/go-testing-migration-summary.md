@@ -124,15 +124,15 @@ make db-migrate-test
 ### 7. Comprehensive Documentation ✅
 
 **Created** (~2,700 lines):
-- `MIGRATION-TESTING-GO.md` (520 lines) - Go-only testing guide
-- `GO-MIGRATION-COMPLETE.md` (250 lines) - Migration completion summary
-- `SHELL-SCRIPTS-REMOVED.md` (200 lines) - Script removal documentation
-- `GO-TESTING-MIGRATION-SUMMARY.md` (this file)
+- `migration-testing-go.md` (520 lines) - Go-only testing guide
+- `go-migration-complete.md` (250 lines) - Migration completion summary
+- `shell-scripts-removed.md` (200 lines) - Script removal documentation
+- `go-testing-migration-summary.md` (this file)
 
 **Updated**:
-- `README-MIGRATION-TESTS.md` - Rewritten for Go approach
-- `MIGRATION-E2E-TESTING.md` - Updated with Go examples
-- `MIGRATION-E2E-QUICKSTART.md` - Updated commands
+- `readme-migration-tests.md` - Rewritten for Go approach
+- `migration-e2e-testing.md` - Updated with Go examples
+- `migration-e2e-quickstart.md` - Updated commands
 
 ## Test Execution Results
 
@@ -216,15 +216,15 @@ Same performance as bash, with better error handling!
 ### New Files
 - `tests/integration/migration/prerequisites_test.go`
 - `tests/integration/migration/main_test.go` (updated)
-- `testing/MIGRATION-TESTING-GO.md`
-- `testing/GO-MIGRATION-COMPLETE.md`
-- `testing/SHELL-SCRIPTS-REMOVED.md`
-- `testing/GO-TESTING-MIGRATION-SUMMARY.md`
+- `testing/migration-testing-go.md`
+- `testing/go-migration-complete.md`
+- `testing/shell-scripts-removed.md`
+- `testing/go-testing-migration-summary.md`
 
 ### Updated Files
 - `tests/integration/migration/migration_e2e_test.go` (+30 lines for Phase0, removed fixture dependency)
 - `Makefile` (+70 lines for test targets)
-- `testing/README-MIGRATION-TESTS.md` (complete rewrite)
+- `testing/readme-migration-tests.md` (complete rewrite)
 
 ### Removed Files
 - `testing/test-migration-e2e.sh` ❌

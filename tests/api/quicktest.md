@@ -230,9 +230,9 @@ go test -race -tags=integration ./tests/api/...
 
 ## Questions or Issues?
 
-- Check `README.md` for detailed documentation
-- Review `TEST_SEPARATION_GUIDE.md` for migration help
-- Look at `REFACTORING_SUMMARY.md` for what changed
+- Check `readme.md` for detailed documentation
+- Review `test_separation_guide.md` for migration help
+- Look at `refactoring_summary.md` for what changed
 - Examine test files for examples:
   - `unit_test.go` - unit test examples
   - `integration_test.go` - integration test examples

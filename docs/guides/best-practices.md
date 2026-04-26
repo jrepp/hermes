@@ -924,7 +924,7 @@ make lint-fix
 ## Additional Resources
 
 - [Performance Tuning Guide](../deployment/performance-tuning.md)
-- [API Documentation](../api/SEMANTIC-SEARCH-API.md)
+- [API Documentation](../api/semantic-search-api.md)
 - [Troubleshooting Guide](./troubleshooting.md)
 - [RFC-088 Implementation Summary](../../docs-internal/rfc/rfc-088-implementation-summary.md)
 

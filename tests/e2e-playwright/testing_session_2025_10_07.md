@@ -28,7 +28,7 @@ Successfully validated the complete Dex OIDC authentication flow for the Hermes 
 - `tests/e2e-playwright/package.json` - Dependencies (Playwright 1.40.0)
 - `tests/e2e-playwright/playwright.config.ts` - Test configuration
 - `tests/e2e-playwright/tests/auth.spec.ts` - Authentication flow tests
-- `tests/e2e-playwright/README.md` - Documentation
+- `tests/e2e-playwright/readme.md` - Documentation
 
 **Dependencies Installed**:
 ```bash
@@ -241,9 +241,9 @@ As configured in `testing/dex-config.yaml` and `testing/users.json`:
 
 ## Related Documentation
 
-- **Playwright Tests**: `tests/e2e-playwright/README.md`
-- **Testing Environment**: `testing/README.md`
-- **Local Workspace Setup**: `testing/LOCAL_WORKSPACE_SETUP_SUMMARY.md`
+- **Playwright Tests**: `tests/e2e-playwright/readme.md`
+- **Testing Environment**: `testing/readme.md`
+- **Local Workspace Setup**: `testing/LOCAL_WORKSPACE_SETUP_summary.md`
 - **Dex Authentication**: `docs-internal/DEX_QUICK_START.md`
 - **Auth Provider Selection**: `docs-internal/AUTH_PROVIDER_SELECTION.md`
 

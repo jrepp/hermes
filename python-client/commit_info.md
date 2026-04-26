@@ -59,10 +59,10 @@ Examples:
 - examples/integration_test.py - Full integration test
 
 Documentation:
-- README.md - Comprehensive guide with API docs
-- QUICKSTART.md - 5-minute getting started
-- DEVELOPMENT.md - Dev setup and contributing
-- IMPLEMENTATION_SUMMARY.md - This implementation
+- readme.md - Comprehensive guide with API docs
+- quickstart.md - 5-minute getting started
+- development.md - Dev setup and contributing
+- implementation_summary.md - This implementation
 - python-client.md - Package overview
 
 Configuration:

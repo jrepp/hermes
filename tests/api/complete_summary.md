@@ -41,11 +41,11 @@ Transformed the `tests/` directory from **broken and unusable** to a **high-perf
 - **After**: 7 tests pass in ~7 minutes (60s each)
 
 ### Documentation Created (Phase 1)
-1. **INDEX.md** - Documentation hub
-2. **QUICKSTART.md** - Quick reference (80 lines)
-3. **README.md** - Architecture guide (180 lines)
-4. **IMPROVEMENTS.md** - Technical changelog (140 lines)
-5. **SUMMARY.md** - Executive summary (200 lines)
+1. **index.md** - Documentation hub
+2. **quickstart.md** - Quick reference (80 lines)
+3. **readme.md** - Architecture guide (180 lines)
+4. **improvements.md** - Technical changelog (140 lines)
+5. **summary.md** - Executive summary (200 lines)
 
 ## Phase 2: Performance Optimization (October 3, 2025)
 
@@ -97,8 +97,8 @@ func TestCreate(t *testing.T) {
 ### New Files Created (Phase 2)
 1. **optimized_test.go** (296 lines) - Performance examples
 2. **helpers.go** (165 lines) - Transaction helper functions
-3. **PERFORMANCE.md** (250 lines) - Complete optimization guide
-4. **PHASE2_SUMMARY.md** (200 lines) - Phase 2 documentation
+3. **performance.md** (250 lines) - Complete optimization guide
+4. **phase2_summary.md** (200 lines) - Phase 2 documentation
 
 ### Helper Functions
 ```go
@@ -166,13 +166,13 @@ tests/api/
 ```
 tests/api/
 ├── 📚 Documentation (7 files, 1,300 lines)
-│   ├── INDEX.md
-│   ├── QUICKSTART.md
-│   ├── README.md
-│   ├── IMPROVEMENTS.md
-│   ├── SUMMARY.md
-│   ├── PERFORMANCE.md
-│   └── PHASE2_SUMMARY.md
+│   ├── index.md
+│   ├── quickstart.md
+│   ├── readme.md
+│   ├── improvements.md
+│   ├── summary.md
+│   ├── performance.md
+│   └── phase2_summary.md
 │
 ├── 🧪 Tests (13+ tests, 850 lines)
 │   ├── integration_test.go     ✅ 7 tests
@@ -234,7 +234,7 @@ func TestMyFeature(t *testing.T) {
 - ✅ Comprehensive docs
 
 ### For Reviewers
-- ✅ Clear changelog (IMPROVEMENTS.md)
+- ✅ Clear changelog (improvements.md)
 - ✅ Documented decisions
 - ✅ Before/after examples
 - ✅ Performance metrics
@@ -246,7 +246,7 @@ func TestMyFeature(t *testing.T) {
 - ✅ Technical debt addressed
 
 ### For New Contributors
-- ✅ QUICKSTART.md gets them running in 1 minute
+- ✅ quickstart.md gets them running in 1 minute
 - ✅ Examples to follow
 - ✅ Clear best practices
 - ✅ Troubleshooting guide

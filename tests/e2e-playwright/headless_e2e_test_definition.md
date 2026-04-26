@@ -844,8 +844,8 @@ See `tests/dashboard-awaiting-review.spec.ts` for a complete example implementin
 ## Related Documentation
 
 - **Playwright E2E Agent Guide**: `docs-internal/PLAYWRIGHT_E2E_AGENT_GUIDE.md`
-- **Testing Environment**: `testing/README.md`
-- **E2E Test Readme**: `tests/e2e-playwright/README.md`
+- **Testing Environment**: `testing/readme.md`
+- **E2E Test Readme**: `tests/e2e-playwright/readme.md`
 - **TODO-011**: E2E test awaiting review dashboard (reference implementation)
 - **TODO-014**: Contributors vs Approvers field gap (context)
 - **TODO-015**: People database not populated (known blocker)

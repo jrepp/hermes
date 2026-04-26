@@ -161,7 +161,7 @@ docker exec hermes-minio mc ls --recursive myminio/hermes-documents/e2e-test/
 ## Next Steps
 
 After successful test run:
-- Review full documentation: [MIGRATION-E2E-TESTING.md](MIGRATION-E2E-TESTING.md)
+- Review full documentation: [migration-e2e-testing.md](migration-e2e-testing.md)
 - Run API tests: `./test-rfc089-api.sh`
 - Run worker tests: `./test-migration-worker.sh`
 - Try comprehensive e2e: `./test-comprehensive-e2e.sh`
@@ -176,8 +176,8 @@ tests/integration/migration/
 
 testing/
 ├── test-migration-e2e.sh        # Convenience script (this runs everything)
-├── MIGRATION-E2E-TESTING.md     # Full documentation
-└── MIGRATION-E2E-QUICKSTART.md  # This file
+├── migration-e2e-testing.md     # Full documentation
+└── migration-e2e-quickstart.md  # This file
 ```
 
 ## Test Standards
@@ -196,5 +196,5 @@ This test follows Hermes testing standards:
 ## Help
 
 For detailed troubleshooting and advanced usage, see:
-- [MIGRATION-E2E-TESTING.md](MIGRATION-E2E-TESTING.md)
+- [migration-e2e-testing.md](migration-e2e-testing.md)
 - [rfc-089-testing-guide.md](rfc-089-testing-guide.md)

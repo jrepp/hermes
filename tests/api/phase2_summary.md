@@ -51,7 +51,7 @@ ParallelWithTransaction(t, db, "TestName", func(t *testing.T, tx *gorm.DB) {
 - Clean, readable test code
 - Encourages fast test patterns
 
-### 3. Performance Documentation (`PERFORMANCE.md`)
+### 3. Performance Documentation (`performance.md`)
 Comprehensive guide covering:
 
 - **Problem Statement**: Why tests are slow (60s each)
@@ -118,7 +118,7 @@ func TestDocuments(t *testing.T) {
    - 2 example test functions
    - Comprehensive documentation
 
-3. **`PERFORMANCE.md`** (250+ lines)
+3. **`performance.md`** (250+ lines)
    - Complete performance guide
    - 4 optimization strategies
    - Best practices
@@ -178,7 +178,7 @@ go test -v -run "Test(Fast|Parallel|Optimized|WithMock)"
 
 ## Metrics
 
-- **New Files**: 3 (optimized_test.go, helpers.go, PERFORMANCE.md)
+- **New Files**: 3 (optimized_test.go, helpers.go, performance.md)
 - **Lines of Code**: ~700+ (tests + docs)
 - **Performance Improvement**: Up to 6000x for individual tests
 - **Overall Suite Speed**: 7x faster

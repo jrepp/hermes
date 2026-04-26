@@ -1,8 +1,17 @@
+---
+id: memo-100
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 4d4136dc-22ff-4d54-8fe3-bf232613cdba
+status: Draft
+title: "AI Agent Prompt Templates for Software Projects"
+---
 # AI Agent Prompt Templates for Software Projects
 ## Proven Patterns from Hermes Provider Migration (October 2025)
 
-**Source**: 98 commits over 4 days, 10-15x productivity gain  
-**Context**: Single developer + GitHub Copilot completing 4-6 weeks of team work  
+**Source**: 98 commits over 4 days, 10-15x productivity gain
+**Context**: Single developer + GitHub Copilot completing 4-6 weeks of team work
 **Purpose**: Reusable prompt templates for AI-assisted development
 
 ---
@@ -37,19 +46,22 @@ Analyze the existing codebase to extract patterns I should follow for new code.
    - Test functions: [pattern] (e.g., `TestFoo`, `Test_foo_whenCondition`)
 
 2. **Error Handling Pattern**:
-   ```go
+
+    ~~~~ go
    // Show actual example from codebase
-   ```
+    ```
 
 3. **Testing Structure**:
-   ```go
+
+    ```go
    // Show actual test structure from codebase
-   ```
+    ```
 
 4. **Documentation Style**:
-   ```go
+
+    ```go
    // Show godoc example from codebase
-   ```
+    ```
 
 5. **Package Organization**:
    - Where do interfaces go? [path]
@@ -59,17 +71,20 @@ Analyze the existing codebase to extract patterns I should follow for new code.
 Save output as: `docs-internal/design/EXISTING_PATTERNS.md`
 
 Include **5 concrete code examples** for each pattern.
-```
+
+``` text
 
 **Real Example from Hermes**:
-```
-Analyze pkg/search/adapters/algolia/ and pkg/workspace/adapters/google/ 
+
+~~~~ text
+Analyze pkg/search/adapters/algolia/ and pkg/workspace/adapters/google/
 
 Extract:
 - Interface naming: `[Noun]Provider` (SearchProvider, WorkspaceProvider)
 - Constructor: `New[Type]Adapter(config)` returns (Adapter, error)
 - Error wrapping: `fmt.Errorf("operation failed: %w", err)`
 - Test structure: Table-driven tests with t.Run() subtests
+
 ```
 
 ---
@@ -84,30 +99,34 @@ Create a documentation structure for this project following best practices.
 **Team size**: [N developers + AI agents]
 
 **Create this folder structure**:
+
 ```
+
 docs-internal/
 ├── design/              # Architecture decisions and designs
 ├── in-progress/         # Active work documentation
 ├── completed/           # Finished work archives
 ├── testing/             # Test strategies and patterns
 ├── sessions/            # Daily session notes
-├── todos/               # Future work planning
-└── README.md            # Navigation hub
-```
+├── plans/               # Future work planning
+└── readme.md            # Navigation hub
 
-**For each folder, create a README.md** with:
+```text
+
+**For each folder, create a readme.md** with:
 - Purpose of this folder
 - What types of docs belong here
 - Naming conventions for files
 - When to move docs between folders
 
-**Main README.md should include**:
+**Main readme.md should include**:
 - Quick navigation by role (Developer, AI Agent, PM)
 - Metrics dashboard (blank initially, will fill)
 - Getting started commands
 - Link to most important docs
 
 Save output as executable bash script: `setup_docs.sh`
+
 ```
 
 **Real Example from Hermes**:
@@ -135,9 +154,11 @@ Create a session handoff template for AI agents to resume work effectively.
 Save as: `docs-internal/SESSION_HANDOFF.md`
 
 **Include example entries** showing how to fill each section.
+
 ```
 
 **Real Example Template**:
+
 ```markdown
 # Session Handoff
 
@@ -170,6 +191,7 @@ Save as: `docs-internal/SESSION_HANDOFF.md`
 ## Known Issues / Warnings
 - drafts.go has 1442 lines - needs modularization before refactoring
 - Some V1 endpoints return 501 until fully migrated
+
 ```
 
 ---
@@ -191,10 +213,10 @@ Design the architecture for [FEATURE_NAME] before writing any code.
 **Create design document with**:
 
 1. **Interface Definitions**:
-   ```go
+    ~~~~ go
    // Show proposed interfaces with method signatures
    // Include godoc comments explaining each method
-   ```
+    ```
 
 2. **Integration Points**:
    - Files that will be modified: [list with brief description]
@@ -230,16 +252,19 @@ Design the architecture for [FEATURE_NAME] before writing any code.
 Save as: `docs-internal/design/[FEATURE_NAME]_DESIGN.md`
 
 Include **code examples** from existing codebase following established patterns.
-```
+
+``` text
 
 **Real Example from Hermes** (Search Abstraction):
-```markdown
+
+~~~~ markdown
 Design search abstraction layer to support multiple search backends.
 
 Problem: Direct Algolia coupling in 15+ API handlers prevents using Meilisearch.
 
 Interfaces:
-```go
+ ~~~~ go
+
 type Provider interface {
     DraftsIndex() DraftsIndex
     DocumentsIndex() DocumentsIndex
@@ -250,7 +275,8 @@ type DraftsIndex interface {
     Search(ctx context.Context, query string, opts SearchOptions) ([]Document, error)
     Index(ctx context.Context, doc Document) error
 }
-```
+
+ ~~~~ text
 
 Integration: Modify internal/api/*.go to accept search.Provider instead of algolia.Client
 
@@ -265,13 +291,13 @@ Alternatives rejected:
 - Feature flags for Algolia/Meilisearch (complex conditional logic)
 
 Trade-offs: Added abstraction layer (complexity) for backend flexibility (value)
-```
+ ```
 
 ---
 
 ### 5. Define Test Strategy Before Implementation
 
-```markdown
+ ```markdown
 Define the test strategy for [FEATURE_NAME] before writing any code.
 
 **Feature**: [brief description]
@@ -292,12 +318,12 @@ Define the test strategy for [FEATURE_NAME] before writing any code.
    - Why this approach: [performance / accuracy trade-off]
 
 3. **Test Structure Pattern**:
-   ```go
+    ~~~~ go
    func TestFeature(t *testing.T) {
        // Show exact structure to follow
        // Include table-driven test example if applicable
    }
-   ```
+    ```
 
 4. **Performance Targets**:
    - Unit tests: All tests should complete in [X seconds]
@@ -318,10 +344,12 @@ Define the test strategy for [FEATURE_NAME] before writing any code.
 Save as: `docs-internal/testing/[FEATURE_NAME]_TEST_STRATEGY.md`
 
 **Reference existing test patterns** from: [list similar test files]
-```
+
+ ``` text
 
 **Real Example from Hermes**:
-```markdown
+
+ ~~~~ markdown
 Test strategy for search abstraction layer.
 
 Unit Testing:
@@ -336,11 +364,12 @@ Integration Testing:
 - Target: <30s for full suite
 
 Structure:
-```go
+ ~~~~ go
+
 func TestMeilisearchAdapter_Search(t *testing.T) {
     suite := setupIntegrationSuite(t)
     defer suite.Cleanup()
-    
+
     tests := []struct{
         name string
         query string
@@ -348,19 +377,20 @@ func TestMeilisearchAdapter_Search(t *testing.T) {
     }{
         // test cases
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             // test implementation
         })
     }
 }
-```
+
+ ~~~~ text
 
 Performance:
 - Unit: <1s for all adapters
 - Integration: <30s with parallelization
-```
+ ```
 
 ---
 
@@ -368,7 +398,7 @@ Performance:
 
 ### 6. Implement Feature Following TDD
 
-```markdown
+ ```markdown
 Implement [FEATURE_NAME] using test-driven development.
 
 **Design document**: [path to design doc]
@@ -415,7 +445,8 @@ Add end-to-end tests:
 
 **STEP 6: Verification**
 Before committing:
-```bash
+ ~~~~ bash
+
 # Build
 make bin
 
@@ -428,17 +459,19 @@ go tool cover -func=coverage.out
 
 # Verify no regressions
 make test
-```
+
+ ~~~~ text
 
 **Commit after each step** with descriptive message following pattern:
 - Step 1-2: `feat: add [feature] interfaces and tests`
 - Step 3: `feat: add mock [feature] for testing`
 - Step 4: `feat: implement [feature]`
 - Step 5: `test: add [feature] integration tests`
-```
+ ```
 
 **Real Example from Hermes** (Meilisearch Adapter):
-```
+
+ ```text
 Implement Meilisearch adapter for search.Provider interface.
 
 STEP 1: Interface already defined in pkg/search/search.go
@@ -463,13 +496,13 @@ Verification:
 go test -v ./pkg/search/adapters/meilisearch/...  # Unit tests
 go test -v ./tests/integration/search/...         # Integration tests
 Coverage: 85% (target: 80%)
-```
+ ```
 
 ---
 
 ### 7. Refactor Large File into Modules
 
-```markdown
+ ```markdown
 Refactor [FILE_NAME] ([CURRENT_LINES] lines) into smaller, focused modules.
 
 **Current file**: [path] ([N] lines)
@@ -480,27 +513,31 @@ Refactor [FILE_NAME] ([CURRENT_LINES] lines) into smaller, focused modules.
 
 1. **Identify logical modules**:
    Analyze [FILE_NAME] and group functions by responsibility:
-   ```
+    ```
+
    Module 1: [Name] - [Functions list] - [Estimated lines]
    Module 2: [Name] - [Functions list] - [Estimated lines]
    ...
-   ```
+
+    ``` text
 
 2. **Determine dependencies**:
    Create dependency graph showing which modules depend on others:
-   ```
+    ```
+
    [Module A] → [Module B]
    [Module B] → [Module C]
    [Module D] → [Module B]
-   ```
-   
+
+    ``` text
+
    Extraction order (least dependencies first):
    1. [Module with no dependencies]
    2. [Module depending only on extracted modules]
    ...
 
 3. **Create extraction plan**:
-   
+
    **Phase 1: Setup** (~30 min)
    - [ ] Create package structure: [package path]
    - [ ] Create types.go with shared types
@@ -529,9 +566,10 @@ Refactor [FILE_NAME] ([CURRENT_LINES] lines) into smaller, focused modules.
 
 4. **Rollback plan**:
    If any step fails:
-   ```bash
+    ~~~~ bash
    git reset --hard [last-good-commit]
-   ```
+    ```
+
    Each phase is independently revertible.
 
 5. **Timeline**:
@@ -541,10 +579,12 @@ Refactor [FILE_NAME] ([CURRENT_LINES] lines) into smaller, focused modules.
 Save plan as: `docs-internal/design/[FILE]_MODULARIZATION_PLAN.md`
 
 **Execute incrementally**, commit after each successful extraction.
-```
+
+ ``` text
 
 **Real Example from Hermes** (drafts.go modularization):
-```markdown
+
+ ~~~~ markdown
 Refactor internal/api/drafts.go (1442 lines) into modules.
 
 Modules identified:
@@ -572,7 +612,7 @@ Extraction order:
 
 Timeline: 8-9 hours over 2-3 days
 Each module ~1-1.5 hours to extract + test
-```
+ ```
 
 ---
 
@@ -580,7 +620,7 @@ Each module ~1-1.5 hours to extract + test
 
 ### 8. Generate Comprehensive Tests for Existing Code
 
-```markdown
+ ```markdown
 Generate comprehensive test coverage for [FUNCTION/MODULE].
 
 **Target**: [package path]
@@ -590,11 +630,11 @@ Generate comprehensive test coverage for [FUNCTION/MODULE].
 **Analysis**:
 
 1. **Identify untested code**:
-   ```bash
+    ~~~~ bash
    go test -coverprofile=coverage.out ./[package]/...
    go tool cover -func=coverage.out | grep -E ":[0-9]+.*0\.0%"
-   ```
-   
+    ```
+
    List functions with 0% coverage:
    - [Function 1] - [complexity: low/medium/high]
    - [Function 2] - [complexity: low/medium/high]
@@ -604,20 +644,20 @@ Generate comprehensive test coverage for [FUNCTION/MODULE].
    High priority (critical path, used frequently):
    - [Function A]
    - [Function B]
-   
+
    Medium priority (important but less frequent):
    - [Function C]
-   
+
    Low priority (edge cases, rarely used):
    - [Function D]
 
 3. **Generate tests**:
-   
+
    For each high-priority function, create:
-   
+
    **Test file**: [package]/[file]_test.go
-   
-   ```go
+
+    ```go
    func Test[FunctionName](t *testing.T) {
        tests := []struct {
            name    string
@@ -644,7 +684,7 @@ Generate comprehensive test coverage for [FUNCTION/MODULE].
            },
            // Add more cases to cover all branches
        }
-       
+
        for _, tt := range tests {
            t.Run(tt.name, func(t *testing.T) {
                got, err := [FunctionName](tt.input)
@@ -658,36 +698,40 @@ Generate comprehensive test coverage for [FUNCTION/MODULE].
            })
        }
    }
-   ```
+    ```
 
 4. **Verification**:
    After generating tests:
-   ```bash
+
+    ```bash
    # Run new tests
    go test -v ./[package]/ -run Test[FunctionName]
-   
+
    # Check coverage improvement
    go test -coverprofile=coverage.out ./[package]/...
    go tool cover -func=coverage.out
-   
+
    # Expected: [old X%] → [new Y%]
-   ```
+    ```
 
 5. **Commit**:
-   ```bash
+
+    ```bash
    git add [test files]
    git commit -m "test: add comprehensive tests for [module]
-   
+
    - Test[Function1]: [N] test cases covering [scenarios]
    - Test[Function2]: [M] test cases covering [scenarios]
    - Coverage: [X%] → [Y%] (+[Z]pp)"
-   ```
+    ```
 
 Generate tests for **high-priority functions first**, verify coverage improvement, then commit.
-```
+
+ ``` text
 
 **Real Example from Hermes**:
-```markdown
+
+ ~~~~ markdown
 Generate tests for tests/api/suite.go helper functions.
 
 Current coverage: 8.5%
@@ -701,7 +745,8 @@ Untested functions (go tool cover analysis):
 - buildRequestURL() - 0% coverage (low priority - internal helper)
 
 Generated tests/api/suite_test.go:
-```go
+ ~~~~ go
+
 func TestSuite_DoGET(t *testing.T) {
     tests := []struct {
         name       string
@@ -712,27 +757,28 @@ func TestSuite_DoGET(t *testing.T) {
         {"missing slash", "api/v1/me", 200}, // Should handle
         {"with query params", "/api/v1/drafts?limit=10", 200},
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             suite := setupTestSuite(t)
             defer suite.Cleanup()
-            
+
             resp := suite.DoGET(tt.path)
             assert.Equal(t, tt.wantStatus, resp.Code)
         })
     }
 }
-```
+
+ ~~~~ text
 
 Coverage after: 11.8% (+ 3.3pp)
-```
+ ```
 
 ---
 
 ### 9. Add Integration Tests for New Feature
 
-```markdown
+ ```markdown
 Add integration tests for [FEATURE_NAME] using real dependencies.
 
 **Feature**: [brief description]
@@ -748,10 +794,10 @@ Add integration tests for [FEATURE_NAME] using real dependencies.
 **Structure**:
 
 1. **Setup test infrastructure**:
-   ```go
+    ~~~~ go
    // tests/integration/[feature]/main_test.go
    var suite *TestSuite
-   
+
    func TestMain(m *testing.M) {
        var err error
        suite, err = setupIntegrationSuite()
@@ -759,48 +805,48 @@ Add integration tests for [FEATURE_NAME] using real dependencies.
            log.Fatal(err)
        }
        defer suite.Cleanup()
-       
+
        os.Exit(m.Run())
    }
-   
+
    func setupIntegrationSuite() (*TestSuite, error) {
        // Start containers
        postgresContainer := // testcontainer for postgres
        searchContainer := // testcontainer for meilisearch
-       
+
        // Initialize clients
        db := // connect to postgres
        search := // connect to meilisearch
-       
+
        return &TestSuite{
            DB: db,
            Search: search,
            // ... other clients
        }, nil
    }
-   ```
+    ```
 
 2. **Write test scenarios**:
-   
+
    Test format: "As a [user], I want to [action], so that [benefit]"
-   
-   ```go
+
+    ```go
    func TestFeature_CompleteUserWorkflow(t *testing.T) {
        t.Run("user creates draft, publishes, and searches", func(t *testing.T) {
            // Step 1: Create draft
            draft := createTestDraft(t, suite)
            assert.NotEmpty(t, draft.ID)
-           
+
            // Step 2: Publish draft
            doc := publishDraft(t, suite, draft.ID)
            assert.Equal(t, "published", doc.Status)
-           
+
            // Step 3: Search finds document
            results := searchDocuments(t, suite, draft.Title)
            assert.Contains(t, results, doc.ID)
        })
    }
-   ```
+    ```
 
 3. **Scenarios to cover**:
    - [ ] Happy path: [describe complete workflow]
@@ -817,23 +863,26 @@ Add integration tests for [FEATURE_NAME] using real dependencies.
      * Running tests in parallel
 
 5. **Verification**:
-   ```bash
+
+    ```bash
    # Run integration tests
    go test -v ./tests/integration/[feature]/...
-   
+
    # Check timing
    go test -v -timeout 30s ./tests/integration/[feature]/...
-   
+
    # Run with race detector
    go test -race ./tests/integration/[feature]/...
-   ```
+    ```
 
 Save test plan as: `docs-internal/testing/[FEATURE]_INTEGRATION_TESTS.md`
 Then implement tests following the plan.
-```
+
+ ``` text
 
 **Real Example from Hermes** (Meilisearch integration):
-```markdown
+
+ ~~~~ markdown
 Add integration tests for Meilisearch search adapter.
 
 Dependencies: Meilisearch (via testcontainers), PostgreSQL
@@ -841,27 +890,29 @@ Dependencies: Meilisearch (via testcontainers), PostgreSQL
 Test file: tests/integration/search/meilisearch_adapter_test.go
 
 Setup:
-```go
+ ~~~~ go
+
 func TestMain(m *testing.M) {
     ctx := context.Background()
-    
+
     // Start Meilisearch container
-    meilisearchC, _ := testcontainers.GenericContainer(ctx, 
+    meilisearchC, _ := testcontainers.GenericContainer(ctx,
         testcontainers.GenericContainerRequest{
             ContainerRequest: testcontainers.ContainerRequest{
                 Image: "getmeili/meilisearch:v1.3",
                 ExposedPorts: []string{"7700/tcp"},
             },
         })
-    
+
     // Initialize adapter
     client := meilisearch.NewClient(config)
     adapter := search.NewMeilisearchAdapter(client)
-    
+
     sharedSuite = &IntegrationSuite{Adapter: adapter}
     os.Exit(m.Run())
 }
-```
+
+ ~~~~ text
 
 Scenarios:
 1. Document indexing and immediate search (tests eventual consistency)
@@ -871,7 +922,7 @@ Scenarios:
 5. Concurrent indexing from multiple goroutines
 
 Performance: Each test <3s, full suite <15s with shared container
-```
+ ```
 
 ---
 
@@ -879,7 +930,7 @@ Performance: Each test <3s, full suite <15s with shared container
 
 ### 10. Generate Comprehensive Documentation for Feature
 
-```markdown
+ ```markdown
 Generate comprehensive documentation for [FEATURE_NAME] that was just implemented.
 
 **Code files**: [list files modified/created]
@@ -894,7 +945,8 @@ Generate comprehensive documentation for [FEATURE_NAME] that was just implemente
 
 Add godoc comments to all exported symbols in [files]:
 
-```go
+ ~~~~ go
+
 // [Type/Function name] [one-line description].
 //
 // [Detailed description explaining what it does, when to use it,
@@ -903,10 +955,12 @@ Add godoc comments to all exported symbols in [files]:
 // [If applicable: Usage example]
 //
 // [If applicable: Error conditions]
-```
+
+ ~~~~ text
 
 For each package, create/update `doc.go`:
-```go
+ ~~~~ go
+
 // Package [name] [one-line description].
 //
 // [Paragraph explaining package purpose and main concepts.]
@@ -919,19 +973,21 @@ For each package, create/update `doc.go`:
 //
 // [Brief explanation of design decisions]
 package [name]
-```
+
+ ~~~~ text
 
 ---
 
 **2. USER DOCUMENTATION**:
 
-Create `docs-internal/[category]/[FEATURE]_COMPLETE.md`:
+Create `docs-internal/[category]/[FEATURE]_complete.md`:
 
-```markdown
+ ~~~~ markdown
+
 # [Feature Name] - Complete
 
-**Status**: ✅ Complete  
-**Completed**: [date]  
+**Status**: ✅ Complete
+**Completed**: [date]
 **Files Changed**: [N] files (+[X] lines, -[Y] lines)
 
 ## Overview
@@ -946,14 +1002,16 @@ Create `docs-internal/[category]/[FEATURE]_COMPLETE.md`:
 ## Usage Examples
 
 ### Example 1: [Common Use Case]
-```go
+
+ ~~~~ go
 // Show complete working example
-```
+ ```
 
 ### Example 2: [Another Use Case]
-```go
+
+ ```go
 // Show complete working example
-```
+ ```
 
 ## API Reference
 [If applicable, list public interfaces/functions with brief descriptions]
@@ -964,9 +1022,10 @@ Create `docs-internal/[category]/[FEATURE]_COMPLETE.md`:
 - Coverage: [X%]
 
 To run tests:
-```bash
+
+ ```bash
 [commands]
-```
+ ```
 
 ## Configuration
 [If applicable, show configuration options]
@@ -988,7 +1047,8 @@ To run tests:
 ## Related Documentation
 - Design: [link to design doc]
 - Tests: [link to test strategy]
-```
+
+ ```text
 
 ---
 
@@ -996,13 +1056,14 @@ To run tests:
 
 Create `docs-internal/design/[FEATURE]_DECISIONS.md`:
 
-```markdown
+ ~~~~ markdown
+
 # [Feature Name] - Architecture Decisions
 
 ## Decision 1: [Name]
 
-**Status**: Accepted  
-**Date**: [date]  
+**Status**: Accepted
+**Date**: [date]
 **Deciders**: [who made the decision]
 
 ### Context
@@ -1019,13 +1080,13 @@ Create `docs-internal/design/[FEATURE]_DECISIONS.md`:
 ### Alternatives Considered
 
 #### Option A: [Name]
-**Pros**: [list]  
-**Cons**: [list]  
+**Pros**: [list]
+**Cons**: [list]
 **Why rejected**: [reason]
 
 #### Option B: [Name]
-**Pros**: [list]  
-**Cons**: [list]  
+**Pros**: [list]
+**Cons**: [list]
 **Why rejected**: [reason]
 
 ### Consequences
@@ -1043,20 +1104,22 @@ Create `docs-internal/design/[FEATURE]_DECISIONS.md`:
 ---
 
 [Repeat for each major decision]
-```
+
+ ~~~~ text
 
 ---
 
 **4. UPDATE NAVIGATION**:
 
-Update `docs-internal/README.md`:
+Update `docs-internal/readme.md`:
 - Add link to new docs in appropriate section
 - Update metrics dashboard if applicable
 - Mark related TODOs as complete
-```
+ ```
 
 **Real Example from Hermes**:
-```markdown
+
+ ```markdown
 Generate documentation for search abstraction layer.
 
 Code files: pkg/search/*.go, pkg/search/adapters/{algolia,meilisearch}/*.go
@@ -1068,7 +1131,7 @@ Generated:
    - pkg/search/examples_test.go with runnable examples
 
 2. USER DOCS:
-   - docs-internal/completed/SEARCH_ABSTRACTION_COMPLETE.md (254 lines)
+   - docs-internal/completed/SEARCH_ABSTRACTION_complete.md (254 lines)
    - Architecture diagram showing Provider → Adapter pattern
    - Examples of creating Algolia vs Meilisearch adapters
    - Migration guide for handlers
@@ -1080,15 +1143,15 @@ Generated:
    - Decision 3: Algolia-compatible query structure (for easy migration)
 
 4. NAVIGATION:
-   - Updated docs-internal/README.md completed/ section
+   - Updated docs-internal/readme.md completed/ section
    - Marked TODO_SEARCH_ABSTRACTION.md as complete
-```
+ ```
 
 ---
 
 ### 11. Create Session Summary at End of Day
 
-```markdown
+ ```markdown
 Create end-of-day session summary capturing today's work.
 
 **Date**: [today's date]
@@ -1096,14 +1159,15 @@ Create end-of-day session summary capturing today's work.
 
 **Generate `docs-internal/sessions/SESSION_[DATE].md`**:
 
-```markdown
+ ~~~~ markdown
+
 # Session Summary: [Date]
 
 ## Accomplishments
 
 ### Code Changes
 - **Files modified**: [N] files
-- **Lines added**: [+X] 
+- **Lines added**: [+X]
 - **Lines deleted**: [-Y]
 - **Net change**: [+Z]
 
@@ -1192,16 +1256,18 @@ Files edited multiple times today:
 
 ---
 
-**Session Duration**: [X hours]  
-**Productivity**: [commits/hour, files/hour, lines/hour]  
+**Session Duration**: [X hours]
+**Productivity**: [commits/hour, files/hour, lines/hour]
 **Quality**: [test ratio, doc ratio, rework rate]
-```
+
+ ~~~~ text
 
 Also update `docs-internal/SESSION_HANDOFF.md` with current state.
-```
+ ```
 
 **Real Example from Hermes** (Day 3 - October 4):
-```markdown
+
+ ```markdown
 # Session Summary: October 4, 2025
 
 ## Accomplishments
@@ -1266,7 +1332,7 @@ Also update `docs-internal/SESSION_HANDOFF.md` with current state.
 
 2. [ ] Document provider migration completion (~1 hour)
    - Create MIGRATION_COMPLETE_SUMMARY.md
-   - Update README.md with completion status
+   - Update readme.md with completion status
    - Move docs to completed/ folder
 
 3. [ ] Performance optimization (~30 min)
@@ -1287,7 +1353,7 @@ Target: <5% ✅
 
 Session Duration: 8 hours
 Commits/hour: 3.1
-```
+ ```
 
 ---
 
@@ -1295,7 +1361,7 @@ Commits/hour: 3.1
 
 ### 12. Start New Work Session
 
-```markdown
+ ```markdown
 Start new work session - load context and set goals.
 
 **STEP 1: Load Previous Session Context**
@@ -1306,17 +1372,20 @@ Read `docs-internal/SESSION_HANDOFF.md` and summarize:
    - What am I working on?
 
 2. **Last 3 Commits**:
-   ```bash
+    ~~~~ bash
    git log -3 --oneline
-   ```
+    ```
+
    - [hash] - [message]
    - [hash] - [message]
    - [hash] - [message]
 
 3. **Active Files**:
-   ```bash
+
+    ```bash
    git status
-   ```
+    ```
+
    - Modified: [list]
    - Untracked: [list]
 
@@ -1332,7 +1401,8 @@ Read `docs-internal/SESSION_HANDOFF.md` and summarize:
 
 Run health checks:
 
-```bash
+ ```bash
+
 # 1. Correct branch?
 git branch --show-current
 # Expected: [branch name]
@@ -1348,7 +1418,8 @@ make test
 # 4. Any uncommitted changes?
 git diff --stat
 # Expected: [describe if any]
-```
+
+ ~~~~ text
 
 Report any failures or unexpected state.
 
@@ -1385,13 +1456,14 @@ For this session (estimated [X] hours), I will:
 
 ---
 
-**Session Start**: [timestamp]  
-**Estimated End**: [timestamp]  
+**Session Start**: [timestamp]
+**Estimated End**: [timestamp]
 **Ready to begin**: ✅
-```
+ ```
 
 **Real Example from Hermes** (Day 4 morning):
-```markdown
+
+ ```markdown
 Start new work session.
 
 STEP 1: Context
@@ -1420,20 +1492,21 @@ Primary: Complete V1 handler migration
 
 Session: 08:00 → ~12:00 (4 hours)
 Ready: ✅
-```
+ ```
 
 ---
 
 ### 13. Update Session Handoff After Significant Work
 
-```markdown
+ ```markdown
 Update SESSION_HANDOFF.md after completing [TASK/MILESTONE].
 
 **What was just completed**: [brief description]
 
 **Update docs-internal/SESSION_HANDOFF.md**:
 
-```markdown
+ ~~~~ markdown
+
 ## Current State (Updated: [TIMESTAMP])
 - **Last Commit**: [run: git log -1 --oneline]
 - **Active Files**: [list files currently being modified]
@@ -1458,7 +1531,8 @@ Update SESSION_HANDOFF.md after completing [TASK/MILESTONE].
 ## Known Issues / Warnings [add any new warnings]
 - [New issue discovered]
 - [Existing issues...]
-```
+
+ ~~~~ text
 
 **Verification**:
 - [ ] Current State reflects latest commit
@@ -1468,14 +1542,17 @@ Update SESSION_HANDOFF.md after completing [TASK/MILESTONE].
 - [ ] Known issues updated
 
 **Commit handoff update**:
-```bash
+ ~~~~ bash
+
 git add docs-internal/SESSION_HANDOFF.md
 git commit -m "docs: update session handoff after [task]"
-```
-```
+
+ ~~~~ text
+ ```
 
 **Real Example from Hermes** (after completing auth migration):
-```markdown
+
+ ```markdown
 Update SESSION_HANDOFF.md after completing auth abstraction layer.
 
 Updated sections:
@@ -1496,18 +1573,18 @@ Updated sections:
    - Replace gw.Service with workspace.Provider
    - Replace algolia.Client with search.Provider
    - Verify tests pass: go test ./internal/api/ -run TestDrafts
-   
+
 2. [ ] Migrate remaining V1 handlers (~2 hours)
    - reviews.go, documents.go, approvals.go, me.go, people.go
    - Same pattern as drafts.go
-   
+
 3. [ ] Enable skipped V1 tests (~30 min)
    - Remove skip directives in tests/api/suite_v1_test.go
    - Verify all 59 tests pass
 
 ## Known Issues
 - drafts.go is 1442 lines - consider modularizing before complex refactoring
-```
+ ```
 
 ---
 
@@ -1515,7 +1592,7 @@ Updated sections:
 
 ### 14. Create Descriptive Commit Message
 
-```markdown
+ ```markdown
 Create a descriptive commit message for the changes I'm about to commit.
 
 **Files changed** (run: `git status`):
@@ -1528,7 +1605,8 @@ Create a descriptive commit message for the changes I'm about to commit.
 
 **Generate commit message following this format**:
 
-```
+ ```
+
 [type]: [short description in imperative mood]
 
 [Detailed body explaining what changed and why]
@@ -1540,7 +1618,8 @@ Create a descriptive commit message for the changes I'm about to commit.
 - Coverage: [X%] → [Y%] if tests added
 - Files changed: [N] files if large change
 - Related: [related issue/doc]
-```
+
+ ```text
 
 **Types**:
 - `feat`: New feature
@@ -1559,7 +1638,8 @@ Create a descriptive commit message for the changes I'm about to commit.
 - Include metrics if applicable (coverage, performance)
 
 **Example**:
-```
+ ```
+
 feat: implement Meilisearch adapter for search provider
 
 Add complete Meilisearch implementation of search.Provider interface
@@ -1572,14 +1652,15 @@ supporting all index operations with proper error handling.
 
 Coverage: 85% (target: 80%)
 Related: docs-internal/design/SEARCH_ABSTRACTION_DESIGN.md
-```
+
+ ```text
 
 Generate commit message for my current changes.
-```
+ ```
 
 **Real Examples from Hermes**:
 
-```
+ ```text
 feat: migrate API handlers to use provider interface extensions
 
 - people.go: Use SearchDirectory() for POST endpoint (removed 501)
@@ -1591,21 +1672,21 @@ feat: migrate API handlers to use provider interface extensions
 - Remove all 501 errors from subcollection handlers
 
 All V1/V2 API handlers now fully provider-agnostic
-```
+ ```
 
-```
+ ```text
 docs: add comprehensive provider migration completion docs
 
-- MIGRATION_STATUS.md: Quick one-page reference for project status
+- MIGRATION_status.md: Quick one-page reference for project status
 - MIGRATION_COMPLETE_SUMMARY.md: Comprehensive 600+ line project summary
 - MIGRATION_CHECKLIST.md: Detailed completion verification checklist
 - Document architecture before/after comparison
 - List all migrated handlers and statistics (100+ usages eliminated)
 - Provide implementation patterns and best practices
 - Confirm production-ready status for main application
-```
+ ```
 
-```
+ ```text
 test(api): add products endpoint integration tests
 
 suite.go:
@@ -1619,19 +1700,21 @@ suite_v1_test.go:
 - All 5 tests passing
 
 Test coverage: 100% for products endpoint migration
-```
+ ```
 
 ---
 
 ### 15. Review Changes Before Committing
 
-```markdown
+ ```markdown
 Review my changes before committing to ensure quality.
 
 **Run git diff and analyze**:
-```bash
+ ~~~~ bash
+
 git diff
-```
+
+ ~~~~ text
 
 **Check for common issues**:
 
@@ -1662,23 +1745,27 @@ git diff
    - [ ] No personal information
 
 **If any issues found**:
-```bash
+ ~~~~ bash
+
 # Unstage problematic files
 git reset HEAD [file]
 
 # Or fix the issues
 [edit files]
 git add [fixed files]
-```
+
+ ~~~~ text
 
 **Once clean**:
-```bash
+ ~~~~ bash
+
 # Review diff one more time
 git diff --cached
 
 # If good, proceed with commit
 git commit -m "[message]"
-```
+
+ ~~~~ text
 
 **Quality checklist** before every commit:
 - ✅ Build passes: `make bin`
@@ -1686,19 +1773,21 @@ git commit -m "[message]"
 - ✅ No debugging code
 - ✅ Meaningful commit message
 - ✅ Changes are focused (one logical change)
-```
+ ```
 
 ---
 
 ### 16. Squash Commits for Clean History
 
-```markdown
+ ```markdown
 Prepare branch for merge by squashing commits into logical units.
 
 **Current commit history**:
-```bash
+ ~~~~ bash
+
 git log --oneline origin/main..HEAD
-```
+
+ ~~~~ text
 
 **Analyze commits** and group by feature/theme:
 
@@ -1715,7 +1804,8 @@ git log --oneline origin/main..HEAD
 
 **Squash strategy**:
 
-```bash
+ ~~~~ bash
+
 # Interactive rebase
 git rebase -i origin/main
 
@@ -1733,12 +1823,14 @@ squash ...
 # - Keep first line of first commit
 # - Merge bullet points from all commits
 # - Add summary of total changes
-```
+
+ ~~~~ text
 
 **Target result**: [X] commits from [Y] commits
 
 **Commit message format for squashed commits**:
-```
+ ```
+
 [type]: [high-level description of entire feature]
 
 [Comprehensive description of what the feature does]
@@ -1758,10 +1850,12 @@ squash ...
 - Design: [link to design doc]
 - Tests: [link to test docs]
 - Closes: #[issue number if applicable]
-```
+
+ ```text
 
 **Verification after squash**:
-```bash
+ ~~~~ bash
+
 # Ensure tests still pass
 make test
 
@@ -1770,17 +1864,19 @@ git log --oneline origin/main..HEAD
 
 # Force push (only if branch is not shared!)
 git push --force-with-lease
-```
+
+ ~~~~ text
 
 **Guidelines**:
 - Group related commits (all test changes together, all refactoring together)
 - Keep one commit per major feature
 - Preserve detailed history in docs (SESSION notes)
 - Descriptive squashed commit messages (what + why + metrics)
-```
+ ```
 
 **Real Example from Hermes** (what should have been done):
-```markdown
+
+ ```markdown
 98 commits squashed to 10 logical units:
 
 1. feat: add environment and documentation setup
@@ -1790,7 +1886,7 @@ git push --force-with-lease
    - Squashes: 15 commits (interfaces, Google adapter, local adapter, tests)
    - Files: 25 (+3,500 lines)
    - Tests: 12 integration tests
-   
+
 3. feat: implement search abstraction layer
    - Squashes: 12 commits (interfaces, Algolia adapter, Meilisearch adapter, tests)
    - Files: 18 (+2,800 lines)
@@ -1799,31 +1895,31 @@ git push --force-with-lease
 4. feat: implement auth abstraction layer
    - Squashes: 8 commits (interfaces, Google/Okta/Mock adapters, tests)
    - Files: 12 (+1,100 lines)
-   
+
 5. test: add comprehensive API test suite
    - Squashes: 10 commits (suite infra, fixtures, integration tests)
    - Tests: 32 tests (+2,991 lines)
-   
+
 6. refactor(api): migrate V2 handlers to provider abstractions
    - Squashes: 15 commits (11 handlers migrated)
    - Files: 11 (-598 lines)
-   
+
 7. refactor(api): migrate V1 handlers to provider abstractions
    - Squashes: 12 commits (6 handlers migrated)
    - Files: 6 (-287 lines)
-   
+
 8. feat: add provider interface extensions
    - Squashes: 8 commits (directory search, OR filters, consistency checker)
-   
+
 9. docs: comprehensive provider migration documentation
    - Squashes: 10 commits (35 markdown files, 8,500 lines)
-   
+
 10. perf: enable test parallelization
     - Squashes: 3 commits (Makefile, parallelization guide)
 
 Clean history: 10 commits vs 98 original
 Detailed history: Preserved in docs-internal/sessions/
-```
+ ```
 
 ---
 
@@ -1925,6 +2021,7 @@ These prompt templates enabled **10-15x productivity** on the Hermes project. Ke
 - `DEV_TIMELINE_VISUAL.md` - Day-by-day timeline
 - `.github/copilot-instructions.md` - Project-specific agent instructions
 
-**Version**: 1.0  
-**Last Updated**: October 6, 2025  
+**Version**: 1.0
+**Last Updated**: October 6, 2025
 **Source Project**: hashicorp-forge/hermes (jrepp/dev-tidy branch)
+

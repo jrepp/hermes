@@ -242,6 +242,6 @@ When adding new scripts:
 ## References
 
 - **Architecture**: `../DISTRIBUTED_TESTING_ENHANCEMENTS.md`
-- **Project Configs**: `../projects/README.md`
+- **Project Configs**: `../projects/readme.md`
 - **Docker Compose**: `../docker-compose.yml`
-- **Main README**: `../README.md`
+- **Main README**: `../readme.md`

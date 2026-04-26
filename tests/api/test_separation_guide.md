@@ -53,7 +53,7 @@ make test                   # All tests (unit + integration)
 
 ### 4. Enhanced Documentation
 
-Updated `README.md` with:
+Updated `readme.md` with:
 - Clear separation of unit vs integration tests
 - Testcontainers setup and benefits
 - Performance comparison table
@@ -234,7 +234,7 @@ Error: port already allocated
 
 ## Questions?
 
-- Check `README.md` for detailed usage
+- Check `readme.md` for detailed usage
 - Review `integration_containers_test.go` for testcontainers setup
 - Look at `unit_test.go` for unit test examples
 - Examine `integration_test.go` for integration test examples

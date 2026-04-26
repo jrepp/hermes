@@ -154,7 +154,7 @@ make docker/postgres/stop && make docker/postgres/start
 ### Root Level Configuration
 - **`Makefile`**: Primary build orchestration (25+ targets)
 - **`go.mod`**: Go 1.25.0, main deps: gorm, google.golang.org/api, algolia, datadog
-- **`testing/`**: Complete containerized testing environment (see `testing/README.md`)
+- **`testing/`**: Complete containerized testing environment (see `testing/readme.md`)
 - **`config.hcl`**: **Fully documented runtime config** (tracked in git, 828 lines with comprehensive examples)
 - **`configs/config.hcl`**: Minimal config template (246 lines, for reference only)
 - **`testing/dex-config.yaml`**: Dex OIDC provider configuration for testing environment

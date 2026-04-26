@@ -91,7 +91,7 @@ HERMES_TEST_MEILISEARCH_HOST="http://localhost:7700"
 
 ## Need More Help?
 
-- **Architecture & Design**: See `tests/api/README.md`
-- **Changes Made**: See `tests/api/IMPROVEMENTS.md`
-- **Full Summary**: See `tests/api/SUMMARY.md`
+- **Architecture & Design**: See `tests/api/readme.md`
+- **Changes Made**: See `tests/api/improvements.md`
+- **Full Summary**: See `tests/api/summary.md`
 - **Build Issues**: See root `.github/copilot-instructions.md`

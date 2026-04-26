@@ -329,7 +329,7 @@ go test -tags=integration ./tests/integration/...
 
 ## Related Documentation
 
-- [API Integration Tests](../api/README.md) - Full API test suite with database
+- [API Integration Tests](../api/readme.md) - Full API test suite with database
 - [Unit Tests Guide](../../docs-internal/TODO_UNIT_TESTS.md) - Unit testing patterns
-- [Search Abstraction](../../docs-internal/SEARCH_ABSTRACTION_IMPLEMENTATION.md) - Search layer design
+- [Search Abstraction](../../docs-internal/SEARCH_ABSTRACTION_implementation.md) - Search layer design
 - [Storage Abstraction](../../docs-internal/STORAGE_ABSTRACTION_PROPOSAL.md) - Storage layer design

@@ -78,13 +78,13 @@ make db-migrate-test
 ```
 
 ### 4. Updated Documentation
-- **Updated** `testing/README-MIGRATION-TESTS.md`:
+- **Updated** `testing/readme-migration-tests.md`:
   - Changed Quick Start to use Make commands
   - Updated all running instructions
   - Added automatic error detection examples
   - Highlighted Go-only approach
 
-- **Created** `testing/MIGRATION-TESTING-GO.md`:
+- **Created** `testing/migration-testing-go.md`:
   - Complete guide to Go-only testing
   - Comparison with bash approach
   - Detailed examples and troubleshooting
@@ -196,13 +196,13 @@ The Go tests provide clear, actionable errors:
 
 ### New Files
 - `tests/integration/migration/prerequisites_test.go` (300 lines)
-- `testing/MIGRATION-TESTING-GO.md` (520 lines)
-- `testing/GO-MIGRATION-COMPLETE.md` (this file)
+- `testing/migration-testing-go.md` (520 lines)
+- `testing/go-migration-complete.md` (this file)
 
 ### Updated Files
 - `tests/integration/migration/migration_e2e_test.go` (+20 lines for Phase0)
 - `Makefile` (+70 lines for test targets)
-- `testing/README-MIGRATION-TESTS.md` (complete rewrite for Go approach)
+- `testing/readme-migration-tests.md` (complete rewrite for Go approach)
 - `testing/test-migration-e2e.sh` (+30 lines deprecation notice)
 
 ## Test Statistics
@@ -237,9 +237,9 @@ The Go tests provide clear, actionable errors:
 ## Documentation
 
 For detailed information, see:
-- **[MIGRATION-TESTING-GO.md](MIGRATION-TESTING-GO.md)** - Go-only testing guide
-- **[README-MIGRATION-TESTS.md](README-MIGRATION-TESTS.md)** - Quick start
-- **[STRONG-SIGNAL-VALIDATION.md](STRONG-SIGNAL-VALIDATION.md)** - Validation details
+- **[migration-testing-go.md](migration-testing-go.md)** - Go-only testing guide
+- **[readme-migration-tests.md](readme-migration-tests.md)** - Quick start
+- **[strong-signal-validation.md](strong-signal-validation.md)** - Validation details
 
 ---
 

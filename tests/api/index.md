@@ -6,12 +6,12 @@ This directory contains comprehensive documentation for the Hermes API test suit
 
 ## 🚀 Start Here
 
-**New to the tests?** → [`QUICKSTART.md`](./QUICKSTART.md)
+**New to the tests?** → [`quickstart.md`](./quickstart.md)
 - How to run tests in 30 seconds
 - Common commands
 - Troubleshooting guide
 
-**Tests too slow?** → [`PERFORMANCE.md`](./PERFORMANCE.md)
+**Tests too slow?** → [`performance.md`](./performance.md)
 - 100x performance improvement guide
 - Transaction-based testing
 - Optimization strategies
@@ -19,28 +19,28 @@ This directory contains comprehensive documentation for the Hermes API test suit
 ## 📖 Full Documentation
 
 ### For Users (Running Tests)
-1. **[QUICKSTART.md](./QUICKSTART.md)** - Quick reference for running tests
-2. **[README.md](./README.md)** - Complete guide with architecture notes
+1. **[quickstart.md](./quickstart.md)** - Quick reference for running tests
+2. **[readme.md](./readme.md)** - Complete guide with architecture notes
 
 ### For Contributors (Understanding Changes)
-3. **[IMPROVEMENTS.md](./IMPROVEMENTS.md)** - Detailed list of what was fixed (Phase 1)
-4. **[SUMMARY.md](./SUMMARY.md)** - High-level summary of improvements (Phase 1)
-5. **[PHASE2_SUMMARY.md](./PHASE2_SUMMARY.md)** - Performance optimizations (Phase 2)
+3. **[improvements.md](./improvements.md)** - Detailed list of what was fixed (Phase 1)
+4. **[summary.md](./summary.md)** - High-level summary of improvements (Phase 1)
+5. **[phase2_summary.md](./phase2_summary.md)** - Performance optimizations (Phase 2)
 
 ### For Performance Optimization
-6. **[PERFORMANCE.md](./PERFORMANCE.md)** - Complete performance guide
+6. **[performance.md](./performance.md)** - Complete performance guide
 
 ## 🗂️ File Structure
 
 ```
 tests/api/
-├── 📘 QUICKSTART.md         ⭐ Start here!
-├── 📕 README.md             Comprehensive guide (180 lines)
-├── 📗 IMPROVEMENTS.md       Technical change log - Phase 1 (140 lines)
-├── 📙 SUMMARY.md            Executive summary - Phase 1 (200 lines)
-├── 📊 PERFORMANCE.md        ⚡ Performance guide (250 lines)
-├── 📝 PHASE2_SUMMARY.md     Phase 2 improvements (200 lines)
-├── 📄 INDEX.md              This file
+├── 📘 quickstart.md         ⭐ Start here!
+├── 📕 readme.md             Comprehensive guide (180 lines)
+├── 📗 improvements.md       Technical change log - Phase 1 (140 lines)
+├── 📙 summary.md            Executive summary - Phase 1 (200 lines)
+├── 📊 performance.md        ⚡ Performance guide (250 lines)
+├── 📝 phase2_summary.md     Phase 2 improvements (200 lines)
+├── 📄 index.md              This file
 │
 ├── 🧪 integration_test.go   7 passing tests (262 lines)
 ├── 🧪 documents_test.go     4 skipped tests (needs refactor)
@@ -58,52 +58,52 @@ tests/api/
 
 | I want to... | Read this |
 |-------------|-----------|
-| Run tests quickly | [QUICKSTART.md](./QUICKSTART.md) |
-| Make tests faster | [PERFORMANCE.md](./PERFORMANCE.md) ⚡ |
-| Understand the architecture | [README.md](./README.md) → Architecture Notes |
-| See what was changed (Phase 1) | [IMPROVEMENTS.md](./IMPROVEMENTS.md) |
-| See what was changed (Phase 2) | [PHASE2_SUMMARY.md](./PHASE2_SUMMARY.md) |
-| Get executive summary | [SUMMARY.md](./SUMMARY.md) |
-| Add new tests | [README.md](./README.md) → Example Test |
-| Write fast tests | [PERFORMANCE.md](./PERFORMANCE.md) → Best Practices |
-| Fix skipped tests | [README.md](./README.md) → Known Issues |
-| Troubleshoot issues | [QUICKSTART.md](./QUICKSTART.md) → Troubleshooting |
+| Run tests quickly | [quickstart.md](./quickstart.md) |
+| Make tests faster | [performance.md](./performance.md) ⚡ |
+| Understand the architecture | [readme.md](./readme.md) → Architecture Notes |
+| See what was changed (Phase 1) | [improvements.md](./improvements.md) |
+| See what was changed (Phase 2) | [phase2_summary.md](./phase2_summary.md) |
+| Get executive summary | [summary.md](./summary.md) |
+| Add new tests | [readme.md](./readme.md) → Example Test |
+| Write fast tests | [performance.md](./performance.md) → Best Practices |
+| Fix skipped tests | [readme.md](./readme.md) → Known Issues |
+| Troubleshoot issues | [quickstart.md](./quickstart.md) → Troubleshooting |
 
 ## 🎯 Documentation Goals
 
 Each document has a specific purpose:
 
-### QUICKSTART.md
+### quickstart.md
 **Goal**: Get someone running tests in < 1 minute
 **Audience**: Anyone who just needs to verify tests pass
 **Length**: Short (~80 lines)
 
-### README.md  
+### readme.md  
 **Goal**: Complete understanding of the test infrastructure
 **Audience**: Developers who will write or maintain tests
 **Length**: Comprehensive (~180 lines)
 
-### IMPROVEMENTS.md
+### improvements.md
 **Goal**: Technical change log for code reviewers
 **Audience**: Reviewers, maintainers, future contributors
 **Length**: Detailed (~140 lines)
 
-### SUMMARY.md
+### summary.md
 **Goal**: High-level summary of the work done
 **Audience**: Product managers, tech leads, stakeholders
 **Length**: Executive (~200 lines)
 
 ## 💡 Pro Tips
 
-1. **First time?** Read QUICKSTART.md, then run `make test/api/quick`
+1. **First time?** Read quickstart.md, then run `make test/api/quick`
 2. **Writing tests?** Study the examples in `integration_test.go`
-3. **Debugging?** Check troubleshooting in QUICKSTART.md
-4. **Reviewing PR?** Read IMPROVEMENTS.md for changes
-5. **Planning work?** Check "TODO" sections in README.md
+3. **Debugging?** Check troubleshooting in quickstart.md
+4. **Reviewing PR?** Read improvements.md for changes
+5. **Planning work?** Check "TODO" sections in readme.md
 
 ## 🔗 Related Documentation
 
-- Root [`README.md`](../../README.md) - Project overview
+- Root [`readme.md`](../../readme.md) - Project overview
 - [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md) - Build instructions
 - [`docs-internal/TODO_INTEGRATION_TESTS.md`](../../docs-internal/TODO_INTEGRATION_TESTS.md) - Original TODO
 
@@ -118,12 +118,12 @@ Each document has a specific purpose:
 ## 🎓 Learning Path
 
 **Level 1: User**
-1. Read QUICKSTART.md
+1. Read quickstart.md
 2. Run `make test/api/quick`
 3. Verify tests pass
 
 **Level 2: Developer**
-1. Read README.md
+1. Read readme.md
 2. Study `integration_test.go`
 3. Write a new test
 

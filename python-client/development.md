@@ -2,7 +2,7 @@
 
 This directory contains the Python client library for the Hermes document management system.
 
-See the main [README.md](../README.md) for installation and usage instructions.
+See the main [readme.md](../readme.md) for installation and usage instructions.
 
 ## Development
 
@@ -83,6 +83,6 @@ python-client/
 │   ├── test_models.py
 │   └── test_utils.py
 ├── pyproject.toml        # Package configuration
-├── README.md             # Documentation
+├── readme.md             # Documentation
 └── .python-version       # Python version
 ```

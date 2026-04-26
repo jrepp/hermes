@@ -47,7 +47,7 @@ go test -tags=integration ./...
 tests/integration/edgesync/
 ├── main_test.go               # TestMain entry point, fixture setup
 ├── edge_sync_auth_test.go     # Authentication middleware tests
-└── README.md                  # This file
+└── readme.md                  # This file
 ```
 
 ### Test Coverage

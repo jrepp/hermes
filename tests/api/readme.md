@@ -24,7 +24,7 @@ Tests are separated into two categories:
 
 ```
 tests/api/
-├── README.md                        # This file
+├── readme.md                        # This file
 ├── unit_test.go                     # Unit tests (no dependencies)
 ├── integration_test.go              # Integration tests (requires containers)
 ├── integration_containers_test.go   # Testcontainers setup

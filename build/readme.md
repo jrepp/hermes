@@ -59,7 +59,7 @@ All build artifacts are automatically placed here by the Makefile and test scrip
 
 ## Git Exclusions
 
-All contents of this directory (except README.md and .gitkeep) are excluded from git via `.gitignore`.
+All contents of this directory (except readme.md and .gitkeep) are excluded from git via `.gitignore`.
 
 ## Directory Purposes
 

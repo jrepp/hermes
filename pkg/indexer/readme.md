@@ -217,5 +217,5 @@ if useNewIndexer {
 
 - [Implementation Guide](../../docs-internal/INDEXER_IMPLEMENTATION_GUIDE.md)
 - [Refactor Plan](../../docs-internal/INDEXER_REFACTOR_PLAN.md)
-- [Workspace Providers](../workspace/README.md)
-- [Search Providers](../search/README.md)
+- [Workspace Providers](../workspace/readme.md)
+- [Search Providers](../search/readme.md)

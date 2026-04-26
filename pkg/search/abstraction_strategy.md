@@ -171,8 +171,8 @@ _, err = client.Docs.SaveObject(doc)
 - `pkg/search/adapters/algolia/adapter.go` - Main implementation
 - `pkg/search/adapters/algolia/adapter_test.go` - Unit tests
 - `pkg/search/adapters/algolia/doc.go` - Package documentation
-- `pkg/search/adapters/algolia/README.md` - Usage guide
-- `pkg/search/adapters/algolia/MIGRATION.md` - Migration notes
+- `pkg/search/adapters/algolia/readme.md` - Usage guide
+- `pkg/search/adapters/algolia/migration.md` - Migration notes
 
 ### Legacy Compatibility
 - `pkg/algolia/client.go` - Wrapper around adapter

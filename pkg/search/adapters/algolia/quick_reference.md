@@ -78,9 +78,9 @@ handler := algoSearch.ProxyHandler(logger)
 ## Documentation
 
 For complete details, see:
-- `docs-internal/ADAPTER_MIGRATION_COMPLETE.md` - Full migration summary
-- `pkg/search/adapters/algolia/MIGRATION.md` - Adapter-specific details
-- `pkg/search/ABSTRACTION_STRATEGY.md` - Architecture overview
+- `docs-internal/ADAPTER_MIGRATION_complete.md` - Full migration summary
+- `pkg/search/adapters/algolia/migration.md` - Adapter-specific details
+- `pkg/search/abstraction_strategy.md` - Architecture overview
 
 ## Using Adapters (For New Code)
 

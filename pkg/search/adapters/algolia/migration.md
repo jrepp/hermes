@@ -6,7 +6,7 @@ The Algolia implementation has been **fully migrated** from `pkg/algolia` to `pk
 
 **Status**: ✅ **COMPLETE** - Legacy code removed, all tests passing, builds successfully
 
-See also: `pkg/search/ABSTRACTION_STRATEGY.md` for the full architectural approach.
+See also: `pkg/search/abstraction_strategy.md` for the full architectural approach.
 
 ## What Was Migrated
 
@@ -26,8 +26,8 @@ pkg/search/adapters/algolia/
 ├── adapter.go          # Main adapter implementation
 ├── adapter_test.go     # Unit tests
 ├── doc.go              # Package documentation
-├── MIGRATION.md        # This file
-└── README.md           # Usage documentation
+├── migration.md        # This file
+└── readme.md           # Usage documentation
 ```
 
 ### ~~Legacy Compatibility Layer~~ [REMOVED]

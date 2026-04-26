@@ -9,10 +9,10 @@ fixtures/
 ├── rfcs/
 │   └── rfc-template.md          # RFC template
 ├── prds/
-│   └── PRD-TEMPLATE.md          # PRD template
+│   └── prd-template.md          # PRD template
 ├── meetings/
 │   └── (meeting notes templates)
-└── README.md                     # This file
+└── readme.md                     # This file
 ```
 
 ## Templates
@@ -39,7 +39,7 @@ generate_rfc 1 "$(generate_uuid)" "My RFC Title" > workspace/testing/rfcs/RFC-00
 
 ### PRD Template
 
-**File**: `prds/PRD-TEMPLATE.md`
+**File**: `prds/prd-template.md`
 
 Product Requirements Document template with:
 - Executive summary
@@ -51,7 +51,7 @@ Product Requirements Document template with:
 **Usage**:
 ```bash
 # Manually
-cp fixtures/prds/PRD-TEMPLATE.md workspaces/testing/prds/PRD-001-my-feature.md
+cp fixtures/prds/prd-template.md workspaces/testing/prds/PRD-001-my-feature.md
 
 # Or use the generator
 source scripts/lib/document-generator.sh
@@ -137,7 +137,7 @@ The `scripts/lib/document-generator.sh` library provides programmatic generation
 - `generate_meeting_notes(number, uuid, title, attendees, date, created)`
 - `generate_doc_page(title, uuid, category, author, created)`
 
-**See**: `scripts/README.md` for detailed usage
+**See**: `scripts/readme.md` for detailed usage
 
 ## Best Practices
 
@@ -181,4 +181,4 @@ When creating templates, use these placeholders:
 - **Generator Library**: `../scripts/lib/document-generator.sh`
 - **Seed Script**: `../scripts/seed-workspaces.sh`
 - **Architecture**: `../DISTRIBUTED_TESTING_ENHANCEMENTS.md`
-- **Projects Config**: `../projects/README.md`
+- **Projects Config**: `../projects/readme.md`

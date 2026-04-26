@@ -11,8 +11,8 @@ The auth adapter system has been fully implemented and is ready for use. This do
 pkg/auth/
 ├── doc.go              # Package documentation
 ├── auth.go             # Provider interface, middleware, helpers
-├── README.md           # User guide and examples
-├── IMPLEMENTATION.md   # Technical implementation details
+├── readme.md           # User guide and examples
+├── implementation.md   # Technical implementation details
 └── adapters/
     ├── google/
     │   └── adapter.go  # Google OAuth implementation
@@ -291,8 +291,8 @@ func (a *SAMLAdapter) Name() string { return "saml" }
 
 ## 📚 Documentation Files
 
-- **`pkg/auth/README.md`** - Executive summary and usage guide
-- **`pkg/auth/IMPLEMENTATION.md`** - Technical implementation details
+- **`pkg/auth/readme.md`** - Executive summary and usage guide
+- **`pkg/auth/implementation.md`** - Technical implementation details
 - **`pkg/auth/doc.go`** - Go package documentation
 - **This file** - Complete reference guide
 

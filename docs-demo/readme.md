@@ -4,9 +4,9 @@ This folder contains all materials for the Hermes Local-First Document Managemen
 
 ## 📂 Contents
 
-- **`DEMO-NARRATIVE.md`** - Complete presentation script and talking points
+- **`demo-narrative.md`** - Complete presentation script and talking points
 - **`DEMO-SCRIPT.sh`** - Automated demo execution script
-- **`DEMO-README.md`** - Quick start guide for demo execution
+- **`DEMO-readme.md`** - Quick start guide for demo execution
 - **`demo1/`** - Example configurations and scripts
 
 ## 🚀 Quick Start
@@ -171,7 +171,7 @@ The demo is organized into four sections:
 
 ### Modify the Narrative
 
-Edit `DEMO-NARRATIVE.md` to:
+Edit `demo-narrative.md` to:
 - Add organization-specific context
 - Highlight particular features
 - Adjust timing for different audiences
@@ -198,7 +198,7 @@ HERMES_ROOT=path   # Path to Hermes repo (default: ..)
 2. ✅ **Pre-start services**: Run `cd testing && docker compose up -d`
 3. ✅ **Prepare browser**: Open http://localhost:4201 in advance
 4. ✅ **Large fonts**: Use 16-18pt terminal font for visibility
-5. ✅ **Review narrative**: Read DEMO-NARRATIVE.md for talking points
+5. ✅ **Review narrative**: Read demo-narrative.md for talking points
 
 ### During Presentation
 
@@ -270,23 +270,23 @@ docker compose up -d
 ## 📚 Additional Resources
 
 ### Documentation
-- [Testing Environment Guide](../testing/README.md)
+- [Testing Environment Guide](../testing/readme.md)
 - [Configuration Documentation](../docs-internal/CONFIG_HCL_DOCUMENTATION.md)
-- [ADR-071: Local File Workspace](../docs-internal/adr/ADR-071-local-file-workspace-system.md)
-- [ADR-073: Provider Abstraction](../docs-internal/adr/ADR-073-provider-abstraction-architecture.md)
-- [RFC-080: Document Sync](../docs-internal/rfc/RFC-080-outbox-pattern-document-sync.md)
+- [ADR-071: Local File Workspace](../docs-internal/adr/adr-071-local-file-workspace-system.md)
+- [ADR-073: Provider Abstraction](../docs-internal/adr/adr-073-provider-abstraction-architecture.md)
+- [RFC-080: Document Sync](../docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md)
 
 ### Related Guides
-- [Dex Authentication Setup](../docs-internal/README-dex.md)
-- [Local Workspace Setup](../docs-internal/README-local-workspace.md)
-- [Meilisearch Configuration](../docs-internal/README-meilisearch.md)
+- [Dex Authentication Setup](../docs-internal/memo/README-dex.md)
+- [Local Workspace Setup](../docs-internal/memo/README-local-workspace.md)
+- [Meilisearch Configuration](../docs-internal/memo/README-meilisearch.md)
 - [Playwright E2E Testing](../docs-internal/PLAYWRIGHT_E2E_AGENT_GUIDE.md)
 
 ## 🤝 Post-Demo Follow-Up
 
 ### Share with Stakeholders
 
-1. **DEMO-NARRATIVE.md** - Complete context and talking points
+1. **demo-narrative.md** - Complete context and talking points
 2. **ADR-073** - Provider abstraction architecture
 3. **ADR-071** - Local file workspace system
 4. **RFC-080** - Document migration design
@@ -308,7 +308,7 @@ docker compose up -d
 For questions about the demo:
 - Technical details: See ADRs in `docs-internal/adr/`
 - Architecture decisions: See RFCs in `docs-internal/rfc/`
-- Setup issues: See `testing/README.md`
+- Setup issues: See `testing/readme.md`
 
 ## 📜 License
 
@@ -318,6 +318,6 @@ Follow project license for code artifacts. Demo materials are for internal use.
 
 **Quick Links**:
 - [Run Demo](./DEMO-SCRIPT.sh)
-- [Narrative](./DEMO-NARRATIVE.md)
-- [Setup Guide](./DEMO-README.md)
-- [Main README](../README.md)
+- [Narrative](./demo-narrative.md)
+- [Setup Guide](./DEMO-readme.md)
+- [Main README](../readme.md)

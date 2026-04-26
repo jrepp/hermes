@@ -63,4 +63,4 @@ When adding new scripts:
 ## Related Documentation
 
 - [Validation Tools Guide](/docs/development/validation-tools.md)
-- [Quick Start Guide](/VALIDATION-QUICK-START.md)
+- [Quick Start Guide](/validation-quick-start.md)

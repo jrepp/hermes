@@ -308,8 +308,8 @@ Expected coverage: **78-85%** (CLI has lower coverage as it's not tested yet)
 3. `tests/test_client.py` - 5 tests, ~80 lines
 
 ### Documentation
-4. `TESTING_AND_VALIDATION_SUMMARY.md` - This file
-5. `PYTHON_VERSION_ISSUE.md` - Detailed issue explanation and solutions
+4. `testing_and_validation_summary.md` - This file
+5. `python_version_issue.md` - Detailed issue explanation and solutions
 
 **Total new code**: ~430 lines of test code + ~200 lines of documentation
 

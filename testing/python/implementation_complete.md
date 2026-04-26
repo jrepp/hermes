@@ -163,7 +163,7 @@ validator.set_token_refresh(
 
 ### Created Files (10)
 
-1. **`testing/python/OAUTH_AUTOMATION_GUIDE.md`** (550+ lines)
+1. **`testing/python/oauth_automation_guide.md`** (550+ lines)
    - Complete OAuth authentication guide
    - 4 authentication methods documented
    - CI/CD integration examples
@@ -221,7 +221,7 @@ validator.set_token_refresh(
 5. **`python-client/src/hc_hermes/models.py`**
    - Made `WebConfig.base_url` optional (API doesn't return it)
 
-6. **`testing/Makefile`** and **`testing/README.md`**
+6. **`testing/Makefile`** and **`testing/readme.md`**
    - From previous work
 
 ---
@@ -327,7 +327,7 @@ python3 scenario_automated.py --google-auth
 
 All documentation is comprehensive and production-ready:
 
-- **`OAUTH_AUTOMATION_GUIDE.md`**: 550+ lines covering all auth scenarios
+- **`oauth_automation_guide.md`**: 550+ lines covering all auth scenarios
 - **`auth_helper.py`**: Fully documented with docstrings and examples
 - **`scenario_automated.py`**: Inline help and error messages
 - **`scenario_long_running.py`**: Token refresh demonstration

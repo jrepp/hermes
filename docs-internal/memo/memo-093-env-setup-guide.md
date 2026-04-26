@@ -1,10 +1,21 @@
+---
+id: memo-093
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: bd259e44-a5d8-4a7b-a7b1-b4df75161021
+status: Draft
+title: "Environment Variables Setup Guide"
+---
 # Environment Variables Setup Guide
 
 ## Quick Start
 
 1. **Copy the template**:
+
    ```bash
    cp .env.template .env
+
    ```
 
 2. **Fill in required credentials** in `.env`:
@@ -335,6 +346,7 @@ Environment variables override configuration file values in this order (highest 
 3. **Default values** (hardcoded)
 
 Example:
+
 ```bash
 # config.hcl has: database { password = "config-password" }
 # .env has: HERMES_SERVER_POSTGRES_PASSWORD=env-password
@@ -363,6 +375,7 @@ export $(cat .env | xargs) && make go/test
 # With PostgreSQL (Docker)
 make docker/postgres/start
 export $(cat .env | xargs) && make go/test/with-docker-postgres
+
 ```
 
 ### Frontend Tests (Ember)
@@ -385,6 +398,7 @@ export $(cat .env | xargs) && ./hermes server -config=config.hcl
 
 # In terminal 2: Start frontend
 cd web && yarn start
+
 ```
 
 ## Security Best Practices
@@ -410,6 +424,7 @@ Make sure you've downloaded your Google Service Account JSON key and placed it i
 ### PostgreSQL connection errors
 
 Verify PostgreSQL is running:
+
 ```bash
 make docker/postgres/start
 # Check it's accessible
@@ -419,3 +434,4 @@ psql postgresql://postgres:postgres@localhost:5432/hermes
 ## CI/CD Notes
 
 For GitHub Actions and production deployments, set these as **repository secrets** or **environment variables** in your CI/CD platform, not in `.env` files.
+

@@ -1,3 +1,12 @@
+---
+id: memo-102
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: f6198856-b0ac-48d6-b15b-9aa98b961f50
+status: Draft
+title: "UUID-Based Document Identification Migration Guide"
+---
 # UUID-Based Document Identification Migration Guide
 
 ## Overview
@@ -42,12 +51,13 @@ Three core types for document identification:
 ```go
 type Document struct {
     // ... existing fields ...
-    
+
     // New fields (all nullable for gradual migration)
     DocumentUUID *docid.UUID `gorm:"type:uuid;uniqueIndex:idx_documents_uuid"`
     ProviderType *string     `gorm:"type:varchar(50)"`
     ProjectID    *string     `gorm:"type:varchar(64)"`
 }
+
 ```
 
 ### Helper Methods
@@ -81,16 +91,18 @@ db.AutoMigrate(models.ModelsToAutoMigrate()...)
 
 **URL Pattern Changes**:
 
-```
+```text
 # Existing (still works)
 GET /api/v2/documents/{googleFileID}
 
 # New formats (now supported)
 GET /api/v2/documents/{uuid}
 GET /api/v2/documents/uuid/{uuid}
+
 ```
 
 **Regex Update**:
+
 ```go
 // Before
 `^\/api\/v2\/%s\/([0-9A-Za-z_\-]+)$`
@@ -100,6 +112,7 @@ GET /api/v2/documents/uuid/{uuid}
 ```
 
 **Lookup Logic**:
+
 ```go
 // Before
 model := models.Document{GoogleFileID: docID}
@@ -108,6 +121,7 @@ model.Get(srv.DB)
 // After (automatic fallback)
 model := models.Document{}
 model.GetByGoogleFileIDOrUUID(srv.DB, docID)
+
 ```
 
 **Examples**:
@@ -145,6 +159,7 @@ type Document struct {
     Name        string
     // ... other fields ...
 }
+
 ```
 
 **Integration Point**: Higher-level code (API handlers, indexer) can populate `CompositeID` when correlating workspace documents with database models.
@@ -190,11 +205,14 @@ hermes operator assign-uuids --config config.hcl --batch-size 50
 ### Unit Tests
 
 **pkg/docid Tests** (96.1% coverage):
+
 ```bash
 go test -v ./pkg/docid/...
+
 ```
 
 **pkg/models Tests** (Document UUID methods):
+
 ```bash
 # Non-database tests
 go test -v ./pkg/models/... -run 'TestDocument.*UUID'
@@ -206,8 +224,10 @@ HERMES_TEST_POSTGRESQL_DSN="..." go test -v ./pkg/models/... -run TestDocument_G
 ### Integration Tests
 
 **API UUID Tests** (requires integration environment):
+
 ```bash
 go test -v ./tests/api/... -tags=integration -run TestDocuments.*UUID
+
 ```
 
 Test scenarios:
@@ -225,29 +245,35 @@ Test scenarios:
 ### For Operators
 
 1. **Deploy the branch**:
+
    ```bash
    git checkout jrepp/dev-tidy
    make build
    ```
 
 2. **Start the server** (AutoMigrate creates columns):
+
    ```bash
    ./hermes server -config=config.hcl
+
    ```
 
 3. **Verify schema migration**:
+
    ```sql
    \d documents
    -- Should show: document_uuid, provider_type, project_id columns
    ```
 
 4. **Assign UUIDs** (optional, can be done anytime):
+
    ```bash
    # Preview first
    ./hermes operator assign-uuids --config config.hcl --dry-run
-   
+
    # Execute
    ./hermes operator assign-uuids --config config.hcl
+
    ```
 
 5. **Monitor**:
@@ -258,43 +284,47 @@ Test scenarios:
 ### For Developers
 
 1. **Use new UUID-based lookups** (optional, both work):
+
    ```go
    // Option 1: Auto-fallback (recommended)
    doc := models.Document{}
    doc.GetByGoogleFileIDOrUUID(db, idString)
-   
+
    // Option 2: Explicit UUID lookup
    uuid, _ := docid.ParseUUID(uuidString)
    doc.GetByUUID(db, uuid)
-   
+
    // Option 3: GoogleFileID (still works)
    doc := models.Document{GoogleFileID: fileID}
    doc.Get(db)
    ```
 
 2. **Generate UUIDs for new documents**:
+
    ```go
    doc := &models.Document{
        GoogleFileID: "...",
        // ... other fields ...
    }
-   
+
    // Option 1: Let GetDocumentUUID generate one
    uuid := doc.GetDocumentUUID()
-   
+
    // Option 2: Explicitly assign
    uuid := docid.NewUUID()
    doc.SetDocumentUUID(uuid)
+
    ```
 
 3. **Use CompositeID for cross-provider references**:
+
    ```go
    compositeID := docid.NewCompositeID(
        uuid,
        providerID,
        "rfc-archive",
    )
-   
+
    // Serialization options
    short := compositeID.ShortString()       // "uuid:550e8400-..."
    uri := compositeID.URIString()           // "hermes://rfc-archive/google:1abc..."
@@ -310,6 +340,7 @@ If issues arise, rollback is safe because:
 3. **Operator Command**: Can be re-run anytime (idempotent)
 
 **To rollback**:
+
 ```bash
 # 1. Revert to previous branch
 git checkout main
@@ -325,6 +356,7 @@ make build
 psql -c "ALTER TABLE documents DROP COLUMN document_uuid;"
 psql -c "ALTER TABLE documents DROP COLUMN provider_type;"
 psql -c "ALTER TABLE documents DROP COLUMN project_id;"
+
 ```
 
 ## Performance Considerations
@@ -337,7 +369,7 @@ psql -c "ALTER TABLE documents DROP COLUMN project_id;"
 ## Documentation References
 
 - **Design**: `docs-internal/DOCID_PACKAGE_ANALYSIS.md` (1,100+ lines)
-- **Implementation**: `docs-internal/DOCID_PACKAGE_IMPLEMENTATION.md` (550+ lines)
+- **Implementation**: `docs-internal/DOCID_PACKAGE_implementation.md` (550+ lines)
 - **Architecture**: `docs-internal/DISTRIBUTED_PROJECTS_ARCHITECTURE.md` (original requirements)
 
 ## Commit History
@@ -365,3 +397,4 @@ Potential next steps (not in this PR):
 - **CompositeID API**: Return CompositeID in API responses
 - **RemoteHermes Provider**: Implement remote document federation
 - **UUID-first Lookup**: Switch default lookup order once most documents have UUIDs
+

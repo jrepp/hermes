@@ -60,13 +60,13 @@ Updated `testing/Makefile` with new targets:
 
 Created two comprehensive guides:
 
-**`testing/scripts/DEPRECATED.md`** (80 lines):
+**`testing/scripts/deprecated.md`** (80 lines):
 - Deprecation notice
 - Command mapping table
 - Feature comparison
 - Migration timeline
 
-**`testing/python/CLI_GUIDE.md`** (350+ lines):
+**`testing/python/cli_guide.md`** (350+ lines):
 - Complete CLI reference
 - Subcommand documentation
 - Examples for all use cases
@@ -268,8 +268,8 @@ All tests pass (15+ tests).
 ### Created
 
 - `testing/python/hermes_test.py` (440 lines) - Main CLI tool
-- `testing/python/CLI_GUIDE.md` (350 lines) - User guide
-- `testing/scripts/DEPRECATED.md` (80 lines) - Migration guide
+- `testing/python/cli_guide.md` (350 lines) - User guide
+- `testing/scripts/deprecated.md` (80 lines) - Migration guide
 
 ### Modified
 
@@ -312,8 +312,8 @@ All tests pass (15+ tests).
 - ✅ All subcommands have `--help`
 - ✅ Linting passes (`ruff check .`)
 - ✅ Type checking passes (implicit via Pydantic)
-- ✅ Documentation complete (CLI_GUIDE.md)
-- ✅ Migration guide created (DEPRECATED.md)
+- ✅ Documentation complete (cli_guide.md)
+- ✅ Migration guide created (deprecated.md)
 - ✅ Makefile integration complete
 - ✅ Python 3.9 compatibility verified
 - ✅ OAuth token refresh tested
@@ -343,8 +343,8 @@ feat(testing): unified Python CLI replacing bash scripts
   - Corrected MPL-2.0 classifier format
   - Updated requires-python to >=3.9 (from 3.10, supports macOS)
 - Created comprehensive documentation
-  - CLI_GUIDE.md (350 lines) - Complete CLI reference with examples
-  - DEPRECATED.md (80 lines) - Bash→Python migration guide
+  - cli_guide.md (350 lines) - Complete CLI reference with examples
+  - deprecated.md (80 lines) - Bash→Python migration guide
 
 **Key Technical Decisions**:
 - argparse over click: Stdlib, no extra deps, simpler for this use case
@@ -372,7 +372,7 @@ feat(testing): unified Python CLI replacing bash scripts
 - Integration: Tested against running Hermes at localhost:8001
 
 **Files**:
-- Created: hermes_test.py, CLI_GUIDE.md, DEPRECATED.md
+- Created: hermes_test.py, cli_guide.md, deprecated.md
 - Modified: testing/python/pyproject.toml, testing/Makefile, python-client/pyproject.toml
 - Deprecated: testing/scripts/{seed-workspaces,scenario-basic,lib/document-generator}.sh
 ```

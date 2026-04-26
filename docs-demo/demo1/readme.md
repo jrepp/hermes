@@ -316,12 +316,12 @@ docker compose logs hermes-backend | grep -i auth
 
 ## Related Documentation
 
-- [Testing Environment Guide](../../testing/README.md)
-- [Local Workspace Documentation](../../docs-internal/README-local-workspace.md)
-- [Dex Authentication Setup](../../docs-internal/README-dex.md)
-- [Meilisearch Configuration](../../docs-internal/README-meilisearch.md)
-- [ADR-071: Local File Workspace](../../docs-internal/adr/ADR-071-local-file-workspace-system.md)
-- [ADR-073: Provider Abstraction](../../docs-internal/adr/ADR-073-provider-abstraction-architecture.md)
+- [Testing Environment Guide](../../testing/readme.md)
+- [Local Workspace Documentation](../../docs-internal/memo/README-local-workspace.md)
+- [Dex Authentication Setup](../../docs-internal/memo/README-dex.md)
+- [Meilisearch Configuration](../../docs-internal/memo/README-meilisearch.md)
+- [ADR-071: Local File Workspace](../../docs-internal/adr/adr-071-local-file-workspace-system.md)
+- [ADR-073: Provider Abstraction](../../docs-internal/adr/adr-073-provider-abstraction-architecture.md)
 
 ## Key Takeaways
 

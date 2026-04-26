@@ -31,11 +31,11 @@ pip install -e ".[dev,cli]"
 
 ### Usage
 
-See [README.md](README.md) for comprehensive usage examples.
+See [readme.md](readme.md) for comprehensive usage examples.
 
 ## Development
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for development setup and contributing guidelines.
+See [development.md](development.md) for development setup and contributing guidelines.
 
 ## Integration with Hermes
 

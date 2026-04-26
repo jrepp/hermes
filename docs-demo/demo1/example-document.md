@@ -163,7 +163,7 @@ providers {
 **Deliverables**:
 - `testing/docker-compose.yml` - Local environment
 - `tests/e2e-playwright/` - E2E test suite
-- `testing/README.md` - Testing documentation
+- `testing/readme.md` - Testing documentation
 
 ### Phase 4: Migration Pipeline (✅ Complete)
 
@@ -286,11 +286,11 @@ providers {
 
 ## References
 
-- [ADR-071: Local File Workspace System](../../docs-internal/adr/ADR-071-local-file-workspace-system.md)
-- [ADR-072: Dex OIDC Authentication](../../docs-internal/adr/ADR-072-dex-oidc-authentication-for-development.md)
-- [ADR-073: Provider Abstraction Architecture](../../docs-internal/adr/ADR-073-provider-abstraction-architecture.md)
-- [ADR-075: Meilisearch as Local Search Solution](../../docs-internal/adr/ADR-075-meilisearch-as-local-search-solution.md)
-- [RFC-080: Outbox Pattern Document Sync](../../docs-internal/rfc/RFC-080-outbox-pattern-document-sync.md)
+- [ADR-071: Local File Workspace System](../../docs-internal/adr/adr-071-local-file-workspace-system.md)
+- [ADR-072: Dex OIDC Authentication](../../docs-internal/adr/adr-072-dex-oidc-authentication-for-development.md)
+- [ADR-073: Provider Abstraction Architecture](../../docs-internal/adr/adr-073-provider-abstraction-architecture.md)
+- [ADR-075: Meilisearch as Local Search Solution](../../docs-internal/adr/adr-075-meilisearch-as-local-search-solution.md)
+- [RFC-080: Outbox Pattern Document Sync](../../docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md)
 
 ## Appendix A: Provider Comparison
 

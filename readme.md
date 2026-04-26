@@ -48,7 +48,7 @@ yarn start:proxy  # Auto-detects backend on port 8000
 \`\`\`
 
 **Next Steps**:
-- 📖 [Testing Environment Guide](testing/README.md) - Detailed setup and troubleshooting
+- 📖 [Testing Environment Guide](testing/readme.md) - Detailed setup and troubleshooting
 - 🔧 [Configuration Guide](docs-internal/CONFIG_HCL_DOCUMENTATION.md) - Customize your setup
 - 🧪 [Makefile Targets](docs-internal/MAKEFILE_ROOT_TARGETS.md) - Common development commands
 
@@ -132,21 +132,21 @@ providers {
 ### Provider Guides
 
 **Authentication Providers**:
-- 🔐 [Dex (Local)](docs-internal/README-dex.md) - Recommended for development
-- 🔐 [Google OAuth](docs-internal/README-google-workspace.md) - Production with Workspace
-- 🔐 [Okta](docs-internal/README-auth-providers.md) - Enterprise SSO
+- 🔐 [Dex (Local)](docs-internal/memo/README-dex.md) - Recommended for development
+- 🔐 [Google OAuth](docs-internal/memo/README-google-workspace.md) - Production with Workspace
+- 🔐 [Okta](docs-internal/memo/README-auth-providers.md) - Enterprise SSO
 
 **Workspace Providers** (document storage):
-- 📁 [Local Workspace](docs-internal/README-local-workspace.md) - Filesystem-based, for development
-- 📁 [Google Workspace](docs-internal/README-google-workspace.md) - Google Docs integration
+- 📁 [Local Workspace](docs-internal/memo/README-local-workspace.md) - Filesystem-based, for development
+- 📁 [Google Workspace](docs-internal/memo/README-google-workspace.md) - Google Docs integration
 
 **Search Providers**:
-- 🔍 [Meilisearch](docs-internal/README-meilisearch.md) - Self-hosted, open-source
-- 🔍 [Algolia](docs-internal/README-algolia.md) - Managed, cloud-hosted
+- 🔍 [Meilisearch](docs-internal/memo/README-meilisearch.md) - Self-hosted, open-source
+- 🔍 [Algolia](docs-internal/memo/README-algolia.md) - Managed, cloud-hosted
 
 **Infrastructure**:
-- 🗄️ [PostgreSQL](docs-internal/README-postgresql.md) - Primary database
-- 🎫 [Jira Integration](docs-internal/README-jira.md) - Optional project linking
+- 🗄️ [PostgreSQL](docs-internal/memo/README-postgresql.md) - Primary database
+- 🎫 [Jira Integration](docs-internal/memo/README-jira.md) - Optional project linking
 
 ## 🛠️ Development
 
@@ -243,24 +243,24 @@ cd web && yarn test:types
 ## 📚 Documentation
 
 ### Getting Started
-- [Testing Environment](testing/README.md) - Complete local setup
+- [Testing Environment](testing/readme.md) - Complete local setup
 - [Configuration Guide](docs-internal/CONFIG_HCL_DOCUMENTATION.md) - All config options
 - [Makefile Targets](docs-internal/MAKEFILE_ROOT_TARGETS.md) - Development workflows
 
 ### Provider Setup
-- [Dex Authentication](docs-internal/README-dex.md) - Local auth for development
-- [Google Workspace](docs-internal/README-google-workspace.md) - Production document storage
-- [Local Workspace](docs-internal/README-local-workspace.md) - Filesystem-based storage
-- [Meilisearch](docs-internal/README-meilisearch.md) - Self-hosted search
-- [Algolia](docs-internal/README-algolia.md) - Managed search
-- [PostgreSQL](docs-internal/README-postgresql.md) - Database setup
-- [Jira Integration](docs-internal/README-jira.md) - Project management integration
+- [Dex Authentication](docs-internal/memo/README-dex.md) - Local auth for development
+- [Google Workspace](docs-internal/memo/README-google-workspace.md) - Production document storage
+- [Local Workspace](docs-internal/memo/README-local-workspace.md) - Filesystem-based storage
+- [Meilisearch](docs-internal/memo/README-meilisearch.md) - Self-hosted search
+- [Algolia](docs-internal/memo/README-algolia.md) - Managed search
+- [PostgreSQL](docs-internal/memo/README-postgresql.md) - Database setup
+- [Jira Integration](docs-internal/memo/README-jira.md) - Project management integration
 
 ### Architecture & Development
-- [Auth Providers Overview](docs-internal/README-auth-providers.md) - All authentication options
+- [Auth Providers Overview](docs-internal/memo/README-auth-providers.md) - All authentication options
 - [Architecture Diagrams](docs-internal/AUTH_ARCHITECTURE_DIAGRAMS.md) - System design
-- [ADRs](docs-internal/adr/README.md) - Architecture decisions
-- [RFCs](docs-internal/rfc/README.md) - Technical proposals
+- [ADRs](docs-internal/adr/readme.md) - Architecture decisions
+- [RFCs](docs-internal/rfc/readme.md) - Technical proposals
 - [Agent Instructions](.github/copilot-instructions.md) - AI-assisted development
 
 ## 🚢 Production Deployment

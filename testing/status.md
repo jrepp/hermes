@@ -100,12 +100,12 @@ Validation correctly detected:
 - `tests/integration/migration/fixture_test.go` (88 lines)
 
 ### Documentation (~2,700 lines)
-- `testing/MIGRATION-TESTING-GO.md` (520 lines) ⭐ **Start here**
-- `testing/GO-MIGRATION-COMPLETE.md` (250 lines)
-- `testing/SHELL-SCRIPTS-REMOVED.md` (200 lines)
-- `testing/GO-TESTING-MIGRATION-SUMMARY.md` (650 lines)
-- `testing/STATUS.md` (this file)
-- Updated: `testing/README-MIGRATION-TESTS.md`
+- `testing/migration-testing-go.md` (520 lines) ⭐ **Start here**
+- `testing/go-migration-complete.md` (250 lines)
+- `testing/shell-scripts-removed.md` (200 lines)
+- `testing/go-testing-migration-summary.md` (650 lines)
+- `testing/status.md` (this file)
+- Updated: `testing/readme-migration-tests.md`
 
 ### Makefile Targets
 - 7 new targets for testing
@@ -175,12 +175,12 @@ Validation correctly detected:
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| **[STATUS.md](STATUS.md)** | **This file - Quick overview** | Everyone |
-| [MIGRATION-TESTING-GO.md](MIGRATION-TESTING-GO.md) | Complete Go testing guide | Developers |
-| [README-MIGRATION-TESTS.md](README-MIGRATION-TESTS.md) | Quick start guide | New users |
-| [GO-TESTING-MIGRATION-SUMMARY.md](GO-TESTING-MIGRATION-SUMMARY.md) | Detailed summary | Reviewers |
-| [SHELL-SCRIPTS-REMOVED.md](SHELL-SCRIPTS-REMOVED.md) | Script removal docs | Migration context |
-| [GO-MIGRATION-COMPLETE.md](GO-MIGRATION-COMPLETE.md) | Migration completion | Historical record |
+| **[status.md](status.md)** | **This file - Quick overview** | Everyone |
+| [migration-testing-go.md](migration-testing-go.md) | Complete Go testing guide | Developers |
+| [readme-migration-tests.md](readme-migration-tests.md) | Quick start guide | New users |
+| [go-testing-migration-summary.md](go-testing-migration-summary.md) | Detailed summary | Reviewers |
+| [shell-scripts-removed.md](shell-scripts-removed.md) | Script removal docs | Migration context |
+| [go-migration-complete.md](go-migration-complete.md) | Migration completion | Historical record |
 
 ---
 

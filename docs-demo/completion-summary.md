@@ -9,7 +9,7 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 
 ### Core Documentation
 
-1. **DEMO-NARRATIVE.md** (14KB)
+1. **demo-narrative.md** (14KB)
    - Complete presentation script with talking points
    - 20-minute demo flow (10 min demo + 10 min Q&A)
    - Concrete metrics and data points from codebase
@@ -17,7 +17,7 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
    - Q&A section with anticipated questions
    - Roadmap and next steps
 
-2. **DEMO-README.md** (8KB)
+2. **DEMO-readme.md** (8KB)
    - Quick start guide for demo execution
    - Demo structure breakdown
    - Execution tips for presenters
@@ -34,7 +34,7 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
    - Service health verification
    - Color-coded output for visibility
 
-4. **README.md** (8KB)
+4. **readme.md** (8KB)
    - Overview of demo materials
    - Quick start instructions
    - Key messages and value propositions
@@ -49,7 +49,7 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 
 ### Demo Examples
 
-6. **demo1/README.md** (7KB)
+6. **demo1/readme.md** (7KB)
    - Local-first development walkthrough
    - Configuration examples (local vs. production)
    - Performance comparison table
@@ -132,7 +132,7 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 
 **Status**: Not created (optional)
 **Reason**: Demo is terminal/browser-based, slides would be redundant
-**Alternative**: DEMO-NARRATIVE.md serves as presentation guide
+**Alternative**: demo-narrative.md serves as presentation guide
 **If needed later**: Could generate reveal.js slides from narrative
 
 ### Graphical Diagrams
@@ -205,10 +205,10 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 1. **Preparation** (15 minutes):
    ```bash
    # Read narrative
-   cat docs-demo/DEMO-NARRATIVE.md
+   cat docs-demo/demo-narrative.md
 
    # Review demo guide
-   cat docs-demo/DEMO-README.md
+   cat docs-demo/DEMO-readme.md
 
    # Test run script
    ./docs-demo/DEMO-SCRIPT.sh
@@ -228,11 +228,11 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
    # Option 1: Automated
    ./docs-demo/DEMO-SCRIPT.sh
 
-   # Option 2: Manual (follow DEMO-NARRATIVE.md)
+   # Option 2: Manual (follow demo-narrative.md)
    ```
 
 4. **Post-Demo**:
-   - Share DEMO-NARRATIVE.md with stakeholders
+   - Share demo-narrative.md with stakeholders
    - Reference ADRs/RFCs for technical details
    - Schedule follow-up discussions
 
@@ -240,7 +240,7 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 
 1. **Local Testing**:
    ```bash
-   # Follow demo1/README.md
+   # Follow demo1/readme.md
    cd testing && docker compose up -d
    open http://localhost:4201
    ```
@@ -293,7 +293,7 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
    - Publish for async viewing
 
 4. **Generate Slides** (if needed):
-   - Convert DEMO-NARRATIVE.md to reveal.js
+   - Convert demo-narrative.md to reveal.js
    - Add visual diagrams
    - Include code snippets
 
@@ -332,13 +332,13 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 ```
 docs-demo/
 ├── .instructions.txt              # Quick reference (0.5KB)
-├── COMPLETION-SUMMARY.md          # This file (summary of deliverables)
-├── DEMO-NARRATIVE.md              # Presentation script (14KB)
-├── DEMO-README.md                 # Setup guide (8KB)
+├── completion-summary.md          # This file (summary of deliverables)
+├── demo-narrative.md              # Presentation script (14KB)
+├── DEMO-readme.md                 # Setup guide (8KB)
 ├── DEMO-SCRIPT.sh                 # Automated demo (12KB, executable)
-├── README.md                      # Overview (8KB)
+├── readme.md                      # Overview (8KB)
 └── demo1/
-    ├── README.md                  # Local development guide (7KB)
+    ├── readme.md                  # Local development guide (7KB)
     └── example-document.md        # Sample RFC document (5KB)
 
 Total: 8 files, ~54KB of documentation

@@ -46,7 +46,7 @@ All tests **PASS** ✓
 
 | Metric | Count |
 |--------|-------|
-| New test files | 2 (`integration_test.go`, `README.md`) |
+| New test files | 2 (`integration_test.go`, `readme.md`) |
 | New passing tests | 7 |
 | Compilation errors fixed | 8 |
 | Runtime errors fixed | 2 |
@@ -68,8 +68,8 @@ tests/api/
 ### After
 ```
 tests/api/
-├── README.md            # ✨ Comprehensive documentation
-├── IMPROVEMENTS.md      # ✨ Detailed change summary
+├── readme.md            # ✨ Comprehensive documentation
+├── improvements.md      # ✨ Detailed change summary
 ├── integration_test.go  # ✨ 7 new passing tests
 ├── documents_test.go    # Fixed compilation, skipped (needs handler refactor)
 ├── suite.go             # ✨ Enhanced with seeding
@@ -103,7 +103,7 @@ The tests in `documents_test.go` are **intentionally skipped** (not deleted) bec
 
 1. **Root Cause**: API handlers (`internal/api/documents.go`) are tightly coupled to Algolia's concrete types
 2. **Not a Test Problem**: The tests are correctly written but can't work without handler refactoring
-3. **Clear Path Forward**: README.md documents 3 solution options with pros/cons
+3. **Clear Path Forward**: readme.md documents 3 solution options with pros/cons
 
 ### Why This Was the Right Call
 - ✅ Preserves test code for future use
@@ -164,10 +164,10 @@ The `tests/` directory is now:
 ## 📁 Files Changed
 
 ### New Files
-- `tests/api/README.md` (180 lines)
-- `tests/api/IMPROVEMENTS.md` (140 lines)  
+- `tests/api/readme.md` (180 lines)
+- `tests/api/improvements.md` (140 lines)  
 - `tests/api/integration_test.go` (262 lines)
-- `tests/api/SUMMARY.md` (this file)
+- `tests/api/summary.md` (this file)
 
 ### Modified Files
 - `tests/api/suite.go` (+30 lines - seedDatabase)

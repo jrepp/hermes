@@ -496,7 +496,7 @@ printf "%s" "$TOKEN" > /tmp/edge-sync-token.txt
 chmod 600 /tmp/edge-sync-token.txt
 ```
 
-**Token Rotation** (See `docs/development/EDGE-TOKEN-ROTATION-GUIDE.md`):
+**Token Rotation** (See `docs/development/edge-token-rotation-guide.md`):
 - Supports multiple active tokens per service
 - Overlapping validity periods for zero-downtime rotation
 - Individual token expiration and revocation
@@ -521,7 +521,7 @@ func (IndexerToken) TableName() string {
 
 **Files Created**:
 - `docs/development/rfc-085-phase3-authentication.md` (547 lines) - Complete authentication implementation guide
-- `docs/development/EDGE-TOKEN-ROTATION-GUIDE.md` (560 lines) - Token rotation procedures and best practices
+- `docs/development/edge-token-rotation-guide.md` (560 lines) - Token rotation procedures and best practices
 
 **Key Topics**:
 - Token generation and validation
@@ -663,7 +663,7 @@ func (IndexerToken) TableName() string {
 | `internal/migrate/migrations/000009_rename_indexer_tokens_to_service_tokens.down.sql` | 28 | Token table rename (down) |
 | `internal/api/v2/edge_sync_auth.go` | 132 | Authentication middleware |
 | `docs/development/rfc-085-phase3-authentication.md` | 547 | Authentication guide |
-| `docs/development/EDGE-TOKEN-ROTATION-GUIDE.md` | 560 | Token rotation guide |
+| `docs/development/edge-token-rotation-guide.md` | 560 | Token rotation guide |
 | `testing/test-edge-sync-api.sh` | 238 | Integration tests |
 | `docs/development/rfc-085-implementation-status.md` | - | This document |
 

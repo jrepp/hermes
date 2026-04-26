@@ -50,7 +50,7 @@ testing/
     ├── docs.hcl              # DOCS - Public documentation
     ├── _template-google.hcl  # Template (not loaded)
     ├── _template-migration.hcl  # Template (not loaded)
-    └── README.md             # Detailed documentation
+    └── readme.md             # Detailed documentation
 ```
 
 **Active test projects**:
@@ -62,7 +62,7 @@ testing/
 - Migration scenario (Google → Git)
 - Remote Hermes federation example
 
-See `projects/README.md` for detailed configuration guide.
+See `projects/readme.md` for detailed configuration guide.
 
 **For internal deployments**: Create `projects.local.hcl` or individual `projects/*.local.hcl` files (gitignored).
 
@@ -151,7 +151,7 @@ make test-distributed-py            # Start + seed + scenario + validate
 - ✅ Automatic retries for indexing waits
 - ✅ Easier to maintain and extend
 
-**Documentation**: See `python/README.md` for comprehensive guide (600+ lines)
+**Documentation**: See `python/readme.md` for comprehensive guide (600+ lines)
 
 ### Available Scenarios
 
@@ -416,7 +416,7 @@ hermes/
 ├── Makefile                    # Root make targets
 ├── scripts/
 │   ├── canary-local.sh        # Local canary test
-│   └── README.md
+│   └── readme.md
 └── testing/                    # Complete containerized environment
     ├── docker-compose.yml     # Full stack definition
     ├── Dockerfile.hermes      # Backend container
@@ -425,7 +425,7 @@ hermes/
     ├── config.hcl             # Test configuration
     ├── Makefile               # Testing commands
     ├── quick-test.sh          # One-command startup
-    └── README.md              # Detailed documentation
+    └── readme.md              # Detailed documentation
 ```
 
 ---
@@ -484,6 +484,6 @@ The Hermes server command currently requires a working Algolia connection even i
    - Reference: `internal/cmd/commands/canary/canary.go` (has `-search-backend` flag)
 
 4. **Read the Docs**:
-   - `scripts/README.md` - Canary test details
-   - `testing/README.md` - Full containerized setup guide
+   - `scripts/readme.md` - Canary test details
+   - `testing/readme.md` - Full containerized setup guide
    - `.github/copilot-instructions.md` - Build standards and workflows

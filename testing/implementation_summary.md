@@ -36,7 +36,7 @@ End-to-end scenario validation:
 #### 4. Document Templates (`fixtures/`)
 Reusable templates for manual document creation:
 - `fixtures/rfcs/rfc-template.md`
-- `fixtures/prds/PRD-TEMPLATE.md`
+- `fixtures/prds/prd-template.md`
 - Complete with frontmatter and structure
 
 #### 5. Enhanced Makefile Targets
@@ -57,18 +57,18 @@ make workspace-clean    # Clean workspaces
 ```
 testing/
 ├── DISTRIBUTED_TESTING_ENHANCEMENTS.md  # Design document
-├── IMPLEMENTATION_SUMMARY.md            # This file
+├── implementation_summary.md            # This file
 ├── Makefile                             # Enhanced with new targets
 ├── scripts/                             # NEW: Automation
 │   ├── lib/
 │   │   └── document-generator.sh        # Generator library
 │   ├── seed-workspaces.sh               # Workspace seeding
 │   ├── scenario-basic.sh                # Basic E2E test
-│   └── README.md                        # Scripts documentation
+│   └── readme.md                        # Scripts documentation
 ├── fixtures/                            # NEW: Templates
 │   ├── rfcs/rfc-template.md
-│   ├── prds/PRD-TEMPLATE.md
-│   └── README.md                        # Fixtures documentation
+│   ├── prds/prd-template.md
+│   └── readme.md                        # Fixtures documentation
 └── workspaces/                          # Document storage
     ├── testing/                         # Populated by seeds
     │   ├── rfcs/
@@ -200,12 +200,12 @@ Documents generated: 10
 2. **`testing/scripts/lib/document-generator.sh`** - Generator library (603 lines)
 3. **`testing/scripts/seed-workspaces.sh`** - Seeding script (300+ lines)
 4. **`testing/scripts/scenario-basic.sh`** - Basic E2E test (100+ lines)
-5. **`testing/scripts/README.md`** - Scripts documentation
-6. **`testing/fixtures/README.md`** - Fixtures documentation
+5. **`testing/scripts/readme.md`** - Scripts documentation
+6. **`testing/fixtures/readme.md`** - Fixtures documentation
 7. **`testing/fixtures/rfcs/rfc-template.md`** - RFC template
-8. **`testing/fixtures/prds/PRD-TEMPLATE.md`** - PRD template
+8. **`testing/fixtures/prds/prd-template.md`** - PRD template
 9. **`testing/Makefile`** - Enhanced with 8 new targets
-10. **`testing/README.md`** - Updated with distributed testing section
+10. **`testing/readme.md`** - Updated with distributed testing section
 
 ## Commit Message
 
@@ -283,8 +283,8 @@ INDEXER_AND_LOCAL_MODE_GUIDE.md
 ## References
 
 - **Design Document**: `testing/DISTRIBUTED_TESTING_ENHANCEMENTS.md`
-- **Scripts README**: `testing/scripts/README.md`
-- **Fixtures README**: `testing/fixtures/README.md`
+- **Scripts README**: `testing/scripts/readme.md`
+- **Fixtures README**: `testing/fixtures/readme.md`
 - **Architecture**: `docs-internal/DISTRIBUTED_PROJECTS_ARCHITECTURE.md`
 - **Indexer Guide**: `docs-internal/INDEXER_AND_LOCAL_MODE_GUIDE.md`
 - **Makefile Targets**: `docs-internal/MAKEFILE_ROOT_TARGETS.md`

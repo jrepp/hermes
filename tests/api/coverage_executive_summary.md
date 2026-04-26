@@ -39,13 +39,13 @@ Also measured: **pkg/models** has 6.1% coverage (short mode)
 
 ### 📊 Coverage Files Created
 
-1. **`COVERAGE_REPORT.md`** (400+ lines)
+1. **`coverage_report.md`** (400+ lines)
    - Detailed analysis
    - Function-by-function breakdown
    - Goals and recommendations
    - How to generate integration coverage
 
-2. **`COVERAGE_SUMMARY.md`** (200+ lines)
+2. **`coverage_summary.md`** (200+ lines)
    - Quick stats and visuals
    - Coverage goals
    - Next steps
@@ -151,18 +151,18 @@ go test -coverprofile=coverage_app.out ./pkg/... ./internal/...
 
 ### In `tests/api/`
 ```
-COVERAGE_REPORT.md          # Detailed analysis
-COVERAGE_SUMMARY.md         # Quick reference
+coverage_report.md          # Detailed analysis
+coverage_summary.md         # Quick reference
 coverage_unit.html          # Interactive visualization ⭐
 coverage_unit.out           # Raw data
 ```
 
 ### Context Documents
 ```
-REFACTORING_SUMMARY.md      # What changed
-TEST_SEPARATION_GUIDE.md    # How to write tests
-QUICKTEST.md                # Quick verification
-README.md                   # Full documentation
+refactoring_summary.md      # What changed
+test_separation_guide.md    # How to write tests
+quicktest.md                # Quick verification
+readme.md                   # Full documentation
 ```
 
 ## Key Takeaways

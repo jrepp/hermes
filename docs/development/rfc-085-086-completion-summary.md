@@ -127,7 +127,7 @@ unauthenticatedEndpoints := []endpoint{
    - Security considerations
    - Monitoring and troubleshooting
 
-2. **EDGE-TOKEN-ROTATION-GUIDE.md** (560 lines)
+2. **edge-token-rotation-guide.md** (560 lines)
    - Overlapping token rotation strategy
    - Multiple tokens per service explanation
    - Automated rotation scripts
@@ -483,7 +483,7 @@ curl -H "Authorization: Bearer $HERMES_EDGE_TOKEN" \
 
 ### Implementation Guides
 - `docs/development/rfc-085-phase3-authentication.md`
-- `docs/development/EDGE-TOKEN-ROTATION-GUIDE.md`
+- `docs/development/edge-token-rotation-guide.md`
 - `docs/development/rfc-085-implementation-status.md`
 
 ### Code Locations

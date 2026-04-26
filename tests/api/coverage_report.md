@@ -223,7 +223,7 @@ go tool cover -html=coverage_integration.out -o coverage_integration.html
 ### Coverage Reports
 - ✅ `tests/api/coverage_unit.out` - Raw unit test coverage data
 - ✅ `tests/api/coverage_unit.html` - HTML visualization (open in browser)
-- 📝 `tests/api/COVERAGE_REPORT.md` - This report
+- 📝 `tests/api/coverage_report.md` - This report
 
 ### How to View HTML Report
 

@@ -339,7 +339,7 @@ This CI infrastructure was inspired by the patterns in:
 
 ### Related Documentation
 - [Pre-commit Hooks](../../docs/PRE_COMMIT_HOOKS.md)
-- [Deployment Guide](../../scripts/deployment/README.md)
+- [Deployment Guide](../../scripts/deployment/readme.md)
 
 ## Support
 
