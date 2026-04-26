@@ -1,8 +1,17 @@
+---
+id: memo-089
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: a72cbef8-7b55-40a1-a799-b82ca3f53a58
+status: Draft
+title: "config-example.hcl Documentation Enhancement"
+---
 # config-example.hcl Documentation Enhancement
 
-**Date**: October 8, 2025  
-**Status**: Complete  
-**Files Modified**: `config-example.hcl`  
+**Date**: October 8, 2025
+**Status**: Complete
+**Files Modified**: `config-example.hcl`
 
 ## Overview
 
@@ -122,12 +131,15 @@ Each example includes:
 ## Verification
 
 ✅ **Syntax Valid**: Config file parses correctly
+
 ```bash
 cp config-example.hcl config.hcl
 ./hermes server -config=config.hcl -help
+
 ```
 
 ✅ **Server Starts**: Successfully loads and runs
+
 ```bash
 ./hermes server -config=config.hcl
 # Output: "Using workspace provider: local"
@@ -136,9 +148,11 @@ cp config-example.hcl config.hcl
 ```
 
 ✅ **Git Tracked**: Example file is now under version control
+
 ```bash
 git status config-example.hcl
 # Output: "new file:   config-example.hcl"
+
 ```
 
 ## Benefits
@@ -210,3 +224,4 @@ Potential improvements to consider:
 - Google workspace adapter: `pkg/workspace/adapters/google/`
 - Dex adapter: `pkg/auth/adapters/dex/`
 - Okta adapter: `pkg/auth/adapters/okta/`
+

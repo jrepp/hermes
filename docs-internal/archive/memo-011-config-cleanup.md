@@ -1,12 +1,15 @@
 ---
-id: memo-011-config-cleanup
-title: Configuration File Cleanup - Removing Duplicates
+id: memo-011
+title: "Configuration File Cleanup - Removing Duplicates"
 date: 2025-10-09
 type: memo
 status: completed
 tags: [configuration, cleanup, documentation]
 audience: [developers, maintainers]
 author: AI Agent
+created: 2025-10-09
+project_id: hermes
+doc_uuid: 79df9f23-60f8-49d1-a830-cec24c07fe29
 ---
 
 # Configuration File Cleanup - Removing Duplicates
@@ -42,17 +45,20 @@ The repository had multiple configuration files with overlapping purposes:
 ### Configuration File Inventory
 
 **Before Cleanup**:
-```
+
+```text
 ./config.hcl                  # 828 lines, comprehensive
 ./config-example.hcl          # 828 lines, nearly identical
 ./configs/config.hcl          # 246 lines, minimal template
 ./dex-config.yaml             # 77 lines, outdated
 ./testing/config.hcl          # 12K, testing environment
 ./testing/dex-config.yaml     # 2.4K, actively used
+
 ```
 
 **After Cleanup**:
-```
+
+```text
 ./config.hcl                  # 828 lines, comprehensive (KEPT)
 ./configs/config.hcl          # 246 lines, minimal template (KEPT)
 ./testing/config.hcl          # 12K, testing environment (KEPT)
@@ -62,6 +68,7 @@ The repository had multiple configuration files with overlapping purposes:
 ### File Comparison Details
 
 **config.hcl vs config-example.hcl** (8 line differences):
+
 ```diff
 145c145: template vs // template (RFC)
 149c149: // markdown_template vs markdown_template (RFC)
@@ -71,6 +78,7 @@ The repository had multiple configuration files with overlapping purposes:
 236c236: // markdown_template vs markdown_template (ADR)
 284c284: // markdown_template vs markdown_template (FRD)
 318c318: // markdown_template vs markdown_template (MEMO)
+
 ```
 
 **Conclusion**: `config-example.hcl` was just an alternative template configuration, not a separate example. The comprehensive `config.hcl` already serves as the primary documented example.
@@ -82,7 +90,7 @@ The repository had multiple configuration files with overlapping purposes:
 - `Makefile` - `make run` target
 - `testing/docker-compose.yml` - Mounted in containers
 - Multiple docs, memos, RFCs, ADRs - Example commands
-- README.md - Setup instructions
+- readme.md - Setup instructions
 
 **config-example.hcl references**: 0 matches (no usage)
 
@@ -130,6 +138,7 @@ The repository had multiple configuration files with overlapping purposes:
 ## Changes Made
 
 ### Removed Files
+
 ```bash
 rm config-example.hcl
 rm dex-config.yaml
@@ -141,7 +150,7 @@ rm dex-config.yaml
 - Updated Dex comments to reference `testing/dex-config.yaml` instead of `dex-config.yaml`
 - Lines 591-601: Updated comments to clarify Dex config location
 
-**File**: `docs-internal/todos/TODO-008-make-configuration-configurable.md`
+**File**: `docs-internal/todos/todo-008-make-configuration-configurable.md`
 - Removed `config-example.hcl` from checklist and references
 - Updated references to clarify `config.hcl` (828 lines) vs `configs/config.hcl` (246 lines)
 
@@ -155,11 +164,14 @@ rm dex-config.yaml
 ### Zero Breaking Changes
 
 ✅ **Native Development**: No change - still uses `config.hcl`
+
 ```bash
 ./hermes server -config=config.hcl
+
 ```
 
 ✅ **Testing Environment**: No change - docker-compose already used `testing/dex-config.yaml`
+
 ```bash
 make up  # Uses testing/docker-compose.yml with testing/dex-config.yaml
 ```
@@ -199,18 +211,19 @@ $ find . -maxdepth 2 -name "*.hcl" -o -name "*dex*.yaml" | sort
 # Docker compose still works
 $ cd testing && docker compose config | grep dex-config
 - ./dex-config.yaml:/etc/dex/config.yaml:ro
+
 ```
 
 ## Related Documentation
 
 - [CONFIG_HCL_DOCUMENTATION.md](./CONFIG_HCL_DOCUMENTATION.md) - Comprehensive config.hcl guide
 - [MAKEFILE_ROOT_TARGETS.md](./MAKEFILE_ROOT_TARGETS.md) - Development workflows
-- [testing/README.md](../testing/README.md) - Testing environment setup
+- [testing/readme.md](../testing/readme.md) - Testing environment setup
 - [ADR-072: Dex OIDC Authentication](./adr/adr-072-dex-oidc-authentication-for-development.md)
 
 ## Commit Message
 
-```
+```text
 docs: remove duplicate config files
 
 Remove config-example.hcl and dex-config.yaml as they are superseded by
@@ -258,3 +271,4 @@ sure example has everything it needs then remove ./config.hcl. remove
 2. **configs/ directory**: Consider if `configs/config.hcl` is still needed given the comprehensive root `config.hcl`
 3. **Config validation**: Add tests that validate config.hcl is parseable and complete
 4. **Template variables**: Consider using environment variable substitution instead of maintaining multiple config variants
+

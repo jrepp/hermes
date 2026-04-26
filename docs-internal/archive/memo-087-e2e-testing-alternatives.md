@@ -1,3 +1,12 @@
+---
+id: memo-087
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: d87a2ddf-f9e1-4d85-8027-6f0803186fe6
+status: Draft
+title: "Alternative E2E Testing Approaches for Hermes"
+---
 # Alternative E2E Testing Approaches for Hermes
 
 ## Problem Summary
@@ -22,9 +31,11 @@ Test the full document lifecycle through REST API calls, bypassing the frontend 
 - ✅ Can test local workspace document CRUD operations
 
 **Implementation:**
+
 ```bash
 # Run the API test
 ./tests/api/document-crud-test.sh
+
 ```
 
 **What it tests:**
@@ -45,6 +56,7 @@ Investigate and resolve the `precompileTemplate` runtime error.
 **Investigation Steps:**
 
 1. **Check for incompatible template imports:**
+
    ```bash
    # Search for problematic template compilation patterns
    cd web
@@ -57,11 +69,13 @@ Investigate and resolve the `precompileTemplate` runtime error.
    - Check `web/package.json` - verify ember-template-imports version
 
 3. **Test with a fresh build:**
+
    ```bash
    cd web
    rm -rf dist tmp node_modules/.cache
    yarn install
    yarn build
+
    ```
 
 4. **Check for dynamic component usage:**
@@ -69,10 +83,11 @@ Investigate and resolve the `precompileTemplate` runtime error.
    - Look for: `{{component}}` helper with dynamic names, lazy-loaded templates, or dynamic template strings
 
 5. **Bisect recent commits:**
+
    ```bash
    # Recent commits that touched web/
    git log --oneline -10 -- web/
-   
+
    # Test an earlier commit
    git checkout <earlier-commit-hash>
    cd testing && docker compose build web && docker compose up -d web
@@ -91,24 +106,29 @@ Investigate and resolve the `precompileTemplate` runtime error.
 Use existing Playwright tests but work around the rendering issue.
 
 **Approach A: Test earlier routes that might work:**
+
 ```typescript
 // Try routes that don't use the problematic component
 await page.goto('http://localhost:4201/authenticate');
 await page.goto('http://localhost:4201/my');
+
 ```
 
 **Approach B: Mock the problematic component:**
+
 ```javascript
 // In Mirage or test setup, stub out the failing component
 ```
 
 **Approach C: Use API + minimal UI validation:**
+
 ```bash
 # 1. Create document via API
 curl -X POST http://localhost:8001/api/v2/documents ...
 
 # 2. Verify it appears in search/listing (if those pages work)
 npx playwright test --grep "search"
+
 ```
 
 ---
@@ -123,6 +143,7 @@ Test individual components in isolation using Ember's test framework.
 - Faster feedback loop
 
 **Example:**
+
 ```bash
 cd web
 yarn test:integration --filter="DocumentEditor"
@@ -140,6 +161,7 @@ Combine multiple strategies for comprehensive coverage:
 3. **E2E tests** once the template issue is resolved
 
 **Workflow:**
+
 ```bash
 # 1. Run API tests (works now)
 ./tests/api/document-crud-test.sh
@@ -150,6 +172,7 @@ cd web && yarn test:integration
 # 3. Fix template issue, then run full E2E
 cd tests/e2e-playwright
 npx playwright test
+
 ```
 
 ---
@@ -211,3 +234,4 @@ npx playwright test
 3. 📝 **Document findings:** Update this file with root cause once identified
 4. ✅ **Fix and verify:** Apply fix, rebuild, test with playwright-mcp
 5. 🎯 **Maintain both:** Keep API tests + E2E tests for comprehensive coverage
+

@@ -1,3 +1,13 @@
+---
+id: rfc-088
+created: 2026-04-24
+title: "RFC-088 Week 8: Optimization Phase Progress"
+author: Hermes Team
+project_id: hermes
+doc_uuid: a1d79277-ae82-4de3-922d-332133701d41
+status: Draft
+---
+
 # RFC-088 Week 8: Optimization Phase Progress
 ## Performance Tuning and Efficiency Improvements
 
@@ -82,6 +92,7 @@ From Week 7 performance analysis, the following optimization opportunities were 
 Added comprehensive connection pooling configuration to the shared database connection layer:
 
 **Configuration Fields Added**:
+
 ```go
 type Config struct {
     // ... existing fields ...
@@ -92,6 +103,7 @@ type Config struct {
     ConnMaxLifetime time.Duration // Maximum connection lifetime (default: 5 minutes)
     ConnMaxIdleTime time.Duration // Maximum connection idle time (default: 10 minutes)
 }
+
 ```
 
 **Default Configuration**:
@@ -140,6 +152,7 @@ All tests passing ✅
 #### Monitoring
 
 Connection pool statistics can be monitored via `GetPoolStats()`:
+
 ```go
 stats, err := database.GetPoolStats(db)
 // Returns:
@@ -186,25 +199,30 @@ Created detailed analysis of all semantic and hybrid search queries:
 **Index Recommendations**:
 
 1. **Critical - Vector Index** (10-100x improvement):
+
 ```sql
 CREATE INDEX idx_embeddings_vector_ivfflat
 ON document_embeddings
 USING ivfflat (embedding_vector vector_cosine_ops)
 WITH (lists = 100);
+
 ```
 
 2. **Critical - Lookup Index** (10-100x improvement):
+
 ```sql
 CREATE INDEX idx_embeddings_lookup
 ON document_embeddings (document_id, model);
 ```
 
 3. **Optional - HNSW Index** (2-4x over IVFFlat):
+
 ```sql
 CREATE INDEX idx_embeddings_vector_hnsw
 ON document_embeddings
 USING hnsw (embedding_vector vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
+
 ```
 
 #### Implementation Roadmap
@@ -250,6 +268,7 @@ WITH (m = 16, ef_construction = 64);
 Replaced sequential search execution with true concurrent goroutines:
 
 **Before (Sequential)**:
+
 ```go
 keywordResults, keywordErr := h.performKeywordSearch(ctx, query, limit*2)
 semanticResults, semanticErr := h.performSemanticSearch(ctx, query, limit*2)
@@ -257,6 +276,7 @@ semanticResults, semanticErr := h.performSemanticSearch(ctx, query, limit*2)
 ```
 
 **After (Parallel)**:
+
 ```go
 // Launch both searches in goroutines
 go func() {
@@ -273,6 +293,7 @@ go func() {
 keywordRes := <-keywordChan
 semanticRes := <-semanticChan
 // Total time = max(keyword_time, semantic_time)
+
 ```
 
 #### Performance Impact
@@ -342,12 +363,14 @@ Applied to all database connections via `pkg/database/database.go`:
 ### Monitoring Recommendations
 
 **Connection Pool Monitoring**:
+
 ```go
 stats, err := database.GetPoolStats(db)
 // Monitor: OpenConnections, InUse, Idle, WaitCount, WaitDuration
 ```
 
 **Query Performance Monitoring**:
+
 ```sql
 -- Check index usage
 SELECT schemaname, tablename, indexname, idx_scan
@@ -359,6 +382,7 @@ SELECT query, mean_exec_time, calls
 FROM pg_stat_statements
 WHERE query LIKE '%document_embeddings%'
 ORDER BY mean_exec_time DESC;
+
 ```
 
 ---
@@ -499,3 +523,4 @@ ORDER BY mean_exec_time DESC;
 
 *Last Updated: November 15, 2025*
 *Week 8 Status: COMPLETE ✅*
+

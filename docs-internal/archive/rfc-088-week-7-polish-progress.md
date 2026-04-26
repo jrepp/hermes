@@ -1,3 +1,13 @@
+---
+id: rfc-088
+created: 2026-04-24
+title: "RFC-088 Week 7: Polish Phase - Testing and Quality"
+author: Hermes Team
+project_id: hermes
+doc_uuid: 8ffcabf7-d425-4a4a-813b-1f609cb3d9f9
+status: Draft
+---
+
 # RFC-088 Week 7: Polish Phase - Testing and Quality
 ## Progress Summary
 
@@ -63,6 +73,7 @@ Week 7 focuses on comprehensive testing, quality assurance, and error scenario v
 
 PASS
 ok  	github.com/hashicorp-forge/hermes/internal/api/v2	0.560s
+
 ```
 
 #### Test Approach
@@ -175,6 +186,7 @@ All RFC-088 related packages now pass golangci-lint:
 ### Why Error Path Testing?
 
 **Server struct uses concrete types**:
+
 ```go
 type Server struct {
     SemanticSearch *search.SemanticSearch
@@ -194,12 +206,14 @@ type Server struct {
 **Discovery**: Handlers check service availability **before** parsing request body.
 
 **Example flow**:
-```
+
+```text
 1. Check authentication ← Tests this
 2. Check service availability ← Tests this
 3. Parse request body
 4. Validate query
 5. Execute search
+
 ```
 
 **Benefit**: Fail fast if service is down, better error messages to clients.
@@ -245,6 +259,7 @@ type Server struct {
 
 #### Short Term (Week 7-8)
 1. Create search service interfaces:
+
 ```go
 type SemanticSearcher interface {
     Search(ctx context.Context, query string, limit int) ([]SemanticSearchResult, error)
@@ -258,11 +273,13 @@ type HybridSearcher interface {
 ```
 
 2. Update Server struct:
+
 ```go
 type Server struct {
     SemanticSearch SemanticSearcher  // Interface instead of concrete type
     HybridSearch HybridSearcher      // Interface instead of concrete type
 }
+
 ```
 
 3. Add comprehensive mock-based tests
@@ -425,3 +442,4 @@ type Server struct {
 ---
 
 *Last Updated: November 15, 2025*
+

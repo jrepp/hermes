@@ -147,7 +147,7 @@ npx playwright test --reporter=line --max-failures=1
 - `docs-internal/INDEXER_API_IMPLEMENTATION_CHECKLIST.md` - API design
 - `docs-internal/todos/indexer-refactor.md` - Phase tracking
 - `docs-internal/DATABASE_MIGRATION_REFACTORING_SUMMARY.md` - Migration strategy
-- `internal/db/migrations/README.md` - Migration guidelines
+- `internal/db/migrations/readme.md` - Migration guidelines
 
 ## 🔗 References
 **Models**: `pkg/models/*.go`  

@@ -105,7 +105,7 @@ cd testing && ./phase4-integration-test.sh
 
 **Files**:
 - `testing/phase4-integration-test.sh` (test script)
-- `docs-internal/todos/PHASE4_INTEGRATION_TEST_COMPLETE.md` (test results)
+- `docs-internal/todos/phase4_integration_test_complete.md` (test results)
 
 ---
 
@@ -126,7 +126,7 @@ cd testing && ./phase4-integration-test.sh
 - Multi-project workspaces
 
 **Files**:
-- `testing/local-hermes-example/README.md` (setup guide)
+- `testing/local-hermes-example/readme.md` (setup guide)
 - `testing/local-hermes-example/config.hcl` (example config)
 - `testing/local-hermes-example/projects.hcl` (project definitions)
 - `testing/local-hermes-example/users.json` (dev users)
@@ -154,7 +154,7 @@ cd testing && ./phase4-integration-test.sh
 
 **Files**:
 - `docs-internal/INDEXER_AND_LOCAL_MODE_GUIDE.md` (comprehensive guide)
-- `docs-internal/todos/LOCAL_WORKFLOW_PROGRESS_SUMMARY.md` (this file updated)
+- `docs-internal/todos/local_workflow_progress_summary.md` (this file updated)
 
 ---
 
@@ -292,12 +292,12 @@ hermes server -config=.hermes/config.hcl
 
 ### Implementation
 - `docs-internal/INDEXER_AND_LOCAL_MODE_GUIDE.md` (complete architecture)
-- `docs-internal/todos/PHASE4_INTEGRATION_TEST_COMPLETE.md` (test results)
-- `testing/local-hermes-example/README.md` (local mode setup)
+- `docs-internal/todos/phase4_integration_test_complete.md` (test results)
+- `testing/local-hermes-example/readme.md` (local mode setup)
 
 ### Testing
 - `testing/phase4-integration-test.sh` (integration tests)
-- `testing/README.md` (testing environment docs)
+- `testing/readme.md` (testing environment docs)
 
 ---
 

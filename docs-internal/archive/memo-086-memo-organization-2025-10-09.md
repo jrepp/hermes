@@ -1,6 +1,6 @@
 ---
-id: MEMO-086
-title: Memo Organization 2025-10-09
+id: memo-086
+title: "Memo Organization 2025-10-09"
 date: 2025-10-09
 type: Implementation
 status: Final
@@ -14,6 +14,10 @@ related:
   - MEMO-023
   - MEMO-052
   - MEMO-058
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 891d851f-14d5-4e21-a008-368f7c068d74
 ---
 
 # Memo Organization - October 9, 2025
@@ -26,7 +30,7 @@ Reorganized Hermes documentation into structured memos with YAML frontmatter for
 
 ### 1. Updated README Format
 
-Added frontmatter specification to `docs-internal/memo/README.md`:
+Added frontmatter specification to `docs-internal/memo/readme.md`:
 - YAML frontmatter with required fields (id, title, date, type, status, tags, related)
 - Clear documentation of memo types and status values
 - Examples showing proper frontmatter usage
@@ -96,10 +100,10 @@ related:
 
 ## File Locations
 
-```
+```text
 docs-internal/
 ├── memo/
-│   ├── README.md (updated with frontmatter spec)
+│   ├── readme.md (updated with frontmatter spec)
 │   ├── memo-004-agent-usage-analysis.md ✅
 │   ├── memo-008-auth-provider-quickref.md ✅
 │   ├── memo-016-deliverables-summary.md ✅
@@ -125,7 +129,8 @@ for f in docs-internal/memo/memo-*.md; do
 done
 
 # Check README updates
-grep "✅\|🔜" docs-internal/memo/README.md
+grep "✅\|🔜" docs-internal/memo/readme.md
+
 ```
 
 ## Next Steps
@@ -137,17 +142,17 @@ grep "✅\|🔜" docs-internal/memo/README.md
 
 ## Outcomes
 
-✅ **Structured Documentation**: All memos follow consistent format  
-✅ **Improved Discoverability**: Tags and frontmatter enable search  
-✅ **Clear Status Tracking**: ✅/🔜 indicators show progress  
-✅ **Better Organization**: Category-based index with completion status  
-✅ **Machine-Readable**: YAML frontmatter enables tooling  
+✅ **Structured Documentation**: All memos follow consistent format
+✅ **Improved Discoverability**: Tags and frontmatter enable search
+✅ **Clear Status Tracking**: ✅/🔜 indicators show progress
+✅ **Better Organization**: Category-based index with completion status
+✅ **Machine-Readable**: YAML frontmatter enables tooling
 
 ## Prompt Used
 
-```
-Update file:README.md to indicate the usage of frontmatter then go through 
-the recommended articles and file:DOCUMENT_CLASSIFICATION.csv to create a 
+```text
+Update file:readme.md to indicate the usage of frontmatter then go through
+the recommended articles and file:DOCUMENT_CLASSIFICATION.csv to create a
 set of usable memos
 ```
 
@@ -163,3 +168,4 @@ set of usable memos
 - README updated with frontmatter documentation
 - Index reorganized with ✅/🔜 status markers
 - Related links added between memos
+

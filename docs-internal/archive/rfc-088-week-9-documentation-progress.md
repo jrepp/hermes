@@ -1,3 +1,13 @@
+---
+id: rfc-088
+created: 2026-04-24
+title: "RFC-088 Week 9: Documentation and Examples Phase"
+author: Hermes Team
+project_id: hermes
+doc_uuid: c25cad96-4a1f-470a-9f11-732e7e16f3ca
+status: Draft
+---
+
 # RFC-088 Week 9: Documentation and Examples Phase
 ## User Documentation, API Examples, and Best Practices
 
@@ -100,7 +110,7 @@ Week 9 focuses on creating comprehensive user-facing documentation, API usage ex
 
 ## Completed Tasks
 
-### 1. API Usage Examples (docs/api/SEMANTIC-SEARCH-API.md)
+### 1. API Usage Examples (docs/api/semantic-search-api.md)
 
 **File**: 625 lines of comprehensive API documentation
 **Commit**: de50f9e
@@ -351,7 +361,7 @@ Week 9 focuses on creating comprehensive user-facing documentation, API usage ex
 
 ## Documentation Structure
 
-```
+```text
 docs/
 ├── api/
 │   ├── semantic-search.md
@@ -373,6 +383,7 @@ docs/
     ├── api-examples.md
     ├── configuration-examples.md
     └── deployment-examples.md
+
 ```
 
 ---
@@ -485,3 +496,4 @@ docs/
 
 *Last Updated: November 15, 2025*
 *Week 9 Status: COMPLETE ✅*
+

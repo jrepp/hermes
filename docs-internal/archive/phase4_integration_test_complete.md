@@ -73,7 +73,7 @@ docker compose logs hermes | grep heartbeat
 - Document local mode setup
 
 **Phase 6**: Documentation & E2E Tests
-- Update docs-internal/README.md
+- Update docs-internal/readme.md
 - Create E2E test for local → central flow
 - Write migration guide
 - Add troubleshooting section

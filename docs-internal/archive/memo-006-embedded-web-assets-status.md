@@ -1,6 +1,15 @@
+---
+id: memo-006
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 9d361a2d-cafe-4398-89f1-a85990d65f51
+status: Draft
+title: "Embedded Web Assets Status"
+---
 # Embedded Web Assets Status
 
-**Date**: October 27, 2025  
+**Date**: October 27, 2025
 **Status**: ✅ Web assets successfully embedded, ⚠️  Server startup blocked by SQLite driver conflict
 
 ## Summary
@@ -33,7 +42,7 @@ However, server startup is currently blocked by a SQLite driver registration con
 
 **Problem**: SQLite driver double-registration panic
 
-```
+```text
 panic: sql: Register called twice for driver sqlite
 
 goroutine 1 [running]:
@@ -41,6 +50,7 @@ database/sql.Register({0x105472b8f, 0x6}, {0x106258400, 0x10713ca30})
     /opt/homebrew/Cellar/go/1.25.2/libexec/src/database/sql/sql.go:63 +0x120
 modernc.org/sqlite.init.0()
     /Users/jrepp/go/pkg/mod/modernc.org/sqlite@v1.23.1/sqlite.go:125 +0x38
+
 ```
 
 **Root Cause**: Multiple SQLite drivers being imported into the same binary:
@@ -112,9 +122,10 @@ cd testing
 docker compose up -d postgres
 cd ..
 ./build/bin/hermes server -config=testing/config-native.hcl
+
 ```
 
-**Pros**: 
+**Pros**:
 - Works immediately
 - Full feature set available
 - Already tested and validated
@@ -190,6 +201,7 @@ strings build/bin/hermes | grep -i "ember" | head -5
 
 # 4. Check for setup wizard code
 strings build/bin/hermes | grep "setup-wizard"
+
 ```
 
 ### Alternative Testing (With Postgres)
@@ -244,6 +256,7 @@ github.com/glebarez/go-sqlite v1.21.2
 gorm.io/driver/sqlite v1.6.0
 modernc.org/sqlite v1.23.1
 github.com/mattn/go-sqlite3 v1.14.22
+
 ```
 
 ## Next Steps
@@ -269,3 +282,4 @@ github.com/mattn/go-sqlite3 v1.14.22
 The embedded web assets feature is **implemented and working** from a build perspective. The latest Ember build is successfully embedded in the Hermes binary. The blocking issue is a SQLite driver registration conflict that prevents the server from starting, which is a separate runtime dependency issue unrelated to the web asset embedding functionality.
 
 **Recommendation**: Proceed with testing using the Postgres configuration, then address the SQLite driver conflict as a separate task.
+

@@ -178,7 +178,7 @@ cannot find encode plan
 **Status**: 🚧 Not Started
 
 **Planned Work**:
-- Update `docs-internal/README.md` with local mode guide
+- Update `docs-internal/readme.md` with local mode guide
 - Create E2E test for local → central flow
 - Write migration guide for existing deployments
 - Document indexer API for external integrations
@@ -193,10 +193,10 @@ cannot find encode plan
 
 ### New Files (27):
 **Documentation**:
-- `docs-internal/todos/DATABASE_MIGRATION_FIX_SESSION.md`
-- `docs-internal/todos/LOCAL_WORKFLOW_FIX_STATUS.md`
-- `docs-internal/todos/WORKSPACE_PROJECTS_MIGRATION_COMPLETE.md`
-- `docs-internal/todos/LOCAL_WORKFLOW_PROGRESS_SUMMARY.md` (this file)
+- `docs-internal/todos/database_migration_fix_session.md`
+- `docs-internal/todos/local_workflow_fix_status.md`
+- `docs-internal/todos/workspace_projects_migration_complete.md`
+- `docs-internal/todos/local_workflow_progress_summary.md` (this file)
 
 **Migrations**:
 - `internal/db/migrations/000003_add_document_type_fields.up/down.sql`
@@ -293,9 +293,9 @@ cannot find encode plan
 
 - **RFC**: `docs-internal/rfc/local_developer_mode_with_central_hermes.md`
 - **Database Migration Strategy**: `docs-internal/DATABASE_MIGRATION_REFACTORING_SUMMARY.md`
-- **Workflow Status**: `docs-internal/todos/LOCAL_WORKFLOW_FIX_STATUS.md`
-- **Migration Fix Session**: `docs-internal/todos/DATABASE_MIGRATION_FIX_SESSION.md`
-- **Workspace Projects Migration**: `docs-internal/todos/WORKSPACE_PROJECTS_MIGRATION_COMPLETE.md`
+- **Workflow Status**: `docs-internal/todos/local_workflow_fix_status.md`
+- **Migration Fix Session**: `docs-internal/todos/database_migration_fix_session.md`
+- **Workspace Projects Migration**: `docs-internal/todos/workspace_projects_migration_complete.md`
 
 ---
 

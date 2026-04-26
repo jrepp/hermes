@@ -1,8 +1,17 @@
+---
+id: memo-031
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: dcca94a5-f4ba-4241-bd5e-ca542d98af76
+status: Draft
+title: "Auto-Migration Validation Summary"
+---
 # Auto-Migration Validation Summary
 
-**Date**: October 27, 2025  
-**Branch**: `jrepp/dev-tidy`  
-**Status**: ✅ ALL TESTS PASSED  
+**Date**: October 27, 2025
+**Branch**: `jrepp/dev-tidy`
+**Status**: ✅ ALL TESTS PASSED
 
 ## Overview
 
@@ -43,6 +52,7 @@ go tool nm build/bin/hermes | grep -c "modernc.org/sqlite"
 # Expected: 0
 # Actual: 0
 # Status: ✅ PASS
+
 ```
 
 ### Test 2: Migration Binary Has SQLite Support ✅
@@ -78,6 +88,7 @@ docker exec hermes-testing-postgres-1 psql -U postgres -d hermes_testing -c "SEL
 # Result: version=6, dirty=f
 
 # Status: ✅ PASS
+
 ```
 
 ### Test 4: Native Server Auto-Migration (Idempotent) ✅
@@ -113,6 +124,7 @@ docker compose ps
 
 # Expected: migrate (Exited 0), hermes (Up, healthy)
 # Status: ✅ PASS
+
 ```
 
 ### Test 6: Docker Compose Project Name ✅
@@ -124,7 +136,7 @@ docker compose ps
 # Expected: All containers prefixed with "hermes-testing-" or specific names
 # Actual:
 # - hermes-testing-postgres-1
-# - hermes-testing-meilisearch-1  
+# - hermes-testing-meilisearch-1
 # - hermes-migrate (custom name)
 # - hermes-server (custom name)
 # - hermes-web (custom name)
@@ -145,6 +157,7 @@ curl -I http://localhost:8001/health
 # Result: HTTP/1.1 200 OK
 
 # Status: ✅ PASS
+
 ```
 
 ### Test 8: SQLite Mode Rejection ✅
@@ -170,6 +183,7 @@ make web/build
 # Output: Built project successfully. Stored in "dist/".
 # Assets: 24 chunks, ~4.5MB total
 # Status: ✅ PASS
+
 ```
 
 ### Server Build ✅
@@ -192,6 +206,7 @@ make bin/migrate
 # Output: CGO_ENABLED=0 go build -o build/bin/hermes-migrate ./cmd/hermes-migrate
 # Binary Size: ~15MB
 # Status: ✅ PASS
+
 ```
 
 ## Configuration Validation
@@ -207,7 +222,7 @@ profile "local" {
     host    = "http://localhost:7701"  // ✅ Correct port
     api_key = "masterKey123"           // ✅ Matches testing env
   }
-  
+
   // PostgreSQL - connects to testing container
   postgres {
     dbname   = "hermes_testing"  // ✅ Correct database
@@ -216,7 +231,7 @@ profile "local" {
     user     = "postgres"
     password = "postgres"
   }
-  
+
   // Dex OIDC - connects to testing container
   dex {
     disabled      = false
@@ -276,28 +291,34 @@ All identified issues have been resolved:
 ### For Production Deployments
 
 1. **Use Docker Compose automated migration**:
+
    ```bash
    docker compose up -d
    # Migration runs automatically before server starts
+
    ```
 
 2. **For manual migrations** (CI/CD, maintenance):
+
    ```bash
    ./hermes-migrate -driver=postgres -dsn="..."
    ```
 
 3. **Monitor migration logs**:
+
    ```bash
    docker compose logs migrate
+
    ```
 
 ### For Local Development
 
 1. **Use native server with auto-migration**:
+
    ```bash
    # Start dependencies
    cd testing && docker compose up -d postgres meilisearch dex
-   
+
    # Run native server (auto-migrates)
    cd .. && ./build/bin/hermes server -config=testing/config-profiles.hcl -profile=local
    ```
@@ -311,8 +332,10 @@ All identified issues have been resolved:
 SQLite is **not supported** in the server binary. For SQLite databases:
 
 1. Use the migration binary:
+
    ```bash
    ./hermes-migrate -driver=sqlite -dsn=".hermes/hermes.db"
+
    ```
 
 2. Then connect with a different tool (e.g., custom application)
@@ -329,3 +352,4 @@ The auto-migration feature is production-ready with:
 - Comprehensive error handling and logging
 
 **Next Steps**: This implementation is ready for merge to main branch.
+

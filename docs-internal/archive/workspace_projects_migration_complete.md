@@ -147,8 +147,8 @@ Server now progresses past database initialization and only stops at authenticat
 
 - `pkg/models/workspace_project.go` - Model definition (source of truth)
 - `docs-internal/DISTRIBUTED_PROJECTS_ARCHITECTURE.md` - Project system design
-- `docs-internal/DATABASE_MIGRATION_FIX_SESSION.md` - Overall migration fix session
-- `docs-internal/todos/LOCAL_WORKFLOW_FIX_STATUS.md` - Current workflow status
+- `docs-internal/database_migration_fix_session.md` - Overall migration fix session
+- `docs-internal/todos/local_workflow_fix_status.md` - Current workflow status
 
 ## ✅ Success Metrics
 
