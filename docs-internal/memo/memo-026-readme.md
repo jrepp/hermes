@@ -1,100 +1,129 @@
+---
+id: memo-026
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 1f80098b-75c3-4ef1-b0be-8c4f459d40eb
+status: Draft
+title: "Memo Documents"
+---
 # Memo Documents
 
-Status updates, investigation findings, session summaries, quick reference guides, and completion reports from Hermes development.
+Implementation notes, quick reference guides, session summaries, and completion reports from Hermes development.
 
 ## Index
 
-### Quick Reference Guides ✅
+### Quick Reference Guides
 
-- **memo-008-auth-provider-quickref.md** - Quick reference for authentication provider configuration and selection
-- **memo-010-ember-dev-server.md** - Ember development server, proxy configuration, and upgrade strategy
-- **memo-017-dev-quickref.md** - Development workflow quick reference (build, test, deploy)
-- **memo-023-dex-quickstart.md** - Dex OIDC authentication quick start guide
-- **memo-035-env-setup.md** - **NEW!** Complete environment setup guide for new developers (10-minute quick start)
-- **memo-052-outbox-pattern-quickref.md** - Outbox pattern implementation quick reference with SQL queries and patterns
-- **memo-058-playwright-agent-guide.md** - Comprehensive guide for AI agents using Playwright for E2E testing
-- **memo-071-auth-providers-guide.md** - **NEW!** Complete authentication providers guide (Google, Okta, Dex)
-- **memo-073-docs-internal-hub.md** - **NEW!** Documentation hub and navigation guide
+- **memo-008** - Auth provider quick reference
+- **memo-010** - Ember dev server, proxy config, upgrade strategy
+- **memo-017** - Development workflow quick reference (build, test, deploy)
+- **memo-023** - Dex OIDC quick start guide
+- **memo-035** - Complete environment setup (10-minute quick start)
+- **memo-052** - Outbox pattern quick reference with SQL queries
+- **memo-058** - Playwright agent E2E testing guide
+- **memo-071** - Authentication providers guide (Google, Okta, Dex)
+- **memo-073** - Documentation hub and navigation guide
+- **memo-093** - Environment variables setup guide
+- **memo-096** - Makefile quick start targets
+- **memo-097** - Project config API usage guide
+- **memo-099** - Project config package implementation summary
 
-### Analysis & Metrics ✅
+### Component & Setup Guides
 
-- **memo-004-agent-usage-analysis.md** - Analysis of AI agent tool usage patterns and effectiveness
-- **memo-016-deliverables-summary.md** - Project deliverables and milestone summary
-- **memo-019-dev-velocity-analysis.md** - Development velocity metrics and analysis
+- **memo-012** - Algolia search provider setup
+- **memo-013** - Auth provider testing guide
+- **memo-014** - Dex OIDC local auth guide
+- **memo-015** - Google Workspace integration guide
+- **memo-018** - Hermes indexer readme
+- **memo-020** - Jira integration guide
+- **memo-021** - Local workspace provider setup
+- **memo-022** - Meilisearch setup guide
+- **memo-024** - Ollama AI provider setup
+- **memo-025** - PostgreSQL database setup
+- **memo-027** - Setup wizard guide
+- **memo-028** - Setup wizard Ollama integration
+- **memo-029** - Simplified local mode demo
 
-### Implementation Reports ✅
+### Analysis & Metrics
 
-- **memo-009-ai-session-playbook.md** - AI agent session playbook with success patterns and anti-patterns
-- **memo-011-config-cleanup.md** - Configuration file cleanup - removing duplicates (config-example.hcl, dex-config.yaml)
-- **memo-086-memo-organization-2025-10-09.md** - Documentation reorganization into structured memos
+- **memo-004** - AI agent tool usage patterns and effectiveness
+- **memo-005** - AI agent capabilities and limitations
+- **memo-007** - Human enablement patterns for AI agents
+- **memo-009** - AI session playbook (16 sessions analyzed)
+- **memo-019** - Development velocity metrics (10-15x speedup)
 
-### Current Planning Trackers
+### Implementation Reports
 
-- **2025-11-15-rfc-implementation-tracker.md** - Active RFC priority tracker and roadmapping notes
-- **2025-11-15-rfc-088-week1-2-complete.md** - RFC-088 milestone log (week 1-2)
-- **2025-11-15-rfc-088-week2-3-complete.md** - RFC-088 milestone log (week 2-3)
+- **memo-100** - AI prompt templates reference
+- **memo-101** - UUID integration summary
+- **memo-102** - UUID migration guide
+- **memo-104** - GTS template compilation debug log
+- **memo-105** - People API architecture clarification
 
-### Investigation & Root Cause Analysis 🔜
+### Simplified Mode (RFC-083) Reference
 
-- **MEMO-001-admin-login-hang-rootcause.md** - Root cause analysis for admin login dashboard loading spinner hang in Promise.all()
-- **MEMO-075-rootcause-fetchpeople-hang.md** - Root cause analysis for maybeFetchPeople hang causing admin login spinner issue
+- **memo-106** - Simplified mode architecture diagram
+- **memo-107** - Simplified mode implementation checklist
+- **memo-108** - Simplified mode summary
 
-### Implementation & Completion Reports 🔜
+### API Provider (RFC-085) Reference
 
-- **MEMO-025-doc-content-integration-complete.md** - Document content API integration test completion summary
-- **MEMO-045-local-workspace-complete.md** - Local workspace provider implementation completion report
-- **MEMO-084-testing-env-complete.md** - Testing environment setup and configuration completion
+- **memo-109** - API provider permissions appendix
 
-### README Files
+### Notification System (RFC-087) Reference
 
-- ✅ **memo-071-auth-providers-guide.md** - Authentication providers guide (Google, Okta, Dex)
-- 🔜 **MEMO-072-local-workspace-readme.md** - Local workspace provider setup and usage documentation
-- ✅ **memo-073-docs-internal-hub.md** - Main documentation hub for docs-internal directory structure
+- **memo-110** - Notification backend addendum
+- **memo-111** - Notification backends implementation
+- **memo-112** - Notification Docker Compose setup
+- **memo-113** - Notification message schema
+- **memo-114** - Notification template scheme
+- **memo-115** - Notification implementation status
 
-### Legacy Provider & Setup READMEs
+### Event-Driven Indexer (RFC-088) Reference
 
-- ✅ **README-algolia.md** - Algolia search provider setup and operations
-- ✅ **README-auth-providers.md** - Auth provider overview and selection
-- ✅ **README-dex.md** - Dex OIDC local auth setup
-- ✅ **README-google-workspace.md** - Google Workspace integration guide
-- ✅ **README-indexer.md** - Indexer architecture and provider mapping
-- ✅ **README-jira.md** - Jira integration guide
-- ✅ **README-meilisearch.md** - Meilisearch setup and tuning
-- ✅ **README-ollama.md** - Ollama provider and embedding setup
-- ✅ **README-postgresql.md** - PostgreSQL database setup
-- ✅ **README-local-workspace.md** - Local workspace provider setup
-- ✅ **SETUP_WIZARD_GUIDE.md** - Setup wizard implementation and usage
-- ✅ **SETUP_WIZARD_OLLAMA.md** - Ollama setup wizard extension notes
-- ✅ **SIMPLIFIED_MODE_DEMO.md** - Simplified mode demo instructions
-- ✅ **SQLITE_DRIVER_CONFLICT.md** - SQLite conflict rationale and migration notes
-- ✅ **VALIDATION_AUTO_MIGRATION.md** - Validation workflow and automatic migration notes
+- **memo-116** - Indexer architecture refactoring notes
+- **memo-117** - Event-driven indexer implementation summary
+- **memo-118** - Event-driven indexer production deployment
+- **memo-119** - Semantic search release notes
+- **memo-120** - Semantic search performance benchmarks
+- **memo-121** - Query optimization analysis
+- **memo-122** - Event-driven indexer testing status
+
+### S3 Storage (RFC-089) Reference
+
+- **memo-123** - S3 storage implementation summary
+
+### Planning Trackers
+
+- **memo-001** - RFC-088 milestone log (week 1-2)
+- **memo-002** - RFC-088 milestone log (week 2-3)
+- **memo-003** - Active RFC priority tracker and roadmap
+
+### E2E Testing
+
+- **memo-092** - E2E testing summary
 
 ## Document Organization
 
 Memos are organized by type:
-
-- **MEMO-NNN-*-rootcause.md**: Root cause analysis documents
-- **MEMO-NNN-*-complete.md**: Implementation completion reports  
-- **MEMO-NNN-*-quickref.md** / **NNN-*-quickstart.md**: Quick reference guides
-- **MEMO-NNN-*-readme.md**: README documentation
-- **MEMO-NNN-*-analysis.md**: Analysis and metrics documents
-- **MEMO-NNN-*-summary.md**: Session and feature summaries
-- **MEMO-NNN-*-validation.md**: Validation and test results
+- ***-quickref.md / *-quickstart.md**: Quick reference guides
+- ***-debug.md**: Debugging and investigation logs
+- ***-summary.md**: Implementation and feature summaries
+- ***-analysis.md**: Analysis and metrics documents
+- ***-guide.md**: Setup and usage guides
 
 ## Memo Format
 
-All memos MUST include YAML frontmatter for metadata tracking and searchability:
-
 ```markdown
 ---
-id: MEMO-NNN
+id: memo-NNN
 title: Descriptive Title
 date: YYYY-MM-DD
-type: Investigation | Implementation | Guide | Analysis | Validation | Session
+type: Investigation | Implementation | Guide | Analysis | Session
 status: Draft | Final | Archived
 tags: [tag1, tag2, tag3]
 related:
-  - MEMO-XXX
   - RFC-YYY
   - ADR-ZZZ
 ---
@@ -102,33 +131,15 @@ related:
 # Title
 
 ## Summary
-Brief overview of the memo's purpose
-
 ## Content
-Detailed information, findings, or instructions
-
 ## Outcomes/Next Steps
-Results, action items, or follow-up work
-
 ## References
-Related documents and resources
 ```
-
-**Frontmatter Fields**:
-- `id`: Sequential memo identifier (MEMO-001, MEMO-002, etc.)
-- `title`: Full descriptive title
-- `date`: Creation or last update date (YYYY-MM-DD)
-- `type`: Document category (see types below)
-- `status`: Draft (WIP), Final (complete), Archived (historical)
-- `tags`: Searchable keywords (e.g., authentication, testing, playwright)
-- `related`: Links to related documents (optional)
 
 ## Contributing
 
-When adding new memos:
 1. Assign next sequential ID (NNN format)
-2. Use descriptive kebab-case filename  
-3. Include type indicator in filename (-complete, -quickref, -analysis, etc.)
-4. Add front matter with date and type
-5. Link related RFCs, ADRs, and memos
-6. Update this README index in appropriate section
+2. Use descriptive kebab-case filename
+3. Include frontmatter with date and type
+4. Link related RFCs, ADRs, and memos
+5. Update this README index
