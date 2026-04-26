@@ -1,0 +1,138 @@
+# RFC Documents (Request for Comments)
+
+Architecture proposals, design documents, and implementation specifications for major features and refactorings in Hermes.
+
+## Quick Stats
+
+- **Total RFC docs**: 47
+- **Scope**: architecture proposals, implementation plans, status updates, and rollout notes
+
+## Current Patterns
+
+**Key Architectural Patterns** (as of October 2025):
+- **Provider Abstraction**: All external services (search, workspace, auth) use adapter pattern
+- **Backend Proxy**: Frontend proxies all API/search requests through backend (no direct Algolia)
+- **Multi-Auth Support**: Runtime selection of auth provider (Google/Okta/Dex) via flag/env var
+- **Profile-Based Config**: Single HCL file with multiple named environments
+- **Docker Testing**: Full containerized environment with Ember dev server + proxy
+
+**Frontend Development**:
+- Ember 6.7.0 with TypeScript and strict mode templates
+- Development server with `--proxy` flag (no nginx required)
+- MIRAGE_ENABLED=false for backend integration
+- Hot reload via Ember CLI dev server
+
+**Backend Development**:
+- Go 1.25.0+ with provider interfaces
+- Config via HCL with profile support (`-profile=testing`)
+- PostgreSQL + Meilisearch (local) or Algolia (production)
+- Dex OIDC for local auth, Google/Okta for production
+
+## Index by Category
+
+### Authentication & Authorization (5 RFCs)
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [007](007-multi-provider-auth-architecture.md) | Multi-Provider Auth Architecture | Implemented | Runtime auth provider selection (Google/Okta/Dex) with provider-specific headers |
+| [009](009-auth-provider-selection.md) | Auth Provider Selection | Implemented | Command-line flag and env var for explicit auth provider override |
+| [020](020-dex-authentication-implementation.md) | Dex OIDC Implementation | Implemented | Complete Dex integration for local development and testing |
+| [021](021-dex-authentication.md) | Dex Authentication | Implemented | Dex IDP architecture and deployment configurations |
+| [079](079-session-authentication-fix.md) | Session Authentication Fix | Implemented | Session-based auth flow for OIDC providers |
+
+### Search Architecture (4 RFCs)
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [051](051-outbox-pattern-design.md) | Outbox Pattern Design | Design Phase | Async search index updates with person/identity tracking and transactional consistency |
+| [076](076-search-auth-refactoring.md) | Search & Auth Refactoring | Implemented | Backend-only search eliminating direct Algolia access |
+| [077](077-search-endpoint-impl.md) | Search Endpoint Implementation | Implemented | Search endpoint design and implementation |
+| [078](078-search-service-migration.md) | Search Service Migration | Implemented | Migration to backend proxy pattern for search |
+
+### Document Management (2 RFCs)
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [026](026-document-editor.md) | Document Editor | Implemented | Smart editor supporting Google Workspace (iframe) and local workspace (text editor) |
+| [047](047-local-workspace-setup.md) | Local Workspace Setup | Implemented | File-based document storage provider for testing |
+
+### Frontend Infrastructure (3 RFCs)
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [033](033-ember-dev-server-migration.md) | Ember Dev Server Migration | Implemented | Migration from Mirage to backend proxy |
+| [034](034-ember-upgrade-strategy.md) | Ember Upgrade Strategy | Partially Complete | Strategy for Ember 6.x upgrade |
+| [037](037-frontend-proxy-config.md) | Frontend Proxy Config | Implemented | Frontend-to-backend proxy configuration |
+
+### Configuration & Deployment (2 RFCs)
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [050](050-oauth-redirect-baseurl.md) | OAuth Redirect BaseURL | Implemented | Environment-agnostic OAuth redirect configuration |
+| [068](068-workspace-provider-selection.md) | Workspace Provider Selection | Implemented | Runtime selection of storage backend (Google/Local/S3/Azure) |
+
+### User Experience (1 RFC)
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [083](rfc-083-simplified-local-mode.md) | Simplified Local Mode | Proposed | Zero-config single-binary CMS with embedded database and search |
+
+## Index by Status
+
+### ✅ Implemented (many)
+- Most historical RFC plans in this folder are implemented or superseded.
+
+## Index Notes
+
+- This index now includes milestone and completion notes for RFC-088 and RFC-089 in addition to earlier RFCs.
+
+### Proposed / In-Progress
+- **051** (Outbox Pattern), **083** (Simplified Local Mode), and newer entries listed with their in-file status.
+
+## Document Format
+
+Each RFC follows this structure:
+
+```markdown
+# RFC-NNN: Title
+
+**Status**: Design Phase | Implemented | Superseded
+**Date**: YYYY-MM-DD
+**Type**: RFC (Architecture | Configuration | Feature)
+**Related**: Links to related RFCs/ADRs
+
+## Context
+Problem statement and background
+
+## Proposal/Solution
+Architecture and implementation approach
+
+## Benefits
+Key advantages and improvements
+
+## Implementation Status
+Checkboxes for completed/pending work
+
+## References
+Source documents and related materials
+```
+
+## Contributing
+
+When adding new RFCs:
+1. Assign next sequential ID (NNN format)
+2. Use descriptive kebab-case filename
+3. Include comprehensive front matter
+4. Link related RFCs and ADRs
+5. Update this README index
+
+## Implementation References
+
+For practical implementation guidance, see:
+- **Memos**: `docs-internal/memo/` - Quick reference guides, trackers, and summaries
+- **Copilot Instructions**: `.github/copilot-instructions.md` - Current project patterns
+
+**Key Implementation Docs**:
+- [MEMO-010: Ember Upgrade & Dev Server](../memo/memo-010-ember-dev-server.md) - Frontend development setup
+- [MEMO-023: Dex Quick Start](../memo/memo-023-dex-quickstart.md) - Local auth setup
+- [MEMO-035: Environment Setup](../memo/memo-035-env-setup.md) - Docker vs native development options

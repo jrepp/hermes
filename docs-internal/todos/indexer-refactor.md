@@ -318,7 +318,7 @@ Some operations may need to be added to workspace provider interface:
 - [x] Create `docs-internal/INDEXER_REFACTOR_PLAN.md`
 - [x] Create `docs-internal/INDEXER_IMPLEMENTATION_GUIDE.md`
 - [x] Create `docs-internal/INDEXER_PHASE1_COMPLETE.md`
-- [x] Create `docs-internal/README-indexer.md`
+- [x] Create `docs-internal/memo/README-indexer.md`
 
 ### Code Documentation
 - [x] Create `pkg/indexer/README.md`
