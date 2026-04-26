@@ -29,13 +29,14 @@ doc_uuid: 41a2dccd-cbc7-4dce-a8ee-6d2a4baf4649
 
 ### `/adr/` - Architecture Decision Records
 
-**Decision logs** explaining "why we chose X over Y" with context, alternatives, and consequences. 24 ADRs covering frontend, auth, storage, search, and infrastructure decisions.
+**Decision logs** explaining "why we chose X over Y" with context, alternatives, and consequences. 22 ADRs covering frontend, auth, storage, search, and infrastructure decisions.
 
 **Key ADRs**:
 - **ADR-073**: Provider Abstraction Architecture (core system design)
 - **ADR-076**: Multi-Provider Auth Architecture
 - **ADR-078**: Dex Authentication Implementation
-- **ADR-080**: Search & Auth Refactoring
+- **ADR-080**: Backend-Mediated Search & Runtime Auth Header Selection
+- **ADR-081**: API Refactoring & Testing Strategy (V2 handler shape, testcontainers)
 - **ADR-085**: Dual Database Support & Stateless Indexer
 
 See [ADR index](../adr/adr-003-readme.md) for complete list.
@@ -112,8 +113,8 @@ Comprehensive 8-section guide covering TypeScript setup, component development, 
 - ADR-001, ADR-029, ADR-032 (Frontend decisions); MEMO-124, MEMO-125 (demoted from ADR-036, ADR-006)
 
 **Database & Persistence**:
-- RFC-051 (Outbox Design), RFC-080 (Document Sync)
-- ADR-083 (SQLite Conflict), ADR-085 (Dual DB Support)
+- RFC-051 (Outbox Design), RFC-080 (Document Sync), RFC-094 (API + testcontainers narrative), RFC-095 (`pkg/docid` narrative), RFC-096 (core+deltas + stateless indexer narrative)
+- ADR-083 (Split Server / Migrate Binaries), ADR-085 (Dual DB Support), MEMO-127 (SQLite driver investigation)
 
 ### By Document Type
 

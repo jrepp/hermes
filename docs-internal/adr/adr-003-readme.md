@@ -30,8 +30,8 @@ If a write-up is "we hit bug X and fixed it by changing line Y," it belongs in `
 
 ## Quick Stats
 
-- **Total ADRs**: 22 (006 and 036 demoted to MEMO-125 and MEMO-124)
-- **Categories**: Frontend (4), Auth (5), Provider/Storage (6), Search (3), Config (2), Infra/Tooling (2)
+- **Total ADRs**: 22 (006, 036, 084 demoted to memos; 081/082/085 narrative migrated to RFCs, tight ADRs retained)
+- **Categories**: Frontend (4), Auth (4), Provider/Storage (6), Search (3), Config (2), Infra/Tooling (2)
 - **Date Range**: October 2025 – April 2026
 
 ## Cross-Cutting Principles
@@ -43,7 +43,7 @@ These principles recur across multiple ADRs and govern new design work. Cite the
 | Provider abstraction via Strategy/Adapter/Factory + DI (`auth.Provider`, `workspace.Provider`, `search.Provider`) | 048, 071, 072, 073, 075, 076, 078, 080, 081 |
 | Configuration-driven runtime provider selection (`providers { auth, workspace, search }`) | 048, 071, 073, 075, 077, 080 |
 | Database is source of truth; search index is a cache | 071, 081 |
-| Backend-centric OIDC; client-centric Google OAuth (header: `Authorization: Bearer` vs `Hermes-Google-Access-Token`) | 048, 072, 076, 077, 078, 080, 084 |
+| Backend-centric OIDC; client-centric Google OAuth (header: `Authorization: Bearer` vs `Hermes-Google-Access-Token`) | 048, 072, 076, 077, 078, 080 |
 | Session cookies HttpOnly + Secure + SameSite=Lax (never localStorage) | 076, 078 |
 | Pure-Go server binary (`CGO_ENABLED=0`); migrations live in a separate binary | 083, 085 |
 | Port-isolation strategy (+1 offset) across native / integration / testing / production | 070, 072, 078 |
@@ -78,7 +78,6 @@ These principles recur across multiple ADRs and govern new design work. Cite the
 | [076](adr-076-multi-provider-auth-architecture.md) | Multi-Provider Auth Architecture | Architectural Pattern | Implemented | Runtime provider selection via `/api/v2/web/config`; provider-specific headers; no Torii. |
 | [077](adr-077-auth-provider-selection.md) | Auth Provider Selection | Configuration Choice | Implemented | `-auth-provider` flag and `HERMES_AUTH_PROVIDER` env var; priority flag > env > config. |
 | [078](adr-078-dex-authentication-implementation.md) | Dex Authentication Implementation | Integration | Implemented | `/auth/login`, `/auth/callback`, `/auth/logout`; HttpOnly session cookies; web dev proxy for `/auth/*`. |
-| [084](adr-084-multi-provider-auth-diagrams.md) | Multi-Provider Auth Diagrams | Architectural Pattern (documentation) | Accepted | Sequence diagrams documenting Google OAuth (popup) vs OIDC (redirect) flows. |
 
 ### Provider & Storage Architecture
 
@@ -119,6 +118,25 @@ These principles recur across multiple ADRs and govern new design work. Cite the
 |-----|-----|--------|
 | ADR-006 (Animated Components Fix) | [MEMO-125](../memo/memo-125-ember-animated-stub-components.md) | Scoped to one ecosystem migration; no general pattern. |
 | ADR-036 (Fix Location Type) | [MEMO-124](../memo/memo-124-fix-ember-location-type.md) | One-line config fix; no ongoing constraint. |
+| ADR-084 (Multi-Provider Auth Diagrams) | [MEMO-126](../memo/memo-126-multi-provider-auth-diagrams.md) | Diagrams are reference material, not a decision; ADR-076 owns the rule. |
+| ADR-083 investigation log | [MEMO-127](../memo/memo-127-sqlite-driver-conflict-investigation.md) | Incident narrative belongs in a memo; the rule lives in the tight ADR-083. |
+
+### Narrative Migrated to RFCs
+
+Some ADRs originally contained extensive narrative, deltas, and process detail. The decision content stays in the ADR (tightened); the narrative now lives in a new RFC.
+
+| Tight ADR | Narrative now in |
+|-----------|------------------|
+| [ADR-081](adr-081-api-refactoring-and-testing-strategy.md) (V2 handler shape, testcontainers) | [RFC-094](../rfc/rfc-094-api-refactoring-and-testing-strategy.md) |
+| [ADR-082](adr-082-document-identification-system.md) (`pkg/docid`) | [RFC-095](../rfc/rfc-095-document-identification-system.md) |
+| [ADR-085](adr-085-dual-database-support-stateless-indexer.md) (core+deltas, stateless indexer) | [RFC-096](../rfc/rfc-096-database-deltas-and-stateless-indexer.md) |
+
+### Known-Missing Legacy References
+
+These IDs are referenced in older docs but **do not exist** in the repo. Do not link to them; treat occurrences as cleanup candidates.
+
+- `RFC-007`, `RFC-020`, `RFC-034`, `RFC-047`, `RFC-076`
+- `MEMO-001`, `MEMO-075`
 
 ## Decision Format
 
