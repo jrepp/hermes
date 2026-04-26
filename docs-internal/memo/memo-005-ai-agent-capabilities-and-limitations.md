@@ -7,6 +7,7 @@ doc_uuid: e8769661-cbba-45b3-8d1e-8b5e27581a05
 status: Draft
 title: AI Agent Capabilities and Limitations
 tags: []
+type: Memo
 ---
 
 # AI Agent Capabilities and Limitations

@@ -1,8 +1,7 @@
 ---
-id: memo-009
 title: Ember Development Server & Upgrade Strategy
 type: Guide
-status: Current Practice
+status: Reference
 audience: [Frontend Developers, DevOps, AI Agents]
 tags: [development-server, ember, frontend, upgrade-strategy]
 related: [RFC 033, RFC 034, RFC 037, TESTING_ENVIRONMENTS.md]

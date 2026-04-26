@@ -1,7 +1,8 @@
 ---
 id: memo-016
 title: Dev Velocity Analysis
-type: Analysis
+type: Memo
+subtype: Analysis
 status: Final
 tags: [ai-agents, metrics, productivity, statistics, velocity]
 related: [MEMO-004, MEMO-016]

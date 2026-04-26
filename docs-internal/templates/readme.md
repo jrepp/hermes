@@ -19,9 +19,12 @@ tags: [docs, templates, authoring, conventions]
 |---|---|---|---|
 | Record a binding architectural rule the project must follow | **ADR** | `adr-NNN-<slug>.md` | `adr-002-readme.md` |
 | Propose, explore, or specify an architecture or feature | **RFC** | `rfc-NNN-<slug>.md` | `rfc-002-readme.md` |
-| Capture operational notes, investigations, diagrams, post-mortems, demoted decisions, how-tos | **Memo** | `memo-NNN-<slug>.md` | `memo-031-docs-internal-hub.md` |
+| Capture an investigation, post-mortem, demoted decision, or one-off operational note (dated, narrow audience) | **Memo** | `memo-NNN-<slug>.md` | `memo-023-readme.md` |
+| Write evergreen step-by-step reference content (setup guides, integration walkthroughs, dev quickrefs) | **Guide** | `guides/<topic>/<slug>.md` | `guides/readme.md` |
 
-If the doc is **not stating a rule the project commits to**, it's a memo — even if it touches architecture. ADRs are short and rule-shaped; RFCs are long and proposal-shaped; memos are everything else.
+Memo vs. Guide: if the doc says "we hit X on date Y and fixed it by Z," it's a memo. If it says "to do X, run these commands," it's a guide. Memos are dated and narrow; guides are evergreen and broad.
+
+If the doc is **not stating a rule the project commits to**, it's a memo or a guide — even if it touches architecture. ADRs are short and rule-shaped; RFCs are long and proposal-shaped; memos and guides are everything else.
 
 When demoting an ADR (because it never was a binding rule, or because it pinned implementation details that don't belong in an ADR), see the **Demotion checklist** below.
 
@@ -40,7 +43,7 @@ These apply to all three doc types.
 9. **Don't bundle two decisions in one ADR.** Split it.
 10. **Don't paste large code listings.** Link to source paths (`pkg/docid/uuid.go`) or to an RFC that holds the long form.
 11. **Don't include implementation status checklists, "Future Work" sections, measured-results tables, or session/incident logs in an ADR or RFC.** Those go in a memo.
-12. **When you change an ADR, RFC, or memo, also update the relevant hub** (`adr-002-readme.md`, `rfc-002-readme.md`, `memo-031-docs-internal-hub.md`) in the same change.
+12. **When you change an ADR, RFC, memo, or guide, also update the relevant hub** (`adr-002-readme.md`, `rfc-002-readme.md`, `memo-023-readme.md`, `guides/readme.md`) in the same change.
 13. **Run `./scripts/docs-validate.sh` before committing.** It must end green.
 
 ## Frontmatter — controlled vocabularies
@@ -54,12 +57,13 @@ Pick from these. If your doc legitimately needs a new value, add it here in the 
 | ADR | `Draft`, `Proposed`, `Accepted`, `Implemented`, `Deprecated`, `Superseded` |
 | RFC | `Draft`, `Proposed`, `Accepted`, `Implemented`, `Withdrawn`, `Superseded` |
 | Memo | `Draft`, `Final`, `Reference`, `Archived` |
+| Guide | `Draft`, `Reference`, `Archived` |
 
 No parenthetical suffixes (`Implemented (Phase 1)` is invalid — use `Implemented` and explain phasing in the body).
 
 ### `type`
 
-Exactly one of: `ADR`, `RFC`, `Memo`. (Not `MEMO`, not `memo`, not `Guide` — the legacy memo `type` values are inconsistent and being normalized.)
+Exactly one of: `ADR`, `RFC`, `Memo`, `Guide`. (Not `MEMO`, not `memo`, not `milestone`, not `Analysis` — these legacy values have been normalized; use `subtype` for finer classification.)
 
 ### `decision_type` (ADR only — required)
 
@@ -77,9 +81,21 @@ One of:
 
 If your ADR doesn't fit any of these, the ADR is probably a memo. Talk it through before adding a new category.
 
-### `subtype` (optional, RFC and Memo)
+### `subtype` (optional, RFC / Memo / Guide)
 
-Free-form short label, Title Case (`Architecture`, `Authentication`, `Frontend Compatibility Note`, `Investigation`, `Diagrams`, `Playbook`). Avoid synonyms — reuse an existing subtype if one fits.
+Free-form short label, Title Case. For Memos, prefer one of:
+
+- `Investigation` — debugging session, root-cause hunt.
+- `Post-Mortem` — incident write-up.
+- `Playbook` — step-by-step runbook for a recurring operation.
+- `Compatibility Note` — known-good / known-bad combinations.
+- `Diagrams` — reference diagrams supporting an ADR or RFC.
+- `Reference` — long-form data tables or matrices.
+- `Analysis` — measurement / observation write-up.
+- `Milestone` — implementation milestone marker.
+- `Configuration Note` — small standalone configuration explainer.
+
+For RFCs and Guides, use whatever short Title-Case label fits (`Architecture`, `Authentication`, `Setup`, `Integration`). Reuse existing values; avoid synonyms.
 
 ### `supersedes`
 
@@ -102,7 +118,7 @@ When converting an ADR into a memo (because it isn't a binding architectural rul
    - Remove the row from the index table.
    - Remove or update any cross-cutting principles row that referenced the ADR.
    - Add a row to the **Demoted to Memos** table.
-6. Update `memo-031-docs-internal-hub.md` to add the memo to the appropriate category.
+6. Update `memo-023-readme.md` to add the memo to the appropriate category.
 7. Grep for inbound references: `rg "ADR-NNN" docs-internal/ AGENTS.md` — fix every hit (`related:` lists, prose, hub tables).
 8. Run `./scripts/docs-validate.sh`.
 9. Commit as a single focused change with an imperative-mood message: `docs(adr): demote ADR-NNN to MEMO-MMM`.
@@ -122,11 +138,12 @@ When an ADR has grown narrative, benchmarks, migration phases, or worked use cas
 - [`adr-template.md`](adr-template.md) — template for new ADRs.
 - [`rfc-template.md`](rfc-template.md) — template for new RFCs.
 - [`memo-template.md`](memo-template.md) — template for new memos.
+- [`guide-template.md`](guide-template.md) — template for new guides.
 - This guide.
 
 ## Known docs-process gaps (track here as discovered)
 
 - `./scripts/docs-validate.sh` currently scans 0 files due to a `docs-project.yaml` path resolution issue; validation is effectively a no-op until that is fixed.
-- Legacy memos use inconsistent `type:` values (`MEMO`, `memo`, `Memo`, `Guide`, `Analysis`, `Playbook`, `milestone`). New docs must use `Memo`; a sweep to normalize legacy memos is open work.
 - Some legacy IDs are referenced but missing on disk: `RFC-007`, `RFC-020`, `RFC 034`, `ADR-007`, `ADR-016`, `MEMO-001`, `MEMO 075`. See `adr-002-readme.md` "Known-Missing Legacy References".
 - Filename casing: docuchango expects lowercase `adr-NNN-…` etc.; some legacy files retain uppercase prefixes and trigger validation warnings.
+- `docs-internal/memo/memo-023-readme.md` (the memo hub) still contains documentation strings that look like template placeholders (`type: Investigation | Implementation | …`); harmless but trips naive surveys.

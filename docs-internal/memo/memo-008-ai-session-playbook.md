@@ -1,8 +1,9 @@
 ---
 id: memo-008
 title: AI Agent Session Playbook
-type: Playbook
-status: Living Document
+type: Memo
+subtype: Playbook
+status: Reference
 author: AI Agent Analysis Team
 audience: [AI Agents, Human Developers, Project Managers]
 tags: [ai-agents, best-practices, patterns, session-analysis]

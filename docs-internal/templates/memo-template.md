@@ -8,7 +8,7 @@ author: Hermes Team
 project_id: hermes
 doc_uuid: <run `uuidgen | tr '[:upper:]' '[:lower:]'`>
 type: Memo
-subtype: <Investigation | Diagrams | Playbook | Compatibility Note | Post-Mortem | Reference>
+subtype: <Investigation | Post-Mortem | Playbook | Compatibility Note | Diagrams | Reference | Analysis | Milestone | Configuration Note>
 tags: [tag-one, tag-two]
 related:
   - ADR-NNN
@@ -63,9 +63,10 @@ The actual content. Memos are flexible — pick the structure that serves the to
 AUTHORING REMINDERS — delete before committing.
 
 DO:
-- Use `type: Memo` (not `MEMO`, not `memo`, not `Guide`).
+- Use `type: Memo` (not `MEMO`, not `memo`, not `milestone`, not `Analysis` — those are subtypes now).
 - Pick a `status` from: Draft, Final, Reference, Archived.
-- Update `memo-031-docs-internal-hub.md` in the same change.
+- Update `memo-023-readme.md` in the same change.
+- If your doc is evergreen step-by-step content (a setup walkthrough, integration recipe, dev quickref), it's a **Guide**, not a memo. Use [`guide-template.md`](guide-template.md) and put it under `docs-internal/guides/<topic>/`.
 - If this memo demotes an ADR, follow the demotion checklist in `templates/readme.md`.
 
 DO NOT:

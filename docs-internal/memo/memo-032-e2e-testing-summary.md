@@ -7,6 +7,7 @@ doc_uuid: adf92ee9-6567-4033-ac08-e12495dcd556
 status: Draft
 title: E2E Testing with Template Compilation Issues - Summary
 tags: []
+type: Memo
 ---
 
 # E2E Testing with Template Compilation Issues - Summary

@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: 0ea4f0d0-1c48-4df4-ac3a-f90535aacf9d
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-013 Addendum: Notification Template Scheme

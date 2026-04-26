@@ -1,12 +1,12 @@
 ---
-id: memo-033
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: bd259e44-a5d8-4a7b-a7b1-b4df75161021
-status: Draft
+status: Reference
 title: Environment Variables Setup Guide
 tags: []
+type: Guide
 ---
 
 # Environment Variables Setup Guide

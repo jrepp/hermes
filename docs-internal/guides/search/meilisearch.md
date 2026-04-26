@@ -1,12 +1,12 @@
 ---
-id: memo-019
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 149719d7-8702-4391-b34b-dd6dad24804c
-status: Draft
+status: Reference
 title: Meilisearch Setup
 tags: []
+type: Guide
 ---
 
 # Meilisearch Setup

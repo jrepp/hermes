@@ -7,6 +7,7 @@ doc_uuid: 2dbdb0d8-23fa-49e8-ae7c-f6306926e276
 status: Draft
 title: 'Human Enablement Patterns: What Makes AI Agents Effective'
 tags: []
+type: Memo
 ---
 
 # Human Enablement Patterns: What Makes AI Agents Effective

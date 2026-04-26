@@ -6,7 +6,7 @@ created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 45308585-fccc-494b-95c7-8901f13e942b
-type: MEMO
+type: Memo
 tags: [auth, diagrams, oauth, oidc, reference]
 supersedes: MEMO-062
 related: [ADR-012, ADR-013, ADR-014]

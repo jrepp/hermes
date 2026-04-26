@@ -1,12 +1,12 @@
 ---
-id: memo-012
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 3ed2450f-3f06-48e3-8bb7-518db18820a9
-status: Draft
+status: Reference
 title: Dex OIDC Local Authentication
 tags: []
+type: Guide
 ---
 
 # Dex OIDC Local Authentication

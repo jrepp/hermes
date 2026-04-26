@@ -1,7 +1,8 @@
 ---
 title: RFC-014 Weeks 1-2 Complete - LLM Integration
-type: milestone
-status: complete
+type: Memo
+subtype: Milestone
+status: Final
 tags: [implementation, llm, milestone, rfc-014]
 id: memo-001
 created: 2025-11-15

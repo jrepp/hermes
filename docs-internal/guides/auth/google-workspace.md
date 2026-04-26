@@ -1,12 +1,12 @@
 ---
-id: memo-013
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: ab35a548-4c40-4d74-bdac-7732fef09613
-status: Draft
+status: Reference
 title: Google Workspace Setup Guide
 tags: []
+type: Guide
 ---
 
 # Google Workspace Setup Guide

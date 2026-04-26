@@ -1,7 +1,7 @@
 ---
 title: RFC Implementation Tracker & Roadmap
-type: memo
-status: active
+type: Memo
+status: Draft
 author: Claude Code
 tags: [implementation, planning, rfc, roadmap]
 id: memo-003

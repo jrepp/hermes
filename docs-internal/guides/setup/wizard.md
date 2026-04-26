@@ -1,12 +1,12 @@
 ---
-id: memo-024
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: fda5cb30-ad2c-4462-8a3b-0e662cb78407
-status: Draft
+status: Reference
 title: Setup Wizard - Zero-Config to Guided Configuration
 tags: []
+type: Guide
 ---
 
 # Setup Wizard - Zero-Config to Guided Configuration

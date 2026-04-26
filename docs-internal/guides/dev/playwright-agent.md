@@ -1,10 +1,9 @@
 ---
-id: memo-029
 title: Playwright E2E Agent Guide
 type: Guide
-status: Final
+status: Reference
 tags: [automation, debugging, e2e-testing, playwright, testing]
-related: [MEMO-014]
+related: [guides/dev/quickref.md]
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes

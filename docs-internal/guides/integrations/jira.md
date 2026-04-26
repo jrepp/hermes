@@ -1,12 +1,12 @@
 ---
-id: memo-017
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: d823b44f-e514-4454-a167-bff9332347d7
-status: Draft
+status: Reference
 title: Jira Integration
 tags: []
+type: Guide
 ---
 
 # Jira Integration

@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: 89cd174c-b144-4e8b-bfeb-da5609e7d1f9
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-013 Implementation: Docker Compose Integration

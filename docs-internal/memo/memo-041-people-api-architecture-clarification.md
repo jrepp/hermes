@@ -9,6 +9,7 @@ deciders: Hermes Team
 project_id: hermes
 doc_uuid: a047487d-71b3-4299-b908-c9323e897f98
 author: Hermes Team
+type: Memo
 ---
 
 # ADR-011: People API Architecture Clarification - No Database Table Needed

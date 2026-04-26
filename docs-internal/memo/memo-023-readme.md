@@ -1,149 +1,99 @@
 ---
 id: memo-023
+title: "Memo Index"
+status: Reference
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 1f80098b-75c3-4ef1-b0be-8c4f459d40eb
-status: Draft
-title: Memo Documents
-tags: []
+type: Memo
+subtype: Reference
+tags: [memo, index, hub]
 ---
 
-# Memo Documents
+# Memo Index
 
-Implementation notes, quick reference guides, session summaries, and completion reports from Hermes development.
+> Investigations, post-mortems, milestone reports, demoted decisions, and other dated narrative notes from Hermes development. **Evergreen step-by-step content lives in [`docs-internal/guides/`](../guides/readme.md), not here.**
 
-> **Authoring a new memo?** Start from [`docs-internal/templates/readme.md`](../templates/readme.md) and use [`memo-template.md`](../templates/memo-template.md). The guide pins memo `status` and `type` conventions and the demotion checklist for converting an ADR into a memo.
+> **Authoring a new memo?** Start from [`docs-internal/templates/readme.md`](../templates/readme.md) and use [`memo-template.md`](../templates/memo-template.md). For evergreen setup/reference content, use [`guide-template.md`](../templates/guide-template.md) instead.
 
-## Index
+## Index by category
 
-### Quick Reference Guides
+### Demoted ADRs (now memos)
 
-- **memo-007** - Auth provider quick reference
-- **memo-009** - Ember dev server, proxy config, upgrade strategy
-- **memo-014** - Development workflow quick reference (build, test, deploy)
-- **memo-020** - Dex OIDC quick start guide
-- **memo-027** - Complete environment setup (10-minute quick start)
-- **memo-028** - Outbox pattern quick reference with SQL queries
-- **memo-029** - Playwright agent E2E testing guide
-- **memo-030** - Authentication providers guide (Google, Okta, Dex)
-- **memo-031** - Documentation hub and navigation guide
-- **memo-033** - Environment variables setup guide
-- **memo-034** - Makefile quick start targets
-- **memo-035** - Project config API usage guide
-- **memo-036** - Project config package implementation summary
+These memos used to be ADRs; the binding rules they once carried have been retired or never existed.
 
-### Component & Setup Guides
+- **memo-060** — Fix Ember `locationType` configuration. (formerly ADR-036)
+- **memo-061** — `ember-animated` stub components. (formerly ADR-006)
+- **memo-062** — Multi-provider auth diagrams. (formerly ADR-084 — diagrams aren't a decision)
+- **memo-063** — SQLite driver conflict investigation. (split from ADR-083)
+- **memo-064** — `ember-concurrency` / `ember-power-select` compatibility. (formerly ADR-029 — pinning belongs in `package.json`)
 
-- **memo-010** - Algolia search provider setup
-- **memo-011** - Auth provider testing guide
-- **memo-012** - Dex OIDC local auth guide
-- **memo-013** - Google Workspace integration guide
-- **memo-015** - Hermes indexer readme
-- **memo-017** - Jira integration guide
-- **memo-018** - Local workspace provider setup
-- **memo-019** - Meilisearch setup guide
-- **memo-021** - Ollama AI provider setup
-- **memo-022** - PostgreSQL database setup
-- **memo-024** - Setup wizard guide
-- **memo-025** - Setup wizard Ollama integration
-- **memo-026** - Simplified local mode demo
+### Investigations & debug logs
 
-### Analysis & Metrics
+- **memo-040** — GTS template compilation debug log.
+- **memo-041** — People API architecture clarification.
+- **memo-052** — Indexer architecture refactoring notes.
+- **memo-057** — Query optimization analysis.
+- **memo-058** — Event-driven indexer testing status.
 
-- **memo-004** - AI agent tool usage patterns and effectiveness
-- **memo-005** - AI agent capabilities and limitations
-- **memo-006** - Human enablement patterns for AI agents
-- **memo-008** - AI session playbook (16 sessions analyzed)
-- **memo-016** - Development velocity metrics (10-15x speedup)
+### Implementation summaries & milestones
 
-### Implementation Reports
+- **memo-001** — RFC-014 milestone log (week 1-2).
+- **memo-002** — RFC-014 milestone log (week 2-3).
+- **memo-003** — Active RFC priority tracker and roadmap.
+- **memo-038** — UUID integration summary.
+- **memo-039** — UUID migration summary.
+- **memo-053** — Event-driven indexer implementation summary.
+- **memo-054** — Event-driven indexer production deployment.
+- **memo-055** — Semantic search release notes.
+- **memo-056** — Semantic search performance benchmarks.
+- **memo-059** — S3 storage implementation summary.
 
-- **memo-037** - AI prompt templates reference
-- **memo-038** - UUID integration summary
-- **memo-039** - UUID migration guide
-- **memo-040** - GTS template compilation debug log
-- **memo-041** - People API architecture clarification
+### Analysis & metrics
 
-### Simplified Mode (RFC-009) Reference
+- **memo-004** — Agent usage analysis.
+- **memo-005** — AI agent capabilities and limitations.
+- **memo-006** — Human enablement patterns.
+- **memo-008** — AI agent session playbook.
+- **memo-016** — Development velocity analysis.
 
-- **memo-042** - Simplified mode architecture diagram
-- **memo-043** - Simplified mode implementation checklist
-- **memo-044** - Simplified mode summary
+### Feature reference (RFC supplements)
 
-### API Provider (RFC-011) Reference
+#### Simplified Mode (RFC-009)
+- **memo-026** — Simplified local mode demo.
+- **memo-042** — Architecture diagram.
+- **memo-043** — Implementation checklist.
+- **memo-044** — Summary.
 
-- **memo-045** - API provider permissions appendix
+#### API Provider (RFC-011)
+- **memo-045** — Permissions appendix.
 
-### Notification System (RFC-013) Reference
+#### Notification System (RFC-013)
+- **memo-046** — Backend addendum.
+- **memo-047** — Backends implementation.
+- **memo-048** — Docker Compose setup.
+- **memo-049** — Message schema.
+- **memo-050** — Template scheme.
+- **memo-051** — Implementation status.
 
-- **memo-046** - Notification backend addendum
-- **memo-047** - Notification backends implementation
-- **memo-048** - Notification Docker Compose setup
-- **memo-049** - Notification message schema
-- **memo-050** - Notification template scheme
-- **memo-051** - Notification implementation status
+### E2E testing
 
-### Event-Driven Indexer (RFC-014) Reference
+- **memo-032** — E2E testing summary.
 
-- **memo-052** - Indexer architecture refactoring notes
-- **memo-053** - Event-driven indexer implementation summary
-- **memo-054** - Event-driven indexer production deployment
-- **memo-055** - Semantic search release notes
-- **memo-056** - Semantic search performance benchmarks
-- **memo-057** - Query optimization analysis
-- **memo-058** - Event-driven indexer testing status
+### Project config (legacy)
 
-### S3 Storage (RFC-015) Reference
+- **memo-035** — Project config API usage notes.
+- **memo-036** — Project config package implementation summary.
 
-- **memo-059** - S3 storage implementation summary
+### Hubs
 
-### Planning Trackers
+- **memo-023** — This file (memo index).
+- **memo-031** — Docs-internal hub (cross-cutting navigation).
 
-- **memo-001** - RFC-014 milestone log (week 1-2)
-- **memo-002** - RFC-014 milestone log (week 2-3)
-- **memo-003** - Active RFC priority tracker and roadmap
+## See also
 
-### E2E Testing
-
-- **memo-032** - E2E testing summary
-
-## Document Organization
-
-Memos are organized by type:
-- ***-quickref.md / *-quickstart.md**: Quick reference guides
-- ***-debug.md**: Debugging and investigation logs
-- ***-summary.md**: Implementation and feature summaries
-- ***-analysis.md**: Analysis and metrics documents
-- ***-guide.md**: Setup and usage guides
-
-## Memo Format
-
-```markdown
----
-id: memo-NNN
-title: Descriptive Title
-date: YYYY-MM-DD
-type: Investigation | Implementation | Guide | Analysis | Session
-status: Draft | Final | Archived
-tags: [tag1, tag2, tag3]
-related:
-  - RFC-YYY
-  - ADR-ZZZ
----
-
-# Title
-
-## Summary
-## Content
-## Outcomes/Next Steps
-## References
-```
-
-## Contributing
-
-1. Assign next sequential ID (NNN format)
-2. Use descriptive kebab-case filename
-3. Include frontmatter with date and type
-4. Link related RFCs, ADRs, and memos
-5. Update this README index
+- [`../guides/readme.md`](../guides/readme.md) — evergreen setup/reference guides (formerly memos 007, 009, 010–015, 017–022, 024–025, 027–030, 033–034, 037).
+- [`../adr/adr-002-readme.md`](../adr/adr-002-readme.md) — ADR index (binding architectural decisions).
+- [`../rfc/rfc-002-readme.md`](../rfc/rfc-002-readme.md) — RFC index (proposals).
+- [`../templates/readme.md`](../templates/readme.md) — authoring guide and templates.

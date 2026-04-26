@@ -5,9 +5,10 @@ deciders: Hermes Team
 author: Hermes Team
 project_id: hermes
 doc_uuid: 78ff5a5e-5edd-434e-b773-9df1027ad2ef
-status: Accepted
+status: Final
 title: .gts Template Compilation Runtime Error Investigation
 tags: []
+type: Memo
 ---
 
 # ADR: .gts Template Compilation Runtime Error Investigation

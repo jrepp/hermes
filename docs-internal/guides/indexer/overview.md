@@ -1,12 +1,12 @@
 ---
-id: memo-015
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 9300791a-57ce-4642-a55b-214ed26df62b
-status: Draft
+status: Reference
 title: Hermes Indexer
 tags: []
+type: Guide
 ---
 
 # Hermes Indexer

@@ -1,7 +1,8 @@
 ---
 title: RFC-014 Week 2-3 Complete - Embeddings Pipeline
-type: milestone
-status: complete
+type: Memo
+subtype: Milestone
+status: Final
 tags: [embeddings, implementation, milestone, rfc-014, vector-search]
 id: memo-002
 created: 2025-11-15

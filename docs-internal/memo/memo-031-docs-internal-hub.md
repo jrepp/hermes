@@ -1,142 +1,104 @@
 ---
 id: memo-031
-title: Docs Internal - Documentation Hub
-type: Guide
-status: Final
-tags: [documentation, index, onboarding]
-related: [memo-027, memo-014]
+title: "Docs-Internal Cross-Cutting Hub"
+type: Memo
+subtype: Reference
+status: Reference
+tags: [documentation, index, onboarding, hub]
+related: [memo-023]
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes
 doc_uuid: 41a2dccd-cbc7-4dce-a8ee-6d2a4baf4649
 ---
 
-# Hermes Documentation Hub
+# Docs-Internal Cross-Cutting Hub
 
-**Welcome!** This directory contains all internal documentation for the Hermes project.
+> Topic-oriented entry point into Hermes internal documentation. For type-oriented indexes, see the per-folder readmes (`adr/`, `rfc/`, `memo/`, `guides/`).
 
 ## Quick Start for New Developers
 
-1. **Setup Environment**: Read [MEMO-027: Environment Setup](memo-024-env-setup.md)
-2. **Dev Workflows**: Read [MEMO-014: Dev Quick Reference](memo-012-dev-quickref.md)
-3. **Authentication**: Read [MEMO-020: Dex Quick Start](memo-017-dex-quickstart.md)
-4. **Testing**: Read [MEMO-029: Playwright E2E Guide](memo-026-playwright-agent-guide.md)
+1. **Set up environment** → [`guides/dev/env-setup.md`](../guides/dev/env-setup.md)
+2. **Daily commands** → [`guides/dev/quickref.md`](../guides/dev/quickref.md)
+3. **Local auth (Dex)** → [`guides/auth/dex-quickstart.md`](../guides/auth/dex-quickstart.md)
+4. **E2E testing** → [`guides/dev/playwright-agent.md`](../guides/dev/playwright-agent.md)
 
-## Documentation Structure
+## Core Indexes
 
-### `/adr/` - Architecture Decision Records
+- [ADR index](../adr/adr-002-readme.md) — binding architectural decisions
+- [RFC index](../rfc/rfc-002-readme.md) — design proposals
+- [Guides index](../guides/readme.md) — evergreen step-by-step references
+- [Memo index](memo-023-readme.md) — investigations, milestones, demoted ADRs
+- [Plans index](../plans/readme.md) — non-durable work items
+- [Templates & authoring](../templates/readme.md) — start here when writing any new doc
 
-**Decision logs** explaining "why we chose X over Y" with context, alternatives, and consequences. 22 ADRs covering frontend, auth, storage, search, and infrastructure decisions.
+## Finding Documentation by Topic
 
-**Key ADRs**:
-- **ADR-009**: Provider Abstraction Architecture (core system design)
-- **ADR-012**: Multi-Provider Auth Architecture
-- **ADR-014**: Dex Authentication Implementation
-- **ADR-016**: Backend-Mediated Search & Runtime Auth Header Selection
-- **ADR-017**: API Refactoring & Testing Strategy (V2 handler shape, testcontainers)
-- **ADR-020**: Dual Database Support & Stateless Indexer
+### Authentication
 
-See [ADR index](../adr/adr-002-readme.md) for complete list.
+- Setup: [`guides/auth/dex-quickstart.md`](../guides/auth/dex-quickstart.md), [`guides/auth/dex.md`](../guides/auth/dex.md), [`guides/auth/google-workspace.md`](../guides/auth/google-workspace.md)
+- Selection / matrix: [`guides/auth/providers.md`](../guides/auth/providers.md), [`guides/auth/quickref.md`](../guides/auth/quickref.md)
+- Decisions: [ADR-008](../adr/adr-008-dex-oidc-authentication-for-development.md) (Dex OIDC), [ADR-012](../adr/adr-012-multi-provider-auth-architecture.md) (Multi-Provider Auth), [ADR-013](../adr/adr-013-auth-provider-selection.md) (Provider Selection), [ADR-014](../adr/adr-014-dex-authentication-implementation.md) (Dex implementation)
+- Reference: [memo-062](memo-062-multi-provider-auth-diagrams.md) (auth diagrams)
 
-### `/rfc/` - Request for Comments
+### Developer Workflows
 
-**Design proposals** and architecture plans for major features. 18 active RFCs.
+- [`guides/dev/quickref.md`](../guides/dev/quickref.md), [`guides/dev/env-setup.md`](../guides/dev/env-setup.md), [`guides/dev/env-vars.md`](../guides/dev/env-vars.md), [`guides/dev/makefile-targets.md`](../guides/dev/makefile-targets.md), [`guides/dev/ember-dev-server.md`](../guides/dev/ember-dev-server.md)
 
-**Key RFCs**:
-- **RFC-009**: Simplified Local Mode
-- **RFC-014**: Event-Driven Indexer
-- **RFC-013**: Notification Backend
-- **RFC-015**: S3 Storage Backend & Migrations
-- **RFC-005**: Outbox Pattern Design
+### Testing
 
-See [RFC index](../rfc/rfc-002-readme.md) for complete list.
+- Guide: [`guides/dev/playwright-agent.md`](../guides/dev/playwright-agent.md)
+- Decisions: [ADR-006](../adr/adr-006-testing-docker-compose-environment.md) (Testing Docker Compose), [ADR-010](../adr/adr-010-playwright-for-local-iteration.md) (Playwright)
+- Memo: [memo-032](memo-032-e2e-testing-summary.md) (E2E testing summary)
 
-### `/memo/` - Implementation Notes & Guides
+### Search & Indexing
 
-**Quick reference guides**, implementation summaries, session notes, and reference material.
+- Setup: [`guides/search/algolia.md`](../guides/search/algolia.md), [`guides/search/meilisearch.md`](../guides/search/meilisearch.md), [`guides/indexer/overview.md`](../guides/indexer/overview.md)
+- Patterns: [`guides/patterns/outbox.md`](../guides/patterns/outbox.md)
+- Decisions: [ADR-011](../adr/adr-011-meilisearch-as-local-search-solution.md) (Meilisearch), [ADR-016](../adr/adr-016-search-and-auth-refactoring.md) (Search refactoring)
+- Proposals: [RFC-005](../rfc/rfc-005-outbox-pattern-design.md) (Outbox), [RFC-014](../rfc/rfc-014-event-driven-indexer.md) (Event-driven indexer)
 
-**Essential Memos**:
-- **MEMO-014**: Dev Quick Reference
-- **MEMO-020**: Dex Quick Start
-- **MEMO-027**: Environment Setup
-- **MEMO-029**: Playwright E2E Guide
-- **MEMO-030**: Auth Providers Guide
+### Frontend (Ember.js)
 
-See [Memo index](memo-020-readme.md) for complete list.
+- Guide: [`guides/dev/ember-dev-server.md`](../guides/dev/ember-dev-server.md)
+- Decisions: [ADR-001](../adr/adr-001-stay-with-classic-ember-build.md), [ADR-003](../adr/adr-003-direct-fetch-for-singleton-endpoints.md), [ADR-005](../adr/adr-005-frontend-async-timeout-policy.md)
+- Demoted-ADR memos: [memo-060](memo-060-fix-ember-location-type.md) (locationType), [memo-061](memo-061-ember-animated-stub-components.md) (ember-animated stubs), [memo-064](memo-064-ember-concurrency-power-select-incompatibility.md) (ember-concurrency / ember-power-select)
 
-### `/plans/` - Work Items
+### Database & Persistence
 
-**Non-durable planning artifacts** — tracked work items with priority and status. When completed, knowledge is folded into durable docs (ADRs, RFCs, memos) and the plan is archived.
+- Setup: [`guides/storage/postgresql.md`](../guides/storage/postgresql.md)
+- Decisions: [ADR-019](../adr/adr-019-split-server-and-migrate-binaries.md) (Split binaries), [ADR-020](../adr/adr-020-dual-database-support-stateless-indexer.md) (Dual DB)
+- Proposals: [RFC-005](../rfc/rfc-005-outbox-pattern-design.md) (Outbox), [RFC-021](../rfc/rfc-021-document-identification-system.md) (`pkg/docid`), [RFC-022](../rfc/rfc-022-database-deltas-and-stateless-indexer.md) (core+deltas)
+- Investigation: [memo-063](memo-063-sqlite-driver-conflict-investigation.md) (SQLite driver conflict)
 
-**Active Plans**:
-- **TODO-002**: API Test Suite (29% complete)
-- **TODO-003**: Search Provider Migration (71% complete)
-- **TODO-005**: Data Consistency (critical)
+### Workspace Providers
 
-See [Plans index](../plans/readme.md) for full backlog.
+- Setup: [`guides/workspace/local.md`](../guides/workspace/local.md)
+- Decisions: [ADR-007](../adr/adr-007-local-file-workspace-system.md) (Local file workspace), [ADR-009](../adr/adr-009-provider-abstraction-architecture.md) (Provider abstraction)
 
-### `/archive/` - Archived Documents
+### Integrations
 
-**Completed and superseded documents** retained for reference. Includes archived weekly progress logs, completed plans, and one-time task records.
+- [`guides/integrations/jira.md`](../guides/integrations/jira.md), [`guides/integrations/ollama.md`](../guides/integrations/ollama.md)
 
-See [Archive index](../archive/readme.md) for contents.
+### Setup Wizard
 
-### `/ember-development-guide/` - Frontend Guide
+- [`guides/setup/wizard.md`](../guides/setup/wizard.md), [`guides/setup/ollama.md`](../guides/setup/ollama.md)
 
-Comprehensive 8-section guide covering TypeScript setup, component development, service architecture, testing, linting, build, common pitfalls, and migration.
+### AI Agents (meta)
 
-## Finding Documentation
-
-### By Topic
-
-**Authentication**:
-- MEMO-020 (Dex Quick Start), MEMO-007 (Auth Provider Quick Ref), MEMO-030 (Auth Providers Guide)
-- ADR-008 (Dex OIDC Decision), ADR-012 (Multi-Provider Auth), ADR-013 (Auth Provider Selection)
-
-**Development Workflows**:
-- MEMO-014 (Dev Quick Reference), MEMO-027 (Environment Setup)
-
-**Testing**:
-- MEMO-029 (Playwright E2E Guide), MEMO-032 (E2E Testing Summary)
-- ADR-006 (Testing Docker Compose), ADR-010 (Playwright for Local Iteration)
-
-**Search & Indexing**:
-- MEMO-028 (Outbox Pattern Quick Ref)
-- RFC-005 (Outbox Design), RFC-014 (Event-Driven Indexer)
-- ADR-011 (Meilisearch Decision), ADR-016 (Search Refactoring)
-
-**Frontend (Ember.js)**:
-- MEMO-009 (Ember Dev Server)
-- ADR-001, ADR-003 (Frontend decisions); MEMO-060, MEMO-061, MEMO-064 (demoted from ADR 036, ADR-006, ADR 029)
-
-**Database & Persistence**:
-- RFC-005 (Outbox Design), RFC-008 (Document Sync), RFC-020 (API + testcontainers narrative), RFC-021 (`pkg/docid` narrative), RFC-022 (core+deltas + stateless indexer narrative)
-- ADR-019 (Split Server / Migrate Binaries), ADR-020 (Dual DB Support), MEMO-063 (SQLite driver investigation)
-
-### By Document Type
-
-**Quick Start Guides** (read these first):
-- MEMO-027, MEMO-014, MEMO-020
-
-**Architecture Documents** (understand the design):
-- RFCs in `/rfc/` for proposed designs
-- ADRs in `/adr/` for finalized decisions
-
-**Implementation Notes** (how it was built):
-- Memos in `/memo/` for guides and summaries
+- Analysis: [memo-004](memo-004-agent-usage-analysis.md), [memo-005](memo-005-ai-agent-capabilities-and-limitations.md), [memo-006](memo-006-human-enablement-patterns.md), [memo-008](memo-008-ai-session-playbook.md), [memo-016](memo-016-dev-velocity-analysis.md)
+- Templates: [`guides/dev/ai-prompt-templates.md`](../guides/dev/ai-prompt-templates.md)
 
 ## When to Create What
 
 | Type | When | Durability |
 |------|------|------------|
-| **ADR** | Finalized decision with long-term impact and alternatives | Durable |
-| **RFC** | Design proposal before implementation | Durable |
-| **Memo** | Implementation notes, guides, summaries, reference material | Durable |
+| **ADR** | Binding decision with long-term force | Durable |
+| **RFC** | Design proposal before / during implementation | Durable |
+| **Guide** | Evergreen step-by-step setup or workflow content | Durable |
+| **Memo** | Dated narrative — investigation, milestone, post-mortem, demoted ADR | Durable |
 | **Plan** | Work item, checklist, or progress tracking | Non-durable |
 
-**Lifecycle**: RFC → (implement) → ADR (finalize decision) + Memo (record how). Plans track progress toward implementation; when done, fold into durable docs and archive.
+**Lifecycle**: RFC → (implement) → ADR (finalize decision) + Guide (record how to set up) + Memo (record what we learned). Plans track progress; when done, fold knowledge into durable docs and archive.
 
----
-
-**Last Updated**: April 2026
-**Maintainer**: Hermes Team
+See [`templates/readme.md`](../templates/readme.md) for the full doc-type matrix and authoring rules.

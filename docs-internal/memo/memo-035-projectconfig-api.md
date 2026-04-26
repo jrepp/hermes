@@ -7,6 +7,7 @@ doc_uuid: 5e2e25e1-9d11-442f-ae88-72a883e1d74d
 status: Draft
 title: Project Config API Usage Guide
 tags: []
+type: Memo
 ---
 
 # Project Config API Usage Guide

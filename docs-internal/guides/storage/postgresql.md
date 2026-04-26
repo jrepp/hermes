@@ -1,12 +1,12 @@
 ---
-id: memo-022
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: fea6703d-6a0f-440d-aa03-3b7cae5825bf
-status: Draft
+status: Reference
 title: PostgreSQL Database Setup
 tags: []
+type: Guide
 ---
 
 # PostgreSQL Database Setup

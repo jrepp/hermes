@@ -1,12 +1,12 @@
 ---
-id: memo-037
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 4d4136dc-22ff-4d54-8fe3-bf232613cdba
-status: Draft
+status: Reference
 title: AI Agent Prompt Templates for Software Projects
 tags: []
+type: Guide
 ---
 
 # AI Agent Prompt Templates for Software Projects

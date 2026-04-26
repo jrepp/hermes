@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: f5625411-94e2-44a5-b198-bfa978c08fc9
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-014 Performance Benchmarks

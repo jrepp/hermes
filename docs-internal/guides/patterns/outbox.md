@@ -1,8 +1,7 @@
 ---
-id: memo-028
 title: Outbox Pattern Quick Reference
 type: Guide
-status: Draft
+status: Reference
 tags: [audit, database, identity, outbox, search-index]
 related: []
 created: 2025-10-09

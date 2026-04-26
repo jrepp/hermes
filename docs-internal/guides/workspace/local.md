@@ -1,12 +1,12 @@
 ---
-id: memo-018
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: bd1bfbd0-cde2-4113-a038-f27df7a0b8e1
-status: Draft
+status: Reference
 title: Local Workspace Provider Setup for Testing Environment
 tags: []
+type: Guide
 ---
 
 # Local Workspace Provider Setup for Testing Environment

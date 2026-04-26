@@ -3,7 +3,7 @@ id: memo-060
 title: 'Fix: Ember locationType auto -> history'
 type: Memo
 subtype: Configuration Note
-status: Accepted
+status: Final
 tags: [configuration, ember, location-type, routing]
 related: [ADR-001]
 supersedes: ADR 036

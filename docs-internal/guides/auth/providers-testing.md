@@ -1,12 +1,12 @@
 ---
-id: memo-011
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 80dfea2e-510a-432b-906b-99e11756e93f
-status: Draft
+status: Reference
 title: Authentication Provider Testing Guide
 tags: []
+type: Guide
 ---
 
 # Authentication Provider Testing Guide

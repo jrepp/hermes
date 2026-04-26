@@ -1,12 +1,12 @@
 ---
-id: memo-010
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: dbff934e-b32a-484a-b194-e470450ca210
-status: Draft
+status: Reference
 title: Algolia Search Setup
 tags: []
+type: Guide
 ---
 
 # Algolia Search Setup

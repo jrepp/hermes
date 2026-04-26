@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: d15126fd-687e-4cd7-befa-41120f02495a
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-009 Summary: Simplified Local Mode

@@ -1,12 +1,12 @@
 ---
-id: memo-021
 created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 52efb638-6bd1-4a22-bbf3-d4a35ad09c41
-status: Draft
+status: Reference
 title: Ollama AI Provider - Local Llama on macOS
 tags: []
+type: Guide
 ---
 
 # Ollama AI Provider - Local Llama on macOS

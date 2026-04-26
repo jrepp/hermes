@@ -59,7 +59,9 @@ These are project-wide commitments. Cite the ADR when you invoke them; flag cont
 - Internal doc hierarchy:
   - `docs-internal/adr/` — architectural decisions (binding)
   - `docs-internal/rfc/` — proposals/architecture
-  - `docs-internal/memo/` — operational/procedural notes
+  - `docs-internal/guides/` — evergreen step-by-step setup, integration, and workflow guides
+  - `docs-internal/memo/` — investigations, milestones, post-mortems, demoted ADRs
+  - `docs-internal/templates/` — ADR / RFC / memo / guide templates and authoring rules
   - `docs-internal/plans/`
   - `docs-internal/archive/`
 
@@ -69,14 +71,16 @@ These are project-wide commitments. Cite the ADR when you invoke them; flag cont
   - `docs/README.md`
   - `docs-internal/README.md`
   - `docs-internal/adr/adr-002-readme.md`
-  - `docs-internal/memo/memo-020-readme.md`
   - `docs-internal/rfc/rfc-002-readme.md`
+  - `docs-internal/memo/memo-023-readme.md`
+  - `docs-internal/guides/readme.md`
+  - `docs-internal/templates/readme.md`
 - Keep links valid after moves and update references in this order:
   1. `docs/`
   2. `docs-internal/`
   3. `docs-demo/`, `testing/`, `tests/`
   4. `internal/*`, `scripts/*`
-- Prefer `docs-internal/memo/` for operational/procedural notes and `docs-internal/rfc/` for proposals/architecture.
+- Prefer `docs-internal/guides/` for evergreen step-by-step setup/integration/workflow content. Prefer `docs-internal/memo/` for dated narrative (investigations, post-mortems, milestones, demoted ADRs). Prefer `docs-internal/rfc/` for proposals/architecture.
 - When an ADR is added, modified, or superseded, update `docs-internal/adr/adr-002-readme.md` (both the category table and, if applicable, the cross-cutting principles table).
 
 ## Validation Commands

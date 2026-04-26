@@ -1,12 +1,12 @@
 ---
 id: memo-063
 title: SQLite Driver Conflict Investigation
-status: Reference (Resolved)
+status: Reference
 created: 2025-10-27
 author: Hermes Team
 project_id: hermes
 doc_uuid: 5fd0862b-40a9-493d-a36f-1ec405eb836d
-type: MEMO
+type: Memo
 tags: [debugging, dependencies, drivers, history, sqlite]
 supersedes: ADR-019 (investigation log section)
 related: [ADR-019]

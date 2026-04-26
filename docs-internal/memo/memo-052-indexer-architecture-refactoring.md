@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: 1cf7c7a6-8470-4744-8ba8-c6c51c42f442
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-014 Architecture Refactoring

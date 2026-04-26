@@ -1,8 +1,7 @@
 ---
-id: memo-034
 title: Root Makefile Quick Start Targets
-type: memo
-status: active
+type: Guide
+status: Reference
 tags: [development, makefile, tooling]
 created: 2025-10-09
 author: Hermes Team

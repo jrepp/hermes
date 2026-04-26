@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: 606438a3-3f3f-4d44-aae5-8537f3bf1e70
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-014 Query Optimization Analysis

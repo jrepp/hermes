@@ -1,10 +1,9 @@
 ---
-id: memo-027
 title: Environment Setup Guide
 type: Guide
-status: Final
+status: Reference
 tags: [credentials, environment, onboarding, setup]
-related: [MEMO-020, MEMO-014]
+related: [guides/auth/dex-quickstart.md, guides/dev/quickref.md]
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes
@@ -65,7 +64,7 @@ Hermes uses `config.hcl` for runtime configuration. The file is **tracked in git
 - `database {}` - PostgreSQL connection
 - `search {}` - Meilisearch or Algolia configuration
 
-**See**: `MEMO-012-config-hcl-docs.md` for complete reference.
+**See**: [ADR-021: HCL Projects Configuration](../../adr/adr-021-hcl-projects-configuration.md) for the configuration model.
 
 ## Authentication Providers
 
@@ -84,7 +83,7 @@ docker compose ps dex
 # admin@hermes.local / password
 ```
 
-**See**: `memo-017-dex-quickstart.md` for Dex details.
+**See**: [Dex Quick Start](../auth/dex-quickstart.md) for Dex details.
 
 ### Option 2: Google Workspace (Production)
 
@@ -221,7 +220,7 @@ yarn start:proxy:testing  # Docker backend (port 8001)
 yarn start                # With Mirage mock API (no backend needed)
 ```
 
-**See**: `memo-012-dev-quickref.md` for workflow details.
+**See**: [Developer Quick Reference](quickref.md) for workflow details.
 
 ## Troubleshooting
 
@@ -284,16 +283,16 @@ grep auth_provider config.hcl
 2. 📚 **Read Architecture**: See `docs-internal/rfc/` and `docs-internal/adr/`
 3. 🧪 **Run Tests**: `make go/test` (backend), `cd web && yarn test` (frontend)
 4. 🎭 **E2E Tests**: See `memo-026-playwright-agent-guide.md`
-5. 🚀 **Start Developing**: See `memo-012-dev-quickref.md` for workflows
+5. **Start Developing**: See [Developer Quick Reference](quickref.md) for workflows
 
 ## Common Development Workflows
 
 See these memos for specific tasks:
-- **MEMO-014**: Dev Quick Reference (native vs Docker workflows)
-- **MEMO-020**: Dex Quick Start (local authentication)
-- **MEMO-012**: Config HCL Documentation (all configuration options)
-- **MEMO-029**: Playwright E2E Agent Guide (testing)
-- **MEMO-009**: Ember Dev Server (frontend specifics)
+- [Developer Quick Reference](quickref.md) — native vs Docker workflows
+- [Dex Quick Start](../auth/dex-quickstart.md) — local authentication
+- [ADR-021: HCL Projects Configuration](../../adr/adr-021-hcl-projects-configuration.md) — configuration options
+- [Playwright Agent Guide](playwright-agent.md) — testing
+- [Ember Development Server](ember-dev-server.md) — frontend specifics
 
 ## Help & Support
 

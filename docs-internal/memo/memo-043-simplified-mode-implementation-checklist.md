@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: c426ceb8-7911-43eb-b0d2-d976c1e7782d
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-009 Implementation Checklist

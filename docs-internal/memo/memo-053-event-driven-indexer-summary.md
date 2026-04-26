@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: d949f6e9-92ad-4c25-8912-891c01dee0ca
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-014 Implementation Summary

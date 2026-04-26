@@ -1,10 +1,9 @@
 ---
-id: memo-020
 title: Dex Quick Start
 type: Guide
-status: Final
+status: Reference
 tags: [authentication, dex, oidc, testing]
-related: [MEMO-007, MEMO-014]
+related: [guides/auth/quickref.md, guides/dev/quickref.md]
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes
@@ -58,7 +57,7 @@ open http://localhost:4201
 docker compose down -v
 ```
 
-**Note**: Acceptance testing is configured to use Dex via the `HERMES_AUTH_PROVIDER=dex` environment variable in `docker-compose.yml`. See MEMO-007 for details on command-line provider selection.
+**Note**: Acceptance testing is configured to use Dex via the `HERMES_AUTH_PROVIDER=dex` environment variable in `docker-compose.yml`. See the [Auth Provider Selection Quick Reference](quickref.md) for details on command-line provider selection.
 
 ## Test Credentials
 

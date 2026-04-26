@@ -1,10 +1,9 @@
 ---
-id: memo-030
 title: Authentication Providers Guide
 type: Guide
-status: Final
+status: Reference
 tags: [authentication, configuration, dex, google, okta, providers]
-related: [MEMO-007, MEMO-020, RFC-007, RFC-009, ADR-008]
+related: [guides/auth/quickref.md, guides/auth/dex-quickstart.md, RFC-007, RFC-009, ADR-008]
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes
@@ -30,7 +29,7 @@ auth_provider = "okta"     # Enterprise (Okta SSO)
 
 ```
 
-**See**: [MEMO-007: Auth Provider Quick Ref](memo-006-auth-provider-quickref.md) for runtime selection details.
+**See**: [Auth Provider Selection Quick Reference](quickref.md) for runtime selection details.
 
 ## Provider Configurations
 
@@ -76,7 +75,7 @@ docker compose up -d dex
 curl http://localhost:5556/dex/.well-known/openid-configuration
 ```
 
-**See**: [MEMO-020: Dex Quick Start](memo-017-dex-quickstart.md) for complete Dex guide.
+**See**: [Dex Quick Start](dex-quickstart.md) for complete Dex guide.
 
 ### Google OAuth (Production)
 
@@ -410,8 +409,8 @@ See [AUTH_ARCHITECTURE_DIAGRAMS.md](../AUTH_ARCHITECTURE_DIAGRAMS.md) for comple
 - `testing/dex-config.yaml` - Dex OIDC configuration
 
 **Documentation**:
-- MEMO-007: Auth Provider Quick Reference
-- MEMO-020: Dex Quick Start
+- [Auth Provider Selection Quick Reference](quickref.md)
+- [Dex Quick Start](dex-quickstart.md)
 - RFC-007: Multi-Provider Auth Architecture
 - RFC-009: Auth Provider Selection
 - ADR-008: Dex OIDC Authentication Decision

@@ -1,10 +1,9 @@
 ---
-id: memo-014
 title: Dev Quick Reference
 type: Guide
-status: Final
+status: Reference
 tags: [debugging, development, docker, ports, workflow]
-related: [MEMO-029]
+related: [guides/dev/playwright-agent.md]
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes

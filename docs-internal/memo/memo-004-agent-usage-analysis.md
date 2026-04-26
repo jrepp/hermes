@@ -1,7 +1,8 @@
 ---
 id: memo-004
 title: Agent Usage Analysis
-type: Analysis
+type: Memo
+subtype: Analysis
 status: Final
 tags: [ai-agents, best-practices, copilot, productivity, prompt-engineering]
 related: [MEMO-016, MEMO-016]

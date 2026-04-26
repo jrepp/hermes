@@ -7,6 +7,7 @@ project_id: hermes
 doc_uuid: a636affa-00ad-44d7-919a-b3a7f751a8ab
 status: Draft
 tags: []
+type: Memo
 ---
 
 # RFC-013 Implementation: Notification Backends
