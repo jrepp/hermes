@@ -271,7 +271,7 @@ main() {
     echo "  2. Configure environment variables or update config.hcl"
     echo "  3. Run: ./hermes server -config=config.hcl"
     echo ""
-    echo "For more information, see: docs-internal/README-ollama.md"
+    echo "For more information, see: docs-internal/memo/README-ollama.md"
     echo ""
 }
 

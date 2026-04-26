@@ -2,7 +2,7 @@
 name = "hermes-testing"
 version = "0.1.0"
 description = "Distributed testing framework for Hermes document management system"
-readme = "README.md"
+readme = "readme.md"
 requires-python = ">=3.9"
 license = { text = "MPL-2.0" }
 authors = [

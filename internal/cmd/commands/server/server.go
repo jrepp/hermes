@@ -592,7 +592,7 @@ func (c *Command) Run(args []string) int {
 		// Simplified mode: use SQLite
 		// NOTE: Server binary does not support SQLite to avoid driver conflicts.
 		// Use hermes-migrate binary for SQLite databases.
-		c.UI.Error("SQLite mode not supported in server binary. Use hermes-migrate for migrations. See docs-internal/SQLITE_DRIVER_CONFLICT.md")
+		c.UI.Error("SQLite mode not supported in server binary. Use hermes-migrate for migrations. See docs-internal/memo/SQLITE_DRIVER_CONFLICT.md")
 		return 1
 	}
 

@@ -69,7 +69,7 @@ func NewDBWithConfig(cfg DatabaseConfig) (*gorm.DB, error) {
 		dialector = postgres.Open(dsn)
 
 	case "sqlite":
-		return nil, fmt.Errorf("SQLite not supported in server binary (avoid driver conflicts). Use hermes-migrate for SQLite migrations. See docs-internal/SQLITE_DRIVER_CONFLICT.md")
+		return nil, fmt.Errorf("SQLite not supported in server binary (avoid driver conflicts). Use hermes-migrate for SQLite migrations. See docs-internal/memo/SQLITE_DRIVER_CONFLICT.md")
 
 	default:
 		return nil, fmt.Errorf("unsupported database driver: %s (server only supports postgres)", cfg.Driver)
@@ -85,7 +85,7 @@ func NewDBWithConfig(cfg DatabaseConfig) (*gorm.DB, error) {
 
 	// NOTE: Migrations are now handled by the separate hermes-migrate binary.
 	// The server expects the database to be pre-migrated.
-	// See: docs-internal/SQLITE_DRIVER_CONFLICT.md for architecture details.
+	// See: docs-internal/memo/SQLITE_DRIVER_CONFLICT.md for architecture details.
 	//
 	// Run migrations manually before starting the server:
 	//   ./build/bin/hermes-migrate -driver=postgres -dsn="..."
