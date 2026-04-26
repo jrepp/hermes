@@ -1,18 +1,21 @@
 ---
 id: adr-032
-title: Ember Data Store Error Fix
+title: Direct fetch() for Singleton API Endpoints
 date: 2025-10-08
 type: ADR
 subtype: Frontend Decision
+decision_type: Architectural Pattern
 status: Accepted
-tags: ['ember', 'frontend', 'ember-data', 'bug-fix', 'authentication']
+tags: ['ember', 'frontend', 'ember-data', 'fetch', 'authentication']
 related: ['RFC-020', 'RFC-007']
 created: 2026-04-24
 deciders: Hermes Team
 project_id: hermes
 doc_uuid: a2cf1e6f-ea7a-4f13-8ee6-00c5a130e5fc
 ---
-# Ember Data Store Error Fix
+# Direct fetch() for Singleton API Endpoints
+
+**Decision Type**: Architectural Pattern (frontend data-loading rule)
 
 ## Context
 

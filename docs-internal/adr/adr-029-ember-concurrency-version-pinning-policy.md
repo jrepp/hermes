@@ -1,18 +1,21 @@
 ---
 id: adr-029
-title: Ember Concurrency Compatibility
+title: Ember Concurrency Version Pinning Policy
 date: 2025-10-08
 type: ADR
 subtype: Dependency Decision
+decision_type: Configuration Choice
 status: Accepted
 tags: ['ember', 'dependencies', 'concurrency', 'compatibility', 'upgrade']
-related: ['ADR-006', 'RFC-034']
+related: ['MEMO-125', 'RFC-034']
 created: 2026-04-24
 deciders: Hermes Team
 project_id: hermes
 doc_uuid: daffd0f1-bd26-4fea-b25f-766b4ebd95e2
 ---
-# Ember Concurrency Compatibility
+# Ember Concurrency Version Pinning Policy
+
+**Decision Type**: Configuration Choice (intentional dependency-version mismatch)
 
 ## Context
 

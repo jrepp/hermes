@@ -1,18 +1,25 @@
 ---
 id: adr-065
-title: Promise Timeout Hang Fix
+title: Frontend Async Timeout & Fallback Policy
 date: 2025-10-08
 type: ADR
 subtype: Frontend Decision
+decision_type: Architectural Pattern
 status: Accepted
-tags: ['frontend', 'promise', 'timeout', 'bug-fix', 'admin-login']
+tags: ['frontend', 'promise', 'timeout', 'resilience', 'graceful-degradation']
 related: ['memo/001', 'memo/075']
 created: 2026-04-24
 deciders: Hermes Team
 project_id: hermes
 doc_uuid: 82333dc0-a780-4bef-817f-207916917ecb
 ---
-# Promise Timeout Hang Fix
+# Frontend Async Timeout & Fallback Policy
+
+**Decision Type**: Architectural Pattern (binding rule for all frontend async API calls)
+
+Every async API call in the frontend is wrapped in `withTimeout()` with a
+graceful fallback. The triggering bug (admin dashboard hanging on a 401)
+established this as a project-wide rule.
 
 ## Context
 

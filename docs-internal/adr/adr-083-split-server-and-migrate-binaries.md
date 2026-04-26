@@ -5,10 +5,20 @@ created: 2026-04-24
 author: Hermes Team
 project_id: hermes
 doc_uuid: 5fd0862b-40a9-493d-a36f-1ec405eb836d
+decision_type: Architectural Pattern
 status: Accepted
-title: "SQLite Driver Double Registration Conflict"
+title: "Split Server and Migrate Binaries (Pure-Go Server)"
 ---
-# SQLite Driver Double Registration Conflict
+# Split Server and Migrate Binaries (Pure-Go Server)
+
+**Decision Type**: Architectural Pattern (binary boundary for database drivers)
+
+The server binary (`cmd/hermes`) is pure-Go (`CGO_ENABLED=0`) and embeds only
+the PostgreSQL driver; all migrations live in a separate `cmd/hermes-migrate`
+binary that owns SQLite (`modernc.org/sqlite`) and PostgreSQL drivers. This
+boundary was forced by the `sql: Register called twice for driver sqlite`
+panic but is preserved as an ongoing architectural constraint (12-factor
+migrations, no transitive `mattn/go-sqlite3` pull-in).
 
 **Issue**: `panic: sql: Register called twice for driver sqlite`
 **Status**: ✅ RESOLVED - Migrations moved to separate binary

@@ -1,18 +1,27 @@
 ---
 id: adr-048
-title: Local Workspace User Info Fix
+title: Environment-Agnostic OAuth Redirect
 date: 2025-10-08
 type: ADR
 subtype: Backend Decision
+decision_type: Architectural Pattern
 status: Accepted
-tags: ['backend', 'workspace', 'user-info', 'local-workspace', 'bug-fix']
-related: ['RFC-047', 'RFC-020']
+tags: ['backend', 'auth', 'oauth', 'workspace', 'redirect']
+related: ['RFC-047', 'RFC-020', 'ADR-076']
 created: 2026-04-24
 deciders: Hermes Team
 project_id: hermes
 doc_uuid: da31eae5-c771-4a30-9541-6c4dbe8d6722
 ---
-# Local Workspace User Info Fix
+# Environment-Agnostic OAuth Redirect
+
+**Decision Type**: Architectural Pattern (OAuth redirect contract)
+
+OAuth `redirect_uri` always points to the backend; the backend then redirects the
+browser to the frontend via an environment-agnostic `base_url`. Independently,
+this ADR also records the fix that initialized the local workspace
+`ProviderAdapter` so `/api/v2/me` returns real users (the bug surfaced the
+redirect requirement).
 
 ## Context
 
