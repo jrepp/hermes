@@ -1,6 +1,6 @@
 ---
-id: MEMO-035
-title: Environment Setup Guide
+id: memo-035
+title: "Environment Setup Guide"
 date: 2025-10-09
 type: Guide
 status: Final
@@ -8,6 +8,10 @@ tags: [setup, environment, credentials, onboarding]
 related:
   - MEMO-023
   - MEMO-017
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: c969d86d-93d2-4c0e-b2c6-5d471083a535
 ---
 
 # Environment Setup Guide
@@ -46,6 +50,7 @@ yarn start:proxy:local
 
 # 6. Open http://localhost:4200
 # Login with: test@hermes.local / password
+
 ```
 
 **Done!** ✅ You're now running Hermes locally.
@@ -69,8 +74,8 @@ Hermes uses `config.hcl` for runtime configuration. The file is **tracked in git
 
 ### Option 1: Dex (Recommended for Local Dev)
 
-✅ **No external account needed**  
-✅ **Test users pre-configured**  
+✅ **No external account needed**
+✅ **Test users pre-configured**
 ✅ **Runs in Docker**
 
 ```bash
@@ -97,12 +102,14 @@ docker compose ps dex
 3. Create OAuth 2.0 Client ID (Web application)
 4. Create Service Account, download JSON key
 5. Update config.hcl:
+
    ```hcl
    auth_provider = "google"
    google_workspace {
      client_id = "your-client-id.apps.googleusercontent.com"
      credentials_file = "./credentials.json"
    }
+
    ```
 
 ### Option 3: Okta (Enterprise)
@@ -115,6 +122,7 @@ docker compose ps dex
 1. Create OIDC app in Okta
 2. Get client ID, client secret, domain
 3. Update config.hcl:
+
    ```hcl
    auth_provider = "okta"
    okta {
@@ -131,6 +139,7 @@ docker compose ps dex
 **PostgreSQL** is required for document metadata.
 
 ### Local Development
+
 ```bash
 # Use Docker (easiest)
 docker compose up -d postgres
@@ -141,10 +150,12 @@ docker compose up -d postgres
 # Database: hermes
 # User: hermes
 # Password: password
+
 ```
 
 ### Production
 Update `config.hcl`:
+
 ```hcl
 database {
   host = "your-postgres-host"
@@ -161,6 +172,7 @@ database {
 **Meilisearch** (local dev) or **Algolia** (production).
 
 ### Meilisearch (Local Dev - Recommended)
+
 ```bash
 # Use Docker (easiest)
 docker compose up -d meilisearch
@@ -168,9 +180,11 @@ docker compose up -d meilisearch
 # Connection details:
 # URL: http://localhost:7700
 # API Key: (optional for local dev)
+
 ```
 
 Config:
+
 ```hcl
 search {
   provider = "meilisearch"
@@ -184,6 +198,7 @@ search {
 1. Create Algolia account (https://www.algolia.com)
 2. Get App ID and Admin API Key
 3. Update config.hcl:
+
    ```hcl
    search {
      provider = "algolia"
@@ -192,6 +207,7 @@ search {
        admin_api_key = "your-admin-key"
      }
    }
+
    ```
 
 ## Frontend Setup
@@ -213,6 +229,7 @@ yarn start                # With Mirage mock API (no backend needed)
 ## Troubleshooting
 
 ### Backend won't start
+
 ```bash
 # Check Dex is running
 curl http://localhost:5556/dex/.well-known/openid-configuration
@@ -222,9 +239,11 @@ docker compose ps postgres
 
 # Check config syntax
 ./hermes server -config=config.hcl -validate
+
 ```
 
 ### Frontend can't connect to backend
+
 ```bash
 # Check backend is running
 curl http://localhost:8000/health
@@ -235,12 +254,14 @@ HERMES_API_URL=http://localhost:8000 yarn start:proxy
 ```
 
 ### "Authentication failed"
+
 ```bash
 # Verify Dex users
 cat testing/dex-config.yaml | grep -A 5 staticPasswords
 
 # Check backend auth provider
 grep auth_provider config.hcl
+
 ```
 
 ## Quick Reference Card
@@ -284,3 +305,4 @@ See these memos for specific tasks:
 - **Memos**: `docs-internal/memo/` for quick references
 - **RFCs**: `docs-internal/rfc/` for design documents
 - **ADRs**: `docs-internal/adr/` for architecture decisions
+

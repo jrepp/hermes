@@ -1,3 +1,12 @@
+---
+id: memo-018
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 9300791a-57ce-4642-a55b-214ed26df62b
+status: Draft
+title: "Hermes Indexer"
+---
 # Hermes Indexer
 
 > **📖 For comprehensive architecture and design documentation, see [RFC: Indexer Architecture](rfc/rfc_indexer_architecture.md)**
@@ -26,7 +35,7 @@ The indexer performs three primary functions:
 
 ### Data Flow
 
-```
+```text
 Google Drive (Source)
     ↓
     ↓ (Google Drive API)
@@ -35,6 +44,7 @@ Indexer Service
     ↓
     ├──→ PostgreSQL Database (metadata & tracking)
     └──→ Algolia (full-text search)
+
 ```
 
 ### Tracking & State Management
@@ -94,6 +104,7 @@ The indexer requires:
 
 # Dry run mode (not yet implemented in current version)
 ./hermes indexer -config=config.hcl -dry-run
+
 ```
 
 ### As a Service
@@ -152,7 +163,7 @@ The indexer interacts with several database models:
 
 - **`Document`**: Core document metadata (Google File ID, doc type, status, etc.)
 - **`DocumentReview`**: Individual reviewer assignments
-- **`DocumentGroupReview`**: Group-based reviewer assignments  
+- **`DocumentGroupReview`**: Group-based reviewer assignments
 - **`IndexerMetadata`**: Global indexer state (last full index time)
 - **`IndexerFolder`**: Per-folder tracking (last indexed time by folder ID)
 
@@ -160,7 +171,7 @@ The indexer interacts with several database models:
 
 The indexer uses structured logging via `hashicorp/go-hclog`:
 
-```
+```text
 [INFO]  indexer: indexing documents folder: folder_id=... last_indexed_at=...
 [INFO]  indexer: indexing document: google_file_id=... folder_id=...
 [INFO]  indexer: indexed document: google_file_id=... folder_id=...
@@ -214,6 +225,7 @@ make bin
 
 # 4. Run indexer
 ./build/bin/hermes indexer -config=config.hcl
+
 ```
 
 ## Performance Tuning
@@ -259,9 +271,9 @@ Potential enhancements identified in code TODOs:
 
 ## Related Documentation
 
-- [Algolia Configuration](./README-algolia.md)
-- [Google Workspace Setup](./README-google-workspace.md)
-- [PostgreSQL Configuration](./README-postgresql.md)
+- [Algolia Configuration](./readme-algolia.md)
+- [Google Workspace Setup](./readme-google-workspace.md)
+- [PostgreSQL Configuration](./readme-postgresql.md)
 - [Config.hcl Documentation](./CONFIG_HCL_DOCUMENTATION.md)
 
 ## See Also
@@ -270,3 +282,4 @@ Potential enhancements identified in code TODOs:
 - **Search Package**: `/pkg/search/` - Search abstraction layer (Algolia/Meilisearch)
 - **Workspace Package**: `/pkg/workspace/` - Workspace provider abstraction (Google/Local)
 - **Document Package**: `/pkg/document/` - Document parsing and conversion logic
+

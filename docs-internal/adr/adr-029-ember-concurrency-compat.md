@@ -1,23 +1,26 @@
 ---
-id: ADR-029
+id: adr-029
 title: Ember Concurrency Compatibility
 date: 2025-10-08
 type: ADR
 subtype: Dependency Decision
 status: Accepted
-tags: [ember, dependencies, concurrency, compatibility, upgrade]
-related:
-  - ADR-006
-  - RFC-034
+tags: ['ember', 'dependencies', 'concurrency', 'compatibility', 'upgrade']
+related: ['ADR-006', 'RFC-034']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: daffd0f1-bd26-4fea-b25f-766b4ebd95e2
 ---
-
 # Ember Concurrency Compatibility
 
 ## Context
 
 `ember-power-select` 8.x requires `ember-concurrency` 3.x and imports from:
+
 ```javascript
 import { buildTask } from 'ember-concurrency/async-arrow-runtime';
+
 ```
 
 However, `ember-concurrency` 3.x does NOT export `async-arrow-runtime` at root level - it's a private module at `addon/-private/async-arrow-runtime.js`.
@@ -60,20 +63,20 @@ yarn up ember-power-select@^8.11.0 ember-concurrency@^2.3.7
 
 1. **Upgrade ember-concurrency to 3.x**
    - ❌ Module resolution fails (async-arrow-runtime not exported)
-   
+
 2. **Manual module shim**
    - ❌ Created `node_modules/ember-concurrency/async-arrow-runtime.js`
    - ❌ Doesn't affect Ember addon module resolution
-   
+
 3. **Webpack alias in ember-cli-build.js**
    - ❌ Doesn't affect Ember's addon resolution system
-   
+
 4. **Patch ember-power-select dist file**
    - ❌ Lost on `yarn install`, requires automation
-   
+
 5. **Downgrade to ember-power-select 7.x**
    - ❌ SASS import errors with Ember 6.x
-   
+
 6. **Skip dropdowns temporarily**
    - ❌ Blocks essential document creation functionality
 
@@ -81,20 +84,23 @@ yarn up ember-power-select@^8.11.0 ember-concurrency@^2.3.7
 
 1. **Wait for upstream fix**: `ember-power-select` fixes export path
 2. **Use patch-package**: Automatically patch on install
+
    ```bash
    npm install -g patch-package
    npx patch-package ember-power-select
+
    ```
+
 3. **Fork and fix**: Maintain our own fork
 4. **Different dropdown library**: Switch to alternative component
 
 ## Verification
 
-✅ Dropdowns render correctly  
-✅ Product/area selection works  
-✅ Document creation functional  
-✅ No runtime errors  
-⚠️ Console shows version mismatch warning (expected)  
+✅ Dropdowns render correctly
+✅ Product/area selection works
+✅ Document creation functional
+✅ No runtime errors
+⚠️ Console shows version mismatch warning (expected)
 
 ## Implementation
 
@@ -118,3 +124,4 @@ yarn up ember-power-select@^8.11.0 ember-concurrency@^2.3.7
 
 - Source: `EMBER_CONCURRENCY_COMPATIBILITY_ISSUE.md`
 - Related: `ANIMATED_COMPONENTS_FIX_2025_10_08.md`, `EMBER_UPGRADE_STRATEGY.md`
+

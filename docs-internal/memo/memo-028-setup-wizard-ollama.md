@@ -1,8 +1,17 @@
+---
+id: memo-028
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: a7cb212e-6b0d-4010-9608-3ff72f145bd2
+status: Draft
+title: "Ollama Integration for Setup Wizard"
+---
 # Ollama Integration for Setup Wizard
 
-**Status**: ✅ Implemented  
-**Branch**: `jrepp/dev-tidy`  
-**Related**: RFC-083, Setup Wizard  
+**Status**: ✅ Implemented
+**Branch**: `jrepp/dev-tidy`
+**Related**: RFC-083, Setup Wizard
 
 ## Overview
 
@@ -36,9 +45,11 @@ type Ollama struct {
     // EmbeddingModel is the model for vector embeddings (e.g., "nomic-embed-text").
     EmbeddingModel string `hcl:"embedding_model,optional"`
 }
+
 ```
 
 Added to main `Config` struct:
+
 ```go
 // Ollama configures Hermes to work with Ollama for local AI summarization.
 Ollama *Ollama `hcl:"ollama,block"`
@@ -47,6 +58,7 @@ Ollama *Ollama `hcl:"ollama,block"`
 #### 2. Setup API (`internal/api/v2/setup.go`)
 
 **Request Structure**:
+
 ```go
 type SetupConfigRequest struct {
     WorkspacePath string `json:"workspace_path"`
@@ -65,6 +77,7 @@ type OllamaValidationResponse struct {
     Message string `json:"message"`
     Version string `json:"version,omitempty"`
 }
+
 ```
 
 **Validation Handler** (`OllamaValidateHandler`):
@@ -74,17 +87,18 @@ type OllamaValidationResponse struct {
 - Returns validation status and helpful error messages
 
 **Config Generation**:
+
 ```go
 func generateConfigFile(workspacePath, upstreamURL, ollamaURL, ollamaModel string) error {
     cfg := config.GenerateSimplifiedConfig(workspacePath)
-    
+
     if ollamaURL != "" {
         cfg.Ollama = &config.Ollama{
             URL:            ollamaURL,
             SummarizeModel: ollamaModel,
         }
     }
-    
+
     return config.WriteConfig(cfg, "config.hcl")
 }
 ```
@@ -92,8 +106,10 @@ func generateConfigFile(workspacePath, upstreamURL, ollamaURL, ollamaModel strin
 #### 3. Endpoint Registration (`internal/cmd/commands/server/server.go`)
 
 Added to both Algolia and non-Algolia endpoint lists:
+
 ```go
 endpoint{"/api/v2/setup/validate-ollama", apiv2.OllamaValidateHandler(c.Log)}
+
 ```
 
 ### Frontend Changes
@@ -101,6 +117,7 @@ endpoint{"/api/v2/setup/validate-ollama", apiv2.OllamaValidateHandler(c.Log)}
 #### 1. Component Logic (`web/app/components/setup-wizard.ts`)
 
 **New Tracked Properties**:
+
 ```typescript
 @tracked ollamaURL = 'http://localhost:11434';
 @tracked ollamaModel = 'llama3.2';
@@ -110,13 +127,16 @@ endpoint{"/api/v2/setup/validate-ollama", apiv2.OllamaValidateHandler(c.Log)}
 ```
 
 **New Actions**:
+
 ```typescript
 @action updateOllamaURL(event: Event)
 @action updateOllamaModel(event: Event)
 @action async validateOllama(event: Event)
+
 ```
 
 **Updated Submit**:
+
 ```typescript
 body: JSON.stringify({
     workspace_path: this.workspacePath,
@@ -136,18 +156,18 @@ Added new section after Upstream Server:
   <h3 class="text-lg font-medium text-gray-900 mb-4">
     Local AI with Ollama (Optional)
   </h3>
-  
+
   <!-- URL Input -->
   <input id="ollama-url" type="url" value={{this.ollamaURL}} ... />
-  
+
   <!-- Model Input -->
   <input id="ollama-model" type="text" value={{this.ollamaModel}} ... />
-  
+
   <!-- Validation Button -->
   <button type="button" {{on "click" this.validateOllama}}>
     Test Connection
   </button>
-  
+
   <!-- Validation Feedback -->
   {{#if this.ollamaValidationMessage}}
     <div class="{{if this.ollamaValidationSuccess 'bg-green-50' 'bg-yellow-50'}}">
@@ -155,6 +175,7 @@ Added new section after Upstream Server:
     </div>
   {{/if}}
 </div>
+
 ```
 
 **UI Features**:
@@ -193,14 +214,17 @@ ollama {
 ### POST /api/v2/setup/validate-ollama
 
 **Request**:
+
 ```json
 {
   "url": "http://localhost:11434",
   "model": "llama3.2"
 }
+
 ```
 
 **Response (Success)**:
+
 ```json
 {
   "valid": true,
@@ -210,15 +234,18 @@ ollama {
 ```
 
 **Response (Model Not Found)**:
+
 ```json
 {
   "valid": false,
   "message": "Model 'llama3.2' not found. Run: ollama pull llama3.2",
   "version": "0.1.0"
 }
+
 ```
 
 **Response (Connection Failed)**:
+
 ```json
 {
   "valid": false,
@@ -262,14 +289,17 @@ The validation handler performs these checks:
 ### Automated Testing
 
 **Backend**:
+
 ```bash
 # Test validation endpoint
 curl -X POST http://localhost:8000/api/v2/setup/validate-ollama \
   -H "Content-Type: application/json" \
   -d '{"url": "http://localhost:11434", "model": "llama3.2"}'
+
 ```
 
 **Build Validation**:
+
 ```bash
 make bin          # Backend compilation
 cd web && yarn build  # Frontend build
@@ -297,8 +327,8 @@ make build        # Full project build
 
 ## Related Documentation
 
-- [README-ollama.md](README-ollama.md) - Ollama provider documentation
-- [SETUP_WIZARD_GUIDE.md](SETUP_WIZARD_GUIDE.md) - Setup wizard overview
+- [readme-ollama.md](readme-ollama.md) - Ollama provider documentation
+- [setup_wizard_guide.md](setup_wizard_guide.md) - Setup wizard overview
 - [RFC-083](rfc/rfc-083-simplified-local-mode.md) - Simplified local mode RFC
 
 ## Files Modified
@@ -314,7 +344,7 @@ make build        # Full project build
 
 ## Commit Message
 
-```
+```text
 feat(setup): add Ollama AI configuration to setup wizard
 
 **Prompt Used**:
@@ -345,4 +375,6 @@ ollama that validates the local ollama is working"
 - Frontend: `cd web && yarn build` - ✅ Success (expected env var warnings)
 - Full build: `make build` - ✅ Success
 - No compilation errors, no TypeScript errors
+
 ```
+

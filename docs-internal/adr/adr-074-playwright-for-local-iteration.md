@@ -1,16 +1,17 @@
 ---
-id: ADR-074
+id: adr-074
 title: Playwright for Local Development Iteration
 date: 2025-10-09
 type: ADR
 subtype: Development Tooling
 status: Accepted
-tags: [playwright, testing, e2e, development, tooling]
-related:
-  - ADR-070
-  - RFC-079
+tags: ['playwright', 'testing', 'e2e', 'development', 'tooling']
+related: ['ADR-070', 'RFC-079']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: 7f575895-2a6a-430d-81b5-34f9be1fe1aa
 ---
-
 # Playwright for Local Development Iteration
 
 ## Context
@@ -29,13 +30,15 @@ Hermes needed a way to perform rapid E2E testing during development without:
 - Debugging test failures requires multiple runs
 
 **Developer Workflow Before**:
-```
+
+``` text
 1. Write code
 2. Manually test in browser (5-10 minutes)
 3. Run headless CI tests (wait for failures)
 4. Add console.log statements
 5. Re-run tests
 6. Repeat until fixed
+
 ```
 
 ## Decision
@@ -52,6 +55,7 @@ Use **dual Playwright strategy**: `playwright-mcp` for interactive exploration, 
 - Reproducing bug reports
 
 **Example Session** (AI Agent Workflow):
+
 ```typescript
 // Navigate to app
 await browser_navigate({ url: 'http://localhost:4200' });
@@ -61,7 +65,7 @@ const snapshot = await browser_snapshot();
 // Agent can "see" interactive elements with refs
 
 // Click login button
-await browser_click({ 
+await browser_click({
   element: 'Login button',
   ref: 'button[name="login"]'
 });
@@ -83,13 +87,15 @@ const requests = await browser_network_requests();
 ```
 
 **Measured Benefits**:
-```
+
+``` text
 Metric                     | Manual | playwright-mcp | Improvement
 ---------------------------|--------|----------------|------------
 Time to reproduce bug      | 8 min  | 2 min          | 4x faster
 Steps to document workflow | 25     | 8              | 3x fewer
 Screenshots per session    | 3      | 12             | 4x more
 Network debugging          | Hard   | Built-in       | Possible
+
 ```
 
 ### 2. Headless Playwright for CI/CD
@@ -102,18 +108,19 @@ Network debugging          | Hard   | Built-in       | Possible
 - Cross-browser compatibility
 
 **Example Test** (`tests/e2e-playwright/tests/document-creation.spec.ts`):
+
 ```typescript
 test('should create document without template markers', async ({ page }) => {
   await page.goto('http://localhost:4200');
-  
+
   // Headless execution, no browser window
   await page.click('[data-test-create-document]');
   await page.fill('[data-test-title]', 'Test Document');
   await page.click('[data-test-submit]');
-  
+
   // Wait for navigation
   await page.waitForURL(/\/documents\/\d+/);
-  
+
   // Validate no {{...}} markers remain
   const content = await page.textContent('[data-test-content]');
   expect(content).not.toMatch(/\{\{[^}]+\}\}/);
@@ -121,21 +128,24 @@ test('should create document without template markers', async ({ page }) => {
 ```
 
 **Execution**:
+
 ```bash
 # Fast, agent-friendly, parseable output
 npx playwright test --reporter=line --max-failures=1
 
 # Exit code: 0 = pass, 1 = fail
 echo $?
+
 ```
 
 **CI/CD Integration** (GitHub Actions):
+
 ```yaml
 - name: E2E Tests
   run: |
     cd tests/e2e-playwright
     npx playwright test --reporter=json > results.json
-    
+
 - name: Upload Results
   if: failure()
   uses: actions/upload-artifact@v3
@@ -166,17 +176,20 @@ echo $?
 ## Measured Results
 
 **Development Velocity**:
-```
+
+``` text
 Task                          | Before | With playwright-mcp | Improvement
 ------------------------------|--------|---------------------|------------
 Debug test failure            | 25 min | 8 min               | 3.1x faster
 Explore new feature           | 15 min | 5 min               | 3x faster
 Document bug with screenshots | 12 min | 3 min               | 4x faster
 Reproduce user issue          | 10 min | 3 min               | 3.3x faster
+
 ```
 
 **Test Reliability**:
-```
+
+``` text
 Metric                  | Selenium | Cypress | Playwright (Headless) | playwright-mcp
 ------------------------|----------|---------|----------------------|----------------
 Flaky tests             | 18%      | 12%     | 3%                   | N/A (manual)
@@ -188,13 +201,15 @@ AI agent compatibility  | Poor     | Poor    | Good                 | Excellent
 ```
 
 **Test Suite Performance**:
-```
+
+``` text
 Test Type              | Count | Duration (Headless) | Duration (playwright-mcp)
 -----------------------|-------|---------------------|-------------------------
 Unit tests             | 147   | 2.3s                | N/A
 Integration tests      | 23    | 12.1s               | N/A
 E2E tests (headless)   | 8     | 45s                 | N/A
 E2E exploration (mcp)  | -     | N/A                 | 3-8 minutes
+
 ```
 
 ## Tool Comparison
@@ -228,6 +243,7 @@ E2E exploration (mcp)  | -     | N/A                 | 3-8 minutes
 ### Pattern 1: Explore → Document → Automate
 
 **Step 1**: Use playwright-mcp to explore feature
+
 ```typescript
 // Interactive session (AI agent)
 await browser_navigate({ url: 'http://localhost:4200/documents/new' });
@@ -237,6 +253,7 @@ await browser_take_screenshot({ filename: 'step1.png' });
 ```
 
 **Step 2**: Document findings in bug report
+
 ```markdown
 ## Bug: Content Not Displayed
 
@@ -252,16 +269,18 @@ await browser_take_screenshot({ filename: 'step1.png' });
 ### Network Logs:
 PUT /api/v2/documents/123/content - 200 OK
 (No subsequent GET to reload content)
+
 ```
 
 **Step 3**: Automate as headless test
+
 ```typescript
 // tests/e2e-playwright/tests/document-content-display-bug.spec.ts
 test('should display content after save', async ({ page }) => {
   await page.goto('http://localhost:4200/documents/123');
   await page.fill('[data-test-content-editor]', 'Updated content');
   await page.click('[data-test-save-button]');
-  
+
   // Expected to fail until bug is fixed
   await expect(page.locator('[data-test-content-display]'))
     .toContainText('Updated content');
@@ -271,12 +290,15 @@ test('should display content after save', async ({ page }) => {
 ### Pattern 2: Debug Headless Failure → Fix → Validate
 
 **Step 1**: Headless test fails
+
 ```bash
 npx playwright test document-creation.spec.ts
 # ✗ should create document - timeout waiting for selector
+
 ```
 
 **Step 2**: Reproduce with playwright-mcp
+
 ```typescript
 await browser_navigate({ url: 'http://localhost:4200' });
 await browser_click({ element: 'Create button', ref: '...' });
@@ -285,12 +307,15 @@ await browser_snapshot();  // See what's actually on page
 ```
 
 **Step 3**: Fix test
+
 ```typescript
 - await page.click('[data-test-create]');
 + await page.click('[data-test-new-document]');
+
 ```
 
 **Step 4**: Validate headless
+
 ```bash
 npx playwright test document-creation.spec.ts
 # ✓ should create document (2.1s)
@@ -299,6 +324,7 @@ npx playwright test document-creation.spec.ts
 ### Pattern 3: Performance Analysis
 
 **Interactive Session**:
+
 ```typescript
 await browser_navigate({ url: 'http://localhost:4200/documents' });
 const requests = await browser_network_requests();
@@ -310,16 +336,18 @@ requests.forEach(req => {
 
 // Identify slow endpoints
 // GET /api/v2/documents?limit=50 - 1.2s (too slow!)
+
 ```
 
 **Automated Performance Test**:
+
 ```typescript
 test('should load documents list in under 500ms', async ({ page }) => {
   const start = Date.now();
   await page.goto('http://localhost:4200/documents');
   await page.waitForSelector('[data-test-document-list]');
   const duration = Date.now() - start;
-  
+
   expect(duration).toBeLessThan(500);
 });
 ```
@@ -327,6 +355,7 @@ test('should load documents list in under 500ms', async ({ page }) => {
 ## Configuration
 
 ### playwright-mcp (via MCP settings)
+
 ```json
 {
   "mcpServers": {
@@ -340,9 +369,11 @@ test('should load documents list in under 500ms', async ({ page }) => {
     }
   }
 }
+
 ```
 
 ### Playwright Headless (`playwright.config.ts`)
+
 ```typescript
 export default defineConfig({
   testDir: './tests',
@@ -385,28 +416,28 @@ export default defineConfig({
 ## Alternatives Considered
 
 ### 1. ❌ Selenium WebDriver
-**Pros**: Mature, widely adopted  
-**Cons**: Slow, no auto-wait, complex setup, poor debugging  
+**Pros**: Mature, widely adopted
+**Cons**: Slow, no auto-wait, complex setup, poor debugging
 **Rejected**: Playwright faster and more reliable
 
 ### 2. ❌ Cypress
-**Pros**: Good developer experience, time-travel debugging  
-**Cons**: Chrome-only, paid parallelization, poor CI/CD integration  
+**Pros**: Good developer experience, time-travel debugging
+**Cons**: Chrome-only, paid parallelization, poor CI/CD integration
 **Rejected**: Limited browser support, expensive scaling
 
 ### 3. ❌ Puppeteer
-**Pros**: Fast, Chrome DevTools Protocol  
-**Cons**: Chrome-only, no cross-browser, manual wait logic  
+**Pros**: Fast, Chrome DevTools Protocol
+**Cons**: Chrome-only, no cross-browser, manual wait logic
 **Rejected**: Playwright superset of Puppeteer features
 
 ### 4. ❌ TestCafe
-**Pros**: No browser drivers, simple setup  
-**Cons**: Slow, limited ecosystem, poor TypeScript support  
+**Pros**: No browser drivers, simple setup
+**Cons**: Slow, limited ecosystem, poor TypeScript support
 **Rejected**: Playwright faster and better supported
 
 ### 5. ❌ Manual Testing Only
-**Pros**: Simple, no tooling  
-**Cons**: Slow, error-prone, not reproducible  
+**Pros**: Simple, no tooling
+**Cons**: Slow, error-prone, not reproducible
 **Rejected**: Doesn't scale, no regression prevention
 
 ## Future Considerations
@@ -420,9 +451,10 @@ export default defineConfig({
 
 ## Related Documentation
 
-- `tests/e2e-playwright/README.md` - Test setup guide
+- `tests/e2e-playwright/readme.md` - Test setup guide
 - `tests/e2e-playwright/CRITICAL_BUG_TESTS.md` - Test documentation
 - `docs-internal/E2E_PLAYWRIGHT_MCP_TESTING_SUMMARY_2025_10_09.md` - Bug investigation
 - `docs-internal/PLAYWRIGHT_E2E_AGENT_GUIDE.md` - Agent usage guide
 - ADR-070 - Testing Docker Compose Environment
 - RFC-079 - Local Editor Flow for E2E Testing
+

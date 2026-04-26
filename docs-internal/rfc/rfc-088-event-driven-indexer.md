@@ -1,10 +1,14 @@
 ---
-id: RFC-088
-title: Event-Driven Document Indexer with Pipeline Rulesets
+id: rfc-088
+created: 2025-11-14
+author: Hermes Team
+project_id: hermes
+doc_uuid: 837e7398-7a9f-44ff-90f6-d6f2a33ba414
+status: Draft
+title: "Event-Driven Document Indexer with Pipeline Rulesets"
 date: 2025-11-14
 type: RFC
 subtype: Architecture Design
-status: Draft
 tags: [indexer, events, pipeline, redpanda, meilisearch, embeddings, llm]
 related:
   - RFC-051
@@ -44,6 +48,7 @@ The current indexer (`internal/indexer/indexer.go`) operates synchronously:
 We already have excellent foundation schemas:
 
 **`document_revisions`** (tracks document versions across providers):
+
 ```sql
 CREATE TABLE document_revisions (
     id SERIAL PRIMARY KEY,
@@ -58,9 +63,11 @@ CREATE TABLE document_revisions (
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 );
+
 ```
 
 **`document_summaries`** (stores AI-generated summaries):
+
 ```sql
 CREATE TABLE document_summaries (
     id SERIAL PRIMARY KEY,
@@ -81,7 +88,7 @@ CREATE TABLE document_summaries (
 
 ### Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │ API Layer / Document Operations                                 │
 ├─────────────────────────────────────────────────────────────────┤
@@ -128,6 +135,7 @@ CREATE TABLE document_summaries (
     │   4. Validation (schema checks, broken links)              │
     │   5. Custom plugins (extensible)                           │
     └────────────────────────────────────────────────────────────┘
+
 ```
 
 ### Key Design Decisions
@@ -209,6 +217,7 @@ CREATE TABLE document_revision_pipeline_executions (
 
 CREATE INDEX idx_pipeline_exec_revision ON document_revision_pipeline_executions(revision_id);
 CREATE INDEX idx_pipeline_exec_status ON document_revision_pipeline_executions(status);
+
 ```
 
 ## Ruleset System
@@ -306,6 +315,7 @@ func (m *Matcher) Match(revision *models.DocumentRevision, metadata map[string]a
 
     return matched
 }
+
 ```
 
 ## Pipeline System
@@ -320,6 +330,7 @@ Each step is a self-contained unit with:
 **Built-in Steps**:
 
 1. **`search_index`**: Update Meilisearch document index
+
    ```go
    type SearchIndexStep struct {
        searchProvider search.Provider
@@ -332,6 +343,7 @@ Each step is a self-contained unit with:
    ```
 
 2. **`embeddings`**: Generate vector embeddings for semantic search
+
    ```go
    type EmbeddingsStep struct {
        embeddingService EmbeddingService
@@ -343,9 +355,11 @@ Each step is a self-contained unit with:
        embeddings := s.embeddingService.Generate(ctx, content)
        return s.vectorStore.Store(ctx, rev.DocumentUUID, embeddings)
    }
+
    ```
 
 3. **`llm_summary`**: Generate AI summary and save to `document_summaries`
+
    ```go
    type LLMSummaryStep struct {
        llmClient LLMClient
@@ -378,6 +392,7 @@ Each step is a self-contained unit with:
    ```
 
 4. **`validation`**: Validate document structure, links, metadata
+
    ```go
    type ValidationStep struct {
        validators []Validator
@@ -394,6 +409,7 @@ Each step is a self-contained unit with:
        }
        return nil
    }
+
    ```
 
 ### Pipeline Executor
@@ -585,3 +601,4 @@ func (e *Executor) ExecutePipeline(ctx context.Context, rev *models.DocumentRevi
 **Document ID**: RFC-088
 **Status**: Draft
 **Last Updated**: 2025-11-14
+

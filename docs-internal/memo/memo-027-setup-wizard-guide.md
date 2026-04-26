@@ -1,3 +1,12 @@
+---
+id: memo-027
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: fda5cb30-ad2c-4462-8a3b-0e662cb78407
+status: Draft
+title: "Setup Wizard - Zero-Config to Guided Configuration"
+---
 # Setup Wizard - Zero-Config to Guided Configuration
 
 ## Overview
@@ -14,6 +23,7 @@ Hermes now provides a web-based setup wizard for initial configuration. Instead 
 
 # Or explicitly (since serve is now default):
 ./hermes serve
+
 ```
 
 **What happens:**
@@ -77,6 +87,7 @@ POST /api/v2/setup/configure
   "upstream_url": "https://hermes.example.com" // optional
 }
 → { "success": true, "config_path": "/path/to/config.hcl" }
+
 ```
 
 **2. Serve Command (`internal/cmd/commands/serve/serve.go`)**
@@ -100,6 +111,7 @@ func validateWorkspacePath(userPath, workingDir string) (string, error) {
   // - No .. traversal
   // - Defaults to docs-cms if empty
 }
+
 ```
 
 ### Frontend Components
@@ -128,12 +140,13 @@ async submitSetup(event) {
       upstream_url: this.upstreamURL,
     }),
   });
-  
+
   // On success, redirect to reload with new config
   if (response.ok) {
     setTimeout(() => window.location.href = '/', 2000);
   }
 }
+
 ```
 
 **3. Application Route Check (`web/app/routes/application.ts`)**
@@ -187,15 +200,16 @@ okta {
 dex {
   disabled = true
 }
+
 ```
 
 ## Workspace Structure Created
 
-```
+```text
 working-directory/
 ├── config.hcl                    # Generated config
 └── docs-cms/                     # User-configured path
-    ├── README.md                 # Auto-generated guide
+    ├── readme.md                 # Auto-generated guide
     ├── documents/                # Published docs
     ├── drafts/                   # Work in progress
     ├── attachments/              # Binary files
@@ -238,6 +252,7 @@ Setup endpoints are intentionally unauthenticated because:
 ./hermes server -config=config.hcl
 ./hermes indexer -config=config.hcl
 ./hermes version
+
 ```
 
 ## Comparison: Before vs After
@@ -252,7 +267,7 @@ Setup endpoints are intentionally unauthenticated because:
 # → Browser opens to working app
 ```
 
-**Pros**: Truly zero-config  
+**Pros**: Truly zero-config
 **Cons**: No user control, assumes defaults
 
 ### After (Current with Setup Wizard)
@@ -265,9 +280,10 @@ Setup endpoints are intentionally unauthenticated because:
 # → User configures workspace path
 # → config.hcl created
 # → Restart required (auto page reload)
+
 ```
 
-**Pros**: User control, explicit configuration, teaches users about structure  
+**Pros**: User control, explicit configuration, teaches users about structure
 **Cons**: Requires one extra step (but still very simple)
 
 ## Advanced Configuration
@@ -276,6 +292,7 @@ The setup wizard creates a **local mode configuration**. For advanced setups:
 
 ### Google Workspace Integration
 Users can manually edit `config.hcl` or see docs:
+
 ```hcl
 google_workspace {
   # ... OAuth, service accounts, etc
@@ -283,6 +300,7 @@ google_workspace {
 ```
 
 ### PostgreSQL Database
+
 ```hcl
 postgres {
   host     = "localhost"
@@ -291,9 +309,11 @@ postgres {
   password = env("POSTGRES_PASSWORD")
   dbname   = "hermes"
 }
+
 ```
 
 ### Algolia Search
+
 ```hcl
 algolia {
   app_id     = env("ALGOLIA_APP_ID")
@@ -362,6 +382,7 @@ cat config.hcl
 # Run again - should skip setup
 /path/to/hermes
 # → Loads existing config, starts normally
+
 ```
 
 ## Key Benefits
@@ -374,3 +395,4 @@ cat config.hcl
 6. **Flexible**: Link to docs for Google Workspace, PostgreSQL, etc.
 
 The setup wizard strikes a balance between **simplicity** (still just `./hermes`) and **control** (explicit configuration with validation).
+

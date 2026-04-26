@@ -1,10 +1,14 @@
 ---
-id: RFC-084
-title: Provider Interface Refactoring - Multi-Backend Document Model
+id: rfc-084
+created: 2025-11-11
+author: Hermes Team
+project_id: hermes
+doc_uuid: 289bc5ce-9111-4656-8f84-11d450b2024f
+status: Proposed
+title: "Provider Interface Refactoring - Multi-Backend Document Model"
 date: 2025-11-11
 type: RFC
 subtype: Architecture
-status: Proposed
 tags: [providers, architecture, interfaces, multi-backend, types]
 related:
   - RFC-082
@@ -47,7 +51,8 @@ Hermes uses a UUID-based document identification system where documents can exis
 - **Multi-Backend Tracking**: Same document UUID can have multiple active revisions across different backends
 
 **Example - Document Across Multiple Backends**:
-```
+
+```text
 Document UUID: 550e8400-e29b-41d4-a716-446655440000
 Title: "RFC-001: API Gateway Design"
 Tags: [rfc, architecture, api-gateway, infrastructure]
@@ -87,6 +92,7 @@ Workflow Status: Published
 │ Last Modified: 2025-10-20T11:15:00Z                         │
 │ Sync Status: conflict                                        │
 └─────────────────────────────────────────────────────────────┘
+
 ```
 
 **Provider Interface Implications**:
@@ -99,7 +105,7 @@ Workflow Status: Published
 
 Hermes currently supports three types of providers, each with direct backend integrations:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                   Hermes Server                         │
 ├─────────────────────────────────────────────────────────┤
@@ -237,6 +243,7 @@ The system must handle these ID format variations transparently:
 5. **Serialization**: JSON/YAML safe (all formats use safe character sets)
 
 **Implementation Considerations**:
+
 ```go
 // Example validation functions
 func IsValidGoogleDriveID(id string) bool {
@@ -255,6 +262,7 @@ func IsValidOffice365ID(id string) bool {
     // Flexible - various formats, typically 20+ chars
     return len(id) >= 20 && len(id) <= 200
 }
+
 ```
 
 ### The Problem
@@ -459,6 +467,7 @@ type BackendRevision struct {
     //   - O365: {"versionLabel": "Major", "size": 12345, "comment": "..."}
     Metadata     map[string]any `json:"metadata,omitempty"`
 }
+
 ```
 
 #### 3. UserIdentity (Unified Identity)
@@ -533,6 +542,7 @@ type ContentComparison struct {
     ContentMatch   bool   // True if content hashes match
     HashDifference string // "same", "minor", "major"
 }
+
 ```
 
 ### Focused Provider Interfaces
@@ -896,6 +906,7 @@ type DocumentRegistry interface {
     // UpdateSyncStatus updates the synchronization status for a document
     UpdateSyncStatus(ctx context.Context, uuid docid.UUID, syncStatus string) error
 }
+
 ```
 
 #### MultiProviderManager
@@ -974,6 +985,7 @@ func (m *MultiProviderManager) syncToSecondary(ctx context.Context, doc *Documen
 ```
 
 **Usage Example**:
+
 ```go
 // Create multi-provider manager
 manager := &MultiProviderManager{
@@ -989,6 +1001,7 @@ manager := &MultiProviderManager{
 
 // Use as normal WorkspaceProvider
 doc, err := manager.GetDocument(ctx, "local:docs/rfc-084.md")
+
 ```
 
 ### Interface Naming Rationale
@@ -1004,6 +1017,7 @@ doc, err := manager.GetDocument(ctx, "local:docs/rfc-084.md")
 ### Provider Implementation Patterns
 
 **Pattern 1: Fully Local Implementation** (Google Workspace):
+
 ```go
 type GoogleWorkspaceProvider struct {
     driveService     *drive.Service
@@ -1022,6 +1036,7 @@ func (p *GoogleWorkspaceProvider) SearchPeople(ctx context.Context, query string
 ```
 
 **Pattern 2: Hybrid Implementation** (Local with Delegation):
+
 ```go
 type LocalWorkspaceProvider struct {
     storage       *LocalStorage      // Implements Document, Content, RevisionTracking locally
@@ -1046,9 +1061,11 @@ func (p *LocalWorkspaceProvider) SendEmail(ctx context.Context, to []string, fro
     // Delegate to remote Hermes instance
     return p.remoteAPI.SendEmail(ctx, to, from, subject, body)
 }
+
 ```
 
 **Pattern 3: Full Delegation** (API Provider - see RFC-085):
+
 ```go
 type APIProvider struct {
     client    *http.Client
@@ -1085,13 +1102,16 @@ All interfaces are REQUIRED. The matrix shows how each provider satisfies them:
 
 1. **Consistent API Surface**: Handlers never need capability checks - all providers implement all interfaces
 2. **Simplified Handler Logic**:
+
    ```go
    // NO capability checking needed!
    func (s *Server) handleShareDocument(w http.ResponseWriter, r *http.Request) {
        // Always works - either local or delegated
        err := s.workspace.ShareDocument(ctx, docID, email, role)
    }
+
    ```
+
 3. **Flexible Implementation**: Providers choose local vs delegated based on backend capabilities
 4. **Separation of Concerns**: Each interface has single responsibility
 5. **Easier Testing**: Mock only needed interfaces
@@ -1282,3 +1302,4 @@ All interfaces are REQUIRED. The matrix shows how each provider satisfies them:
 
 **Status**: Proposed
 **Implementation**: See RFC-085 for API provider patterns and RFC-086 for authentication strategy
+

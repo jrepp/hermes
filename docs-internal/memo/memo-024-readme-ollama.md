@@ -1,3 +1,12 @@
+---
+id: memo-024
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 52efb638-6bd1-4a22-bbf3-d4a35ad09c41
+status: Draft
+title: "Ollama AI Provider - Local Llama on macOS"
+---
 # Ollama AI Provider - Local Llama on macOS
 
 **Status**: ✅ Implemented
@@ -21,8 +30,10 @@ The Ollama AI provider enables **fully local AI summarization and embeddings** u
 ### 1. Install Ollama
 
 **macOS**:
+
 ```bash
 brew install ollama
+
 ```
 
 **Or download from**: https://ollama.ai/download
@@ -38,15 +49,18 @@ This starts the Ollama API server at `http://localhost:11434`.
 ### 3. Pull Required Models
 
 **For Summarization**:
+
 ```bash
 # Llama 3.2 3B - Fast, good quality (recommended)
 ollama pull llama3.2
 
 # Or Llama 3.1 8B - Higher quality, slower
 ollama pull llama3.1
+
 ```
 
 **For Embeddings**:
+
 ```bash
 # Nomic Embed Text - 768 dimensions, optimized for search
 ollama pull nomic-embed-text
@@ -69,6 +83,7 @@ curl http://localhost:11434/api/embeddings -d '{
   "model": "nomic-embed-text",
   "prompt": "test document"
 }'
+
 ```
 
 ## Configuration
@@ -102,6 +117,7 @@ cfg := &ollama.Config{
 }
 
 provider, err := ollama.NewProvider(cfg)
+
 ```
 
 ### Remote Ollama Server
@@ -162,6 +178,7 @@ func main() {
     fmt.Printf("Tags: %v\n", resp.Summary.Tags)
     fmt.Printf("Status: %s\n", resp.Summary.SuggestedStatus)
 }
+
 ```
 
 ### Generate Embeddings (Single)
@@ -203,6 +220,7 @@ for _, chunk := range resp.Embeddings.Chunks {
     fmt.Printf("Chunk %d: %s\n", chunk.ChunkIndex, chunk.Text[:50])
     fmt.Printf("  Embedding dims: %d\n", len(chunk.Embedding))
 }
+
 ```
 
 ## Integration with Indexer Commands
@@ -252,6 +270,7 @@ pipeline := indexer.NewPipeline("prepare-semantic-search").
     AddCommand(vectorIndexCmd)
 
 results, err := pipeline.Execute(ctx, baseCtx)
+
 ```
 
 ## Model Selection Guide
@@ -303,27 +322,33 @@ results, err := pipeline.Execute(ctx, baseCtx)
 ### Common Errors
 
 **Ollama Not Running**:
-```
+
+```text
 Error: ollama request failed: dial tcp [::1]:11434: connect: connection refused
 Solution: Run `ollama serve` in a separate terminal
 ```
 
 **Model Not Pulled**:
-```
+
+```text
 Error: ollama returned status 404: model 'llama3.2' not found
 Solution: Run `ollama pull llama3.2`
+
 ```
 
 **Out of Memory**:
-```
+
+```text
 Error: failed to load model: not enough memory
 Solution: Use smaller model (llama3.2 instead of llama3.1) or close other apps
 ```
 
 **Timeout**:
-```
+
+```text
 Error: context deadline exceeded
 Solution: Increase cfg.Timeout for large documents
+
 ```
 
 ### Retry Logic
@@ -331,24 +356,24 @@ Solution: Increase cfg.Timeout for large documents
 ```go
 func summarizeWithRetry(ctx context.Context, provider ai.Provider, req *ai.SummarizeRequest, maxRetries int) (*ai.SummarizeResponse, error) {
     var lastErr error
-    
+
     for i := 0; i < maxRetries; i++ {
         resp, err := provider.Summarize(ctx, req)
         if err == nil {
             return resp, nil
         }
-        
+
         lastErr = err
-        
+
         // Don't retry on user errors
         if strings.Contains(err.Error(), "model") {
             return nil, err
         }
-        
+
         // Exponential backoff
         time.Sleep(time.Duration(i+1) * 2 * time.Second)
     }
-    
+
     return nil, fmt.Errorf("failed after %d retries: %w", maxRetries, lastErr)
 }
 ```
@@ -363,21 +388,22 @@ func TestOllamaProvider_Summarize(t *testing.T) {
     if _, err := http.Get("http://localhost:11434/api/version"); err != nil {
         t.Skip("Ollama not running")
     }
-    
+
     provider, err := ollama.NewProvider(ollama.DefaultConfig())
     require.NoError(t, err)
-    
+
     req := &ai.SummarizeRequest{
         Title:            "Test Document",
         Content:          "This is a test document about AI summarization.",
         ExtractKeyPoints: true,
     }
-    
+
     resp, err := provider.Summarize(context.Background(), req)
     require.NoError(t, err)
     assert.NotEmpty(t, resp.Summary.ExecutiveSummary)
     assert.Greater(t, len(resp.Summary.KeyPoints), 0)
 }
+
 ```
 
 ### Integration Tests
@@ -441,30 +467,31 @@ type OllamaPool struct {
 
 func NewOllamaPool(urls []string) (*OllamaPool, error) {
     providers := make([]*ollama.Provider, len(urls))
-    
+
     for i, url := range urls {
         cfg := ollama.DefaultConfig()
         cfg.BaseURL = url
-        
+
         p, err := ollama.NewProvider(cfg)
         if err != nil {
             return nil, err
         }
         providers[i] = p
     }
-    
+
     return &OllamaPool{providers: providers}, nil
 }
 
 func (p *OllamaPool) GetProvider() *ollama.Provider {
     p.mu.Lock()
     defer p.mu.Unlock()
-    
+
     provider := p.providers[p.current]
     p.current = (p.current + 1) % len(p.providers)
-    
+
     return provider
 }
+
 ```
 
 ## Troubleshooting
@@ -498,7 +525,8 @@ func (p *OllamaPool) GetProvider() *ollama.Provider {
 
 ## Related Documentation
 
-- [INDEXER_REFACTOR_IMPLEMENTATION.md](./INDEXER_REFACTOR_IMPLEMENTATION.md) - Complete implementation guide
-- [README-meilisearch.md](./README-meilisearch.md) - Vector search backend
+- [INDEXER_REFACTOR_implementation.md](./INDEXER_REFACTOR_implementation.md) - Complete implementation guide
+- [readme-meilisearch.md](./readme-meilisearch.md) - Vector search backend
 - [AI Provider Interface](../pkg/ai/provider.go) - Interface specification
 - [Ollama Documentation](https://github.com/ollama/ollama) - Official Ollama docs
+

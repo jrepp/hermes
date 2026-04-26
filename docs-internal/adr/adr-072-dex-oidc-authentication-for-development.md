@@ -1,17 +1,17 @@
 ---
-id: ADR-072
+id: adr-072
 title: Dex OIDC Authentication for Development
 date: 2025-10-09
 type: ADR
 subtype: Authentication
 status: Accepted
-tags: [authentication, dex, oidc, development, testing]
-related:
-  - RFC-020
-  - RFC-007
-  - ADR-070
+tags: ['authentication', 'dex', 'oidc', 'development', 'testing']
+related: ['RFC-020', 'RFC-007', 'ADR-070']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: b1c6dc1c-a68b-4b12-86cf-be97dcd38823
 ---
-
 # Dex OIDC Authentication for Development
 
 ## Context
@@ -38,6 +38,7 @@ Use Dex (dexidp/dex) as local OIDC provider with static password connector.
    - No external dependencies
 
 2. **Configuration** (`testing/dex-config.yaml`):
+
 ```yaml
 issuer: http://dex:5557/dex
 
@@ -54,14 +55,16 @@ staticPasswords:
   hash: "$2a$10$..." # bcrypt(password)
   username: "test"
   userID: "test-user-id"
-  
+
 - email: "admin@hermes.local"
   hash: "$2a$10$..."
   username: "admin"
   userID: "admin-user-id"
+
 ```
 
 3. **Backend Integration** (`pkg/auth/adapters/dex/`):
+
 ```go
 type DexAdapter struct {
     issuerURL    string
@@ -94,17 +97,20 @@ func (a *DexAdapter) ValidateIDToken(ctx context.Context, rawIDToken string) (*U
 ## Measured Results
 
 **Authentication Performance**:
-```
+
+``` text
 Operation              | Time   | Notes
 -----------------------|--------|------------------------
 Login Page Load        | 45ms   | Dex UI render
 Password Verification  | 180ms  | bcrypt check + OIDC token
 Token Validation       | 8ms    | JWT verify (cached keys)
 Full Auth Flow         | 850ms  | Browser redirects included
+
 ```
 
 **Comparison to Google OAuth**:
-```
+
+``` text
 Metric                 | Google OAuth | Dex OIDC | Improvement
 -----------------------|--------------|----------|------------
 Setup Time             | 15-30 min    | 2 min    | 7-15x faster
@@ -117,7 +123,8 @@ Network Dependency     | Required     | None     | Offline capable
 *Local environment uptime
 
 **Developer Experience**:
-```
+
+``` text
 Task                        | Before (Google) | After (Dex)
 ----------------------------|-----------------|-------------
 First-time setup            | 25 min          | 3 min
@@ -125,12 +132,14 @@ Add test user               | N/A (use real)  | 30 seconds
 Reset test data             | Manual cleanup  | docker restart
 Run tests offline           | Impossible      | Possible
 Parallel test execution     | Rate limited    | Unlimited
+
 ```
 
 ## Configuration Flexibility
 
 **Port Isolation** (avoid conflicts):
-```
+
+``` text
 Environment      | Dex HTTP | Dex Telemetry | Issuer URL
 -----------------|----------|---------------|---------------------------
 Integration      | 5556     | 5558          | http://localhost:5556/dex
@@ -169,6 +178,7 @@ Testing          | 5557     | 5559          | http://dex:5557/dex (internal)
 ## User Management
 
 **Adding Users** (`dex-config.yaml`):
+
 ```bash
 # Generate bcrypt hash
 htpasswd -bnBC 10 "" password | tr -d ':\n'
@@ -181,10 +191,12 @@ htpasswd -bnBC 10 "" password | tr -d ':\n'
 
 # Restart Dex
 docker compose restart dex
+
 ```
 
 **Test User Credentials**:
-```
+
+``` text
 Email: test@hermes.local
 Password: password
 
@@ -195,6 +207,7 @@ Password: password
 ## Integration with Hermes
 
 **Backend** (`testing/config.hcl`):
+
 ```hcl
 dex {
   disabled      = false
@@ -207,6 +220,7 @@ dex {
 providers {
   auth = "dex"  # or "google", "okta"
 }
+
 ```
 
 **Authentication Flow**:
@@ -222,28 +236,28 @@ providers {
 ## Alternatives Considered
 
 ### 1. ❌ Mock OAuth (No Real OIDC)
-**Pros**: Simplest implementation  
-**Cons**: Not testing real OAuth flow, false confidence  
+**Pros**: Simplest implementation
+**Cons**: Not testing real OAuth flow, false confidence
 **Rejected**: Need to validate production flow
 
 ### 2. ❌ Keycloak
-**Pros**: Full-featured IAM, supports LDAP, MFA  
-**Cons**: Heavy (1GB+ RAM), slow startup (30s+), complex UI  
+**Pros**: Full-featured IAM, supports LDAP, MFA
+**Cons**: Heavy (1GB+ RAM), slow startup (30s+), complex UI
 **Rejected**: Overkill for development/testing
 
 ### 3. ❌ Auth0 / Okta Free Tier
-**Pros**: Production-grade, full features  
-**Cons**: External dependency, rate limits, requires account  
+**Pros**: Production-grade, full features
+**Cons**: External dependency, rate limits, requires account
 **Rejected**: Same problems as Google OAuth
 
 ### 4. ❌ Custom JWT Minter
-**Pros**: Minimal code, fast  
-**Cons**: Not OIDC-compliant, won't catch integration issues  
+**Pros**: Minimal code, fast
+**Cons**: Not OIDC-compliant, won't catch integration issues
 **Rejected**: Need real OIDC for confidence
 
 ### 5. ❌ httpbin + Manual Tokens
-**Pros**: Ultra-simple  
-**Cons**: No token validation, no real flow  
+**Pros**: Ultra-simple
+**Cons**: No token validation, no real flow
 **Rejected**: Too simplistic for integration testing
 
 ## Future Considerations
@@ -261,3 +275,4 @@ providers {
 - `docs-internal/DEX_QUICK_START.md` - Setup guide
 - RFC-020 - Dex Authentication Implementation
 - RFC-007 - Multi-Provider Auth Architecture
+

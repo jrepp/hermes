@@ -1,7 +1,17 @@
+---
+id: rfc-004
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: ecbf9292-e976-4b6c-80c4-89a56cc8af29
+status: Draft
+title: "RFC: Indexer Architecture and Design"
+---
+
 # RFC: Indexer Architecture and Design
 
-**Status**: Complete  
-**Created**: October 25, 2025  
+**Status**: Complete
+**Created**: October 25, 2025
 **Consolidates**: All INDEXER_* design documents
 
 ---
@@ -17,30 +27,31 @@ graph TB
         WP -->|Documents| CMD
         CMD -->|Metadata| API
     end
-    
+
     subgraph "Central Hermes Server"
         REST[REST API<br/>/api/v2/indexer/*]
         DB[(PostgreSQL<br/>Projects/Docs/Revisions)]
         SEARCH[Search<br/>Algolia/Meilisearch]
         VECTOR[Vector DB<br/>pgvector]
     end
-    
+
     API -->|HTTPS + Bearer| REST
     REST --> DB
     REST --> SEARCH
     REST --> VECTOR
-    
+
     subgraph "AI Enhancement (Optional)"
         AI[AI Provider<br/>Bedrock/OpenAI]
         CMD -.->|Summarize| AI
         CMD -.->|Embed| AI
     end
-    
+
     style WP fill:#e1f5ff
     style CMD fill:#fff4e1
     style API fill:#f0e1ff
     style REST fill:#e8f5e9
     style AI fill:#fce4ec
+
 ```
 
 ---
@@ -90,8 +101,8 @@ The indexer's **stateless design** allows it to run anywhere—developer worksta
 
 ### Standard Indexing Pipeline
 
-```
-[Discover Documents] → [Assign UUID] → [Extract Content] → 
+```text
+[Discover Documents] → [Assign UUID] → [Extract Content] →
 [Calculate Hash] → [Track Revision] → [Transform] → [Index]
 ```
 
@@ -106,9 +117,10 @@ The indexer's **stateless design** allows it to run anywhere—developer worksta
 
 ### AI-Enhanced Pipeline
 
-```
-[Standard Pipeline] → [Summarize] → [Generate Embeddings] → 
+```text
+[Standard Pipeline] → [Summarize] → [Generate Embeddings] →
 [Index Vector DB]
+
 ```
 
 **Additional Steps**:
@@ -118,9 +130,9 @@ The indexer's **stateless design** allows it to run anywhere—developer worksta
 
 ### Migration Pipeline
 
-```
-[Discover Source] → [Assign UUID] → [Extract Content] → 
-[Calculate Hash] → [Migrate to Target] → [Track Revisions] → 
+```text
+[Discover Source] → [Assign UUID] → [Extract Content] →
+[Calculate Hash] → [Migrate to Target] → [Track Revisions] →
 [Detect Conflicts] → [Index Target]
 ```
 
@@ -150,6 +162,7 @@ CREATE TABLE projects (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
 ```
 
 **Benefits**:
@@ -193,6 +206,7 @@ CREATE TABLE document_revisions (
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(document_id, project_id, content_hash)
 );
+
 ```
 
 **Use Case**: Track document versions during migration. Same document UUID can have multiple revisions across different projects.
@@ -234,6 +248,7 @@ Authorization: Bearer <registration-token>
   "indexer_id": "uuid",
   "api_token": "hermes-api-token-xxxxx"
 }
+
 ```
 
 ### 2. Heartbeat
@@ -272,6 +287,7 @@ Authorization: Bearer <api-token>
   "id": "550e8400-...",
   "created": true
 }
+
 ```
 
 ### 4. Create Revision
@@ -307,6 +323,7 @@ Authorization: Bearer <api-token>
   "model": "claude-3-7-sonnet",
   "generated_at": "2025-10-24T10:00:00Z"
 }
+
 ```
 
 ### 6. Store Embeddings
@@ -349,6 +366,7 @@ type Pipeline struct {
     Filter     DocumentFilter  // Skip certain documents
     MaxParallel int            // Concurrency limit
 }
+
 ```
 
 ### Document Context (State Carrier)
@@ -357,32 +375,32 @@ type Pipeline struct {
 type DocumentContext struct {
     // Source document
     Document *workspace.Document
-    
+
     // UUID and versioning
     DocumentUUID UUID
     ContentHash  string
     Revision     *models.DocumentRevision
-    
+
     // Hermes metadata
     Metadata     *models.Document
-    
+
     // Processing state
     Content      string
     Transformed  *document.Document
-    
+
     // AI-generated (optional, external structures)
     AISummary    *ai.DocumentSummary
     Embeddings   *ai.DocumentEmbeddings
     VectorDoc    *search.VectorDocument
-    
+
     // Provider info
     SourceProvider workspace.DocumentStorage
     TargetProvider workspace.DocumentStorage
-    
+
     // Migration tracking
     MigrationStatus string
     ConflictInfo    *ConflictInfo
-    
+
     // Errors
     StartTime time.Time
     Errors    []error
@@ -392,6 +410,7 @@ type DocumentContext struct {
 ### Example Commands
 
 **Discover Documents**:
+
 ```go
 type DiscoverCommand struct {
     Provider workspace.DocumentStorage
@@ -406,9 +425,11 @@ func (c *DiscoverCommand) Discover(ctx context.Context) ([]*DocumentContext, err
     // Convert to DocumentContext
     return contexts, nil
 }
+
 ```
 
 **Assign UUID**:
+
 ```go
 type AssignUUIDCommand struct {
     Provider workspace.DocumentStorage
@@ -420,7 +441,7 @@ func (c *AssignUUIDCommand) Execute(ctx context.Context, doc *DocumentContext) e
         doc.DocumentUUID = uuid
         return nil
     }
-    
+
     // Generate new UUID and write back to document
     doc.DocumentUUID = uuid.New()
     return c.Provider.UpdateMetadata(ctx, doc.Document.ID, map[string]string{
@@ -430,6 +451,7 @@ func (c *AssignUUIDCommand) Execute(ctx context.Context, doc *DocumentContext) e
 ```
 
 **Calculate Hash**:
+
 ```go
 type CalculateHashCommand struct{}
 
@@ -438,9 +460,11 @@ func (c *CalculateHashCommand) Execute(ctx context.Context, doc *DocumentContext
     doc.ContentHash = fmt.Sprintf("sha256:%x", hash)
     return nil
 }
+
 ```
 
 **Track Revision**:
+
 ```go
 type TrackRevisionCommand struct {
     DB           *gorm.DB
@@ -472,20 +496,22 @@ project "docs-internal" {
   short_name  = "DOCS"
   description = "Internal documentation"
   status      = "active"
-  
+
   workspace "local" {
     type = "local"
     root = "./docs-internal"
-    
+
     folders {
       docs   = "."
       drafts = ".drafts"
     }
   }
 }
+
 ```
 
 **CLI Usage**:
+
 ```bash
 # Index specific project
 ./hermes indexer -config=config.hcl -project=docs-internal
@@ -542,7 +568,7 @@ While the indexer **supports migration** (moving documents between providers), t
 ## Future Enhancements
 
 ### 1. Real-Time Indexing via Webhooks
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: Medium
 
 Add webhook listeners for:
@@ -557,7 +583,7 @@ Add webhook listeners for:
 ---
 
 ### 2. Incremental Embedding Generation
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: High
 
 Current approach generates embeddings for entire documents. Improve with:
@@ -570,10 +596,11 @@ Current approach generates embeddings for entire documents. Improve with:
 ---
 
 ### 3. Multi-Tenant Indexer Support
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: Low
 
 Support multiple Hermes instances from one indexer:
+
 ```hcl
 indexer {
   targets {
@@ -587,6 +614,7 @@ indexer {
     }
   }
 }
+
 ```
 
 **Benefits**: Sync documents to multiple environments (prod, staging, DR).
@@ -594,7 +622,7 @@ indexer {
 ---
 
 ### 4. Custom Document Classifiers
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: Medium
 
 Use AI to automatically classify documents:
@@ -608,7 +636,7 @@ Use AI to automatically classify documents:
 ---
 
 ### 5. Conflict Resolution UI
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: Medium
 
 When migration conflicts occur, provide UI to:
@@ -622,7 +650,7 @@ When migration conflicts occur, provide UI to:
 ---
 
 ### 6. Indexer Health Dashboard
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: Low
 
 Web UI showing:
@@ -637,7 +665,7 @@ Web UI showing:
 ---
 
 ### 7. Provider-Specific Optimizations
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: Medium
 
 Optimize for each provider's API characteristics:
@@ -650,7 +678,7 @@ Optimize for each provider's API characteristics:
 ---
 
 ### 8. Document Relationship Tracking
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: Low
 
 Track relationships between documents:
@@ -659,6 +687,7 @@ Track relationships between documents:
 - **Supersedes**: New version replaces old version
 
 **Database Schema**:
+
 ```sql
 CREATE TABLE document_relationships (
   source_document_id INTEGER NOT NULL,
@@ -673,10 +702,11 @@ CREATE TABLE document_relationships (
 ---
 
 ### 9. Plugin System for Custom Commands
-**Status**: Not implemented  
+**Status**: Not implemented
 **Priority**: Low
 
 Allow users to add custom commands to pipelines:
+
 ```go
 // Custom command in user code
 type ValidateLinksCommand struct{}
@@ -688,6 +718,7 @@ func (c *ValidateLinksCommand) Execute(ctx context.Context, doc *DocumentContext
 
 // Register in pipeline
 pipeline.Commands = append(pipeline.Commands, &ValidateLinksCommand{})
+
 ```
 
 **Benefits**: Extensibility without forking Hermes.
@@ -695,7 +726,7 @@ pipeline.Commands = append(pipeline.Commands, &ValidateLinksCommand{})
 ---
 
 ### 10. Cost Optimization for AI Operations
-**Status**: Partially implemented (basic caching)  
+**Status**: Partially implemented (basic caching)
 **Priority**: High
 
 Improve AI cost management:
@@ -724,6 +755,7 @@ Improve AI cost management:
 - Validate end-to-end workflows
 
 ### Canary Test
+
 ```bash
 make canary
 ```
@@ -760,26 +792,27 @@ search {
 indexer {
   enabled  = true
   interval = "60s"
-  
+
   projects_dir = "./testing/projects"  # HCL project configs
-  
+
   ai {
     provider = "bedrock"
     model    = "claude-3-7-sonnet"
     region   = "us-west-2"
-    
+
     cost_controls {
       daily_budget_usd = 10.0
       max_tokens       = 100000
     }
   }
-  
+
   vector_search {
     enabled    = true
     model      = "text-embedding-3-small"
     dimensions = 1536
   }
 }
+
 ```
 
 ### Running the Indexer
@@ -819,10 +852,10 @@ indexer {
 ## Related Documentation
 
 - **Distributed Projects**: `DISTRIBUTED_PROJECTS_ARCHITECTURE.md`
-- **Workspace Providers**: `memo/README-google-workspace.md`, `memo/README-local-workspace.md`
-- **Search Providers**: `memo/README-algolia.md`, `memo/README-meilisearch.md`
+- **Workspace Providers**: `memo/readme-google-workspace.md`, `memo/readme-local-workspace.md`
+- **Search Providers**: `memo/readme-algolia.md`, `memo/readme-meilisearch.md`
 - **Project Config**: `PROJECTCONFIG_PACKAGE_SUMMARY.md`
-- **Document Revisions**: `DOCUMENT_REVISIONS_AND_MIGRATION.md`
+- **Document Revisions**: `DOCUMENT_REVISIONS_AND_migration.md`
 - **Testing Guide**: `PLAYWRIGHT_E2E_AGENT_GUIDE.md`
 
 ---
@@ -851,3 +884,4 @@ The Hermes indexer is a **stateless, provider-agnostic document synchronization 
 - Cost optimization
 
 This architecture positions Hermes to support diverse document workflows—from local developer environments to enterprise-scale deployments—with minimal infrastructure complexity.
+

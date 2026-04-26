@@ -1,15 +1,17 @@
 ---
-id: ADR-006
+id: adr-006
 title: Animated Components Fix
 date: 2025-10-08
 type: ADR
 subtype: Frontend Decision
 status: Accepted
-tags: [ember, frontend, animation, components, migration]
-related:
-  - RFC-034
+tags: ['ember', 'frontend', 'animation', 'components', 'migration']
+related: ['RFC-034']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: 5c56e57d-1dd7-49fe-9b2e-2e5b63bb792d
 ---
-
 # Animated Components Fix
 
 ## Context
@@ -28,13 +30,16 @@ Create passthrough stub components that provide the same API as `ember-animated`
 **Implementation**:
 
 1. **AnimatedContainer** (`.gts` template-only component):
+
    ```typescript
    const AnimatedContainer: TemplateOnlyComponent = <template>
      <div ...attributes>{{yield}}</div>
    </template>;
+
    ```
 
 2. **AnimatedIf** (class-based with positional params):
+
    ```typescript
    export default class AnimatedIfCurly extends Component {
      static positionalParams = ['predicate'];
@@ -43,11 +48,13 @@ Create passthrough stub components that provide the same API as `ember-animated`
    ```
 
 3. **AnimatedEach** (class-based with key tracking):
+
    ```typescript
    export default class AnimatedEachCurly extends Component {
      static positionalParams = ['items'];
      get keyName() { return this.args.key || '@identity'; }
    }
+
    ```
 
 4. **Updated Glint Registry** (`web/types/glint/index.d.ts`):
@@ -94,13 +101,14 @@ Create passthrough stub components that provide the same API as `ember-animated`
 
 ## Verification
 
-✅ Form pages render without errors  
-✅ Conditional content shows/hides correctly  
-✅ Lists render with proper key tracking  
-✅ No TypeScript errors  
-✅ No Glint errors  
+✅ Form pages render without errors
+✅ Conditional content shows/hides correctly
+✅ Lists render with proper key tracking
+✅ No TypeScript errors
+✅ No Glint errors
 
 ## References
 
 - Source: `ANIMATED_COMPONENTS_FIX_2025_10_08.md`
 - Related: `EMBER_UPGRADE_STRATEGY.md`, `EMBER_CONCURRENCY_COMPATIBILITY_ISSUE.md`
+

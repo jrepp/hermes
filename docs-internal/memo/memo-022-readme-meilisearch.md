@@ -1,3 +1,12 @@
+---
+id: memo-022
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 149719d7-8702-4391-b34b-dd6dad24804c
+status: Draft
+title: "Meilisearch Setup"
+---
 # Meilisearch Setup
 
 This guide covers setting up Meilisearch as the self-hosted search provider for Hermes.
@@ -24,7 +33,7 @@ Meilisearch provides:
 - You need built-in analytics and query insights
 - You want global CDN distribution
 
-See [README-algolia.md](README-algolia.md) for the managed alternative.
+See [readme-algolia.md](readme-algolia.md) for the managed alternative.
 
 ## Quick Start (Docker)
 
@@ -40,6 +49,7 @@ docker compose up -d
 # Meilisearch available at:
 # - Native mode: http://localhost:7700
 # - Testing mode: http://localhost:7701
+
 ```
 
 ### Standalone Docker
@@ -81,9 +91,11 @@ services:
 
 volumes:
   meilisearch_data:
+
 ```
 
 Start with:
+
 ```bash
 export MEILI_MASTER_KEY="your-secure-master-key-here"
 docker compose up -d
@@ -101,6 +113,7 @@ curl -L https://install.meilisearch.com | sh
 MEILI_MASTER_KEY="your-master-key" \
 MEILI_ENV=production \
 ./meilisearch
+
 ```
 
 ### Cloud Deployment
@@ -137,6 +150,7 @@ Instead of hardcoding in config.hcl:
 ```bash
 export HERMES_MEILISEARCH_HOST="http://localhost:7700"
 export HERMES_MEILISEARCH_MASTER_KEY="your-master-key"
+
 ```
 
 ### Master Key Requirements
@@ -149,6 +163,7 @@ export HERMES_MEILISEARCH_MASTER_KEY="your-master-key"
 - Never commit to version control
 
 Generate a secure key:
+
 ```bash
 # Using openssl
 openssl rand -base64 32
@@ -218,6 +233,7 @@ Meilisearch automatically configures optimal settings:
     "exactness"
   ]
 }
+
 ```
 
 ## Indexing Operations
@@ -246,6 +262,7 @@ Keep search synchronized:
 ./hermes indexer -config=config.hcl &
 
 # Or with systemd/supervisor for production
+
 ```
 
 ### Indexer Configuration
@@ -273,12 +290,14 @@ results, err := client.Index("docs").Search(query, &meilisearch.SearchRequest{
     Limit:  20,
     Offset: 0,
 })
+
 ```
 
 ### API Endpoints
 
 Search available at:
-```
+
+```text
 POST /api/v2/search
 GET  /api/v2/search?q=query&filters=docType:RFC
 ```
@@ -290,11 +309,13 @@ GET  /api/v2/search?q=query&filters=docType:RFC
 ```bash
 curl http://localhost:7700/health
 # {"status":"available"}
+
 ```
 
 ### Stats and Metrics
 
 Get index statistics:
+
 ```bash
 curl -H "Authorization: Bearer ${MEILI_MASTER_KEY}" \
      http://localhost:7700/indexes/docs/stats
@@ -310,12 +331,14 @@ curl -H "Authorization: Bearer ${MEILI_MASTER_KEY}" \
 ### Logs
 
 View Meilisearch logs:
+
 ```bash
 # Docker
 docker logs -f meilisearch
 
 # Binary
 # Logs to stdout/stderr
+
 ```
 
 ## Performance Tuning
@@ -349,9 +372,11 @@ MEILI_DB_PATH=/mnt/ssd/meili_data ./meilisearch
 Default: 10 concurrent requests
 
 Increase for high-traffic:
+
 ```bash
 # Set via reverse proxy (nginx, caddy)
 # Or scale horizontally with multiple instances
+
 ```
 
 ## Backup and Recovery
@@ -388,6 +413,7 @@ docker run -d \
   -v $(pwd)/meili_data:/meili_data \
   getmeili/meilisearch:v1.5 \
   --import-dump /dumps/dump.dump
+
 ```
 
 ### Volume Snapshots
@@ -409,6 +435,7 @@ docker run --rm \
 **Cause**: Meilisearch not running or wrong host/port
 
 **Solution**:
+
 ```bash
 # Check if running
 docker ps | grep meilisearch
@@ -416,6 +443,7 @@ curl http://localhost:7700/health
 
 # Check config.hcl
 grep -A3 "meilisearch {" config.hcl
+
 ```
 
 ### Authentication Errors
@@ -423,6 +451,7 @@ grep -A3 "meilisearch {" config.hcl
 **Cause**: Missing or incorrect master key
 
 **Solution**:
+
 ```bash
 # Verify master key matches between:
 # 1. Meilisearch startup (MEILI_MASTER_KEY)
@@ -438,6 +467,7 @@ curl -H "Authorization: Bearer ${MEILI_MASTER_KEY}" \
 **Cause**: Index empty or not created
 
 **Solution**:
+
 ```bash
 # Check index exists
 curl -H "Authorization: Bearer ${MEILI_MASTER_KEY}" \
@@ -448,6 +478,7 @@ curl -H "Authorization: Bearer ${MEILI_MASTER_KEY}" \
 
 # Check indexer logs
 grep -i meilisearch /tmp/hermes-indexer.log
+
 ```
 
 ### Slow Search Performance
@@ -467,6 +498,7 @@ To switch from Algolia to Meilisearch:
 1. **Set up Meilisearch** (see Quick Start above)
 
 2. **Update config.hcl**:
+
    ```hcl
    providers {
      search = "meilisearch"  # Change from "algolia"
@@ -474,8 +506,10 @@ To switch from Algolia to Meilisearch:
    ```
 
 3. **Run indexer** to populate Meilisearch:
+
    ```bash
    ./hermes indexer -config=config.hcl
+
    ```
 
 4. **Test search** functionality thoroughly
@@ -484,7 +518,8 @@ To switch from Algolia to Meilisearch:
 
 ## See Also
 
-- [Algolia Setup](README-algolia.md) - Managed alternative
+- [Algolia Setup](readme-algolia.md) - Managed alternative
 - [Configuration Documentation](CONFIG_HCL_DOCUMENTATION.md)
 - [Meilisearch Documentation](https://docs.meilisearch.com/)
 - [Search Adapter Code](../pkg/search/adapters/meilisearch/)
+

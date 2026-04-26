@@ -1,8 +1,17 @@
+---
+id: memo-007
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 2dbdb0d8-23fa-49e8-ae7c-f6306926e276
+status: Draft
+title: "Human Enablement Patterns: What Makes AI Agents Effective"
+---
 # Human Enablement Patterns: What Makes AI Agents Effective
 
-**Date**: October 25, 2025  
-**Collaborator**: Jacob Repp (jrepp)  
-**Context**: Reflection on infrastructure and practices that enabled/hindered AI effectiveness  
+**Date**: October 25, 2025
+**Collaborator**: Jacob Repp (jrepp)
+**Context**: Reflection on infrastructure and practices that enabled/hindered AI effectiveness
 **Repository**: hashicorp/hermes
 
 ## Executive Summary
@@ -34,14 +43,17 @@ This memo analyzes the **infrastructure, documentation, and interaction patterns
 - Followed existing conventions instead of inventing new ones
 
 **Example**:
+
 ```markdown
 **Port Conventions**:
 - Native: Frontend 4200, Backend 8000, Postgres 5432
 - Testing (in `./testing`): Frontend 4201, Backend 8001, Postgres 5433
+
 ```
+
 → Knew to use `localhost:8001` for testing environment without asking
 
-**Best Practice Identified**: 
+**Best Practice Identified**:
 > **Front-load context in a single authoritative document.** Don't make AI search 10 READMEs - put project-critical info in one place.
 
 ---
@@ -94,12 +106,14 @@ File `docs-internal/AUTH_ARCHITECTURE_DIAGRAMS.md` had:
 - Deprecated old targets with warnings instead of breaking changes
 
 **Example**:
+
 ```makefile
 .PHONY: canary
 canary: ## Quick validation that testing environment is working
 	@echo "🐦 Running canary test..."
 	@curl -f http://localhost:8001/health || ...
 ```
+
 → Knew `make canary` was the "is everything working?" check
 
 **Best Practice Identified**:
@@ -110,7 +124,8 @@ canary: ## Quick validation that testing environment is working
 ### 4. Consistent Directory Structure
 
 **Pattern**:
-```
+
+```text
 testing/
 ├── python/           # All Python testing code
 │   ├── tests/        # Pytest tests
@@ -119,6 +134,7 @@ testing/
 ├── scripts/          # Bash scripts (being deprecated)
 ├── workspaces/       # Test data
 └── Makefile          # Entry point
+
 ```
 
 **What Made It Effective**:
@@ -152,12 +168,14 @@ testing/
 - Caught bugs early (wrong enum value = immediate error)
 
 **Example**:
+
 ```python
 class TestingConfig(BaseModel):
     hermes_base_url: str = Field(
         default_factory=lambda: os.getenv("HERMES_BASE_URL", "http://localhost:8001")
     )
 ```
+
 → Knew default URL and how to override it
 
 **Best Practice Identified**:
@@ -235,14 +253,16 @@ class TestingConfig(BaseModel):
 - Blocked on understanding Dex setup
 
 **What Would Have Helped**:
+
 ```markdown
-# testing/python/README.md
+# testing/python/readme.md
 
 ## Running Tests with Auth
 
 Tests require a valid OAuth token from Dex:
 
-```bash
+ ~~~~ bash
+
 # Get token
 export HERMES_AUTH_TOKEN=$(python3 auth_helper.py get-token \
   --username test@example.com \
@@ -250,15 +270,18 @@ export HERMES_AUTH_TOKEN=$(python3 auth_helper.py get-token \
 
 # Run tests
 pytest tests/ -v
-```
+
+ ~~~~ text
 
 Or use the fixture (automatically handles tokens):
-```python
+ ~~~~ python
+
 @pytest.fixture(scope="session")
 def hermes_auth_token():
     return get_token_from_dex()
-```
-```
+
+ ~~~~ text
+ ```
 
 **Best Practice Identified**:
 > **Document the "zero-to-green" path.** How to go from git clone → all tests passing.
@@ -282,7 +305,8 @@ def hermes_auth_token():
 - Didn't know if changes should go in `config.hcl` or `testing/config.hcl`
 
 **What Would Have Helped**:
-```markdown
+
+ ```markdown
 # Config File Precedence
 
 1. Command line: `./hermes server -config=custom.hcl`
@@ -291,7 +315,7 @@ def hermes_auth_token():
 
 **For testing**: Always use `testing/config.hcl` (testing environment)
 **For native dev**: Use `config.hcl` in repo root
-```
+ ```
 
 **Best Practice Identified**:
 > **Explicit config precedence prevents confusion.** Document the loading order.
@@ -303,7 +327,8 @@ def hermes_auth_token():
 **Problem**: CLI allowed `--workspace all` but enum only had `TESTING` and `DOCS`
 
 **Code**:
-```python
+
+ ```python
 class WorkspaceName(str, Enum):
     TESTING = "testing"
     DOCS = "docs"
@@ -312,7 +337,7 @@ class WorkspaceName(str, Enum):
 workspace_map = {
     "all": WorkspaceName.ALL,  # AttributeError
 }
-```
+ ```
 
 **Impact**:
 - CLI crashed on valid-looking option
@@ -335,11 +360,12 @@ Either:
 **Problem**: `asyncio.run()` creates/destroys loops incompatibly with pytest
 
 **Code**:
-```python
+
+ ```python
 # In hc-hermes client
 def get_web_config(self) -> WebConfig:
     return asyncio.run(self._async_client.get_web_config())  # Creates loop
-```
+ ```
 
 **Impact**:
 - Tests crashed with "Event loop is closed"
@@ -348,11 +374,12 @@ def get_web_config(self) -> WebConfig:
 - Created false impression tests were broken
 
 **What Would Have Helped**:
-```python
+
+ ```python
 # Support async context manager pattern
 async with HermesAsync(base_url=...) as client:
     config = await client.get_web_config()  # Uses existing loop
-```
+ ```
 
 **Best Practice Identified**:
 > **Library design affects testability.** Async libraries should support both sync and async usage patterns.
@@ -375,16 +402,17 @@ async with HermesAsync(base_url=...) as client:
 - Left TODO for proper implementation
 
 **What Would Have Helped**:
-```python
+
+ ```python
 class WorkspaceName(str, Enum):
     """Workspace identifiers.
-    
+
     Note: 'all' is handled by seeding functions iterating over
     [TESTING, DOCS]. It's not a workspace itself.
     """
     TESTING = "testing"
     DOCS = "docs"
-```
+ ```
 
 **Best Practice Identified**:
 > **Document non-obvious semantics.** What "all" means should be explicit.
@@ -417,23 +445,25 @@ class WorkspaceName(str, Enum):
 **Problem**: Had to guess if services were ready
 
 **Manual Process**:
-```bash
+
+ ```bash
 docker compose ps  # Are containers up?
 curl localhost:8001/health  # Is backend responding?
 curl localhost:4201/  # Is frontend up?
 # But is Dex ready? Is DB migrated? Is search indexed?
-```
+ ```
 
 **Impact**:
 - Ran tests before services ready → confusing failures
 - Added `make canary` during session but should have existed
 
 **What Would Have Helped**:
-```bash
+
+ ```bash
 # make health (or make ready)
 Checking services...
 ✓ PostgreSQL (5433) - ready
-✓ Meilisearch (7701) - ready  
+✓ Meilisearch (7701) - ready
 ✓ Dex (5558) - ready
 ✓ Hermes backend (8001) - ready
 ✓ Hermes frontend (4201) - ready
@@ -441,7 +471,7 @@ Checking services...
 ✓ Search indexed (1 documents)
 
 All systems ready! 🚀
-```
+ ```
 
 **Best Practice Identified**:
 > **One command to verify readiness.** Don't make developers check 5 services manually.
@@ -542,7 +572,7 @@ Bash scripts marked deprecated but:
 ### For AI Agents (Self-Guidance)
 
 **Do More Of** ✅:
-1. **Read docs first** - Check `docs-internal/`, `README.md`, copilot-instructions
+1. **Read docs first** - Check `docs-internal/`, `readme.md`, copilot-instructions
 2. **Validate assumptions** - "Is Hermes supposed to be running?"
 3. **Ask about duration** - "Should this take 2 minutes or 20?"
 4. **Follow existing patterns** - New code should look like old code
@@ -589,18 +619,18 @@ Bash scripts marked deprecated but:
 
 **You built infrastructure that makes AI collaboration effective:**
 
-✅ Comprehensive documentation  
-✅ Clear conventions  
-✅ Automated tooling  
-✅ Type safety  
-✅ Structured workflows  
+✅ Comprehensive documentation
+✅ Clear conventions
+✅ Automated tooling
+✅ Type safety
+✅ Structured workflows
 
 **Missing pieces that would unlock more:**
 
-⚠️ Auth setup for tests  
-⚠️ Health check automation  
-⚠️ Config consolidation  
-⚠️ Schema validation  
+⚠️ Auth setup for tests
+⚠️ Health check automation
+⚠️ Config consolidation
+⚠️ Schema validation
 
 **The pattern**: AI agents are **force multipliers for well-structured codebases** but **get stuck on implicit knowledge and manual setup**.
 
@@ -613,3 +643,4 @@ Investment in developer experience (docs, Makefiles, linting, types) pays divide
 - Type safety
 
 **Bottom line**: You've done the hard work of making the codebase navigable. The remaining friction points (auth, health checks) are solvable with the same patterns you've already established.
+

@@ -1,7 +1,16 @@
+---
+id: memo-005
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: e8769661-cbba-45b3-8d1e-8b5e27581a05
+status: Draft
+title: "AI Agent Capabilities and Limitations"
+---
 # AI Agent Capabilities and Limitations
 
-**Date**: October 25, 2025  
-**Context**: Post-session reflection on test infrastructure work  
+**Date**: October 25, 2025
+**Context**: Post-session reflection on test infrastructure work
 **Purpose**: Clear-eyed assessment for effective human-AI collaboration
 
 ## Explicit Strengths
@@ -64,7 +73,7 @@
 ### 2. No Real-Time Feedback Loop
 **Problem**: Only know a command succeeded/failed when tool returns
 
-**Impact**: 
+**Impact**:
 - Can't abort mid-execution if wrong direction
 - Can't see incremental progress (build %, test count)
 - Can't detect early warning signs
@@ -154,27 +163,27 @@
 ## Optimal Collaboration Patterns
 
 ### When AI Excels (Leverage These)
-✅ **Code archaeology**: "Find all places this function is called"  
-✅ **Systematic fixes**: "Update all Pydantic models to V2"  
-✅ **Documentation**: "Explain how this auth flow works"  
-✅ **Batch operations**: "Add type hints to all functions"  
-✅ **Pattern matching**: "Find similar bugs in other files"  
-✅ **Multi-language**: "Fix issues in Go, Python, and TypeScript"  
+✅ **Code archaeology**: "Find all places this function is called"
+✅ **Systematic fixes**: "Update all Pydantic models to V2"
+✅ **Documentation**: "Explain how this auth flow works"
+✅ **Batch operations**: "Add type hints to all functions"
+✅ **Pattern matching**: "Find similar bugs in other files"
+✅ **Multi-language**: "Fix issues in Go, Python, and TypeScript"
 
 ### When Human Oversight Needed (Watch For These)
-⚠️ **Long-running processes**: Check in after 2-5 minutes  
-⚠️ **Destructive operations**: Verify before `rm -rf`, `DROP TABLE`, etc.  
-⚠️ **Architecture decisions**: "Should we refactor or patch?"  
-⚠️ **Performance tuning**: "Is this fast enough?"  
-⚠️ **UX/design**: "Does this CLI feel intuitive?"  
-⚠️ **Cultural fit**: "Is this how our team does things?"  
+⚠️ **Long-running processes**: Check in after 2-5 minutes
+⚠️ **Destructive operations**: Verify before `rm -rf`, `DROP TABLE`, etc.
+⚠️ **Architecture decisions**: "Should we refactor or patch?"
+⚠️ **Performance tuning**: "Is this fast enough?"
+⚠️ **UX/design**: "Does this CLI feel intuitive?"
+⚠️ **Cultural fit**: "Is this how our team does things?"
 
 ### Red Flags to Intervene
-🚨 **No output for >2 minutes** → Probably stuck  
-🚨 **Same error 3+ times** → Wrong approach  
-🚨 **Over-engineering** → Simple solution being ignored  
-🚨 **Asking same question twice** → Context window full  
-🚨 **Uncertain language** → "Might work", "Should probably"  
+🚨 **No output for >2 minutes** → Probably stuck
+🚨 **Same error 3+ times** → Wrong approach
+🚨 **Over-engineering** → Simple solution being ignored
+🚨 **Asking same question twice** → Context window full
+🚨 **Uncertain language** → "Might work", "Should probably"
 
 ## Recommendations for Effective Use
 
@@ -198,7 +207,7 @@
 
 ### What Worked Well ✅
 - **Systematic debugging**: Traced project_uuid issue through 4 layers
-- **Parallel fixes**: Addressed 6 different issues simultaneously  
+- **Parallel fixes**: Addressed 6 different issues simultaneously
 - **Comprehensive analysis**: Created actionable test coverage report
 - **Multi-language**: Fixed Go, Python, and config issues
 
@@ -211,7 +220,7 @@
 ### Key Insight
 I'm excellent at **systematic execution** of well-defined tasks, but need human judgment for:
 - Recognizing stuck processes
-- Choosing between "quick fix" vs. "proper solution"  
+- Choosing between "quick fix" vs. "proper solution"
 - Knowing when "good enough" beats "perfect"
 - Sensing when I'm fighting the framework
 
@@ -227,3 +236,4 @@ Understanding these limitations allows for effective collaboration:
 The goal isn't to make me smarter - it's to structure collaboration so my strengths complement human judgment and vice versa.
 
 **Best metaphor**: I'm a very fast, very thorough junior engineer who never gets tired, but needs a senior engineer to point me in the right direction and tell me when I'm stuck.
+

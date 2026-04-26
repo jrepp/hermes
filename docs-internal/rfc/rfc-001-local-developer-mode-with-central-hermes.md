@@ -1,8 +1,18 @@
+---
+id: rfc-001
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 51818a0a-50bf-497f-80b0-4555025530d6
+status: Draft
+title: "RFC: Local Developer Mode with Central Hermes"
+---
+
 # RFC: Local Developer Mode with Central Hermes
 
-**Status**: 🚧 Draft  
-**Version**: 1.0.0-draft  
-**Created**: October 24, 2025  
+**Status**: 🚧 Draft
+**Version**: 1.0.0-draft
+**Created**: October 24, 2025
 **Authors**: Development Team
 
 ## Overview
@@ -55,7 +65,7 @@ Hermes will support two deployment modes:
 
 ### Component Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     Central Hermes                          │
 │                                                             │
@@ -85,6 +95,7 @@ Hermes will support two deployment modes:
 │ Local Files  │ │ Local Files  │ │ Local Files  │
 │ Git Repo     │ │ Git Repo     │ │ Git Repo     │
 └──────────────┘ └──────────────┘ └──────────────┘
+
 ```
 
 ### Database Strategy: Dual PostgreSQL + SQLite Support
@@ -102,7 +113,8 @@ Use **[golang-migrate](https://github.com/golang-migrate/migrate)** for database
 - ✅ Embedded migration files via `go:embed`
 
 **Migration Structure**:
-```
+
+```text
 internal/db/migrations/
   000001_initial_schema.up.sql
   000001_initial_schema.down.sql
@@ -113,6 +125,7 @@ internal/db/migrations/
 ```
 
 **Implementation Pattern**:
+
 ```go
 package db
 
@@ -134,7 +147,7 @@ func RunMigrations(db *sql.DB, driver string) error {
     if err != nil {
         return fmt.Errorf("failed to load migrations: %w", err)
     }
-    
+
     var databaseDriver migrate.DatabaseDriver
     switch driver {
     case "postgres":
@@ -144,7 +157,7 @@ func RunMigrations(db *sql.DB, driver string) error {
     default:
         return fmt.Errorf("unsupported database driver: %s", driver)
     }
-    
+
     m, err := migrate.NewWithDatabaseInstance(
         "iofs", sourceDriver,
         driver, databaseDriver,
@@ -152,18 +165,19 @@ func RunMigrations(db *sql.DB, driver string) error {
     if err != nil {
         return fmt.Errorf("failed to create migration instance: %w", err)
     }
-    
+
     if err := m.Up(); err != nil && err != migrate.ErrNoChange {
         return fmt.Errorf("migration failed: %w", err)
     }
-    
+
     return nil
 }
+
 ```
 
 #### Database Abstraction
 
-**Current**: `internal/db/db.go` hardcoded for PostgreSQL  
+**Current**: `internal/db/db.go` hardcoded for PostgreSQL
 **New**: Support driver selection via config
 
 ```go
@@ -171,62 +185,62 @@ func RunMigrations(db *sql.DB, driver string) error {
 
 type DatabaseConfig struct {
     Driver   string // "postgres" or "sqlite"
-    
+
     // PostgreSQL config
     Host     string
     Port     int
     User     string
     Password string
     DBName   string
-    
+
     // SQLite config
     Path     string // e.g., ".hermes/hermes.db"
 }
 
 func NewDB(cfg DatabaseConfig) (*gorm.DB, error) {
     var dialector gorm.Dialector
-    
+
     switch cfg.Driver {
     case "postgres":
         dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d",
             cfg.Host, cfg.User, cfg.Password, cfg.DBName, cfg.Port)
         dialector = postgres.Open(dsn)
-        
+
     case "sqlite":
         dialector = sqlite.Open(cfg.Path)
-        
+
     default:
         return nil, fmt.Errorf("unsupported database driver: %s", cfg.Driver)
     }
-    
+
     db, err := gorm.Open(dialector, &gorm.Config{})
     if err != nil {
         return nil, fmt.Errorf("error connecting to database: %w", err)
     }
-    
+
     // Get underlying sql.DB for migrations
     sqlDB, err := db.DB()
     if err != nil {
         return nil, fmt.Errorf("error getting sql.DB: %w", err)
     }
-    
+
     // Run migrations
     if err := RunMigrations(sqlDB, cfg.Driver); err != nil {
         return nil, fmt.Errorf("error running migrations: %w", err)
     }
-    
+
     // PostgreSQL-specific setup (citext extension)
     if cfg.Driver == "postgres" {
         if err := enableCitextExtension(sqlDB); err != nil {
             return nil, err
         }
     }
-    
+
     // Setup join tables (works for both drivers)
     if err := setupJoinTables(db); err != nil {
         return nil, err
     }
-    
+
     return db, nil
 }
 ```
@@ -243,12 +257,15 @@ func NewDB(cfg DatabaseConfig) (*gorm.DB, error) {
 5. Indexer registers with central Hermes using token
 
 **Token Format**:
-```
+
+```text
 hermes-indexer-token-<UUID>-<HMAC-signature>
 Example: hermes-indexer-token-550e8400-e29b-41d4-a716-446655440000-a7b3c9d2e1f4
+
 ```
 
 **Token Storage** (new table):
+
 ```sql
 -- 000002_add_indexer_tokens.up.sql
 CREATE TABLE indexer_tokens (
@@ -269,6 +286,7 @@ CREATE INDEX idx_indexer_tokens_hash ON indexer_tokens(token_hash);
 **1. Register Indexer** (POST `/api/v2/indexer/register`)
 
 Request:
+
 ```json
 {
   "token": "hermes-indexer-token-550e8400-...",
@@ -279,9 +297,11 @@ Request:
     "version": "v1.2.3"
   }
 }
+
 ```
 
 Response:
+
 ```json
 {
   "indexer_id": "idx-550e8400-e29b-41d4-a716-446655440000",
@@ -293,11 +313,14 @@ Response:
 **2. Submit Documents** (POST `/api/v2/indexer/documents`)
 
 Headers:
-```
+
+```text
 Authorization: Bearer hermes-api-token-abc123...
+
 ```
 
 Request:
+
 ```json
 {
   "indexer_id": "idx-550e8400-...",
@@ -321,12 +344,14 @@ Request:
 **3. Heartbeat** (POST `/api/v2/indexer/heartbeat`)
 
 Request:
+
 ```json
 {
   "indexer_id": "idx-550e8400-...",
   "status": "healthy",
   "document_count": 42
 }
+
 ```
 
 ### Docker Compose Integration
@@ -344,7 +369,7 @@ services:
     environment:
       # ... existing env ...
       HERMES_INDEXER_TOKEN_PATH: /app/shared/indexer-token.txt
-      
+
   hermes-indexer:  # NEW SERVICE
     container_name: hermes-indexer
     build:
@@ -377,18 +402,21 @@ volumes:
 Create `testing/local-hermes-example/`:
 
 **Directory Structure**:
-```
+
+```text
 testing/local-hermes-example/
-  README.md           # How to use local Hermes
+  readme.md           # How to use local Hermes
   .hermes/
     config.hcl        # Local mode configuration
   docs/
     rfc-001.md        # Example document
     templates/
       rfc.md
+
 ```
 
 **Configuration** (`testing/local-hermes-example/.hermes/config.hcl`):
+
 ```hcl
 # Hermes Local Mode Configuration
 # This config connects to the testing environment's central Hermes
@@ -412,7 +440,7 @@ database {
 workspace {
   provider = "local"
   path     = "."  # Current directory
-  
+
   # Which folders to index
   document_folders = ["docs", "rfcs"]
   template_folders = ["docs/templates"]
@@ -429,6 +457,7 @@ document_types {
 ```
 
 **Usage**:
+
 ```bash
 # Navigate to workspace
 cd testing/local-hermes-example
@@ -450,6 +479,7 @@ echo "# RFC-002: New Feature" > docs/rfc-002.md
 # Hermes detects change and syncs to central
 # ✓ Detected new document: docs/rfc-002.md
 # ✓ Synced to central Hermes (200 OK)
+
 ```
 
 ## Implementation Plan
@@ -516,7 +546,7 @@ echo "# RFC-002: New Feature" > docs/rfc-002.md
 
 ### Phase 5: Documentation & Integration Tests ✅ (Quality Assurance)
 - [ ] Create this RFC document
-- [ ] Update `docs-internal/README.md` with local mode guide
+- [ ] Update `docs-internal/readme.md` with local mode guide
 - [ ] Create E2E test for local → central flow
 - [ ] Add Playwright test for indexer registration UI
 - [ ] Update `MAKEFILE_ROOT_TARGETS.md` with new commands
@@ -530,6 +560,7 @@ echo "# RFC-002: New Feature" > docs/rfc-002.md
 ## Configuration Schema
 
 ### Central Mode (existing + new fields)
+
 ```hcl
 # mode is optional, defaults to "central"
 mode = "central"
@@ -552,6 +583,7 @@ indexer {
 ```
 
 ### Local Mode (new)
+
 ```hcl
 mode = "local"
 
@@ -571,6 +603,7 @@ workspace {
   path             = "."
   document_folders = ["docs", "rfcs"]
 }
+
 ```
 
 ## Security Considerations
@@ -623,6 +656,7 @@ workspace {
 ## Migration Path for Existing Deployments
 
 ### Step 1: Upgrade Database Schema
+
 ```bash
 # Backup database
 pg_dump hermes > hermes_backup.sql
@@ -635,15 +669,18 @@ psql hermes -c "SELECT version FROM schema_migrations;"
 ```
 
 ### Step 2: Enable Indexer Registration (Optional)
+
 ```hcl
 # config.hcl
 indexer {
   enable_registration = true
   token_path          = "/var/hermes/indexer-token.txt"
 }
+
 ```
 
 ### Step 3: Deploy Indexer (Optional)
+
 ```bash
 # If using external indexer
 docker run -v /var/hermes:/shared \
@@ -690,11 +727,12 @@ docker run -v /var/hermes:/shared \
 ## Decision Log
 
 ### 2025-10-24: Chose golang-migrate over alternatives
-**Considered**: GORM AutoMigrate, go-pg/migrations, Goose, Atlas  
-**Decision**: golang-migrate for industry standard, embedded support, dual driver support  
+**Considered**: GORM AutoMigrate, go-pg/migrations, Goose, Atlas
+**Decision**: golang-migrate for industry standard, embedded support, dual driver support
 **Rationale**: Best fit for our use case, strong community, SQLite + PostgreSQL support
 
 ### 2025-10-24: Token-based auth for indexer registration
-**Considered**: OIDC, mutual TLS, API keys, shared secret  
-**Decision**: Token-based with optional OIDC upgrade path  
+**Considered**: OIDC, mutual TLS, API keys, shared secret
+**Decision**: Token-based with optional OIDC upgrade path
 **Rationale**: Simplest for Docker Compose testing, extensible for production
+

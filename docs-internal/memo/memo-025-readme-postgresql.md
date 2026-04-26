@@ -1,3 +1,12 @@
+---
+id: memo-025
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: fea6703d-6a0f-440d-aa03-3b7cae5825bf
+status: Draft
+title: "PostgreSQL Database Setup"
+---
 # PostgreSQL Database Setup
 
 This guide covers setting up PostgreSQL as the database for Hermes.
@@ -36,6 +45,7 @@ docker compose up -d
 # PostgreSQL available at:
 # - Native mode: localhost:5432
 # - Testing mode: localhost:5433
+
 ```
 
 ### Using Root Makefile
@@ -66,6 +76,7 @@ docker run -d \
   -e POSTGRES_DB=hermes \
   -v postgres_data:/var/lib/postgresql/data \
   postgres:15
+
 ```
 
 ## Production Deployment
@@ -100,9 +111,11 @@ volumes:
 ```
 
 Start with:
+
 ```bash
 export POSTGRES_PASSWORD="your-secure-password"
 docker compose up -d
+
 ```
 
 ### Managed Services
@@ -118,6 +131,7 @@ docker compose up -d
 ### Native Installation
 
 **Ubuntu/Debian**:
+
 ```bash
 sudo apt update
 sudo apt install postgresql postgresql-contrib
@@ -126,12 +140,15 @@ sudo systemctl enable postgresql
 ```
 
 **macOS**:
+
 ```bash
 brew install postgresql@15
 brew services start postgresql@15
+
 ```
 
 **RHEL/CentOS**:
+
 ```bash
 sudo yum install postgresql15-server
 sudo postgresql-15-setup initdb
@@ -152,10 +169,11 @@ database {
   dbname   = "hermes"
   user     = "postgres"
   password = "postgres"  # Use secure password in production!
-  
+
   # Optional: Additional connection parameters
   sslmode  = "disable"   # Use "require" in production
 }
+
 ```
 
 ### Environment Variables (Recommended for Production)
@@ -198,6 +216,7 @@ Hermes automatically migrates the database schema on startup using GORM AutoMigr
 # Output:
 # [info] Running database migrations...
 # [info] Database migrations completed
+
 ```
 
 ### Manual Schema Inspection
@@ -238,7 +257,7 @@ SELECT id, title, doc_type, status FROM documents LIMIT 10;
 **`recently_viewed_docs`**: User activity
 - `user_id`, `document_id`, `viewed_at`
 
-**`drafts`**: Draft document associations  
+**`drafts`**: Draft document associations
 - `id`, `document_id`, `user_id`, `created_at`
 
 **`projects`**: Project definitions
@@ -249,6 +268,7 @@ SELECT id, title, doc_type, status FROM documents LIMIT 10;
 ### Using pg_dump
 
 **Full database backup**:
+
 ```bash
 # Backup to file
 pg_dump -h localhost -U postgres hermes > hermes_backup.sql
@@ -258,9 +278,11 @@ pg_dump -h localhost -U postgres hermes | gzip > hermes_backup.sql.gz
 
 # With timestamp
 pg_dump -h localhost -U postgres hermes > hermes_$(date +%Y%m%d_%H%M%S).sql
+
 ```
 
 **Restore from backup**:
+
 ```bash
 # Drop and recreate database
 psql -h localhost -U postgres -c "DROP DATABASE hermes;"
@@ -276,14 +298,17 @@ gunzip -c hermes_backup.sql.gz | psql -h localhost -U postgres hermes
 ### Docker Volume Backup
 
 **Backup volume**:
+
 ```bash
 docker run --rm \
   -v hermes_postgres_data:/data \
   -v $(pwd):/backup \
   busybox tar czf /backup/postgres-data-backup.tar.gz /data
+
 ```
 
 **Restore volume**:
+
 ```bash
 # Stop PostgreSQL
 docker compose stop postgres
@@ -301,12 +326,14 @@ docker compose start postgres
 ### Automated Backups
 
 **Cron job** (daily at 2 AM):
+
 ```bash
 # Add to crontab
 0 2 * * * /usr/bin/pg_dump -h localhost -U postgres hermes | gzip > /backups/hermes_$(date +\%Y\%m\%d).sql.gz
 
 # Keep only last 30 days
 0 3 * * * find /backups -name "hermes_*.sql.gz" -mtime +30 -delete
+
 ```
 
 **Managed services**: AWS RDS, Cloud SQL, and Azure provide automated backup solutions.
@@ -338,51 +365,58 @@ Hermes GORM models define indices automatically. Check with:
 
 ```sql
 -- List all indices
-SELECT tablename, indexname, indexdef 
-FROM pg_indexes 
-WHERE schemaname = 'public' 
+SELECT tablename, indexname, indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
 ORDER BY tablename, indexname;
 
 -- Missing indices analysis
-SELECT schemaname, tablename, attname, n_distinct, correlation 
-FROM pg_stats 
-WHERE schemaname = 'public' 
+SELECT schemaname, tablename, attname, n_distinct, correlation
+FROM pg_stats
+WHERE schemaname = 'public'
 ORDER BY abs(correlation) DESC;
+
 ```
 
 ### Monitoring
 
 **Check connections**:
+
 ```sql
 SELECT count(*) FROM pg_stat_activity;
 SELECT * FROM pg_stat_activity WHERE datname = 'hermes';
 ```
 
 **Check database size**:
+
 ```sql
 SELECT pg_size_pretty(pg_database_size('hermes'));
+
 ```
 
 **Check table sizes**:
+
 ```sql
-SELECT 
+SELECT
   schemaname, tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
-FROM pg_tables 
-WHERE schemaname = 'public' 
+FROM pg_tables
+WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 ```
 
 **Slow queries**:
+
 ```sql
 -- Enable slow query logging in postgresql.conf
 log_min_duration_statement = 1000  -- Log queries > 1 second
 
 -- View slow queries
-SELECT query, calls, total_time, mean_time 
-FROM pg_stat_statements 
-ORDER BY mean_time DESC 
+SELECT query, calls, total_time, mean_time
+FROM pg_stat_statements
+ORDER BY mean_time DESC
 LIMIT 10;
+
 ```
 
 ## Security
@@ -426,14 +460,17 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO hermes;
 ### SSL/TLS Configuration
 
 **Enable SSL in PostgreSQL** (`postgresql.conf`):
+
 ```ini
 ssl = on
 ssl_cert_file = '/path/to/server.crt'
 ssl_key_file = '/path/to/server.key'
 ssl_ca_file = '/path/to/root.crt'
+
 ```
 
 **Configure Hermes to use SSL** (`config.hcl`):
+
 ```hcl
 database {
   host     = "localhost"
@@ -452,6 +489,7 @@ database {
 **Cause**: PostgreSQL not running or wrong host/port
 
 **Solution**:
+
 ```bash
 # Check if running
 docker ps | grep postgres
@@ -463,6 +501,7 @@ grep -A5 "^database {" config.hcl
 
 # Test connection
 psql -h localhost -p 5432 -U postgres -d hermes -c "SELECT 1;"
+
 ```
 
 ### Authentication Failed
@@ -470,6 +509,7 @@ psql -h localhost -p 5432 -U postgres -d hermes -c "SELECT 1;"
 **Cause**: Wrong username or password
 
 **Solution**:
+
 ```bash
 # Check environment variables
 env | grep POSTGRES
@@ -488,12 +528,14 @@ sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'newpassword';"
 **Cause**: Database not created yet
 
 **Solution**:
+
 ```bash
 # Create database
 psql -h localhost -U postgres -c "CREATE DATABASE hermes;"
 
 # Or let Hermes create it on first run
 ./hermes server -config=config.hcl
+
 ```
 
 ### Too Many Connections
@@ -501,13 +543,14 @@ psql -h localhost -U postgres -c "CREATE DATABASE hermes;"
 **Cause**: Connection limit reached
 
 **Solution**:
+
 ```sql
 -- Check current connections
 SELECT count(*) FROM pg_stat_activity;
 
 -- Kill idle connections
-SELECT pg_terminate_backend(pid) 
-FROM pg_stat_activity 
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
 WHERE datname = 'hermes' AND state = 'idle';
 
 -- Increase max_connections in postgresql.conf
@@ -519,6 +562,7 @@ max_connections = 200
 **Cause**: Missing indices or inefficient queries
 
 **Solution**:
+
 ```sql
 -- Analyze tables
 ANALYZE;
@@ -528,6 +572,7 @@ EXPLAIN ANALYZE SELECT * FROM documents WHERE doc_type = 'RFC';
 
 -- Create index if needed
 CREATE INDEX idx_documents_doc_type ON documents(doc_type);
+
 ```
 
 ## Migration from Other Databases
@@ -543,7 +588,8 @@ Hermes is designed for PostgreSQL only. If migrating from another database:
 ## See Also
 
 - [Configuration Documentation](CONFIG_HCL_DOCUMENTATION.md)
-- [Testing Environment](../testing/README.md)
+- [Testing Environment](../testing/readme.md)
 - [Makefile Targets](MAKEFILE_ROOT_TARGETS.md) - Database commands
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [GORM Documentation](https://gorm.io/docs/) - ORM used by Hermes
+

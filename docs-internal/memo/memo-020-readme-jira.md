@@ -1,3 +1,12 @@
+---
+id: memo-020
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: d823b44f-e514-4454-a167-bff9332347d7
+status: Draft
+title: "Jira Integration"
+---
 # Jira Integration
 
 This guide covers integrating Hermes with Jira for project management.
@@ -75,12 +84,13 @@ Add to your `config.hcl`:
 ```hcl
 jira {
   enabled = true
-  
+
   # Jira Cloud
   base_url  = "https://yourcompany.atlassian.net"
   user_email = "your-email@yourcompany.com"
   api_token  = "your-api-token-here"
 }
+
 ```
 
 ### Jira Data Center Configuration
@@ -90,7 +100,7 @@ Add to your `config.hcl`:
 ```hcl
 jira {
   enabled = true
-  
+
   # Jira Data Center
   base_url              = "https://jira.yourcompany.com"
   personal_access_token = "your-personal-access-token-here"
@@ -112,6 +122,7 @@ export HERMES_JIRA_API_TOKEN="your-api-token"
 export HERMES_JIRA_ENABLED="true"
 export HERMES_JIRA_BASE_URL="https://jira.yourcompany.com"
 export HERMES_JIRA_PERSONAL_ACCESS_TOKEN="your-token"
+
 ```
 
 Then in `config.hcl`:
@@ -158,17 +169,21 @@ Hermes periodically syncs with Jira to keep issue details current:
 ### Backend API
 
 **Get Jira issue details**:
-```
+
+```text
 GET /api/v2/jira/issues/{issueKey}
+
 ```
 
 Example:
+
 ```bash
 curl -H "Authorization: Bearer $TOKEN" \
      https://hermes.yourcompany.com/api/v2/jira/issues/PROJ-123
 ```
 
 Response:
+
 ```json
 {
   "key": "PROJ-123",
@@ -182,6 +197,7 @@ Response:
     }
   }
 }
+
 ```
 
 ### Rate Limiting
@@ -231,6 +247,7 @@ The Jira account used for integration needs:
 **Cause**: Invalid credentials or wrong authentication method
 
 **Solution**:
+
 ```bash
 # Test Jira Cloud authentication
 curl -u "your-email@yourcompany.com:your-api-token" \
@@ -259,15 +276,17 @@ grep -i jira /tmp/hermes-backend.log
 **Cause**: Self-signed certificates on Jira Data Center
 
 **Solution**:
+
 ```hcl
 jira {
   enabled = true
   base_url = "https://jira.yourcompany.com"
   personal_access_token = "your-token"
-  
+
   # Skip SSL verification (NOT recommended for production!)
   insecure_skip_verify = true
 }
+
 ```
 
 **Better solution**: Add your CA certificate to system trust store.
@@ -277,6 +296,7 @@ jira {
 **Cause**: Network issues or firewall blocking
 
 **Solution**:
+
 ```bash
 # Test connectivity
 curl -v https://yourcompany.atlassian.net
@@ -343,6 +363,7 @@ curl -H "Authorization: Bearer $TOKEN" \
      https://hermes.yourcompany.com/api/v2/jira/issues/TEST-1
 
 # 5. Revoke old token in Jira
+
 ```
 
 ## Advanced Configuration
@@ -356,13 +377,13 @@ jira {
   enabled = true
   base_url = "https://yourcompany.atlassian.net"
   api_token = "your-token"
-  
+
   # HTTP proxy
   http_proxy = "http://proxy.yourcompany.com:8080"
-  
+
   # HTTPS proxy
   https_proxy = "http://proxy.yourcompany.com:8080"
-  
+
   # No proxy for these hosts
   no_proxy = "localhost,127.0.0.1"
 }
@@ -373,9 +394,11 @@ jira {
 To display custom Jira fields in Hermes:
 
 1. Identify custom field IDs in Jira:
+
    ```bash
    curl -u "email:token" \
         https://yourcompany.atlassian.net/rest/api/3/field
+
    ```
 
 2. Modify Hermes code to fetch and display custom fields
@@ -406,3 +429,4 @@ If you don't use Jira, consider:
 - [API Documentation](../internal/api/v2/)
 - [Jira REST API Documentation](https://developer.atlassian.com/cloud/jira/platform/rest/v3/)
 - [Jira Data Center API](https://docs.atlassian.com/software/jira/docs/api/REST/latest/)
+

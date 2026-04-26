@@ -1,6 +1,6 @@
 ---
-id: MEMO-010
-title: Ember Development Server & Upgrade Strategy
+id: memo-010
+title: "Ember Development Server & Upgrade Strategy"
 date: 2025-10-09
 type: Guide
 status: Current Practice
@@ -14,6 +14,10 @@ related:
   - RFC-034
   - RFC-037
   - TESTING_ENVIRONMENTS.md
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 625813a1-291b-4d34-af33-39dcb88bcfee
 ---
 
 # Ember Development Server & Upgrade Strategy
@@ -82,16 +86,19 @@ This memo documents the current Ember.js frontend development setup, including t
 ### Backend Integration Pattern
 
 **Before** (Pre-October 2025):
-```
+
+```text
 Frontend (Ember)
   ↓
 Mirage Mock Server (in-browser)
   ↓
 (Optional) Backend API calls
+
 ```
 
 **After** (Current - Backend Proxy Pattern):
-```
+
+```text
 Frontend (Ember) → API Request (/api/v2/...)
   ↓
 Ember Dev Server Proxy
@@ -117,9 +124,11 @@ PostgreSQL / Meilisearch / Google Workspace
 **Use Case**: E2E testing, acceptance testing, CI/CD validation
 
 **Setup**:
+
 ```bash
 cd testing
 docker compose up -d
+
 ```
 
 **Services**:
@@ -130,7 +139,8 @@ docker compose up -d
 - **Dex OIDC**: localhost:5558/5559
 
 **Architecture**:
-```
+
+```text
 Browser → localhost:4201
   ↓
 Docker: hermes-web-acceptance (Ember dev server)
@@ -158,6 +168,7 @@ Docker: dex (Dex OIDC) → port 5558/5559
 **Use Case**: Active feature development, fastest iteration
 
 **Setup**:
+
 ```bash
 # Terminal 1: Start dependencies (Docker)
 docker compose up -d dex postgres meilisearch
@@ -173,20 +184,27 @@ yarn start  # Defaults to proxy localhost:8001 (see note below)
 # Or explicitly:
 # HERMES_API_URL=http://localhost:8000 yarn start
 # Frontend at http://localhost:4200
+
 ```
 
 **⚠️ Current package.json Gotcha**:
+
 ```json
 "start": "MIRAGE_ENABLED=false ember server --port 4200 --proxy ${HERMES_API_URL:-http://localhost:8001}"
 ```
+
 The default is `8001` (testing backend), not `8000` (native backend). Use:
+
 ```bash
 HERMES_API_URL=http://localhost:8000 yarn start
+
 ```
+
 Or add alias script to package.json (see recommendations below).
 
 **Architecture**:
-```
+
+```text
 Browser → localhost:4200
   ↓
 Native: ember server (proxy enabled)
@@ -208,6 +226,7 @@ Docker: dex (5556/5557)
 **Use Case**: Frontend development against stable backend
 
 **Setup**:
+
 ```bash
 # Terminal 1: Start testing backend
 cd testing
@@ -218,10 +237,12 @@ docker compose up -d hermes dex postgres meilisearch
 cd web
 yarn start  # Already defaults to 8001
 # Frontend at http://localhost:4200 → proxies to localhost:8001
+
 ```
 
 **Architecture**:
-```
+
+```text
 Browser → localhost:4200
   ↓
 Native: ember server (proxy enabled)
@@ -250,6 +271,7 @@ Docker: dex (5558/5559)
 **Scope**: Server-side (Ember CLI), not browser-visible
 
 **Usage**:
+
 ```bash
 # Explicit override
 HERMES_API_URL=http://localhost:8000 yarn start
@@ -259,6 +281,7 @@ yarn start  # Uses ${HERMES_API_URL:-http://localhost:8001}
 
 # Docker (set in docker-compose.yml)
 HERMES_API_URL: http://hermes:8000  # Container name
+
 ```
 
 ### Current package.json Scripts
@@ -287,15 +310,17 @@ HERMES_API_URL: http://hermes:8000  # Container name
 {
   "scripts": {
     "start": "MIRAGE_ENABLED=false ember server --port 4200 --proxy ${HERMES_API_URL:-http://localhost:8001}",
-    
+
     "start:native": "MIRAGE_ENABLED=false ember server --port 4200 --proxy http://localhost:8000",
     "start:testing": "MIRAGE_ENABLED=false ember server --port 4200 --proxy http://localhost:8001",
     "start:custom": "MIRAGE_ENABLED=false ember server --port 4200 --proxy ${HERMES_API_URL}"
   }
 }
+
 ```
 
 **Usage**:
+
 ```bash
 yarn start:native   # Native backend (8000)
 yarn start:testing  # Docker testing backend (8001)
@@ -307,8 +332,10 @@ yarn start:custom   # Use HERMES_API_URL env var
 **Example**: Frontend requests user profile
 
 1. **Browser JavaScript**:
+
    ```javascript
    fetch('/api/v2/me')  // Relative URL, same origin
+
    ```
 
 2. **Ember Dev Server** (localhost:4200):
@@ -375,15 +402,18 @@ CMD ["sh", "-c", "yarn ember server --proxy ${HERMES_API_URL:-http://hermes:8000
 **Why Not Pre-Build?**
 
 **Previous Approach** (Static Assets):
+
 ```dockerfile
 # Build on host
 cd web && yarn build
 # Copy to container
 COPY dist /app/dist
 CMD ["serve", "-s", "dist"]
+
 ```
 
 **Current Approach** (Dev Server):
+
 ```dockerfile
 # Install dependencies in container
 RUN yarn install --immutable
@@ -436,6 +466,7 @@ services:
       start_period: 5s
     networks:
       - hermes-acceptance
+
 ```
 
 **Key Configuration**:
@@ -466,34 +497,43 @@ services:
 ### Build and Startup Times
 
 **First Build** (Cold Cache):
+
 ```bash
 cd testing
 docker compose build web
 ```
+
 - **Duration**: ~180 seconds
 - **Steps**: Pull node:20-alpine → yarn install → copy source
 - **Size**: ~300MB image
 
 **Subsequent Builds** (Warm Cache):
+
 ```bash
 docker compose build web
+
 ```
+
 - **Duration**: ~30 seconds
 - **Steps**: Use cached layers (node_modules unchanged)
 
 **Container Startup**:
+
 ```bash
 docker compose up -d web
 ```
+
 - **Duration**: ~15-20 seconds
 - **Steps**: Start container → webpack build → health check passes
 - **Logs**: `docker compose logs -f web` to watch progress
 
 **Ready State**:
+
 ```bash
 docker compose ps web
 # NAME                   STATUS         PORTS
 # hermes-web-acceptance  Up 25 seconds  0.0.0.0:4201->4200/tcp
+
 ```
 
 ---
@@ -506,7 +546,8 @@ docker compose ps web
 
 **Known Issues**:
 1. ⚠️ **Test suite broken** - 1 test with global failure
-   ```
+
+   ``` text
    not ok 1 Chrome 141.0 - [1 ms] - global failure
    # tests 1
    # pass  0
@@ -573,51 +614,56 @@ docker compose ps web
 **Priority Services to Test**:
 
 1. **`services/session.ts`** (Authentication)
+
    ```typescript
    // Test cases:
    test('it authenticates with valid credentials', async function(assert) {
      // Mock successful login
    });
-   
+
    test('it handles auth provider detection', async function(assert) {
      // Test Google, Okta, Dex detection
    });
-   
+
    test('it clears session on logout', async function(assert) {
      // Verify session cleared
    });
+
    ```
 
 2. **`services/fetch.ts`** (API Wrapper)
+
    ```typescript
    // Test cases:
    test('it adds auth headers to requests', async function(assert) {
      // Verify Authorization header
    });
-   
+
    test('it handles 401 unauthorized', async function(assert) {
      // Test session expiry
    });
-   
+
    test('it adds provider-specific headers', async function(assert) {
      // Test X-Hermes-Google-Auth-Id
    });
    ```
 
 3. **`services/algolia.ts`** (Search Proxy)
+
    ```typescript
    // Test cases:
    test('it constructs search queries', async function(assert) {
      // Test query building
    });
-   
+
    test('it proxies through backend', async function(assert) {
      // Verify /1/indexes/* path
    });
-   
+
    test('it handles facet filters', async function(assert) {
      // Test facet construction
    });
+
    ```
 
 **Target Coverage**: 70% for these 3 services
@@ -695,6 +741,7 @@ docker compose ps web
 **Upgrade Path**:
 
 #### Step 1: Minor Version Bump (6.7.0 → 6.9.0)
+
 ```bash
 cd web
 yarn upgrade ember-source@6.9.0 ember-cli@6.9.0
@@ -767,39 +814,47 @@ yarn test:ember  # Run full test suite
 ### Issue: "ECONNREFUSED localhost:8000"
 
 **Symptom**:
-```
+
+```text
 Error: connect ECONNREFUSED 127.0.0.1:8000
+
 ```
 
 **Cause**: Backend is not running or running on different port
 
 **Solutions**:
 1. **Check backend is running**:
+
    ```bash
    lsof -i :8000  # Native backend
    lsof -i :8001  # Docker testing backend
    ```
 
 2. **Verify backend health**:
+
    ```bash
    curl http://localhost:8000/health
    curl http://localhost:8001/health
+
    ```
 
 3. **Use correct proxy URL**:
+
    ```bash
    # Native backend
    HERMES_API_URL=http://localhost:8000 yarn start
-   
+
    # Docker testing backend
    yarn start  # Default is 8001
    ```
 
 4. **Check Docker backend**:
+
    ```bash
    cd testing
    docker compose ps hermes
    docker compose logs hermes | tail -20
+
    ```
 
 ### Issue: "Proxy timeout" or Slow Responses
@@ -813,22 +868,26 @@ Error: connect ECONNREFUSED 127.0.0.1:8000
 
 **Solutions**:
 1. **Check backend logs**:
+
    ```bash
    # Native backend
    tail -f /tmp/hermes-backend.log
-   
+
    # Docker backend
    docker compose logs -f hermes
    ```
 
 2. **Check database connection**:
+
    ```bash
    # PostgreSQL
    docker compose ps postgres
    psql -h localhost -p 5432 -U hermes -d hermes -c "SELECT 1"
+
    ```
 
 3. **Increase timeout** (temporary workaround):
+
    ```javascript
    // web/app/services/fetch.ts
    const controller = new AbortController();
@@ -836,6 +895,7 @@ Error: connect ECONNREFUSED 127.0.0.1:8000
    ```
 
 4. **Disable external services** (if testing locally):
+
    ```hcl
    # config.hcl
    okta {
@@ -844,12 +904,14 @@ Error: connect ECONNREFUSED 127.0.0.1:8000
    google_workspace {
      disabled = true
    }
+
    ```
 
 ### Issue: "webpack build failed" in Docker
 
 **Symptom**:
-```
+
+```text
 ERROR in ./app/components/...
 Module parse failed: Unexpected token
 ```
@@ -858,29 +920,35 @@ Module parse failed: Unexpected token
 
 **Solutions**:
 1. **Check source file locally**:
+
    ```bash
    cd web
    yarn test:types  # TypeScript check
    yarn lint:js     # ESLint check
+
    ```
 
 2. **Rebuild with no cache**:
+
    ```bash
    cd testing
    docker compose build --no-cache web
    ```
 
 3. **Check dependency versions**:
+
    ```bash
    cd web
    yarn install --check-cache
    yarn outdated  # Check for outdated deps
+
    ```
 
 ### Issue: "Module not found" After Dependency Update
 
 **Symptom**:
-```
+
+```text
 Error: Cannot find module 'some-package'
 ```
 
@@ -888,21 +956,26 @@ Error: Cannot find module 'some-package'
 
 **Solutions**:
 1. **Reinstall dependencies**:
+
    ```bash
    cd web
    rm -rf node_modules .yarn/cache
    yarn install
+
    ```
 
 2. **Rebuild Docker image**:
+
    ```bash
    cd testing
    docker compose build --no-cache web
    ```
 
 3. **Check Yarn version**:
+
    ```bash
    yarn --version  # Should be 4.10.3
+
    ```
 
 ### Issue: "Session expired" Loop
@@ -913,6 +986,7 @@ Error: Cannot find module 'some-package'
 
 **Solutions**:
 1. **Check cookie domain**:
+
    ```bash
    # In browser DevTools → Application → Cookies
    # Look for 'hermes_session' cookie
@@ -920,46 +994,57 @@ Error: Cannot find module 'some-package'
    ```
 
 2. **Check backend session config**:
+
    ```hcl
    # config.hcl
    server {
      session_secret = "your-secret-key"
      cookie_secure = false  # false for localhost
    }
+
    ```
 
 3. **Clear browser cookies**:
-   ```
+
+   ``` text
    Chrome DevTools → Application → Clear storage → Cookies only
    ```
 
 4. **Check backend logs for auth errors**:
+
    ```bash
    grep -i "session\|auth" /tmp/hermes-backend.log | tail -20
+
    ```
 
 ### Issue: Port Already in Use
 
 **Symptom**:
-```
+
+```text
 Error: listen EADDRINUSE: address already in use :::4200
 ```
 
 **Solutions**:
 1. **Kill process on port**:
+
    ```bash
    lsof -ti :4200 | xargs kill -9
+
    ```
 
 2. **Check for zombie processes**:
+
    ```bash
    ps aux | grep "[e]mber server"
    pkill -f "ember server"
    ```
 
 3. **Use different port**:
+
    ```bash
    yarn ember server --port 4201 --proxy http://localhost:8000
+
    ```
 
 ---
@@ -974,7 +1059,7 @@ Error: listen EADDRINUSE: address already in use :::4200
 
 ### Documentation Files
 - **EMBER_UPGRADE_STRATEGY.md**: Full upgrade plan with coverage targets
-- **EMBER_DEV_SERVER_MIGRATION.md**: Docker migration details
+- **EMBER_DEV_SERVER_migration.md**: Docker migration details
 - **FRONTEND_PROXY_CONFIGURATION.md**: Proxy setup and troubleshooting
 - **TESTING_ENVIRONMENTS.md**: Native vs Docker comparison
 - **DEX_QUICK_START.md**: Local auth setup for development
@@ -996,20 +1081,24 @@ Error: listen EADDRINUSE: address already in use :::4200
 ### Immediate (Next Sprint)
 
 1. **Fix package.json default**:
+
    ```json
    "start": "MIRAGE_ENABLED=false ember server --port 4200 --proxy ${HERMES_API_URL:-http://localhost:8000}"
    ```
+
    Change default from `8001` to `8000` (native backend more common)
 
 2. **Add convenience scripts**:
+
    ```json
    "start:native": "...",
    "start:testing": "...",
    "start:custom": "..."
+
    ```
 
 3. **Document Yarn version requirement**:
-   Add to `web/README.md`: "Requires Yarn 4.10.3 (Berry)"
+   Add to `web/readme.md`: "Requires Yarn 4.10.3 (Berry)"
 
 4. **Fix test suite** (Priority 1 blocker for upgrades)
 
@@ -1053,15 +1142,15 @@ Error: listen EADDRINUSE: address already in use :::4200
   "scripts": {
     // Build for production (minified, optimized)
     "build": "ember build --environment=production",
-    
+
     // Development server with proxy (current default)
     "start": "MIRAGE_ENABLED=false ember server --port 4200 --proxy ${HERMES_API_URL:-http://localhost:8001}",
-    
+
     // Linting
     "lint": "npm-run-all --aggregate-output --continue-on-error --parallel \"lint:!(fix)\"",
     "lint:hbs": "ember-template-lint .",
     "lint:js": "eslint . --cache",
-    
+
     // Testing
     "test": "npm-run-all lint test:*",
     "test:ember": "ember test",
@@ -1070,7 +1159,7 @@ Error: listen EADDRINUSE: address already in use :::4200
     "test:unit": "ember test --filter='Unit'",
     "test:integration": "ember test --filter='Integration'",
     "test:acceptance": "ember test --filter='Acceptance'",
-    
+
     // Validation (CI/CD)
     "validate": "npm-run-all test:types test:lint test:build"
   }
@@ -1078,6 +1167,7 @@ Error: listen EADDRINUSE: address already in use :::4200
 ```
 
 **Common Commands**:
+
 ```bash
 yarn start              # Dev server (proxy to 8001)
 yarn test:types         # TypeScript check (fast, no browser)
@@ -1085,10 +1175,12 @@ yarn test:ember         # Full test suite (launches browser)
 yarn lint:hbs           # Template linting (533 files)
 yarn build              # Production build
 yarn validate           # Full validation (CI/CD)
+
 ```
 
 ---
 
-**Approval**: Living document, update as frontend evolves  
-**Next Review**: After test suite fix (Phase 1 completion)  
+**Approval**: Living document, update as frontend evolves
+**Next Review**: After test suite fix (Phase 1 completion)
 **Feedback**: Update with Ember 7 migration notes when completed
+

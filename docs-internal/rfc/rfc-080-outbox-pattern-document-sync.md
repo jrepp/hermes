@@ -1,10 +1,14 @@
 ---
-id: RFC-080
-title: Outbox Pattern for Document Synchronization
+id: rfc-080
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 51518baa-f9b3-418f-8e36-1cc23b37eb3b
+status: Proposed
+title: "Outbox Pattern for Document Synchronization"
 date: 2025-10-09
 type: RFC
 subtype: Architecture Proposal
-status: Proposed
 tags: [outbox-pattern, document-sync, architecture, meilisearch, search]
 related:
   - ADR-073
@@ -23,6 +27,7 @@ Implement the **Transactional Outbox Pattern** to ensure reliable synchronizatio
 ### Current Architecture Problems
 
 **Problem 1: Inconsistent State**
+
 ```go
 // Current implementation (internal/api/v2/documents.go)
 func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
@@ -31,12 +36,13 @@ func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
     if err != nil {
         return c.JSON(500, gin.H{"error": "database error"})
     }
-    
+
     // 2. Write to search index
     err = h.search.Index(ctx, "documents", []Document{doc})
     // ❌ PROBLEM: If this fails, database has doc but search doesn't!
     // Users can view document but can't find it via search
 }
+
 ```
 
 **Problem 2: Partial Failures**
@@ -58,7 +64,8 @@ func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
 ### Real-World Scenarios
 
 **Scenario 1: Algolia Rate Limit**
-```
+
+```text
 11:23:45 POST /api/v2/documents (create RFC-456)
 11:23:46 DB: Document RFC-456 created ✅
 11:23:47 Algolia: Rate limit exceeded (429 Too Many Requests) ❌
@@ -67,16 +74,19 @@ func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
 ```
 
 **Scenario 2: Network Partition**
-```
+
+```text
 14:15:00 PUT /api/v2/documents/123 (update content)
 14:15:01 DB: Update successful ✅
 14:15:02 Meilisearch: Connection timeout ❌
 14:15:30 Search shows old content ❌
 14:16:00 Another user finds document via search, sees outdated info
+
 ```
 
 **Scenario 3: Bulk Import**
-```
+
+```text
 09:00:00 Admin: Import 500 documents from CSV
 09:00:05 DB: 500 documents inserted ✅
 09:00:10 Algolia: 247/500 indexed, then quota exceeded ❌
@@ -98,7 +108,7 @@ func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
 
 ### Architecture Overview
 
-```
+```text
 ┌───────────────────────────────────────────────────────────────┐
 │ API Handler (internal/api/v2/documents.go)                    │
 │                                                                │
@@ -128,11 +138,13 @@ func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
 │  Receives document updates from outbox worker                 │
 │  Eventually consistent with database                          │
 └───────────────────────────────────────────────────────────────┘
+
 ```
 
 ### Database Schema
 
 **Outbox Table** (`pkg/models/outbox_event.go`):
+
 ```go
 type OutboxEvent struct {
     ID            uint       `gorm:"primaryKey"`
@@ -151,10 +163,12 @@ type OutboxEvent struct {
 ```
 
 **Indexes**:
+
 ```sql
 CREATE INDEX idx_outbox_status_created ON outbox_events(status, created_at);
 CREATE INDEX idx_outbox_event_type ON outbox_events(event_type);
 CREATE INDEX idx_outbox_aggregate_id ON outbox_events(aggregate_id);
+
 ```
 
 ### Implementation
@@ -162,21 +176,23 @@ CREATE INDEX idx_outbox_aggregate_id ON outbox_events(aggregate_id);
 #### Step 1: Emit Events in Handlers
 
 **Before (Current)**:
+
 ```go
 func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
     // Write to DB
     if err := h.db.Create(&doc).Error; err != nil {
         return c.JSON(500, err)
     }
-    
+
     // Update search (MAY FAIL!)
     h.search.Index(ctx, "documents", []Document{doc})
-    
+
     return c.JSON(201, doc)
 }
 ```
 
 **After (With Outbox)**:
+
 ```go
 func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
     // Begin transaction
@@ -186,13 +202,13 @@ func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
             tx.Rollback()
         }
     }()
-    
+
     // Write to DB
     if err := tx.Create(&doc).Error; err != nil {
         tx.Rollback()
         return c.JSON(500, err)
     }
-    
+
     // Emit outbox event
     payload, _ := json.Marshal(doc)
     event := &OutboxEvent{
@@ -206,26 +222,28 @@ func (h *DocumentsHandler) CreateDocument(c *gin.Context) {
         tx.Rollback()
         return c.JSON(500, err)
     }
-    
+
     // Commit transaction (atomic!)
     if err := tx.Commit().Error; err != nil {
         return c.JSON(500, err)
     }
-    
+
     // ✅ Both DB and outbox event are committed atomically
     return c.JSON(201, doc)
 }
+
 ```
 
 #### Step 2: Outbox Worker
 
 **Worker Implementation** (`pkg/outbox/worker.go`):
+
 ```go
 type Worker struct {
     db     *gorm.DB
     search search.Provider
     logger hclog.Logger
-    
+
     pollInterval time.Duration
     batchSize    int
     maxRetries   int
@@ -234,7 +252,7 @@ type Worker struct {
 func (w *Worker) Start(ctx context.Context) error {
     ticker := time.NewTicker(w.pollInterval)
     defer ticker.Stop()
-    
+
     for {
         select {
         case <-ctx.Done():
@@ -259,7 +277,7 @@ func (w *Worker) processEvents(ctx context.Context) error {
             Find(&events).Error; err != nil {
             return err
         }
-        
+
         // Mark as processing
         eventIDs := make([]uint, len(events))
         for i, e := range events {
@@ -269,19 +287,19 @@ func (w *Worker) processEvents(ctx context.Context) error {
             Where("id IN ?", eventIDs).
             Update("status", "processing").Error
     })
-    
+
     if err != nil {
         return err
     }
-    
+
     // Process each event
     for _, event := range events {
         if err := w.processEvent(ctx, &event); err != nil {
-            w.logger.Warn("event processing failed", 
-                "event_id", event.ID, 
+            w.logger.Warn("event processing failed",
+                "event_id", event.ID,
                 "event_type", event.EventType,
                 "error", err)
-            
+
             // Update failure
             w.db.Model(&event).Updates(map[string]interface{}{
                 "status":          "failed",
@@ -297,7 +315,7 @@ func (w *Worker) processEvents(ctx context.Context) error {
             })
         }
     }
-    
+
     return nil
 }
 
@@ -309,10 +327,10 @@ func (w *Worker) processEvent(ctx context.Context, event *OutboxEvent) error {
             return fmt.Errorf("unmarshal payload: %w", err)
         }
         return w.search.Index(ctx, "documents", []Document{doc})
-        
+
     case "document.deleted":
         return w.search.Delete(ctx, "documents", []string{event.AggregateID})
-        
+
     default:
         return fmt.Errorf("unknown event type: %s", event.EventType)
     }
@@ -322,10 +340,11 @@ func (w *Worker) processEvent(ctx context.Context, event *OutboxEvent) error {
 #### Step 3: Worker Startup
 
 **Server Initialization** (`cmd/hermes/main.go`):
+
 ```go
 func main() {
     // ... existing setup ...
-    
+
     // Start outbox worker
     outboxWorker := outbox.NewWorker(
         db,
@@ -335,22 +354,24 @@ func main() {
         outbox.WithBatchSize(100),
         outbox.WithMaxRetries(5),
     )
-    
+
     // Run worker in background
     go func() {
         if err := outboxWorker.Start(ctx); err != nil {
             logger.Error("outbox worker stopped", "error", err)
         }
     }()
-    
+
     // ... start HTTP server ...
 }
+
 ```
 
 ### Retry Strategy
 
 **Exponential Backoff**:
-```
+
+```text
 Attempt | Delay | Cumulative
 --------|-------|------------
 1       | 1s    | 1s
@@ -362,6 +383,7 @@ Failed  | -     | Give up
 ```
 
 **Configuration**:
+
 ```hcl
 outbox {
   poll_interval = "1s"
@@ -369,6 +391,7 @@ outbox {
   max_retries   = 5
   backoff_base  = 2  # Exponential base
 }
+
 ```
 
 ## Monitoring & Observability
@@ -376,6 +399,7 @@ outbox {
 ### Metrics
 
 **Prometheus Metrics** (`pkg/outbox/metrics.go`):
+
 ```go
 var (
     outboxEventsTotal = prometheus.NewCounterVec(
@@ -385,7 +409,7 @@ var (
         },
         []string{"event_type", "status"},
     )
-    
+
     outboxProcessingDuration = prometheus.NewHistogramVec(
         prometheus.HistogramOpts{
             Name:    "hermes_outbox_processing_duration_seconds",
@@ -394,14 +418,14 @@ var (
         },
         []string{"event_type"},
     )
-    
+
     outboxPendingEvents = prometheus.NewGauge(
         prometheus.GaugeOpts{
             Name: "hermes_outbox_pending_events",
             Help: "Number of pending outbox events",
         },
     )
-    
+
     outboxFailedEvents = prometheus.NewGauge(
         prometheus.GaugeOpts{
             Name: "hermes_outbox_failed_events",
@@ -412,6 +436,7 @@ var (
 ```
 
 **Grafana Dashboard Queries**:
+
 ```promql
 # Pending events (should be < 100)
 hermes_outbox_pending_events
@@ -420,17 +445,19 @@ hermes_outbox_pending_events
 rate(hermes_outbox_events_total{status="completed"}[5m])
 
 # Failure rate (should be < 1%)
-rate(hermes_outbox_events_total{status="failed"}[5m]) 
+rate(hermes_outbox_events_total{status="failed"}[5m])
   / rate(hermes_outbox_events_total[5m])
 
 # Processing latency (p99 should be < 5s)
-histogram_quantile(0.99, 
+histogram_quantile(0.99,
   rate(hermes_outbox_processing_duration_seconds_bucket[5m]))
+
 ```
 
 ### Admin Endpoints
 
 **Outbox Status API** (`internal/api/v2/outbox.go`):
+
 ```go
 // GET /api/v2/admin/outbox/stats
 func (h *OutboxHandler) GetStats(c *gin.Context) {
@@ -441,18 +468,18 @@ func (h *OutboxHandler) GetStats(c *gin.Context) {
         Failed     int64 `json:"failed"`
         OldestPending time.Time `json:"oldest_pending"`
     }
-    
+
     h.db.Model(&OutboxEvent{}).Where("status = ?", "pending").Count(&stats.Pending)
     h.db.Model(&OutboxEvent{}).Where("status = ?", "processing").Count(&stats.Processing)
     h.db.Model(&OutboxEvent{}).Where("status = ?", "completed").Count(&stats.Completed)
     h.db.Model(&OutboxEvent{}).Where("status = ?", "failed").Count(&stats.Failed)
-    
+
     h.db.Model(&OutboxEvent{}).
         Where("status = ?", "pending").
         Order("created_at ASC").
         Limit(1).
         Pluck("created_at", &stats.OldestPending)
-    
+
     c.JSON(200, stats)
 }
 
@@ -460,14 +487,14 @@ func (h *OutboxHandler) GetStats(c *gin.Context) {
 func (h *OutboxHandler) ListEvents(c *gin.Context) {
     status := c.Query("status")
     limit := c.GetInt("limit", 50)
-    
+
     var events []OutboxEvent
     query := h.db.Model(&OutboxEvent{})
     if status != "" {
         query = query.Where("status = ?", status)
     }
     query.Order("created_at DESC").Limit(limit).Find(&events)
-    
+
     c.JSON(200, events)
 }
 
@@ -480,7 +507,7 @@ func (h *OutboxHandler) RetryFailed(c *gin.Context) {
             "attempt_count": 0,
             "error_message": "",
         })
-    
+
     c.JSON(200, gin.H{"retried": result.RowsAffected})
 }
 ```
@@ -488,6 +515,7 @@ func (h *OutboxHandler) RetryFailed(c *gin.Context) {
 ### Alerts
 
 **Alertmanager Rules**:
+
 ```yaml
 groups:
   - name: outbox
@@ -500,7 +528,7 @@ groups:
           severity: warning
         annotations:
           summary: "Outbox backlog exceeds 1000 events"
-          
+
       - alert: OutboxProcessingStalled
         expr: increase(hermes_outbox_events_total[5m]) == 0
         for: 10m
@@ -508,16 +536,17 @@ groups:
           severity: critical
         annotations:
           summary: "Outbox worker not processing events"
-          
+
       - alert: OutboxHighFailureRate
         expr: |
-          rate(hermes_outbox_events_total{status="failed"}[5m]) 
+          rate(hermes_outbox_events_total{status="failed"}[5m])
           / rate(hermes_outbox_events_total[5m]) > 0.05
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: "Outbox failure rate exceeds 5%"
+
 ```
 
 ## Implementation Plan
@@ -609,55 +638,55 @@ groups:
 ## Alternatives Considered
 
 ### 1. ❌ Synchronous Dual Writes (Current Approach)
-**Pros**: Simple, immediate consistency  
-**Cons**: Partial failures, no retry, data loss  
+**Pros**: Simple, immediate consistency
+**Cons**: Partial failures, no retry, data loss
 **Rejected**: Current problems too severe
 
 ### 2. ❌ Event Sourcing
-**Pros**: Complete audit trail, time travel  
-**Cons**: Complex, requires full rewrite, overkill  
+**Pros**: Complete audit trail, time travel
+**Cons**: Complex, requires full rewrite, overkill
 **Rejected**: Too disruptive for existing system
 
 ### 3. ❌ Change Data Capture (CDC)
-**Pros**: Automatic, no code changes  
-**Cons**: Requires Debezium/Kafka, complex infrastructure  
+**Pros**: Automatic, no code changes
+**Cons**: Requires Debezium/Kafka, complex infrastructure
 **Rejected**: Too much operational overhead
 
 ### 4. ❌ Two-Phase Commit (2PC)
-**Pros**: Strong consistency  
-**Cons**: Requires XA transactions, not supported by Algolia/Meilisearch  
+**Pros**: Strong consistency
+**Cons**: Requires XA transactions, not supported by Algolia/Meilisearch
 **Rejected**: Not feasible with search providers
 
 ### 5. ❌ Saga Pattern
-**Pros**: Handles distributed transactions  
-**Cons**: Complex compensation logic, harder to reason about  
+**Pros**: Handles distributed transactions
+**Cons**: Complex compensation logic, harder to reason about
 **Rejected**: Outbox pattern is simpler and sufficient
 
 ## Risks & Mitigation
 
 ### Risk 1: Outbox Table Growth
-**Problem**: Outbox table grows unbounded  
+**Problem**: Outbox table grows unbounded
 **Mitigation**:
 - Cleanup job deletes completed events after 7 days
 - Archive old events to S3 for audit
 - Partition table by month
 
 ### Risk 2: Worker Failure
-**Problem**: Worker crashes, events not processed  
+**Problem**: Worker crashes, events not processed
 **Mitigation**:
 - Worker restarts automatically (Kubernetes/systemd)
 - Multiple workers for redundancy (with locking)
 - Alerting on processing stall
 
 ### Risk 3: Event Ordering
-**Problem**: Events processed out of order  
+**Problem**: Events processed out of order
 **Mitigation**:
 - Process events in `created_at` order
 - Use document ID as partition key (future enhancement)
 - Eventual consistency model accepts small delays
 
 ### Risk 4: Payload Size
-**Problem**: Large documents exceed JSON field size  
+**Problem**: Large documents exceed JSON field size
 **Mitigation**:
 - Store reference instead of full payload (future optimization)
 - Compress payload with gzip
@@ -679,13 +708,13 @@ groups:
 - ADR-073: Provider Abstraction Architecture
 - ADR-075: Meilisearch as Local Search Solution
 - RFC-076: Search and Auth Refactoring
-- `pkg/search/README.md` - Search provider architecture
+- `pkg/search/readme.md` - Search provider architecture
 
 ## Open Questions
 
 1. **Should we use a separate database for the outbox?**
    - No - same DB simplifies transactions
-   
+
 2. **How long should we keep completed events?**
    - 7 days for debugging, then delete or archive
 
@@ -710,3 +739,4 @@ groups:
 - **Week 8**: Monitoring & stabilization
 
 **Total Effort**: 8 weeks (1 backend engineer + 0.5 ops engineer)
+

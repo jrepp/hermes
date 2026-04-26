@@ -1,6 +1,6 @@
 ---
-id: MEMO-023
-title: Dex Quick Start
+id: memo-023
+title: "Dex Quick Start"
 date: 2025-10-09
 type: Guide
 status: Final
@@ -8,6 +8,10 @@ tags: [dex, oidc, authentication, testing]
 related:
   - MEMO-008
   - MEMO-017
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 27acea11-7b87-48c2-932f-7b9da32e8cec
 ---
 
 # Dex IDP Quick Start Guide
@@ -31,6 +35,7 @@ make go/test/with-docker-postgres
 
 # 5. Cleanup
 docker compose down
+
 ```
 
 ## Quick Start: Acceptance Testing
@@ -62,15 +67,17 @@ docker compose down -v
 
 Use any of these pre-configured accounts:
 
-```
+```text
 Email: test@hermes.local   | Password: password
-Email: admin@hermes.local  | Password: password  
+Email: admin@hermes.local  | Password: password
 Email: user@hermes.local   | Password: password
+
 ```
 
 ## Verify Dex is Working
 
 ### Check Service Health
+
 ```bash
 # Integration environment (port 5556)
 docker compose ps dex
@@ -83,12 +90,14 @@ docker compose logs dex
 ```
 
 ### Check OIDC Configuration
+
 ```bash
 # Integration environment
 curl http://localhost:5556/dex/.well-known/openid-configuration | jq
 
 # Acceptance environment
 curl http://localhost:5557/dex/.well-known/openid-configuration | jq
+
 ```
 
 Expected output includes:
@@ -115,6 +124,7 @@ Expected output includes:
 ## Common Issues
 
 ### Issue: Port already in use
+
 ```bash
 # Check what's using the port
 lsof -i :5556
@@ -125,6 +135,7 @@ docker compose down
 ```
 
 ### Issue: Dex container unhealthy
+
 ```bash
 # View detailed logs
 docker compose logs dex
@@ -134,9 +145,11 @@ docker compose restart dex
 
 # Rebuild if config changed
 docker compose up -d --force-recreate dex
+
 ```
 
 ### Issue: Authentication fails
+
 ```bash
 # Check Hermes can reach Dex (from inside container in acceptance env)
 docker compose exec hermes wget -O- http://dex:5557/dex/.well-known/openid-configuration
@@ -155,11 +168,12 @@ docker compose exec hermes cat /app/config-profiles.hcl | grep -A 6 "dex {"
 curl "http://localhost:5556/dex/auth?client_id=hermes-integration&response_type=code&scope=openid+email+profile&redirect_uri=http://localhost:8000/auth/callback&state=random123"
 
 # This will return HTML for the login page
+
 ```
 
 ## Architecture at a Glance
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     Integration Testing                      │
 ├─────────────────────────────────────────────────────────────┤
@@ -200,3 +214,4 @@ curl "http://localhost:5556/dex/auth?client_id=hermes-integration&response_type=
 │  └────────────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────────────┘
 ```
+

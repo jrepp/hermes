@@ -1,3 +1,12 @@
+---
+id: memo-015
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: ab35a548-4c40-4d74-bdac-7732fef09613
+status: Draft
+title: "Google Workspace Setup Guide"
+---
 # Google Workspace Setup Guide
 
 This guide covers setting up Google Workspace integration for Hermes. Choose the setup that matches your needs:
@@ -63,13 +72,16 @@ This setup is perfect for:
 
 1. On the **"Scopes"** page, click **"Add or Remove Scopes"**
 2. Add these scopes (search and check each one):
-   ```
+
+   ``` text
    https://www.googleapis.com/auth/admin.directory.group.readonly
    https://www.googleapis.com/auth/directory.readonly
    https://www.googleapis.com/auth/documents
    https://www.googleapis.com/auth/drive
    https://www.googleapis.com/auth/gmail.send
+
    ```
+
 3. Click **"Update"** and then **"Save and Continue"**
 
 ### Step 5: Create OAuth Desktop Credentials
@@ -165,12 +177,15 @@ providers {
 ### Step 9: Start Hermes
 
 1. Start required services (if using Dex + Meilisearch):
+
    ```bash
    cd testing
    make up
+
    ```
 
 2. Start Hermes server:
+
    ```bash
    hermes server
    ```
@@ -281,10 +296,11 @@ Enable the following APIs in **"APIs & Services" → "Library"**:
 
 Add these scopes for user authentication:
 
-```
+```text
 https://www.googleapis.com/auth/drive.readonly
 https://www.googleapis.com/auth/userinfo.email
 https://www.googleapis.com/auth/userinfo.profile
+
 ```
 
 Note: Service account scopes are configured separately in domain-wide delegation.
@@ -344,9 +360,11 @@ These steps require **Google Workspace admin** access.
 6. Fill in:
    - **Client ID**: Paste the service account Unique ID from Step 8
    - **OAuth scopes**: Paste these scopes (comma-separated):
-     ```
+
+     ``` text
      https://www.googleapis.com/auth/directory.readonly,https://www.googleapis.com/auth/documents,https://www.googleapis.com/auth/drive,https://www.googleapis.com/auth/gmail.send,https://www.googleapis.com/auth/admin.directory.group.readonly
      ```
+
 7. Click **"Authorize"**
 
 **Important**: These scopes allow the service account to:
@@ -396,7 +414,7 @@ Create a dedicated user account for the service to impersonate:
 
 Create this structure in your shared drive:
 
-```
+```text
 Hermes Documents/
 ├── Published Docs/       (flat structure - all published documents)
 ├── Drafts/              (private - draft documents)
@@ -404,6 +422,7 @@ Hermes Documents/
     ├── RFC/
     ├── PRD/
     └── FRD/
+
 ```
 
 **To create folders:**
@@ -539,12 +558,15 @@ providers {
 Options for securing credentials:
 
 1. **Environment variables**:
+
    ```bash
    export GOOGLE_CLIENT_EMAIL="..."
    export GOOGLE_PRIVATE_KEY="..."
+
    ```
 
    Reference in config:
+
    ```hcl
    auth {
      client_email = env("GOOGLE_CLIENT_EMAIL")
@@ -557,8 +579,10 @@ Options for securing credentials:
 3. **Kubernetes secrets** (if deploying on K8s)
 
 4. **Restrict file permissions**:
+
    ```bash
    chmod 600 config.hcl
+
    ```
 
 ### Part 5: Testing and Deployment
@@ -616,8 +640,10 @@ Hermes uses a **dual authentication system**:
 #### 1. User Authentication (Frontend)
 
 **Flow**:
-```
+
+```text
 User → Hermes UI → Google OAuth → Google Sign-In → Hermes Session
+
 ```
 
 **Purpose**: Authenticates users logging into Hermes
@@ -632,7 +658,8 @@ User → Hermes UI → Google OAuth → Google Sign-In → Hermes Session
 #### 2. Service Account (Backend)
 
 **Flow**:
-```
+
+```text
 Hermes Backend → Service Account → Impersonate User → Google APIs
 ```
 
@@ -854,14 +881,17 @@ When `create_docs_as_user = false`:
 ### Credential Management
 
 1. **Never commit credentials to Git**:
+
    ```bash
    # Add to .gitignore
    credentials.json
    token.json
    config.hcl  # if it contains secrets
+
    ```
 
 2. **Use environment variables** for sensitive data:
+
    ```hcl
    auth {
      client_email = env("GOOGLE_CLIENT_EMAIL")
@@ -870,8 +900,10 @@ When `create_docs_as_user = false`:
    ```
 
 3. **Restrict file permissions**:
+
    ```bash
    chmod 600 credentials.json config.hcl
+
    ```
 
 4. **Use secret management** in production:
@@ -958,6 +990,7 @@ google_workspace {
 
   user_not_found_email = "admin@company.com"
 }
+
 ```
 
 ---
@@ -981,9 +1014,11 @@ To migrate from personal Drive folders to shared drive:
 
 1. **Create shared drive** (Step 12-13)
 2. **Move documents**:
+
    ```bash
    # In Google Drive UI: Select → Move → Shared Drive
    ```
+
 3. **Update config.hcl**: Use new folder IDs
 4. **Run indexer**: Re-index to update database
 5. **Verify**: Check all documents are accessible
@@ -1002,8 +1037,8 @@ To migrate from personal Drive folders to shared drive:
 ### Hermes Documentation
 
 - [Configuration Documentation](CONFIG_HCL_DOCUMENTATION.md)
-- [Local Workspace Setup](README-local-workspace.md) - For testing without Google
-- [Auth Providers Overview](README-auth-providers.md)
+- [Local Workspace Setup](readme-local-workspace.md) - For testing without Google
+- [Auth Providers Overview](readme-auth-providers.md)
 - [Authentication Architecture](AUTH_ARCHITECTURE_DIAGRAMS.md)
 
 ### Support
@@ -1026,17 +1061,18 @@ To migrate from personal Drive folders to shared drive:
 
 ### Required OAuth Scopes (Service Account)
 
-```
+```text
 https://www.googleapis.com/auth/directory.readonly
 https://www.googleapis.com/auth/documents
 https://www.googleapis.com/auth/drive
 https://www.googleapis.com/auth/gmail.send
 https://www.googleapis.com/auth/admin.directory.group.readonly
+
 ```
 
 ### Required OAuth Scopes (User Login)
 
-```
+```text
 https://www.googleapis.com/auth/drive.readonly
 https://www.googleapis.com/auth/userinfo.email
 https://www.googleapis.com/auth/userinfo.profile
@@ -1066,3 +1102,4 @@ Found in service account details → "Unique ID" (numeric value)
 - [ ] Can create and edit documents
 - [ ] Can search for users
 - [ ] Documents appear in correct folders
+

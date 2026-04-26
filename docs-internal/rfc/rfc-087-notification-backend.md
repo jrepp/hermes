@@ -1,12 +1,16 @@
 ---
+id: rfc-087
+created: 2025-11-13T00:00:00Z
+author: Hermes Team
+project_id: hermes
+doc_uuid: 3a576e56-b6fc-4080-947c-e38d252403b1
+status: Draft
 hermes-uuid: RFC-087-NOTIFICATION-BACKEND
 document-type: RFC
 document-number: RFC-087
-status: draft
 title: "Multi-Backend Notification System with Message Queues"
 authors:
   - system
-created: 2025-11-13T00:00:00Z
 modified: 2025-11-13T00:00:00Z
 tags:
   - rfc
@@ -39,9 +43,11 @@ The current notification system (pkg/workspace/adapters/local/notification.go an
 5. Notification failures can cause API request failures
 
 **Current Architecture**:
-```
+
+```text
 API Handler → NotificationProvider.SendEmail() → SMTP / Log
               (synchronous, blocking)
+
 ```
 
 ### Problem Statement
@@ -79,7 +85,7 @@ The current synchronous notification system has several limitations:
 
 Replace the synchronous notification system with an asynchronous, event-driven, template-based architecture:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ API Layer                                                    │
 ├─────────────────────────────────────────────────────────────┤
@@ -160,6 +166,7 @@ type Recipient struct {
     TelegramID string  // For Telegram backend
     DiscordID  string  // For Discord backend
 }
+
 ```
 
 ### Supported Backends
@@ -177,6 +184,7 @@ type Recipient struct {
 **Template**: `document_approved`
 
 **Context**:
+
 ```json
 {
   "DocumentShortName": "RFC-087",
@@ -205,9 +213,11 @@ type NotificationProvider interface {
     SendEmail(ctx context.Context, to []string, from, subject, body string) error
     SendEmailWithTemplate(ctx context.Context, to []string, template string, data map[string]any) error
 }
+
 ```
 
 **New template-based method** (recommended):
+
 ```go
 // Internal API
 publisher.PublishNotification(
@@ -223,15 +233,18 @@ publisher.PublishNotification(
 ### Data Model
 
 **Redpanda Topic Configuration**:
-```
+
+```text
 Topic: hermes.notifications
 Partitions: 3 (allows parallel processing)
 Replication Factor: 1 (testing), 3 (production)
 Retention: 7 days
 Cleanup Policy: delete
+
 ```
 
 **Optional: Notification History Table**:
+
 ```sql
 CREATE TABLE notification_events (
     id UUID PRIMARY KEY,
@@ -347,7 +360,8 @@ Templates are stored as Hermes documents rather than embedded in code, enabling:
 - ✅ **Audit Trail**: Track who changed what and when
 
 **Structure**:
-```
+
+```text
 /notification-templates/
 ├── document_approved/
 │   ├── mail.html       (HTML template for email)
@@ -357,6 +371,7 @@ Templates are stored as Hermes documents rather than embedded in code, enabling:
 ├── review_requested/
 │   └── ... (same structure)
 └── ... (other templates)
+
 ```
 
 **Implementation Details**:
@@ -371,6 +386,7 @@ Templates are stored as Hermes documents rather than embedded in code, enabling:
 ### Template Development Workflow
 
 **Creating Templates**:
+
 ```bash
 # Option 1: Via CLI
 hermes-admin templates create \
@@ -386,11 +402,13 @@ hermes-admin templates create \
 ```
 
 **Updating Templates**:
+
 ```bash
 # 1. Edit template in Hermes UI
 # 2. Save document (version increments)
 # 3. Worker detects change within 1 minute
 # 4. New notifications use updated template
+
 ```
 
 **See**: [rfc-087-message-schema.md](./rfc-087-message-schema.md#template-storage) for detailed template management guide.
@@ -559,3 +577,4 @@ This RFC is supported by detailed implementation documents:
 **Document ID**: RFC-087
 **Hermes UUID**: RFC-087-NOTIFICATION-BACKEND
 **Last Updated**: 2025-11-13
+

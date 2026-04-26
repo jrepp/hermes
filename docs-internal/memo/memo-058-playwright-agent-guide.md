@@ -1,12 +1,16 @@
 ---
-id: MEMO-058
-title: Playwright E2E Agent Guide
+id: memo-058
+title: "Playwright E2E Agent Guide"
 date: 2025-10-09
 type: Guide
 status: Final
 tags: [playwright, e2e-testing, automation, testing, debugging]
 related:
   - MEMO-017
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 996154fc-7360-4564-85f5-86a931b5d929
 ---
 
 # Playwright E2E Testing: Agent Guide
@@ -19,11 +23,12 @@ Hermes has two approaches to E2E testing:
 
 ## ⚡ Quick Decision Tree
 
-```
+```text
 Need to validate E2E functionality?
 ├─ Interactive exploration/debugging? → Use playwright-mcp (mcp_microsoft_pla_browser_*)
 ├─ Validate existing test suite? → Use headless Playwright (npx playwright test)
 └─ Create new E2E test? → Write Playwright test file, validate with headless mode
+
 ```
 
 ## 🎯 When to Use Each Approach
@@ -55,7 +60,7 @@ Before running Playwright tests, verify the environment is ready:
 # 1. Check if backend is running
 curl -s http://localhost:8000/health || echo "Backend not running on 8000"
 
-# 2. Check if frontend is running  
+# 2. Check if frontend is running
 curl -s http://localhost:4200/ | head -20 || echo "Frontend not running on 4200"
 
 # 3. Check if Dex is running
@@ -82,6 +87,7 @@ npx playwright test --reporter=json > results.json
 
 # Run specific test by name (use grep)
 npx playwright test -g "should edit document content" --reporter=line
+
 ```
 
 **Key Options**:
@@ -101,7 +107,8 @@ npx playwright test -g "should edit document content" --reporter=line
 ### Reading Test Results
 
 **Line Reporter Output Pattern**:
-```
+
+```text
 Running 3 tests using 1 worker
 [chromium] › tests/document-content-editor.spec.ts:168:7 › should edit... (5.2s)
   1 passed
@@ -109,16 +116,18 @@ Running 3 tests using 1 worker
 ```
 
 **Failure Output Pattern**:
-```
+
+```text
   1) [chromium] › tests/file.spec.ts:10:7 › Test Name
      Error: expect(locator).toBeVisible()
      Expected: visible
      Timeout: 5000ms
-     
+
      attachment #1: screenshot (...png)
      attachment #2: trace (...zip)
-     
+
   1 failed
+
 ```
 
 **Interpreting Results**:
@@ -138,6 +147,7 @@ When tests fail, follow this workflow:
 4. **Switch to playwright-mcp** for interactive debugging if needed
 
 Example failure investigation:
+
 ```bash
 # 1. Run test and capture output
 npx playwright test document-content-editor.spec.ts --reporter=line > test-output.txt 2>&1
@@ -167,16 +177,18 @@ cd /Users/jrepp/hc/hermes
 docker compose up -d dex postgres meilisearch  # Start dependencies
 ./hermes server -config=config.hcl            # Run backend natively
 
-# Terminal 2: Frontend  
+# Terminal 2: Frontend
 cd /Users/jrepp/hc/hermes/web
 MIRAGE_ENABLED=false yarn ember server --port 4200 --proxy http://127.0.0.1:8000
 
 # Terminal 3: Run tests
 cd /Users/jrepp/hc/hermes/tests/e2e-playwright
 npx playwright test --reporter=line
+
 ```
 
 **Verification**:
+
 ```bash
 # All should return 200/success
 curl -I http://localhost:8000/health
@@ -201,6 +213,7 @@ MIRAGE_ENABLED=false yarn ember server --port 4200 --proxy http://127.0.0.1:8001
 # Terminal 3: Run tests
 cd /Users/jrepp/hc/hermes/tests/e2e-playwright
 npx playwright test --reporter=line
+
 ```
 
 **Note**: If using testing environment (port 8001), may need to update test baseURL in `playwright.config.ts`.
@@ -221,13 +234,13 @@ mcp_microsoft_pla_browser_navigate({ url: "http://localhost:4200/" })
 mcp_microsoft_pla_browser_snapshot({})
 
 // Take screenshot (for visual documentation)
-mcp_microsoft_pla_browser_take_screenshot({ 
+mcp_microsoft_pla_browser_take_screenshot({
   filename: "auth-page.png",
-  fullPage: true 
+  fullPage: true
 })
 
 // Click elements
-mcp_microsoft_pla_browser_click({ 
+mcp_microsoft_pla_browser_click({
   element: "Log in with Email button",
   ref: "e15"  // From snapshot
 })
@@ -270,12 +283,12 @@ mcp_microsoft_pla_browser_snapshot({})
 mcp_microsoft_pla_browser_wait_for({ text: "Log in to dex", time: 5 })
 
 // 4. Take screenshot for documentation
-mcp_microsoft_pla_browser_take_screenshot({ 
-  filename: "dex-login-page.png" 
+mcp_microsoft_pla_browser_take_screenshot({
+  filename: "dex-login-page.png"
 })
 
 // 5. Click "Log in with Email"
-mcp_microsoft_pla_browser_click({ 
+mcp_microsoft_pla_browser_click({
   element: "Log in with Email link",
   ref: "e15"  // Get from snapshot
 })
@@ -297,6 +310,7 @@ mcp_microsoft_pla_browser_wait_for({ text: "Dashboard", time: 10 })
 // 9. Verify authentication succeeded
 mcp_microsoft_pla_browser_snapshot({})
 // Should show authenticated app state
+
 ```
 
 ## 📝 Writing New Playwright Tests
@@ -326,10 +340,10 @@ test.describe('Feature Name', () => {
   test('should do something', async ({ page }) => {
     // Arrange
     await page.goto('http://localhost:4200/some/path');
-    
+
     // Act
     await page.click('button:has-text("Action")');
-    
+
     // Assert
     await expect(page.locator('text=Success')).toBeVisible();
   });
@@ -349,28 +363,29 @@ test.describe('Feature Name', () => {
 
 ### Issue: Tests hang with `--headed` mode
 
-**Symptom**: Terminal blocks, HTML report server starts, test never completes  
-**Cause**: `--headed` keeps browser open and starts interactive report server  
+**Symptom**: Terminal blocks, HTML report server starts, test never completes
+**Cause**: `--headed` keeps browser open and starts interactive report server
 **Solution**: Use headless mode (default) with `--reporter=line`
 
 ```bash
 # ❌ BAD: Hangs for agent
 npx playwright test --headed
 
-# ✅ GOOD: Returns immediately with results  
+# ✅ GOOD: Returns immediately with results
 npx playwright test --reporter=line --max-failures=1
+
 ```
 
 ### Issue: Connection refused errors
 
-**Symptom**: `net::ERR_CONNECTION_REFUSED at http://localhost:4200/`  
-**Cause**: Frontend or backend not running  
+**Symptom**: `net::ERR_CONNECTION_REFUSED at http://localhost:4200/`
+**Cause**: Frontend or backend not running
 **Solution**: Check services and start if needed
 
 ```bash
 # Check what's running
 lsof -i :4200  # Frontend
-lsof -i :8000  # Backend  
+lsof -i :8000  # Backend
 lsof -i :5556  # Dex
 
 # Start missing services (see Environment Setup above)
@@ -378,8 +393,8 @@ lsof -i :5556  # Dex
 
 ### Issue: Authentication redirect fails
 
-**Symptom**: Test times out waiting for Dex redirect  
-**Cause**: Backend can't reach Dex, or redirect URL misconfigured  
+**Symptom**: Test times out waiting for Dex redirect
+**Cause**: Backend can't reach Dex, or redirect URL misconfigured
 **Solution**: Verify Dex is accessible and config is correct
 
 ```bash
@@ -391,12 +406,13 @@ grep -A 5 "dex {" config.hcl
 
 # Check redirect URL matches
 # Should be: redirect_url = "http://localhost:8000/auth/callback"
+
 ```
 
 ### Issue: Test passes locally but fails in CI
 
-**Symptom**: Tests work on dev machine but fail in GitHub Actions  
-**Cause**: Timing issues, different environment, missing dependencies  
+**Symptom**: Tests work on dev machine but fail in GitHub Actions
+**Cause**: Timing issues, different environment, missing dependencies
 **Solution**: Add explicit waits, check CI environment setup
 
 ```typescript
@@ -432,6 +448,7 @@ cat results.json | jq '{
 
 # Check if all passed
 cat results.json | jq '.stats.expected' # Should equal total tests
+
 ```
 
 ### Example: Creating Summary Report
@@ -503,10 +520,10 @@ if [ $? -eq 0 ]; then
   echo "✅ All tests passed - functionality validated"
 else
   echo "❌ Tests failed - investigating..."
-  
+
   # Show last failure
   find test-results -name "test-failed-*.png" -mtime -1 | head -1
-  
+
   # Extract error message
   grep -A 10 "Error:" test-results/last-run.txt
 fi
@@ -515,6 +532,7 @@ fi
 echo "=== Test Summary ===" > TEST_VALIDATION.md
 date >> TEST_VALIDATION.md
 grep -E "passed|failed" test-results/*.txt >> TEST_VALIDATION.md
+
 ```
 
 ## 📚 Additional Resources
@@ -535,6 +553,7 @@ grep -E "passed|failed" test-results/*.txt >> TEST_VALIDATION.md
 - ✅ **Document findings** with screenshots and test results
 
 **Key Commands**:
+
 ```bash
 # Validate feature (preferred)
 npx playwright test feature.spec.ts --reporter=line --max-failures=1
@@ -548,3 +567,4 @@ curl -I http://localhost:4200/
 ```
 
 **Remember**: Playwright tests are for **validation**, playwright-mcp is for **exploration**. Use the right tool for the job!
+

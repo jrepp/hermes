@@ -1,16 +1,17 @@
 ---
-id: ADR-065
+id: adr-065
 title: Promise Timeout Hang Fix
 date: 2025-10-08
 type: ADR
 subtype: Frontend Decision
 status: Accepted
-tags: [frontend, promise, timeout, bug-fix, admin-login]
-related:
-  - memo/001
-  - memo/075
+tags: ['frontend', 'promise', 'timeout', 'bug-fix', 'admin-login']
+related: ['memo/001', 'memo/075']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: 82333dc0-a780-4bef-817f-207916917ecb
 ---
-
 # Promise Timeout Hang Fix
 
 ## Context
@@ -52,11 +53,14 @@ Implement comprehensive timeout and error handling throughout frontend to preven
 ## Implementation
 
 **Before** (hangs forever):
+
 ```typescript
 await this.store.maybeFetchPeople.perform(documents);
+
 ```
 
 **After** (fails gracefully):
+
 ```typescript
 await withTimeout(
   this.store.maybeFetchPeople.perform(documents),
@@ -106,15 +110,15 @@ await withTimeout(
 1. **Global timeout for all promises**
    - ❌ One size doesn't fit all operations
    - ❌ Some operations legitimately take longer
-   
+
 2. **Retry logic instead of timeout**
    - ❌ Still needs timeout to prevent infinite retries
    - ❌ More complex, may not solve root cause
-   
+
 3. **Backend request timeout enforcement**
    - ❌ Doesn't help with network issues
    - ❌ Frontend still needs client-side protection
-   
+
 4. **Remove problematic features**
    - ❌ Loses functionality
    - ❌ Doesn't address underlying architecture issue
@@ -131,12 +135,12 @@ All services now log:
 
 ## Verification
 
-✅ Dashboard loads even with API failures  
-✅ Timeouts trigger after configured duration  
-✅ Error handlers catch and log failures  
-✅ Fallback states applied (empty arrays, placeholders)  
-✅ UI renders without hangs  
-✅ Logs provide debugging information  
+✅ Dashboard loads even with API failures
+✅ Timeouts trigger after configured duration
+✅ Error handlers catch and log failures
+✅ Fallback states applied (empty arrays, placeholders)
+✅ UI renders without hangs
+✅ Logs provide debugging information
 
 ## Future Considerations
 
@@ -157,3 +161,4 @@ All services now log:
 
 - Source: `PROMISE_TIMEOUT_HANG_FIX_2025_10_08.md`
 - Related: `ADMIN_LOGIN_HANG_ROOT_CAUSE_2025_10_08.md`, `ROOT_CAUSE_MAYBEFETCHPEOPLE_HANG_2025_10_08.md`
+

@@ -1,10 +1,14 @@
 ---
-id: RFC-086
-title: Authentication and Bearer Token Management
+id: rfc-086
+created: 2025-11-11
+author: Hermes Team
+project_id: hermes
+doc_uuid: 7b0677a9-17a2-4bce-abfa-ddbcbfa0c441
+status: Proposed
+title: "Authentication and Bearer Token Management"
 date: 2025-11-11
 type: RFC
 subtype: Security
-status: Proposed
 tags: [authentication, oidc, bearer-tokens, security, delegation]
 related:
   - RFC-084
@@ -41,7 +45,8 @@ When a local Hermes delegates operations to a remote Hermes, authentication beco
 4. **Security**: Tokens must be securely transmitted and validated
 
 **Problem Scenario**:
-```
+
+```text
 ┌─────────────┐           ┌─────────────┐
 │ User        │  ─login─> │ Local       │  ─API call─>  ┌─────────────┐
 │ Browser     │           │ Hermes      │               │ Remote      │
@@ -49,6 +54,7 @@ When a local Hermes delegates operations to a remote Hermes, authentication beco
                                 │                        └─────────────┘
                                 │                               │
                           How to authenticate?            Need valid token!
+
 ```
 
 ## Proposed Solution
@@ -57,7 +63,7 @@ When a local Hermes delegates operations to a remote Hermes, authentication beco
 
 **Solution**: Local Hermes discovers OIDC provider from remote, redirects users for authentication, and proxies bearer tokens.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Authentication Flow                           │
 └─────────────────────────────────────────────────────────────────┘
@@ -98,6 +104,7 @@ Step 3: Token Proxying (Delegated Operations)
 Both local and remote Hermes use the same OIDC provider:
 
 **Local Hermes Configuration**:
+
 ```hcl
 # Local Hermes configuration
 providers {
@@ -130,9 +137,11 @@ local_workspace {
     }
   }
 }
+
 ```
 
 **Remote Hermes Configuration**:
+
 ```hcl
 # Remote Hermes configuration (same OIDC provider)
 providers {
@@ -174,6 +183,7 @@ server {
 Local Hermes discovers OIDC provider from remote and redirects users:
 
 **Local Hermes Configuration**:
+
 ```hcl
 # Local Hermes configuration
 providers {
@@ -196,9 +206,11 @@ local_workspace {
     }
   }
 }
+
 ```
 
 **Discovery Flow**:
+
 ```go
 // Local Hermes discovers auth config on startup
 type AuthConfigResponse struct {
@@ -218,6 +230,7 @@ localHermes.ConfigureAuth(authConfig)
 ```
 
 **Remote Endpoint** (`/api/v2/auth/config`):
+
 ```go
 func (s *Server) handleAuthConfig(w http.ResponseWriter, r *http.Request) {
     response := AuthConfigResponse{
@@ -229,6 +242,7 @@ func (s *Server) handleAuthConfig(w http.ResponseWriter, r *http.Request) {
 
     json.NewEncoder(w).Encode(response)
 }
+
 ```
 
 #### Strategy 3: Machine-to-Machine API Key
@@ -276,6 +290,7 @@ func (s *Server) handleShareDocument(w http.ResponseWriter, r *http.Request) {
 
     w.WriteHeader(http.StatusOK)
 }
+
 ```
 
 #### Local Workspace Provider
@@ -341,6 +356,7 @@ func (c *RemoteAPIClient) ShareDocument(ctx context.Context, providerID, email, 
 
     return nil
 }
+
 ```
 
 ## Security Considerations
@@ -399,6 +415,7 @@ Bearer tokens must have appropriate scope:
   "scope": "openid profile email hermes:read hermes:write",
   "exp": 1699999999
 }
+
 ```
 
 **Required Scopes**:
@@ -469,6 +486,7 @@ func (s *Server) handleAuthCallback(w http.ResponseWriter, r *http.Request) {
 
     http.Redirect(w, r, "/", http.StatusFound)
 }
+
 ```
 
 ### Refresh Tokens
@@ -535,6 +553,7 @@ func (s *Server) validateToken(ctx context.Context, token string) (*Claims, erro
 
     return claims, nil
 }
+
 ```
 
 ## Configuration Examples
@@ -542,6 +561,7 @@ func (s *Server) validateToken(ctx context.Context, token string) (*Claims, erro
 ### Full Configuration: Local with Shared OIDC
 
 **Local Hermes (Edge Node)**:
+
 ```hcl
 providers {
   workspace = "local"
@@ -576,6 +596,7 @@ local_workspace {
 ```
 
 **Remote Hermes (Central Node)**:
+
 ```hcl
 providers {
   workspace = "google"
@@ -606,6 +627,7 @@ server {
     required_scopes = ["openid", "profile", "email", "hermes:read", "hermes:write"]
   }
 }
+
 ```
 
 ## Authentication Endpoints
@@ -615,12 +637,14 @@ server {
 Discover OIDC configuration from remote:
 
 **Request**:
-```
+
+```text
 GET /api/v2/auth/config HTTP/1.1
 Host: central.hermes.example.com
 ```
 
 **Response**:
+
 ```json
 {
   "oidc_provider": "https://auth.example.com",
@@ -629,6 +653,7 @@ Host: central.hermes.example.com
   "auth_type": "oidc",
   "discovery_url": "https://auth.example.com/.well-known/openid-configuration"
 }
+
 ```
 
 ### POST /api/v2/auth/validate
@@ -636,7 +661,8 @@ Host: central.hermes.example.com
 Validate bearer token (optional, for debugging):
 
 **Request**:
-```
+
+```text
 POST /api/v2/auth/validate HTTP/1.1
 Host: central.hermes.example.com
 Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -645,6 +671,7 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response** (Success):
+
 ```json
 {
   "valid": true,
@@ -653,9 +680,11 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
   "expiry": "2025-11-12T10:30:00Z",
   "scopes": ["openid", "profile", "email", "hermes:read", "hermes:write"]
 }
+
 ```
 
 **Response** (Failure):
+
 ```json
 {
   "valid": false,
@@ -751,3 +780,4 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 **Status**: Proposed
 **Dependencies**: RFC-084 (interfaces), RFC-085 (API provider)
 **Next Steps**: Implement discovery endpoint and token validation middleware
+

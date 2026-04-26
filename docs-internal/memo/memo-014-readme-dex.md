@@ -1,3 +1,12 @@
+---
+id: memo-014
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 3ed2450f-3f06-48e3-8bb7-518db18820a9
+status: Draft
+title: "Dex OIDC Local Authentication"
+---
 # Dex OIDC Local Authentication
 
 This guide covers using Dex as a local OpenID Connect (OIDC) provider for Hermes development and testing.
@@ -24,7 +33,7 @@ Dex provides:
 - Integration with existing identity providers
 - When you need real user directories
 
-See [README-auth-providers.md](README-auth-providers.md) for all authentication options.
+See [readme-auth-providers.md](readme-auth-providers.md) for all authentication options.
 
 ## Quick Start
 
@@ -40,6 +49,7 @@ docker compose up -d
 # Dex available at:
 # - Native mode: http://localhost:5556/dex
 # - Testing mode: http://localhost:5558/dex
+
 ```
 
 ### Verify Dex is Running
@@ -84,6 +94,7 @@ dex {
 providers {
   auth = "dex"  # Enable Dex authentication
 }
+
 ```
 
 ### Port Conventions
@@ -151,6 +162,7 @@ htpasswd -bnBC 10 "" password | tr -d ':\n'
 
 # Or using Python
 python3 -c "import bcrypt; print(bcrypt.hashpw(b'password', bcrypt.gensalt()).decode())"
+
 ```
 
 Add to `staticPasswords` in `dex-config.yaml`:
@@ -164,8 +176,10 @@ staticPasswords:
 ```
 
 Restart Dex:
+
 ```bash
 cd testing && docker compose restart dex
+
 ```
 
 ## Authentication Flow
@@ -221,6 +235,7 @@ cd testing && docker compose up -d
 
 # Native: http://localhost:4200
 # Testing: http://localhost:4201
+
 ```
 
 ### Switching Between Configs
@@ -245,6 +260,7 @@ Use config profiles:
 **Cause**: Port conflict or container issues
 
 **Solution**:
+
 ```bash
 # Check if port in use
 lsof -i :5556
@@ -255,6 +271,7 @@ cd testing && docker compose restart dex
 
 # Check logs
 docker compose logs dex
+
 ```
 
 ### Authentication Redirect Errors
@@ -273,6 +290,7 @@ docker compose logs dex
 **Cause**: `client_id` or `client_secret` mismatch
 
 **Solution**:
+
 ```bash
 # Verify config.hcl matches dex-config.yaml
 grep -A3 "^dex {" config-example.hcl
@@ -288,6 +306,7 @@ grep -A3 "staticClients:" testing/dex-config.yaml
 **Cause**: Token validation failing or session not persisting
 
 **Solution**:
+
 ```bash
 # Check backend logs
 tail -f /tmp/hermes-backend.log | grep -i "auth\|token\|session"
@@ -295,6 +314,7 @@ tail -f /tmp/hermes-backend.log | grep -i "auth\|token\|session"
 # Verify issuer URL matches
 curl http://localhost:5556/dex/.well-known/openid-configuration | jq .issuer
 grep issuer_url config-example.hcl
+
 ```
 
 ### User Not Found
@@ -306,6 +326,7 @@ grep issuer_url config-example.hcl
 2. Check `dex-config.yaml` for available users
 3. Verify password hash generated correctly
 4. Check Dex logs for authentication attempts:
+
    ```bash
    docker compose logs dex | grep -i "password\|auth"
    ```
@@ -321,7 +342,7 @@ Dex with static passwords is for **development and testing only**.
 - **Okta**: Enterprise identity provider with MFA
 - **Dex with external connectors**: LDAP, SAML, other OIDC providers
 
-See [README-auth-providers.md](README-auth-providers.md) for production authentication.
+See [readme-auth-providers.md](readme-auth-providers.md) for production authentication.
 
 ### If Using Dex in Production
 
@@ -351,6 +372,7 @@ staticPasswords:
     groups:
       - "developers"
       - "admins"
+
 ```
 
 ### Multiple Clients
@@ -364,7 +386,7 @@ staticClients:
     name: 'Hermes'
     redirectURIs:
       - 'http://localhost:8000/auth/callback'
-  
+
   - id: another-app
     secret: YW5vdGhlci1zZWNyZXQ=
     name: 'Another App'
@@ -392,15 +414,17 @@ connectors:
         idAttr: uid
         emailAttr: mail
         nameAttr: cn
+
 ```
 
 See [Dex connectors documentation](https://dexidp.io/docs/connectors/) for more options.
 
 ## See Also
 
-- [Auth Providers Overview](README-auth-providers.md)
+- [Auth Providers Overview](readme-auth-providers.md)
 - [Authentication Architecture](AUTH_ARCHITECTURE_DIAGRAMS.md)
-- [Google Workspace Setup](README-google-workspace.md)
-- [Testing Environment](../testing/README.md)
+- [Google Workspace Setup](readme-google-workspace.md)
+- [Testing Environment](../testing/readme.md)
 - [Configuration Documentation](CONFIG_HCL_DOCUMENTATION.md)
 - [Dex Official Documentation](https://dexidp.io/docs/)
+

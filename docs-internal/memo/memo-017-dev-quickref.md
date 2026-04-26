@@ -1,12 +1,16 @@
 ---
-id: MEMO-017
-title: Dev Quick Reference
+id: memo-017
+title: "Dev Quick Reference"
 date: 2025-10-09
 type: Guide
 status: Final
 tags: [development, workflow, docker, ports, debugging]
 related:
   - MEMO-058
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 56d3551e-a613-4057-884a-53da5166e15c
 ---
 
 # Hermes Development Quick Reference
@@ -17,7 +21,7 @@ related:
 # Quick start: Native backend + Native frontend
 ./scripts/dev-env.sh  # Choose option 1
 
-# Quick start: Testing backend + Native frontend  
+# Quick start: Testing backend + Native frontend
 ./scripts/dev-env.sh  # Choose option 2
 
 # Quick start: Fully containerized
@@ -28,6 +32,7 @@ related:
 
 # Stop everything
 ./scripts/dev-env.sh  # Choose option 5
+
 ```
 
 ## Development Workflows
@@ -67,6 +72,7 @@ docker compose up -d hermes
 # Terminal 2: Frontend
 cd web
 yarn start:proxy:testing
+
 ```
 
 **Access**: http://localhost:4200
@@ -107,6 +113,7 @@ yarn start                 # Proxies to $HERMES_API_URL (default: localhost:8001
 yarn start:proxy           # Native, proxies to $HERMES_API_URL (default: localhost:8000)
 yarn start:proxy:local     # Native, proxies to localhost:8000
 yarn start:proxy:testing   # Native, proxies to localhost:8001
+
 ```
 
 ## Health Checks
@@ -132,6 +139,7 @@ lsof -i :4201  # Testing frontend
 **Cause**: Backend not running on expected port
 
 **Solution**:
+
 ```bash
 # Check which backend is running
 lsof -i :8000
@@ -140,6 +148,7 @@ lsof -i :8001
 # Make sure you're using the matching script:
 yarn start:proxy:local    # for port 8000
 yarn start:proxy:testing  # for port 8001
+
 ```
 
 ### Authentication redirects to wrong URL
@@ -166,6 +175,7 @@ Check: `curl http://localhost:BACKEND_PORT/api/v2/web/config | jq '.dex_redirect
 **Cause**: Port conflict or previous container still running
 
 **Solution**:
+
 ```bash
 # Stop all
 cd testing
@@ -182,18 +192,22 @@ docker compose up -d
 ## Environment Variables
 
 ### Backend
+
 ```bash
 # In testing/docker-compose.yml or testing/config.hcl
 HERMES_BASE_URL=http://localhost:4201  # Where to redirect after auth
+
 ```
 
 ### Frontend (Docker)
+
 ```bash
 # In testing/docker-compose.yml
 HERMES_API_URL=http://hermes:8000  # Docker service name
 ```
 
 ### Frontend (Native)
+
 ```bash
 # Default start command proxies to localhost:8001
 yarn start
@@ -205,6 +219,7 @@ HERMES_API_URL=http://localhost:9000 yarn start
 # Alternative proxy scripts:
 yarn start:proxy:local    # Uses localhost:8000
 yarn start:proxy:testing  # Uses localhost:8001
+
 ```
 
 ## Debugging
@@ -239,6 +254,7 @@ docker compose logs -f web
 ```bash
 # Use browser automation for debugging
 # (requires playwright-mcp setup)
+
 ```
 
 ## Test Credentials
@@ -266,7 +282,7 @@ cd .. && docker compose down       # Stop root dependencies
 
 ## File Locations
 
-```
+```text
 hermes/
 ├── config.hcl                  # Native backend config
 ├── testing/
@@ -278,6 +294,7 @@ hermes/
 │   └── Dockerfile              # Frontend Docker build
 └── scripts/
     └── dev-env.sh              # Environment selector
+
 ```
 
 ## Need Help?
@@ -286,3 +303,4 @@ hermes/
 2. Check `docs-internal/TESTING_DOCKER_COMPOSE_DEBUG_2025_10_08.md` for auth flow
 3. Run `./scripts/dev-env.sh` option 4 to check status
 4. Check logs (see Debugging section above)
+

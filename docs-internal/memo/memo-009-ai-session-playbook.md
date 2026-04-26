@@ -1,6 +1,6 @@
 ---
-id: MEMO-009
-title: AI Agent Session Playbook
+id: memo-009
+title: "AI Agent Session Playbook"
 date: 2025-10-09
 type: Playbook
 status: Living Document
@@ -10,6 +10,9 @@ audience:
   - Human Developers
   - Project Managers
 tags: [ai-agents, best-practices, patterns, session-analysis]
+created: 2025-10-09
+project_id: hermes
+doc_uuid: 612971c4-3a01-43ec-a44f-d8c82334e6fd
 ---
 
 # AI Agent Session Playbook
@@ -31,7 +34,7 @@ This memo analyzes 16 documented AI agent sessions from the Hermes project (Octo
 ## Session Types & Success Patterns
 
 ### Type 1: Feature Implementation Sessions
-**Characteristics**: New functionality, clear requirements, isolated scope  
+**Characteristics**: New functionality, clear requirements, isolated scope
 **Success Rate**: 85% (6/7 sessions)
 
 #### ✅ Successful Examples
@@ -42,7 +45,7 @@ This memo analyzes 16 documented AI agent sessions from the Hermes project (Octo
 - **Pattern**: Analysis → Implementation → Integration → Verification → Documentation
 - **Outcome**: ✅ All objectives met, feature deployed to testing environment
 
-**Profile-Based Configuration** (Oct 6, 2025)  
+**Profile-Based Configuration** (Oct 6, 2025)
 - **Duration**: ~60 minutes
 - **Deliverables**: Profile system with 7/7 tests passing, backward compatibility
 - **Pattern**: Design → Core implementation → Test validation → Docker integration
@@ -55,13 +58,13 @@ This memo analyzes 16 documented AI agent sessions from the Hermes project (Octo
 4. **Test-first validation** - Write tests alongside code, validate continuously
 
 ### Type 2: Migration & Refactoring Sessions
-**Characteristics**: Large codebase changes, architectural improvements  
+**Characteristics**: Large codebase changes, architectural improvements
 **Success Rate**: 70% (7/10 sessions)
 
 #### ✅ Successful Examples
 
 **Provider Migration - Session 1** (Oct 4, 2025)
-- **Duration**: ~90 minutes  
+- **Duration**: ~90 minutes
 - **Scope**: V2 API Reviews (14 points) + Projects (3 points)
 - **Deliverables**: 17 migration points completed, all V2 tests passing
 - **Pattern**: Priority-based approach, one file at a time, test after each
@@ -117,8 +120,8 @@ Several smaller, focused migration sessions were completed as part of the larger
 2. **Infrastructure first** - Ensure test environment works before migrating tests
 3. **Document blockers clearly** - List possible causes, next debugging steps
 
-### Type 3: Infrastructure & Tooling Sessions  
-**Characteristics**: CI/CD, Docker, testing infrastructure  
+### Type 3: Infrastructure & Tooling Sessions
+**Characteristics**: CI/CD, Docker, testing infrastructure
 **Success Rate**: 50% (2/4 sessions)
 
 #### ✅ Successful Example
@@ -148,14 +151,14 @@ Several smaller, focused migration sessions were completed as part of the larger
 3. **Multi-option planning** - Present 3-4 solutions with tradeoffs
 
 ### Type 4: Analysis & Planning Sessions
-**Characteristics**: Technical debt assessment, architectural planning  
+**Characteristics**: Technical debt assessment, architectural planning
 **Success Rate**: 100% (2/2 sessions)
 
 #### ✅ Successful Examples
 
 **FIXME Resolution Session** (Jan 5, 2025)
 - **Duration**: ~60 minutes
-- **Deliverables**: 
+- **Deliverables**:
   - 2 FIXMEs resolved (products endpoint)
   - 10 FIXMEs documented with architectural plan
   - Comprehensive 5-phase implementation plan (~6 weeks effort)
@@ -183,12 +186,14 @@ Several smaller, focused migration sessions were completed as part of the larger
 **Pattern**: Build → Unit Test → Integration Test → Document
 
 **Example** (Auth Provider Selection):
-```
+
+```text
 Phase 1: Analysis (5 min) → Review existing code
 Phase 2: Implementation (15 min) → `make bin` ✅
 Phase 3: Docker Integration (10 min) → `docker compose build` ✅
 Phase 4: Runtime Testing (15 min) → Fix Dex config, verify logs
 Phase 5: Documentation (30 min) → 310 lines comprehensive guide
+
 ```
 
 **Why It Works**:
@@ -267,16 +272,17 @@ Phase 5: Documentation (30 min) → 310 lines comprehensive guide
 **Pattern**: Explain WHY, not just WHAT
 
 **Example** (Profile Config - Why profiles vs. multiple files?):
-```
+
+```text
 Considered Options:
 1. ❌ Multiple config files (config-local.hcl, config-testing.hcl)
    - Duplicate configuration
    - Drift between environments
-   
+
 2. ❌ Command-line flags for all overrides
    - 50+ flags needed
    - Hard to track what's configured
-   
+
 3. ✅ Profile-based single file
    - Single source of truth
    - Easy to compare environments
@@ -354,13 +360,15 @@ Considered Options:
 - Documentation scattered
 
 **Example** (Hypothetical - not seen in sessions, but a risk):
-```
+
+```text
 Session start: Implement auth provider selection
   → Discover Dex config issue → Fix Dex
     → Discover frontend needs update → Update frontend
       → Discover tests broken → Fix tests
         → Discover docs outdated → Update docs
           → Session ends, nothing fully working
+
 ```
 
 **Prevention**:
@@ -376,7 +384,8 @@ Session start: Implement auth provider selection
 **Pattern**: Session ends with "in progress" state but unclear next steps
 
 **Example** (V2 Migration - good example of what NOT to do):
-```
+
+```text
 Status: 🔄 IN PROGRESS - Tests updated, troubleshooting document lookup
 
 Issue: Document Not Found 🔄
@@ -385,7 +394,7 @@ Possible causes:
   2. Schema/table isolation issue
   3. Document not committed before query
   4. ID/GoogleFileID lookup issue
-  
+
 Next Steps:
   1. Verify database connection matches
   2. Check if document in database
@@ -400,7 +409,8 @@ Next Steps:
 - ❌ No test case that reproduces the issue reliably
 
 **Better Handoff Format**:
-```
+
+```text
 Status: ⚠️ BLOCKED - Document lookup returns 404
 
 Reproduction Steps:
@@ -413,19 +423,20 @@ Hypothesis (in priority order):
    - Check: `internal/api/v2/documents.go` line ~50
    - Look for: `srv.WorkspaceProvider.GetFile()` (wrong)
    - Should be: `srv.DB.Where("google_file_id = ?").First()`
-   
+
 2. Database connection mismatch
    - Check: `tests/api/suite.go` - compare `suite.DB` vs `srv.DB`
    - Run: Add debug log in handler to print DB connection pointer
-   
+
 3. Transaction not committed
    - Check: `fixtures.NewDocument().Create()` - does it commit?
-   
+
 Next Session Should:
 - [ ] Verify hypothesis #1 (read handler code)
 - [ ] Add debug logging if needed
 - [ ] Fix handler to use DB, not workspace provider
 - [ ] Re-run test to validate fix
+
 ```
 
 **Recommendation**: ⭐ **Handoffs must be executable, not just descriptive**
@@ -435,7 +446,8 @@ Next Session Should:
 **Pattern**: Refactor 1000+ line file in one shot
 
 **Example** (drafts.go decision):
-```
+
+```text
 Initial plan: Refactor drafts.go (1442 lines) with regex replacements
 Decision: STOP - Break into 9 modules first
 Rationale: Previous bulk changes caused file corruption
@@ -449,7 +461,8 @@ Rationale: Previous bulk changes caused file corruption
 - Difficult to review/debug
 
 **Alternative Pattern** (Modularization first):
-```
+
+```text
 drafts.go (1442 lines)
   ↓ Extract into modules
 ├── drafts_handler.go (100 lines) - HTTP routing
@@ -464,6 +477,7 @@ drafts.go (1442 lines)
   ↓ Refactor each module independently
   ↓ Test after each module
 ✅ Incremental, safe, verifiable
+
 ```
 
 **Recommendation**: ⭐ **Modularize >500 lines before refactoring**
@@ -536,35 +550,41 @@ drafts.go (1442 lines)
 ##### ✅ **DO Provide**
 
 1. **Clear success criteria**
-   ```
-   GOOD: "Add -auth-provider flag that accepts dex/okta/google and 
+
+   ``` text
+   GOOD: "Add -auth-provider flag that accepts dex/okta/google and
           overrides auto-selection. Document with examples."
-   
+
    BAD:  "Make auth provider configurable"
    ```
 
 2. **Context files to read**
-   ```
-   GOOD: "Reference docs-internal/AUTH_PROVIDER_SELECTION.md for 
-          architecture. See internal/cmd/commands/server/server.go 
+
+   ``` text
+   GOOD: "Reference docs-internal/AUTH_PROVIDER_SELECTION.md for
+          architecture. See internal/cmd/commands/server/server.go
           for existing flag patterns."
-   
+
    BAD:  "Figure out where flags are defined"
+
    ```
 
 3. **Verification steps**
-   ```
+
+   ``` text
    GOOD: "Verify with: `make bin && ./hermes server -help | grep auth`
           Should show -auth-provider flag with description."
-   
+
    BAD:  "Make sure it compiles"
    ```
 
 4. **Time box and scope limit**
-   ```
+
+   ``` text
    GOOD: "Spend max 60 min. If blocked, document blocker and stop."
-   
+
    BAD:  "Implement auth provider selection and fix any issues"
+
    ```
 
 ##### ⛔ **DON'T Request**
@@ -664,7 +684,8 @@ After an agent session, verify:
 5. **Documentation** (20 min) - How-to, troubleshooting
 
 ## Verification Commands
-```bash
+ ~~~~ bash
+
 # Build
 make bin
 
@@ -674,7 +695,8 @@ go test ./internal/... -short
 # Integration
 cd testing && docker compose up -d
 curl http://localhost:8001/health
-```
+
+ ~~~~ text
 
 ## Blocker Escalation
 If blocked for >15 min:
@@ -682,12 +704,12 @@ If blocked for >15 min:
 2. List 2-3 possible solutions with effort estimates
 3. Stop and create follow-up task
 4. Do NOT continue debugging indefinitely
-```
+ ```
 
 ### Template 2: Refactoring Session
 
-```markdown
-# [Component] Refactoring Session  
+ ```markdown
+# [Component] Refactoring Session
 **Date**: YYYY-MM-DD
 **Type**: Migration | Cleanup | Modularization
 **Time Budget**: 60-120 minutes
@@ -734,11 +756,12 @@ If file is:
 - [ ] Multiple domains mixed (auth + search + storage)
 
 Then: Create modularization plan, stop refactoring
-```
+
+ ```
 
 ### Template 3: Debugging Session
 
-```markdown
+ ```markdown
 # [Issue] Debugging Session
 **Date**: YYYY-MM-DD
 **Issue**: [One-line description]
@@ -750,7 +773,8 @@ Then: Create modularization plan, stop refactoring
 **Expected vs. Actual**: [Side-by-side comparison]
 
 ## Reproduction
-```bash
+ ~~~~ bash
+
 # Commands that trigger the issue
 [exact commands]
 
@@ -759,16 +783,19 @@ Then: Create modularization plan, stop refactoring
 
 # Actual output
 [what actually happens]
-```
+
+ ~~~~ text
 
 ## Hypotheses (ranked by likelihood)
 
 ### Hypothesis 1: [Most likely cause]
 **Why**: [Reasoning]
 **Test**: [How to verify]
-```bash
+ ~~~~ bash
+
 [commands to test hypothesis]
-```
+
+ ~~~~ text
 **If true**: [Fix required]
 **If false**: [Move to hypothesis 2]
 
@@ -794,7 +821,7 @@ Then: Create modularization plan, stop refactoring
 - [ ] Fix implemented
 - [ ] Reproduction test added
 - [ ] Documented in troubleshooting guide
-```
+ ```
 
 ---
 
@@ -820,7 +847,7 @@ Then: Create modularization plan, stop refactoring
 
 ### Common Blockers
 1. **External dependencies** (Algolia, Google Workspace) - 4 sessions
-2. **Large file complexity** (>1000 lines) - 2 sessions  
+2. **Large file complexity** (>1000 lines) - 2 sessions
 3. **Database connection issues** - 2 sessions
 4. **Configuration mismatches** - 2 sessions
 5. **Test infrastructure incomplete** - 1 session
@@ -848,7 +875,7 @@ Then: Create modularization plan, stop refactoring
 ## Lessons Learned: Top 10
 
 1. ⭐ **Incremental verification beats big-bang testing** - Test after every logical change
-2. ⭐ **Document while building, not after** - Context is fresh, handoff is seamless  
+2. ⭐ **Document while building, not after** - Context is fresh, handoff is seamless
 3. ⭐ **Stop when done, defer the rest** - Scope discipline prevents half-done work
 4. ⭐ **Modularize before refactoring** - Files >500 lines need decomposition first
 5. ⭐ **External dependencies need adapters** - Mock/local versions for testing
@@ -909,6 +936,7 @@ The session templates, patterns, and recommendations in this memo provide a **re
 
 ---
 
-**Approval**: Living document, updated as new patterns emerge  
-**Review Cadence**: After every 10 sessions, analyze and update  
+**Approval**: Living document, updated as new patterns emerge
+**Review Cadence**: After every 10 sessions, analyze and update
 **Feedback**: Submit session retrospectives to `docs-internal/sessions/`
+

@@ -1,14 +1,18 @@
 ---
-id: RFC-083
-title: Simplified Local Mode - Zero-Config Document CMS
+id: rfc-083
+created: 2025-10-26
+author: Hermes Team
+project_id: hermes
+doc_uuid: 6c101a02-7e50-4dba-9bcc-44f64d7f56db
+status: Proposed
+title: "Simplified Local Mode - Zero-Config Document CMS"
 date: 2025-10-26
 type: RFC
 subtype: Architecture
-status: Proposed
 tags: [local-mode, ux, zero-config, embedded, standalone]
 related:
-  - memo/README-local-workspace.md
-  - memo/README-indexer.md
+  - memo/readme-local-workspace.md
+  - memo/readme-indexer.md
   - RFC-007
 ---
 
@@ -90,11 +94,12 @@ Today, running Hermes requires:
 # - If path argument provided → Use that path
 # - If -config flag provided → Traditional enterprise mode
 # - If none of above → Create ./docs-cms/ and initialize
+
 ```
 
 ### Well-Known Directory Structure
 
-```
+```text
 ./docs-cms/
 ├── config.yaml              # Auto-generated minimal config (optional overrides)
 ├── data/
@@ -130,6 +135,7 @@ Today, running Hermes requires:
 - ✅ File-based backups (just copy the file)
 
 **Migration Strategy**:
+
 ```go
 // internal/db/db.go
 func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
@@ -141,6 +147,7 @@ func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
         return gorm.Open(postgres.Open(cfg.Postgres.DSN()), &gorm.Config{})
     }
 }
+
 ```
 
 #### 2. Search: Bleve (Embedded Full-Text Search)
@@ -159,6 +166,7 @@ func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
 **Alternative**: Embedded Meilisearch (via `github.com/meilisearch/meilisearch-go` + bundled binary)
 
 **Interface**:
+
 ```go
 // pkg/search/search.go (existing interface)
 type Adapter interface {
@@ -188,11 +196,13 @@ type BleveAdapter struct {
 - User switching via dropdown in UI
 
 **Configuration**:
+
 ```yaml
 # docs-cms/config.yaml
 auth:
   mode: single-user  # or "local-network"
   domain: localhost
+
 ```
 
 #### 4. Workspace: Local Filesystem Provider
@@ -240,6 +250,7 @@ When `simplified_mode: true`:
 
 # Advertises on local network:
 # http://192.168.1.100:8000/.well-known/hermes.json
+
 ```
 
 ```json
@@ -300,7 +311,7 @@ When `simplified_mode: true`:
 ### Phase 4: Documentation & Distribution (Week 6)
 
 **Documentation**:
-- [ ] Update `README.md` with simplified mode as primary use case
+- [ ] Update `readme.md` with simplified mode as primary use case
 - [ ] Create "Quick Start" guide (< 5 minutes to first document)
 - [ ] Add architecture diagrams (simplified vs. enterprise mode)
 
@@ -383,6 +394,7 @@ When `simplified_mode: true`:
 - ✅ Still supports HCL for advanced users (backwards compatible)
 
 **Example**:
+
 ```yaml
 # docs-cms/config.yaml (auto-generated)
 server:
@@ -394,6 +406,7 @@ auth:
 
 workspace:
   base_path: ./docs-cms
+
 ```
 
 ## Migration & Compatibility
@@ -411,6 +424,7 @@ workspace:
 **Scenario**: User starts with simplified mode, team grows, needs enterprise features
 
 **Migration Script**:
+
 ```bash
 # Export from SQLite to PostgreSQL
 ./hermes operator migrate-local-to-postgresql \
@@ -559,8 +573,8 @@ workspace:
 ## References
 
 ### Internal Documentation
-- [memo/README-local-workspace.md](memo/README-local-workspace.md) - Existing local workspace provider
-- [memo/README-indexer.md](memo/README-indexer.md) - Document indexing architecture
+- [memo/readme-local-workspace.md](memo/readme-local-workspace.md) - Existing local workspace provider
+- [memo/readme-indexer.md](memo/readme-indexer.md) - Document indexing architecture
 - [RFC-007: Multi-Provider Auth](rfc-007-multi-provider-auth-architecture.md) - Authentication patterns
 
 ### External Inspiration
@@ -592,12 +606,12 @@ func (c *Command) Run(args []string) int {
     // Parse flags
     flags := c.Flags()
     configPath := flags.Lookup("config").Value.String()
-    
+
     // If explicit config provided, use traditional enterprise mode
     if configPath != "" {
         return c.runEnterpriseMode(configPath)
     }
-    
+
     // Check for explicit path argument
     var workspacePath string
     if len(args) > 0 {
@@ -607,7 +621,7 @@ func (c *Command) Run(args []string) int {
         cwd, _ := os.Getwd()
         workspacePath = filepath.Join(cwd, "docs-cms")
     }
-    
+
     // Check if workspace path exists
     if _, err := os.Stat(workspacePath); os.IsNotExist(err) {
         // Initialize new workspace
@@ -617,9 +631,10 @@ func (c *Command) Run(args []string) int {
             return 1
         }
     }
-    
+
     return c.runSimplifiedMode(workspacePath)
 }
+
 ```
 
 ### Auto-Generated Config
@@ -677,35 +692,36 @@ func InitializeWorkspace(basePath string) error {
         filepath.Join(basePath, "attachments"),
         filepath.Join(basePath, "templates"),
     }
-    
+
     for _, dir := range dirs {
         if err := os.MkdirAll(dir, 0755); err != nil {
             return fmt.Errorf("failed to create directory %s: %w", dir, err)
         }
     }
-    
+
     // Create default templates
     templates := map[string]string{
         "rfc.md":  defaultRFCTemplate,
         "prd.md":  defaultPRDTemplate,
         "frd.md":  defaultFRDTemplate,
     }
-    
+
     for name, content := range templates {
         path := filepath.Join(basePath, "templates", name)
         if err := os.WriteFile(path, []byte(content), 0644); err != nil {
             return fmt.Errorf("failed to create template %s: %w", name, err)
         }
     }
-    
+
     // Write minimal config.yaml
     configPath := filepath.Join(basePath, "config.yaml")
     if err := writeDefaultConfig(configPath); err != nil {
         return err
     }
-    
+
     return nil
 }
+
 ```
 
 ---
@@ -717,6 +733,7 @@ func InitializeWorkspace(basePath string) error {
 4. Spike: SQLite migration (1 day)
 5. Implement Phase 1 (2 weeks)
 
-**Authors**: [@jrepp](https://github.com/jrepp)  
-**Reviewers**: [TBD]  
+**Authors**: [@jrepp](https://github.com/jrepp)
+**Reviewers**: [TBD]
 **Last Updated**: 2025-10-26
+

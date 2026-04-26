@@ -1,11 +1,15 @@
 ---
-id: MEMO-052
-title: Outbox Pattern Quick Reference
+id: memo-052
+title: "Outbox Pattern Quick Reference"
 date: 2025-10-09
 type: Guide
 status: Draft
 tags: [outbox, database, search-index, audit, identity]
 related: []
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: f1587e08-dc24-4032-8964-55a1fc9b81f3
 ---
 
 # Document Tracking & Outbox Pattern - Quick Reference
@@ -35,7 +39,7 @@ related: []
 
 ## Key Database Tables
 
-```
+```text
 person (id, display_name)
   ↓ 1:many
 person_identity (person_id, identity_type, identity_value, provider_type, primary)
@@ -45,6 +49,7 @@ documents (id, google_file_id, workspace_provider, last_modified_by_person_id)
 document_modification_log (document_id, modified_by_person_id, modification_type, field_changes)
   ↓ triggers
 document_outbox (document_id, workspace_provider, created_by_person_id, payload, status)
+
 ```
 
 ## API Handler Pattern
@@ -106,6 +111,7 @@ DELETE FROM person WHERE id = 456;
 -- Set primary identity
 UPDATE person_identity SET primary_identity = (identity_value = 'preferred@email.com')
 WHERE person_id = 123 AND identity_type = 'email';
+
 ```
 
 ## Monitoring & Observability
@@ -126,7 +132,7 @@ WHERE person_id = 123 AND identity_type = 'email';
 
 ```sql
 -- Recent document history
-SELECT m.created_at, m.modification_type, m.field_changes, 
+SELECT m.created_at, m.modification_type, m.field_changes,
        p.display_name, m.modified_by_identity, m.workspace_provider
 FROM document_modification_log m
 LEFT JOIN person p ON p.id = m.modified_by_person_id
@@ -170,14 +176,14 @@ WHERE p.id = 123;
 
 ## Benefits
 
-✅ **Transactional Consistency**: No lost search index updates  
-✅ **Full Audit Trail**: Complete history of who changed what  
-✅ **Identity Flexibility**: Support migrations, email changes  
-✅ **Workspace Awareness**: Track storage backend per document  
-✅ **Performance**: API responses not blocked by search indexing  
-✅ **Reliability**: Automatic retry with exponential backoff  
-✅ **Observability**: Metrics on lag, throughput, errors  
-✅ **Compliance**: Complete audit trail for security/compliance needs  
+✅ **Transactional Consistency**: No lost search index updates
+✅ **Full Audit Trail**: Complete history of who changed what
+✅ **Identity Flexibility**: Support migrations, email changes
+✅ **Workspace Awareness**: Track storage backend per document
+✅ **Performance**: API responses not blocked by search indexing
+✅ **Reliability**: Automatic retry with exponential backoff
+✅ **Observability**: Metrics on lag, throughput, errors
+✅ **Compliance**: Complete audit trail for security/compliance needs
 
 ## Next Actions
 
@@ -189,3 +195,4 @@ WHERE p.id = 123;
 6. ⏳ Build outbox worker
 7. ⏳ Remove synchronous indexing
 8. ⏳ Deploy in phases with monitoring
+

@@ -1,16 +1,17 @@
 ---
-id: ADR-048
+id: adr-048
 title: Local Workspace User Info Fix
 date: 2025-10-08
 type: ADR
 subtype: Backend Decision
 status: Accepted
-tags: [backend, workspace, user-info, local-workspace, bug-fix]
-related:
-  - RFC-047
-  - RFC-020
+tags: ['backend', 'workspace', 'user-info', 'local-workspace', 'bug-fix']
+related: ['RFC-047', 'RFC-020']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: da31eae5-c771-4a30-9541-6c4dbe8d6722
 ---
-
 # Local Workspace User Info Fix
 
 ## Context
@@ -30,14 +31,17 @@ Fix backend to properly initialize local workspace provider and use it for user 
 **Changes Made**:
 
 1. **Configuration** (`testing/config.hcl`):
+
    ```hcl
    providers {
      workspace = "local"  // Changed from "google"
      search    = "meilisearch"
    }
+
    ```
 
 2. **Server Initialization** (`internal/cmd/commands/server/server.go`):
+
    ```go
    case "local":
        localCfg := cfg.LocalWorkspace.ToLocalAdapterConfig()
@@ -50,8 +54,10 @@ Fix backend to properly initialize local workspace provider and use it for user 
    ```
 
 3. **BaseURL Configuration** (environment-agnostic OAuth redirects):
+
    ```hcl
    base_url = "http://localhost:4201"  // Ember dev server
+
    ```
 
 ## Consequences
@@ -89,15 +95,15 @@ Fix backend to properly initialize local workspace provider and use it for user 
 1. **Auto-detect frontend URL from request**
    - ❌ OAuth callback comes from Dex, not frontend
    - ❌ No reliable way to determine frontend URL from backend
-   
+
 2. **Use relative redirects**
    - ❌ Would redirect to backend port, not frontend
    - ❌ User lands on wrong server
-   
+
 3. **Frontend handles OAuth callback**
    - ❌ Violates OAuth security model (code exchange server-side only)
    - ❌ Exposes client secret
-   
+
 4. **Proxy both backend and frontend through single port**
    - ❌ Complex development setup
    - ❌ Doesn't match production architecture
@@ -105,6 +111,7 @@ Fix backend to properly initialize local workspace provider and use it for user 
 ## Configuration Examples
 
 **Testing Environment** (`testing/config.hcl`):
+
 ```hcl
 base_url = "http://localhost:4201"  # Ember dev server
 providers { workspace = "local" }
@@ -114,15 +121,18 @@ dex {
 ```
 
 **Native Development** (`config.hcl`):
+
 ```hcl
 base_url = "http://localhost:4200"  # Native dev server
 providers { workspace = "local" }
 dex {
   redirect_url = "http://localhost:8000/auth/callback"  # Native backend
 }
+
 ```
 
 **Production**:
+
 ```hcl
 base_url = "https://hermes.company.com"
 providers { workspace = "google" }
@@ -132,6 +142,7 @@ providers { workspace = "google" }
 ## Verification
 
 **Backend API Test**:
+
 ```bash
 $ curl -b "hermes_session=test@hermes.local" \
   http://localhost:8001/api/v2/me | jq .
@@ -141,19 +152,21 @@ $ curl -b "hermes_session=test@hermes.local" \
   "given_name": "Test",
   "picture": "https://ui-avatars.com/api/?name=Test+User..."
 }
+
 ```
 
 **Server Logs**:
-```
+
+``` text
 Using workspace provider: local
 2025-10-08T03:18:34.857Z [INFO]  hermes: listening on 0.0.0.0:8000...
 2025-10-08T03:19:15.869Z [INFO]  hermes: user authenticated successfully: email=test@hermes.local
 ```
 
-✅ Backend returns correct user info  
-✅ Server uses local workspace provider  
-✅ OAuth redirects to frontend correctly  
-✅ User menu displays authenticated user  
+✅ Backend returns correct user info
+✅ Server uses local workspace provider
+✅ OAuth redirects to frontend correctly
+✅ User menu displays authenticated user
 
 ## Future Considerations
 
@@ -165,4 +178,5 @@ Using workspace provider: local
 ## References
 
 - Source: `LOCAL_WORKSPACE_USER_INFO_FIX.md`
-- Related: `LOCAL_WORKSPACE_SETUP_SUMMARY.md`, `DEX_AUTHENTICATION_IMPLEMENTATION.md`
+- Related: `LOCAL_WORKSPACE_SETUP_SUMMARY.md`, `DEX_AUTHENTICATION_implementation.md`
+

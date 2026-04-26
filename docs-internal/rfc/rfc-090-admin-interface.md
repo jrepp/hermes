@@ -1,10 +1,14 @@
 ---
-id: RFC-090
-title: Hermes Admin Interface - Comprehensive Management UI
+id: rfc-090
+created: 2025-11-15
+author: Hermes Team
+project_id: hermes
+doc_uuid: b57e9754-f7c0-4a45-9fd1-bd8a3e69a1be
+status: Draft
+title: "Hermes Admin Interface - Comprehensive Management UI"
 date: 2025-11-15
 type: RFC
 subtype: Feature Design
-status: Draft
 tags: [admin, ui, identity, migrations, monitoring, analytics]
 related:
   - RFC-089
@@ -74,7 +78,7 @@ Hermes currently has:
 
 ### Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │ Hermes Admin Interface (React/TypeScript SPA)                        │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -143,6 +147,7 @@ Hermes currently has:
 │ Prometheus: Metrics and time-series data                             │
 │ Redpanda: Real-time event stream (for WebSocket updates)             │
 └─────────────────────────────────────────────────────────────────────┘
+
 ```
 
 ## Feature Specifications
@@ -155,7 +160,7 @@ Hermes currently has:
 
 **UI Components**:
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Users & Identity Management                   [Search users]  │
 ├────────────────────────────────────────────────────────────────┤
@@ -250,6 +255,7 @@ type LinkIdentityRequest struct {
 
 // DELETE /api/v2/admin/users/:id/identities/:identity_id
 // Unlinks an identity from a user
+
 ```
 
 **Database Schema Extension**:
@@ -282,7 +288,7 @@ CREATE INDEX idx_identity_audit_performed_by ON identity_audit_log(performed_by)
 
 **Use Case**: When two user accounts are discovered to be the same person.
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Merge User Identities                                          │
 ├────────────────────────────────────────────────────────────────┤
@@ -315,13 +321,14 @@ CREATE INDEX idx_identity_audit_performed_by ON identity_audit_log(performed_by)
 │                                                                 │
 │ [Cancel]                         [Confirm Merge]              │
 └────────────────────────────────────────────────────────────────┘
+
 ```
 
 ### 2. Project Administration
 
 #### 2.1 Project List & Management
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Projects Administration                [+ New Project]         │
 ├────────────────────────────────────────────────────────────────┤
@@ -343,7 +350,7 @@ CREATE INDEX idx_identity_audit_performed_by ON identity_audit_log(performed_by)
 
 #### 2.2 Project Detail View
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Project: Platform Core                 [Edit] [Archive] [⚙️]  │
 ├────────────────────────────────────────────────────────────────┤
@@ -390,6 +397,7 @@ CREATE INDEX idx_identity_audit_performed_by ON identity_audit_log(performed_by)
 │ │ Backup:  Local Edge NYC (local-edge-nyc) - enabled      │  │
 │ └──────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────┘
+
 ```
 
 **API Endpoints**:
@@ -436,7 +444,7 @@ type TransferProjectRequest struct {
 
 #### 3.1 Migration List View
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Migrations                              [+ New Migration]      │
 ├────────────────────────────────────────────────────────────────┤
@@ -469,11 +477,12 @@ type TransferProjectRequest struct {
 │ │ office365-test    Google   O365       ❌ Failed    Nov 8 │  │
 │ └──────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────┘
+
 ```
 
 #### 3.2 Create Migration Wizard
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Create New Migration                          Step 1 of 4      │
 ├────────────────────────────────────────────────────────────────┤
@@ -585,13 +594,14 @@ ws.onmessage = (event) => {
   // }
   updateProgressBar(update);
 };
+
 ```
 
 ### 4. Indexer Health Dashboard
 
 #### 4.1 Pipeline Health Overview
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Indexer Health Dashboard                        [Refresh]      │
 ├────────────────────────────────────────────────────────────────┤
@@ -641,7 +651,7 @@ ws.onmessage = (event) => {
 
 #### 4.2 Kafka/Redpanda Consumer Lag
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Kafka Consumer Groups                                          │
 ├────────────────────────────────────────────────────────────────┤
@@ -675,6 +685,7 @@ ws.onmessage = (event) => {
 │ │ Lag Status: ⚠️  Warning (> 100 messages)                 │  │
 │ └──────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────┘
+
 ```
 
 **API Endpoints**:
@@ -717,7 +728,7 @@ type ConsumerGroup struct {
 
 #### 5.1 Overview Dashboard
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Documentation Analytics                    Last 30 days ▾      │
 ├────────────────────────────────────────────────────────────────┤
@@ -759,11 +770,12 @@ type ConsumerGroup struct {
 │ │ Guide (10%)    ███░░░░░░░░░░░░░░░░░░░░    534 docs       │  │
 │ └──────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────┘
+
 ```
 
 #### 5.2 Team Productivity View
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Team: Platform Engineering                                     │
 ├────────────────────────────────────────────────────────────────┤
@@ -831,6 +843,7 @@ type DocumentViewsResponse struct {
     Viewers    []string    `json:"unique_viewers"`
     ViewTrend  []DataPoint `json:"view_trend"`
 }
+
 ```
 
 ## Implementation Plan
@@ -1003,6 +1016,7 @@ CREATE TABLE admin_audit_log (
 
 CREATE INDEX idx_admin_audit_performed_by ON admin_audit_log(performed_by, performed_at DESC);
 CREATE INDEX idx_admin_audit_resource ON admin_audit_log(resource_type, resource_id);
+
 ```
 
 ### Rate Limiting
@@ -1051,3 +1065,4 @@ adminRouter.Use(ratelimit.Middleware(ratelimit.Config{
 **Author**: Engineering Team
 **Created**: 2025-11-15
 **Last Updated**: 2025-11-15
+

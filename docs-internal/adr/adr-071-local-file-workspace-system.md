@@ -1,16 +1,17 @@
 ---
-id: ADR-071
+id: adr-071
 title: Local File Workspace System
 date: 2025-10-09
 type: ADR
 subtype: Backend Architecture
 status: Accepted
-tags: [backend, architecture, workspace, local-workspace, filesystem]
-related:
-  - RFC-047
-  - ADR-070
+tags: ['backend', 'architecture', 'workspace', 'local-workspace', 'filesystem']
+related: ['RFC-047', 'ADR-070']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: 56b73a28-5daf-43ac-8b23-66539a5df990
 ---
-
 # Local File Workspace System
 
 ## Context
@@ -41,7 +42,8 @@ Implement local filesystem-based workspace provider as alternative to Google Wor
    - Drop-in replacement for GoogleAdapter
 
 3. **File Structure**:
-```
+
+``` text
 workspace_data/
 ├── drafts/              # Work-in-progress documents
 │   ├── {doc-id}.md
@@ -55,9 +57,11 @@ workspace_data/
 │   ├── template-prd.md
 │   └── template-frd.md
 └── users.json          # User directory
+
 ```
 
 4. **Document Format** (Markdown with YAML frontmatter):
+
 ```markdown
 ---
 id: abc123
@@ -94,7 +98,8 @@ Markdown body here...
 ## Measured Results
 
 **Performance Comparison**:
-```
+
+``` text
 Operation          | Google API | Local FS | Speedup
 -------------------|------------|----------|--------
 Get Document       | 280ms      | 0.8ms    | 350x
@@ -102,20 +107,24 @@ Create Document    | 450ms      | 1.2ms    | 375x
 Update Content     | 380ms      | 1.1ms    | 345x
 Search (10 docs)   | 650ms      | 5ms      | 130x
 List Documents     | 420ms      | 2.3ms    | 183x
+
 ```
 
 **Test Suite Impact**:
-```
+
+``` text
 Before (Google API mocks): 45s, 23% flaky
 After (Local filesystem):  12s, 0% flaky
 Improvement: 73% faster, 100% reliable
 ```
 
 **Development Iteration**:
-```
+
+``` text
 Before: 5-10min (OAuth setup, API exploration, rate limit waits)
 After: 30s (docker compose up, test data loaded)
 Improvement: 10-20x faster onboarding
+
 ```
 
 ## Implementation Highlights
@@ -130,6 +139,7 @@ Stores Google Workspace metadata in YAML frontmatter for compatibility:
 
 ### 2. Template Variable Replacement
 Templates use `{{variable}}` placeholders:
+
 ```markdown
 **Owner**: {{owner}}
 **Created**: {{created_date}}
@@ -140,6 +150,7 @@ Replaced on document creation with actual values from metadata and user input.
 
 ### 3. User Directory
 `users.json` provides user information:
+
 ```json
 [
   {
@@ -148,6 +159,7 @@ Replaced on document creation with actual values from metadata and user input.
     "photoURL": "https://ui-avatars.com/api/?name=Admin+User"
   }
 ]
+
 ```
 
 Used by ME endpoint and SearchPeople operations.
@@ -160,6 +172,7 @@ Used by ME endpoint and SearchPeople operations.
 ## Provider Abstraction Benefits
 
 Both Google and Local adapters implement same interface:
+
 ```go
 type Provider interface {
     GetDocument(ctx context.Context, id string, isDraft bool) (*Document, error)
@@ -185,35 +198,36 @@ providers {
 
 local_workspace {
   root_path = "/app/workspace_data"
-  
+
   users_file = "users.json"  # optional, default
-  
+
   drafts_folder = "drafts"   # optional, default
   docs_folder = "docs"       # optional, default
   templates_folder = "templates"  # optional, default
 }
+
 ```
 
 ## Alternatives Considered
 
 ### 1. ❌ SQLite Database
-**Pros**: ACID, transactions, SQL queries  
-**Cons**: Binary format (not human-readable), schema migrations, overkill  
+**Pros**: ACID, transactions, SQL queries
+**Cons**: Binary format (not human-readable), schema migrations, overkill
 **Rejected**: Markdown files easier to inspect and edit
 
 ### 2. ❌ S3-Compatible Storage (MinIO)
-**Pros**: Production-like, scalable, versioning  
-**Cons**: Additional service, network overhead, complexity  
+**Pros**: Production-like, scalable, versioning
+**Cons**: Additional service, network overhead, complexity
 **Rejected**: Too heavyweight for development/testing use case
 
 ### 3. ❌ In-Memory Only
-**Pros**: Maximum speed, no I/O  
-**Cons**: Data lost on restart, can't inspect state  
+**Pros**: Maximum speed, no I/O
+**Cons**: Data lost on restart, can't inspect state
 **Rejected**: Persistence needed for multi-session testing
 
 ### 4. ❌ Git as Storage
-**Pros**: Built-in versioning, collaboration via PRs  
-**Cons**: Git operations slow, conflicts, learning curve  
+**Pros**: Built-in versioning, collaboration via PRs
+**Cons**: Git operations slow, conflicts, learning curve
 **Rejected**: Complexity outweighs benefits for this use case
 
 ## Future Considerations
@@ -238,7 +252,8 @@ Configuration switch: `providers.workspace = "local" | "google"`
 
 ## Related Documentation
 
-- `pkg/workspace/local/README.md` - Implementation details
-- `testing/workspace_data/README.md` - Data structure
+- `pkg/workspace/local/readme.md` - Implementation details
+- `testing/workspace_data/readme.md` - Data structure
 - ADR-048 - Local Workspace User Info Fix
 - RFC-047 - Local Workspace Setup
+

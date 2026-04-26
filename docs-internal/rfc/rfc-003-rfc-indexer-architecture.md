@@ -1,8 +1,18 @@
+---
+id: rfc-003
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: a082cf3d-6c4e-4089-a01d-37c12568ab32
+status: Draft
+title: "RFC: Indexer Architecture and Distributed Document Management"
+---
+
 # RFC: Indexer Architecture and Distributed Document Management
 
-**Status**: Implemented (Phase 1 Complete)  
-**RFC Number**: TBD  
-**Created**: October 26, 2025  
+**Status**: Implemented (Phase 1 Complete)
+**RFC Number**: TBD
+**Created**: October 26, 2025
 **Author**: Hermes Core Team
 
 ## Overview
@@ -16,46 +26,47 @@ graph TB
         GW[Google Workspace<br/>Docs, Sheets, Slides]
         RH[Remote Hermes<br/>Federated Instances]
     end
-    
+
     subgraph "Indexer Layer"
         I1[Indexer Agent 1<br/>Testing Workspace]
         I2[Indexer Agent 2<br/>Docs Workspace]
         I3[Indexer Agent N<br/>Remote Workspace]
     end
-    
+
     subgraph "Central Hermes"
         API[REST API]
         DB[(PostgreSQL<br/>Document Metadata)]
         SEARCH[(Meilisearch<br/>Full-Text Index)]
     end
-    
+
     subgraph "User Interface"
         WEB[Web Frontend]
         CLI[CLI Tools]
     end
-    
+
     LW -->|Watches| I1
     LW -->|Watches| I2
     GW -->|Polls| I3
     RH -->|Federation| I3
-    
+
     I1 -->|Register & Sync| API
     I2 -->|Register & Sync| API
     I3 -->|Register & Sync| API
-    
+
     API --> DB
     API --> SEARCH
-    
+
     DB --> WEB
     SEARCH --> WEB
     API --> CLI
-    
+
     style I1 fill:#4CAF50
     style I2 fill:#4CAF50
     style I3 fill:#4CAF50
     style API fill:#2196F3
     style DB fill:#9C27B0
     style SEARCH fill:#FF9800
+
 ```
 
 ## Why the Indexer Exists
@@ -145,7 +156,7 @@ The indexer **detects** migration scenarios but doesn't perform them:
 
 ### Component Design
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      Indexer Agent                          │
 ├─────────────────────────────────────────────────────────────┤
@@ -175,7 +186,8 @@ The indexer **detects** migration scenarios but doesn't perform them:
 ### Data Flow
 
 **1. Registration (on startup)**
-```
+
+```text
 Indexer → POST /api/v2/indexers/register
 {
   "name": "docs-indexer",
@@ -190,10 +202,12 @@ Response: 200 OK
   "registered_at": "2025-10-26T10:00:00Z",
   "heartbeat_interval": 300
 }
+
 ```
 
 **2. Heartbeat (every 5 minutes)**
-```
+
+```text
 Indexer → POST /api/v2/indexers/{id}/heartbeat
 {
   "status": "healthy",
@@ -205,7 +219,8 @@ Response: 200 OK
 ```
 
 **3. Document Discovery (polling cycle)**
-```
+
+```text
 1. Scan workspace for .md, .txt files
 2. Extract frontmatter/metadata
 3. Calculate content hash (SHA-256)
@@ -215,10 +230,12 @@ Response: 200 OK
    - If exists with different hash: Create new revision
 5. Sync to Hermes API
 6. Update search index
+
 ```
 
 **4. Document Synchronization**
-```
+
+```text
 Indexer → POST /api/v2/documents
 {
   "uuid": "550e8400-e29b-41d4-a716-446655440000",
@@ -264,7 +281,7 @@ CREATE TABLE document_revisions (
     status VARCHAR(50) DEFAULT 'active',
     indexed_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
-    
+
     UNIQUE(document_uuid, project_id, provider_type, provider_document_id)
 );
 
@@ -280,6 +297,7 @@ CREATE TABLE indexers (
     last_heartbeat_at TIMESTAMP,
     registered_at TIMESTAMP DEFAULT NOW()
 );
+
 ```
 
 ## Workflow and Capabilities
@@ -288,7 +306,7 @@ CREATE TABLE indexers (
 
 **Scenario**: Developer adds RFC to local workspace
 
-```
+```text
 1. Developer creates docs/rfcs/RFC-042-distributed-auth.md
    ---
    hermes-uuid: 7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d
@@ -319,13 +337,13 @@ CREATE TABLE indexers (
 
 **Scenario**: Two teams with separate workspaces
 
-```
+```text
 Indexer 1 (Testing Team)
   Watches: /app/workspaces/testing
   Project: testing
   Documents: TEST-001, TEST-002, TEST-003
 
-Indexer 2 (Docs Team)  
+Indexer 2 (Docs Team)
   Watches: /app/workspaces/docs
   Project: docs
   Documents: GUIDE-001, GUIDE-002, API-001
@@ -334,6 +352,7 @@ Central Hermes
   Aggregates: TEST-001, TEST-002, TEST-003, GUIDE-001, GUIDE-002, API-001
   Search: Returns results from both projects
   UI: Shows documents from both teams in unified interface
+
 ```
 
 **Key Capabilities**:
@@ -348,7 +367,7 @@ Central Hermes
 
 **Scenario**: Migrating RFCs from Google Docs to Local Workspace
 
-```
+```text
 Phase 1: Pre-Migration (Single Source)
   Provider: google-workspace
   Document: RFC-001 (Google Doc ID: 1a2b3c4d5e6f7890)
@@ -362,7 +381,7 @@ Phase 2: Migration Started (Dual Source)
     ---
     hermes-uuid: 550e8400-e29b-41d4-a716-446655440000
     ---
-  
+
   # Indexer detects document with existing UUID
   # Creates second revision:
   Revision 1 (Google):
@@ -370,7 +389,7 @@ Phase 2: Migration Started (Dual Source)
     Provider Doc ID: 1a2b3c4d5e6f7890
     Content Hash: sha256:abc123...
     Status: migrating-from
-  
+
   Revision 2 (Local):
     Provider: local
     Provider Doc ID: docs/rfcs/RFC-001.md
@@ -382,18 +401,18 @@ Phase 3: Conflict Detected (Content Divergence)
   Revision 1 (Google):
     Content Hash: sha256:xyz789...  (CHANGED!)
     Status: conflict-source
-  
+
   Revision 2 (Local):
     Content Hash: sha256:abc123...  (unchanged)
     Status: conflict-target
-  
+
   # UI flags conflict for manual resolution
 
 Phase 4: Migration Complete
   # Google Doc archived or deleted
   Revision 1 (Google):
     Status: archived
-  
+
   Revision 2 (Local):
     Status: canonical
 ```
@@ -421,6 +440,7 @@ make scenario-basic          # Basic E2E: seed → index → search → verify
 # Validate results
 curl http://localhost:8001/api/v2/documents | jq '.documents[] | {title, project_id}'
 curl http://localhost:8001/api/v2/search?q=RFC | jq '.results[] | .title'
+
 ```
 
 **Test Capabilities**:
@@ -486,10 +506,11 @@ curl http://localhost:8001/api/v2/search?q=RFC | jq '.results[] | .title'
 - [ ] Multi-region deployment support
 
 **Example**:
+
 ```hcl
 project "internal-docs" {
   title = "Internal Documentation"
-  
+
   provider "remote-hermes" {
     base_url = "https://hermes.internal.example.com"
     auth {
@@ -517,6 +538,7 @@ project "internal-docs" {
 - [ ] Stale document flagging (last modified > 6 months, no views)
 
 **Example**:
+
 ```yaml
 # Auto-generated metadata
 ai_metadata:
@@ -528,6 +550,7 @@ ai_metadata:
     - PRD-042: SSO Requirements
   duplicate_confidence: 0.0
   staleness_score: 0.2
+
 ```
 
 **Estimated Effort**: 60-80 hours
@@ -546,17 +569,18 @@ ai_metadata:
 - [ ] **Quip**
 
 **Generic Provider Interface**:
+
 ```go
 type ProviderAdapter interface {
     // Discovery
     ListDocuments(ctx context.Context) ([]Document, error)
     GetDocument(ctx context.Context, id string) (*Document, error)
     GetDocumentContent(ctx context.Context, id string) ([]byte, error)
-    
+
     // Metadata
     GetDocumentMetadata(ctx context.Context, id string) (*Metadata, error)
     CalculateContentHash(ctx context.Context, id string) (string, error)
-    
+
     // Change Detection
     ListChanges(ctx context.Context, since time.Time) ([]Change, error)
     SupportsWebhooks() bool
@@ -576,7 +600,7 @@ type ProviderAdapter interface {
 - [x] Makefile integration (`make seed`, `make scenario-basic`)
 - [x] Comprehensive documentation (1500+ LOC)
 
-**Delivered**: October 24, 2025  
+**Delivered**: October 24, 2025
 **Verification**: All scripts tested and working
 
 ### ⏳ Phase 2-7: Planned
@@ -676,7 +700,7 @@ type ProviderAdapter interface {
 - **Seed Scripts**: `testing/scripts/seed-workspaces.sh`
 - **Document Generators**: `testing/scripts/lib/document-generator.sh`
 - **Scenarios**: `testing/scripts/scenario-basic.sh`
-- **Templates**: `testing/fixtures/rfcs/rfc-template.md`, `testing/fixtures/prds/PRD-TEMPLATE.md`
+- **Templates**: `testing/fixtures/rfcs/rfc-template.md`, `testing/fixtures/prds/prd-template.md`
 
 ### Configuration
 - **Projects**: `testing/projects.hcl` - Main project configuration
@@ -691,5 +715,6 @@ type ProviderAdapter interface {
 
 ---
 
-**Last Updated**: October 26, 2025  
+**Last Updated**: October 26, 2025
 **Status**: Phase 1 Complete ✅, Phases 2-7 Planned ⏳
+

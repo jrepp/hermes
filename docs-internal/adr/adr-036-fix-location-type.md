@@ -1,22 +1,26 @@
 ---
-id: ADR-036
+id: adr-036
 title: Fix Location Type
 date: 2025-10-07
 type: ADR
 subtype: Configuration Decision
 status: Accepted
-tags: [ember, configuration, routing, location-type]
-related:
-  - RFC-034
+tags: ['ember', 'configuration', 'routing', 'location-type']
+related: ['RFC-034']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: f1cf2017-f977-4461-8b3a-2630c42f118e
 ---
-
 # Fix Location Type
 
 ## Context
 
 Development server failed to load with error:
-```
+
+``` text
 Uncaught Error: Assertion Failed: Could not resolve a location class at 'location:auto'
+
 ```
 
 **Root Cause**: `web/config/environment.js` used `locationType: "auto"`, which was deprecated and removed in Ember 6.x.
@@ -40,11 +44,11 @@ locationType: "history",
   - Recommended for modern apps
   - Requires server routing configuration
   - Better UX with clean URLs
-  
+
 - **`hash`**: Uses URL hash fragments (`/#/documents`)
   - Works without server configuration
   - Older approach but still valid
-  
+
 - **`auto`**: Deprecated in Ember 6.x
   - Automatically chose between history/hash
   - Must be replaced with explicit choice
@@ -76,11 +80,11 @@ locationType: "history",
    - ✅ Simpler server configuration
    - ❌ Ugly URLs with hash fragments
    - ❌ Not modern best practice
-   
+
 2. **Stay with `auto`**
    - ❌ Not supported in Ember 6.x
    - ❌ Application won't load
-   
+
 3. **Custom location implementation**
    - ❌ Unnecessary complexity
    - ❌ Reinventing the wheel
@@ -94,20 +98,22 @@ locationType: "history",
 - Production: Nginx must route all paths to `/index.html`
 
 **Nginx Configuration** (for reference):
+
 ```nginx
 location / {
   try_files $uri $uri/ /index.html;
 }
+
 ```
 
 ## Verification
 
-✅ Dev server rebuilt successfully (1091ms)  
-✅ Application loads at http://localhost:4200/  
-✅ No location resolution errors  
-✅ Navigation between routes works  
-✅ URL changes reflect in address bar  
-✅ Browser back/forward buttons work  
+✅ Dev server rebuilt successfully (1091ms)
+✅ Application loads at http://localhost:4200/
+✅ No location resolution errors
+✅ Navigation between routes works
+✅ URL changes reflect in address bar
+✅ Browser back/forward buttons work
 
 ## Future Considerations
 
@@ -120,3 +126,4 @@ location / {
 - Source: `FIX_LOCATION_TYPE_2025_10_07.md`
 - Ember Router Docs: https://guides.emberjs.com/release/routing/
 - Related: `EMBER_UPGRADE_STRATEGY.md`
+

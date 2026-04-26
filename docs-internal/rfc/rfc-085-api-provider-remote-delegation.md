@@ -1,10 +1,14 @@
 ---
-id: RFC-085
-title: Multi-Provider Architecture with Automatic Pass-Through and Document Synchronization
+id: rfc-085
+created: 2025-11-11
+author: Hermes Team
+project_id: hermes
+doc_uuid: e5776445-4e4b-4dac-8eb5-b8b64405cf99
+status: Proposed
+title: "Multi-Provider Architecture with Automatic Pass-Through and Document Synchronization"
 date: 2025-11-11
 type: RFC
 subtype: Implementation
-status: Proposed
 tags: [multi-provider, pass-through, federation, synchronization, uuid-merging, identity-joining]
 related:
   - RFC-084
@@ -37,7 +41,8 @@ This RFC proposes a multi-provider architecture for Hermes that enables simultan
 ### Use Cases for Multi-Provider Architecture
 
 **Use Case 1: Local Authoring with Central Tracking**
-```
+
+```text
 ┌────────────────────────────────────────────┐
 │ Edge Hermes (Developer Laptop)             │
 ├────────────────────────────────────────────┤
@@ -62,10 +67,12 @@ This RFC proposes a multi-provider architecture for Hermes that enables simultan
 │  • Manages document revision states        │
 │  • Central identity provider               │
 └────────────────────────────────────────────┘
+
 ```
 
 **Use Case 2: Document UUID Merging (Drift Resolution)**
-```
+
+```text
 Scenario: Same document authored independently in two locations
 
 Edge Hermes:
@@ -88,7 +95,8 @@ Resolution via UUID Merging:
 ```
 
 **Use Case 3: Cross-Provider Identity Joining**
-```
+
+```text
 Developer has multiple identities:
   • jacob.repp@hashicorp.com (Google OAuth)
   • jrepp@ibm.com (IBM Verify)
@@ -101,10 +109,12 @@ Flow:
   4. Upon success, identities linked via UnifiedUserID
   5. Documents authored on edge attributed correctly
   6. Permissions propagate across identities
+
 ```
 
 **Use Case 4: Replicated Notifications**
-```
+
+```text
 Document workflow requiring notifications:
   • Document authored on Edge Hermes (local Git)
   • Review requested via Edge UI
@@ -120,7 +130,8 @@ Document workflow requiring notifications:
 ### Multi-Provider Architecture Overview
 
 **Edge Hermes with Multiple Providers**:
-```
+
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                   Edge Hermes (Developer)                       │
 ├─────────────────────────────────────────────────────────────────┤
@@ -156,6 +167,7 @@ Document workflow requiring notifications:
                                    │  - Local                    │
                                    │  - GitHub                   │
                                    └─────────────────────────────┘
+
 ```
 
 ### Automatic Pass-Through Routing
@@ -312,10 +324,12 @@ func (s *DocumentMergeService) updateUUIDReferences(ctx context.Context, oldUUID
 
     return nil
 }
+
 ```
 
 **UUID Merge API Endpoint**:
-```
+
+```text
 POST /api/v2/documents/merge
 Authorization: Bearer <token>
 
@@ -395,10 +409,12 @@ func (s *IdentityJoinService) JoinIdentity(ctx context.Context, req *JoinIdentit
 
     return currentUser, nil
 }
+
 ```
 
 **Identity Join API Flow**:
-```
+
+```text
 1. UI: User clicks "Join Identity" button
    GET /api/v2/identity/join/initiate?provider=github
 
@@ -477,10 +493,12 @@ func (r *NotificationReplicator) SendNotification(ctx context.Context, notificat
 
     return nil
 }
+
 ```
 
 **Notification Replication Flow**:
-```
+
+```text
 Edge Hermes:
   1. User requests document review
   2. NotificationReplicator.SendNotification() called
@@ -817,6 +835,7 @@ func (p *Provider) SearchPeople(ctx context.Context, query string) ([]*workspace
 }
 
 // ... other PeopleProvider, TeamProvider, NotificationProvider, RevisionTrackingProvider methods
+
 ```
 
 ### Provider Feature Matrix
@@ -864,6 +883,7 @@ The multi-provider architecture supports these key capabilities:
 ### Configuration Patterns
 
 **Pattern 1: Multi-Provider Edge with Automatic Pass-Through**:
+
 ```hcl
 # Edge Hermes with local Git + API pass-through to Central
 providers {
@@ -910,6 +930,7 @@ notification_replication {
 ```
 
 **Pattern 2: Central Hermes with Multiple Providers**:
+
 ```hcl
 # Central Hermes tracking documents across Google + Local + GitHub
 providers {
@@ -952,9 +973,11 @@ identity_management {
   # Allow users to join identities via UI
   allow_identity_joining = true
 }
+
 ```
 
 **Pattern 3: Offline-Capable Edge**:
+
 ```hcl
 # Edge Hermes that works offline, syncs when online
 providers {
@@ -998,6 +1021,7 @@ api_workspace {
 ```
 
 **Pattern 4: Development Setup with Identity Joining**:
+
 ```hcl
 # Developer laptop configuration
 providers {
@@ -1043,6 +1067,7 @@ identity_joining {
   # Additional providers to join
   join_providers = ["github", "ibm-verify"]
 }
+
 ```
 
 ## API Contract Requirements
@@ -1136,6 +1161,7 @@ For the API provider to work, the remote Hermes instance must expose consistent 
 
 **Response Format**:
 All endpoints return Hermes-native types (not Google types):
+
 ```json
 {
   "uuid": "550e8400-e29b-41d4-a716-446655440000",
@@ -1171,6 +1197,7 @@ All endpoints return Hermes-native types (not Google types):
 ```
 
 **Content Response Format** (includes BackendRevision):
+
 ```json
 {
   "uuid": "550e8400-e29b-41d4-a716-446655440000",
@@ -1196,6 +1223,7 @@ All endpoints return Hermes-native types (not Google types):
   "contentHash": "sha256:abc123def456...",
   "lastModified": "2025-01-16T14:20:00Z"
 }
+
 ```
 
 ## Error Handling
@@ -1231,6 +1259,7 @@ p.client = &http.Client{
 
 // Context-aware requests
 req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
+
 ```
 
 ### Graceful Degradation
@@ -1277,6 +1306,7 @@ func (p *CachedAPIProvider) GetDocument(ctx context.Context, providerID string) 
     p.cache.Set(providerID, doc, 5*time.Minute)
     return doc, nil
 }
+
 ```
 
 ### Batch Operations
@@ -1327,6 +1357,7 @@ func NewProvider(cfg *Config) (*Provider, error) {
 
     return p, nil
 }
+
 ```
 
 ## Implementation Plan
@@ -1421,3 +1452,4 @@ func NewProvider(cfg *Config) (*Provider, error) {
 **Status**: Proposed
 **Dependencies**: RFC-084 (interfaces), RFC-086 (authentication)
 **Next Steps**: Begin Phase 1 implementation after RFC-084 and RFC-086 are approved
+

@@ -1,6 +1,15 @@
+---
+id: memo-097
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 5e2e25e1-9d11-442f-ae88-72a883e1d74d
+status: Draft
+title: "Project Config API Usage Guide"
+---
 # Project Config API Usage Guide
 
-**Created**: 2025-10-22  
+**Created**: 2025-10-22
 **Package**: `pkg/projectconfig`
 
 ## Overview
@@ -22,6 +31,7 @@ const (
     ProviderStateTarget   = "target"   // Migration: write destination
     ProviderStateArchived = "archived" // No operations
 )
+
 ```
 
 ### State Semantics
@@ -94,6 +104,7 @@ state := provider.GetState() // "active" (or empty defaults to "active")
 role := provider.GetRole()   // "Active (read/write)"
 
 log.Printf("Using %s provider in %s state: %s", provider.Type, state, role)
+
 ```
 
 ### 3. Working with Providers - Migration Scenario
@@ -106,17 +117,17 @@ if project.IsInMigration() {
     if err != nil {
         return fmt.Errorf("migration source not found: %w", err)
     }
-    
+
     // Get target provider (write destination, migrating TO)
     targetProvider, err := project.GetTargetProvider()
     if err != nil {
         return fmt.Errorf("migration target not found: %w", err)
     }
-    
+
     log.Printf("Migration in progress:")
     log.Printf("  Source: %s - %s", sourceProvider.Type, sourceProvider.GetRole())
     log.Printf("  Target: %s - %s", targetProvider.Type, targetProvider.GetRole())
-    
+
     // Read from source, write to target
     documents := readFromProvider(sourceProvider)
     writeToProvider(targetProvider, documents)
@@ -153,11 +164,12 @@ for _, provider := range project.Providers {
     } else if provider.IsArchivedState() {
         // This provider is archived (no operations)
     }
-    
+
     // Get human-readable role description
     role := provider.GetRole()
     log.Printf("%s provider: %s", provider.Type, role)
 }
+
 ```
 
 ## API Response Patterns
@@ -171,10 +183,10 @@ func HandleListProjects(w http.ResponseWriter, r *http.Request) error {
     if err != nil {
         return err
     }
-    
+
     // Get all active projects as sanitized summaries
     summaries := config.GetActiveProjectSummaries()
-    
+
     // Safe to return in API response - no secrets included
     return json.NewEncoder(w).Encode(summaries)
 }
@@ -217,23 +229,24 @@ func HandleListProjects(w http.ResponseWriter, r *http.Request) error {
 // API handler: GET /api/v2/projects/{name}
 func HandleGetProject(w http.ResponseWriter, r *http.Request) error {
     projectName := mux.Vars(r)["name"]
-    
+
     config, err := projectconfig.LoadConfigFromEnv()
     if err != nil {
         return err
     }
-    
+
     project, err := config.GetProject(projectName)
     if err != nil {
         http.Error(w, "Project not found", http.StatusNotFound)
         return nil
     }
-    
+
     // Convert to sanitized summary
     summary := project.ToSummary()
-    
+
     return json.NewEncoder(w).Encode(summary)
 }
+
 ```
 
 ### 7. Project Summary Structure (What APIs Return)
@@ -246,16 +259,16 @@ type ProjectSummary struct {
     ShortName    string             `json:"short_name"`
     Description  string             `json:"description"`
     Status       string             `json:"status"`
-    
+
     // Computed fields
     IsActive     bool               `json:"is_active"`
     IsArchived   bool               `json:"is_archived"`
     IsCompleted  bool               `json:"is_completed"`
     InMigration  bool               `json:"in_migration"`
-    
+
     // Provider information (sanitized)
     Providers    []*ProviderSummary `json:"providers"`
-    
+
     // Metadata (no secrets)
     Metadata     *Metadata          `json:"metadata,omitempty"`
 }
@@ -264,7 +277,7 @@ type ProviderSummary struct {
     Type             string   `json:"type"`              // local, google, remote-hermes
     State            string   `json:"state"`             // active, source, target, archived
     Role             string   `json:"role"`              // Human-readable description
-    
+
     // Type-specific fields (non-sensitive only)
     WorkspacePath    string   `json:"workspace_path,omitempty"`
     WorkspaceID      string   `json:"workspace_id,omitempty"`
@@ -273,10 +286,10 @@ type ProviderSummary struct {
     GitRepository    string   `json:"git_repository,omitempty"`
     GitBranch        string   `json:"git_branch,omitempty"`
     IndexingEnabled  bool     `json:"indexing_enabled"`
-    
+
     // Authentication indicator (no credentials)
     HasAuthentication bool    `json:"has_authentication"`
-    
+
     // Non-sensitive IDs
     SharedDriveIDs   []string `json:"shared_drive_ids,omitempty"`
 }
@@ -293,32 +306,32 @@ func MigrateProject(projectName string) error {
     if err != nil {
         return err
     }
-    
+
     project, err := config.GetProject(projectName)
     if err != nil {
         return err
     }
-    
+
     // Verify project is in migration
     if !project.IsInMigration() {
         return fmt.Errorf("project %s is not in migration", projectName)
     }
-    
+
     // Get source and target providers
     source, err := project.GetSourceProvider()
     if err != nil {
         return fmt.Errorf("no source provider: %w", err)
     }
-    
+
     target, err := project.GetTargetProvider()
     if err != nil {
         return fmt.Errorf("no target provider: %w", err)
     }
-    
+
     log.Printf("Migration plan:")
     log.Printf("  FROM: %s (%s) - %s", source.Type, source.GetState(), source.GetRole())
     log.Printf("  TO:   %s (%s) - %s", target.Type, target.GetState(), target.GetRole())
-    
+
     // Initialize source (read-only)
     if source.IsGoogle() {
         sourceWorkspace, err := initGoogleWorkspace(source)
@@ -326,7 +339,7 @@ func MigrateProject(projectName string) error {
             return err
         }
         defer sourceWorkspace.Close()
-        
+
         // Initialize target (write)
         if target.IsLocal() {
             targetWorkspace, err := initLocalWorkspace(target, config.WorkspaceBasePath)
@@ -334,14 +347,15 @@ func MigrateProject(projectName string) error {
                 return err
             }
             defer targetWorkspace.Close()
-            
+
             // Perform migration
             return migrateDocuments(sourceWorkspace, targetWorkspace)
         }
     }
-    
+
     return fmt.Errorf("unsupported migration path: %s -> %s", source.Type, target.Type)
 }
+
 ```
 
 ## Configuration Examples
@@ -355,22 +369,22 @@ project "testing" {
   friendly_name = "Hermes Testing"
   short_name    = "TEST"
   status        = "active"
-  
+
   provider "local" {
     migration_status = "active"  # Or omit - defaults to "active"
     workspace_path   = "testing"
-    
+
     git {
       repository = "https://github.com/hashicorp-forge/hermes"
       branch     = "main"
     }
-    
+
     indexing {
       enabled = true
       allowed_extensions = ["md", "txt", "json"]
     }
   }
-  
+
   metadata {
     created_at = "2025-10-22T00:00:00Z"
     owner      = "hermes-dev-team"
@@ -380,6 +394,7 @@ project "testing" {
 ```
 
 **API Response**:
+
 ```json
 {
   "name": "testing",
@@ -400,6 +415,7 @@ project "testing" {
     }
   ]
 }
+
 ```
 
 ### 10. Migration Scenario (Google → Local)
@@ -411,7 +427,7 @@ project "docs" {
   friendly_name = "Hermes Docs"
   short_name    = "DOCS"
   status        = "active"
-  
+
   # Source: Google Workspace (read-only during migration)
   provider "google" {
     migration_status      = "source"
@@ -420,23 +436,23 @@ project "docs" {
     credentials_path      = env("GOOGLE_CREDENTIALS_PATH")
     shared_drive_ids      = [env("GOOGLE_SHARED_DRIVE_ID")]
   }
-  
+
   # Target: Local Filesystem (write destination during migration)
   provider "local" {
     migration_status = "target"
     workspace_path   = "docs"
-    
+
     git {
       repository = "https://github.com/hashicorp-forge/hermes-docs"
       branch     = "main"
     }
-    
+
     indexing {
       enabled = true
       allowed_extensions = ["md", "txt"]
     }
   }
-  
+
   metadata {
     owner = "docs-team"
     tags  = ["documentation", "migration"]
@@ -446,6 +462,7 @@ project "docs" {
 ```
 
 **API Response**:
+
 ```json
 {
   "name": "docs",
@@ -475,6 +492,7 @@ project "docs" {
     }
   ]
 }
+
 ```
 
 ## Best Practices
@@ -512,7 +530,7 @@ func SelectProvider(project *projectconfig.Project, readOnly bool) (*projectconf
             return project.GetTargetProvider()
         }
     }
-    
+
     // Non-migration: use active provider
     return project.GetActiveProvider()
 }
@@ -527,18 +545,18 @@ func NewWorkspaceService(projectName string) (*WorkspaceService, error) {
     if err != nil {
         return nil, err
     }
-    
+
     project, err := config.GetProject(projectName)
     if err != nil {
         return nil, err
     }
-    
+
     // Get primary provider (handles migration)
     provider, err := project.GetPrimaryProvider()
     if err != nil {
         return nil, err
     }
-    
+
     // Initialize based on provider type
     if provider.IsLocal() {
         return NewLocalWorkspaceService(provider, config.WorkspaceBasePath)
@@ -547,9 +565,10 @@ func NewWorkspaceService(projectName string) (*WorkspaceService, error) {
     } else if provider.IsRemoteHermes() {
         return NewRemoteHermesService(provider)
     }
-    
+
     return nil, fmt.Errorf("unsupported provider type: %s", provider.Type)
 }
+
 ```
 
 ### Pattern 3: Document Operations with Provider Awareness
@@ -559,10 +578,10 @@ func NewWorkspaceService(projectName string) (*WorkspaceService, error) {
 func ReadDocument(projectName, docID string) (*Document, error) {
     config, _ := projectconfig.LoadConfigFromEnv()
     project, _ := config.GetProject(projectName)
-    
+
     var provider *projectconfig.Provider
     var err error
-    
+
     if project.IsInMigration() {
         // During migration, read from source
         provider, err = project.GetSourceProvider()
@@ -570,11 +589,11 @@ func ReadDocument(projectName, docID string) (*Document, error) {
         // Normal operation, use active provider
         provider, err = project.GetActiveProvider()
     }
-    
+
     if err != nil {
         return nil, err
     }
-    
+
     return readDocumentFromProvider(provider, docID)
 }
 
@@ -582,13 +601,13 @@ func ReadDocument(projectName, docID string) (*Document, error) {
 func WriteDocument(projectName string, doc *Document) error {
     config, _ := projectconfig.LoadConfigFromEnv()
     project, _ := config.GetProject(projectName)
-    
+
     // Always write to primary provider (target during migration)
     provider, err := project.GetPrimaryProvider()
     if err != nil {
         return err
     }
-    
+
     return writeDocumentToProvider(provider, doc)
 }
 ```
@@ -605,6 +624,7 @@ provider "local" {
   migration_status = "active"  // Or omit this line
   workspace_path = "testing"
 }
+
 ```
 
 ### Error: "no source provider found"
@@ -633,6 +653,7 @@ if project.IsInMigration() {
     // Use active provider only
     provider, _ := project.GetActiveProvider()
 }
+
 ```
 
 ## Summary
@@ -660,3 +681,4 @@ if project.IsInMigration() {
 - Always use `ToSummary()` or `GetAllProjectSummaries()` for API responses
 - Never return raw `Provider` objects with credentials
 - `ProviderSummary` automatically excludes secrets
+

@@ -1,17 +1,17 @@
 ---
-id: ADR-073
+id: adr-073
 title: Provider Abstraction Architecture
 date: 2025-10-09
 type: ADR
 subtype: System Architecture
 status: Accepted
-tags: [architecture, abstraction, providers, workspace, authentication, search]
-related:
-  - RFC-007
-  - RFC-047
-  - RFC-076
+tags: ['architecture', 'abstraction', 'providers', 'workspace', 'authentication', 'search']
+related: ['RFC-007', 'RFC-047', 'RFC-076']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: 7840bd07-7728-4eac-97e9-d7b4302c79b4
 ---
-
 # Provider Abstraction Architecture
 
 ## Context
@@ -36,6 +36,7 @@ Implement provider abstraction layer with interfaces for authentication, workspa
 **Architecture**:
 
 ### 1. Authentication Provider (`pkg/auth/provider.go`)
+
 ```go
 type Provider interface {
     ValidateIDToken(ctx context.Context, rawIDToken string) (*User, error)
@@ -47,9 +48,11 @@ Implementations:
 - GoogleAdapter (production)
 - OktaAdapter (enterprise)
 - DexAdapter (development/testing)
+
 ```
 
 ### 2. Workspace Provider (`pkg/workspace/provider.go`)
+
 ```go
 type Provider interface {
     GetDocument(ctx context.Context, id string, isDraft bool) (*Document, error)
@@ -66,6 +69,7 @@ Implementations:
 ```
 
 ### 3. Search Provider (`pkg/search/provider.go`)
+
 ```go
 type Provider interface {
     Index(ctx context.Context, indexName string, docs []Document) error
@@ -77,9 +81,11 @@ type Provider interface {
 Implementations:
 - AlgoliaAdapter (production)
 - MeilisearchAdapter (development/testing)
+
 ```
 
 ### 4. Configuration-Driven Selection
+
 ```hcl
 providers {
   auth      = "dex"        # or "google", "okta"
@@ -109,17 +115,20 @@ providers {
 ## Measured Results
 
 **Code Metrics**:
-```
+
+``` text
 Metric                      | Before | After | Change
 ----------------------------|--------|-------|--------
 Handler LOC                 | 3200   | 2100  | -34%
 Provider-specific code      | Mixed  | 1800  | Isolated
 Test coverage               | 45%    | 78%   | +73%
 Mock complexity (lines)     | 450    | 120   | -73%
+
 ```
 
 **Development Velocity**:
-```
+
+``` text
 Task                        | Before | After | Improvement
 ----------------------------|--------|-------|------------
 Add new API endpoint        | 4h     | 1.5h  | 2.7x faster
@@ -129,12 +138,14 @@ Switch to different provider| 2d     | 5min  | 576x faster
 ```
 
 **Provider Implementation Effort**:
-```
+
+``` text
 Provider Type | Methods | LOC  | Time to Implement
 --------------|---------|------|------------------
 Auth          | 3       | 150  | 4 hours
 Workspace     | 15      | 800  | 2 days
 Search        | 6       | 300  | 6 hours
+
 ```
 
 ## Design Patterns Applied
@@ -147,6 +158,7 @@ Wraps third-party APIs (Google, Algolia) into common interface.
 
 ### 3. Factory Pattern
 Provider creation based on configuration:
+
 ```go
 func NewAuthProvider(cfg Config) (auth.Provider, error) {
     switch cfg.Providers.Auth {
@@ -162,12 +174,14 @@ func NewAuthProvider(cfg Config) (auth.Provider, error) {
 
 ### 4. Dependency Injection
 Handlers receive providers via constructor:
+
 ```go
 func NewDocumentsHandler(
     workspace workspace.Provider,
     search search.Provider,
     logger hclog.Logger,
 ) *DocumentsHandler
+
 ```
 
 ## Provider Compatibility Matrix
@@ -185,6 +199,7 @@ func NewDocumentsHandler(
 ## Configuration Examples
 
 ### Development
+
 ```hcl
 profile "development" {
   providers {
@@ -196,6 +211,7 @@ profile "development" {
 ```
 
 ### Staging
+
 ```hcl
 profile "staging" {
   providers {
@@ -204,9 +220,11 @@ profile "staging" {
     search    = "algolia"
   }
 }
+
 ```
 
 ### Hybrid (Testing with Real Auth)
+
 ```hcl
 profile "integration" {
   providers {
@@ -224,8 +242,10 @@ All methods accept `context.Context` for cancellation and deadlines.
 
 ### 2. Error Transparency
 Providers return provider-specific errors wrapped with context:
+
 ```go
 return nil, fmt.Errorf("google workspace: get document: %w", err)
+
 ```
 
 ### 3. Idempotency
@@ -233,6 +253,7 @@ Operations are idempotent where possible (create, update, delete).
 
 ### 4. Pagination
 Search operations support cursor-based pagination:
+
 ```go
 type SearchQuery struct {
     Query  string
@@ -247,6 +268,7 @@ Interfaces expose only essential operations, keep methods focused.
 ## Testing Strategy
 
 ### Unit Tests
+
 ```go
 // Mock provider
 type MockWorkspace struct {
@@ -262,17 +284,19 @@ func TestHandler(t *testing.T) {
     handler := NewDocumentsHandler(mock, ...)
     // Test handler logic in isolation
 }
+
 ```
 
 ### Integration Tests
+
 ```go
 func TestRealProviders(t *testing.T) {
     // Test with real Google Workspace
     google := google.NewAdapter(cfg)
-    
+
     // Test with real local filesystem
     local := local.NewAdapter(cfg)
-    
+
     // Both should satisfy same interface
     testProviderBehavior(t, google)
     testProviderBehavior(t, local)
@@ -292,23 +316,23 @@ func TestRealProviders(t *testing.T) {
 ## Alternatives Considered
 
 ### 1. ❌ Plugin System (Go plugins)
-**Pros**: Runtime loading, third-party providers  
-**Cons**: Fragile, build complexity, version hell  
+**Pros**: Runtime loading, third-party providers
+**Cons**: Fragile, build complexity, version hell
 **Rejected**: Not worth complexity for known providers
 
 ### 2. ❌ Microservices (Separate provider services)
-**Pros**: Independent scaling, polyglot  
-**Cons**: Network overhead, operational complexity  
+**Pros**: Independent scaling, polyglot
+**Cons**: Network overhead, operational complexity
 **Rejected**: Overkill for current scale
 
 ### 3. ❌ Single Concrete Implementation
-**Pros**: Simpler code, no abstraction  
-**Cons**: Hard to test, inflexible, vendor lock-in  
+**Pros**: Simpler code, no abstraction
+**Cons**: Hard to test, inflexible, vendor lock-in
 **Rejected**: Already caused problems
 
 ### 4. ❌ Code Generation (OpenAPI/gRPC)
-**Pros**: Automatic client generation  
-**Cons**: Build complexity, opinionated structure  
+**Pros**: Automatic client generation
+**Cons**: Build complexity, opinionated structure
 **Rejected**: Overkill, hand-written interfaces sufficient
 
 ## Future Considerations
@@ -322,8 +346,9 @@ func TestRealProviders(t *testing.T) {
 
 ## Related Documentation
 
-- `pkg/auth/README.md` - Auth provider architecture
-- `pkg/workspace/README.md` - Workspace provider guide
-- `pkg/search/README.md` - Search provider implementation
+- `pkg/auth/readme.md` - Auth provider architecture
+- `pkg/workspace/readme.md` - Workspace provider guide
+- `pkg/search/readme.md` - Search provider implementation
 - RFC-007 - Multi-Provider Auth Architecture
 - RFC-076 - Search and Auth Refactoring
+

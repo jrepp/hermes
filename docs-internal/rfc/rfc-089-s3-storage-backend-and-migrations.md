@@ -1,10 +1,14 @@
 ---
-id: RFC-089
-title: S3-Compatible Storage Backend and Document Migration System
+id: rfc-089
+created: 2025-11-15
+author: Hermes Team
+project_id: hermes
+doc_uuid: 3727c043-2d93-477d-b13c-60e27364f8ae
+status: Draft
+title: "S3-Compatible Storage Backend and Document Migration System"
 date: 2025-11-15
 type: RFC
 subtype: Architecture Design
-status: Draft
 tags: [storage, s3, migration, multi-backend, archival, provider]
 related:
   - RFC-084
@@ -46,6 +50,7 @@ Hermes currently supports two primary workspace providers:
 Hermes already has excellent multi-backend support via RFC-084:
 
 **UUID-Based Document Model**:
+
 ```go
 type Document struct {
     UUID       docid.UUID  // Stable global identifier
@@ -60,10 +65,12 @@ type DocumentRevision struct {
     BackendRevision string  // S3 version ID, Git commit, Google rev number
     SyncStatus      string  // "canonical", "mirror", "conflict", "archived"
 }
+
 ```
 
 **Multi-Backend Document Example** (from RFC-084):
-```
+
+```text
 Document UUID: 550e8400-e29b-41d4-a716-446655440000
 Title: "RFC-001: API Gateway Design"
 
@@ -116,7 +123,7 @@ Revision 3: Local Git (migration in progress)
 
 **Event-Driven Architecture using Kafka/Redpanda + Outbox Pattern (RFC-080, RFC-087)**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │ Hermes Core                                                           │
 │                                                                       │
@@ -243,6 +250,7 @@ Revision 3: Local Git (migration in progress)
 │ │ - Retry failed items from DLQ                                   │  │
 │ └────────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
+
 ```
 
 ## Component Design
@@ -451,6 +459,7 @@ workspace {
     multipart_threshold_mb = 100
   }
 }
+
 ```
 
 ### 2. Database Schema Extensions
@@ -564,6 +573,7 @@ CREATE INDEX idx_migration_jobs_dest ON migration_jobs(dest_provider_id);
 CREATE INDEX idx_migration_jobs_created ON migration_jobs(created_at);
 CREATE INDEX idx_migration_jobs_scheduled ON migration_jobs(scheduled_at) WHERE status = 'pending' AND schedule_type = 'scheduled';
 CREATE INDEX idx_migration_jobs_next_run ON migration_jobs(next_run_at) WHERE recurrence_enabled = true;
+
 ```
 
 #### Migration Items
@@ -655,9 +665,11 @@ CREATE TABLE migration_outbox (
 CREATE INDEX idx_migration_outbox_status ON migration_outbox(status, created_at);
 CREATE INDEX idx_migration_outbox_job ON migration_outbox(migration_job_id);
 CREATE INDEX idx_migration_outbox_document ON migration_outbox(document_uuid);
+
 ```
 
 **Payload Schema Example**:
+
 ```json
 {
   "job_config": {
@@ -701,6 +713,7 @@ CREATE INDEX idx_migration_outbox_document ON migration_outbox(document_uuid);
 -- - provider_document_id: Provider-specific ID
 -- - content_hash: For drift detection
 -- - status: For sync status tracking
+
 ```
 
 ### 3. Migration Orchestrator
@@ -946,6 +959,7 @@ func (r *Relay) publishEvent(ctx context.Context, event *models.MigrationOutbox)
         },
     }, nil)
 }
+
 ```
 
 #### Migration Worker (Kafka Consumer)
@@ -1387,12 +1401,14 @@ func (h *AdminHandler) RollbackMigration(c *gin.Context) {
 
     c.JSON(200, gin.H{"status": "rolled back"})
 }
+
 ```
 
 #### UI Mockup
 
 **Provider Management Screen**:
-```
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Hermes Admin / Storage Providers                               │
 ├────────────────────────────────────────────────────────────────┤
@@ -1419,7 +1435,8 @@ func (h *AdminHandler) RollbackMigration(c *gin.Context) {
 ```
 
 **Migration Dashboard**:
-```
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Hermes Admin / Migrations                                      │
 ├────────────────────────────────────────────────────────────────┤
@@ -1444,10 +1461,12 @@ func (h *AdminHandler) RollbackMigration(c *gin.Context) {
 │ │ office365-test      google-prod  o365-dev    ❌ Failed   │  │
 │ └──────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────┘
+
 ```
 
 **Migration Detail View**:
-```
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │ Migration: google-to-s3-rfcs                    [Pause] [❌]    │
 ├────────────────────────────────────────────────────────────────┤
@@ -1655,6 +1674,7 @@ GET /api/v2/admin/migrations/1
   "migrated_documents": 450,
   "failed_documents": 2
 }
+
 ```
 
 ### Use Case 2: Migrate from Google Docs to Markdown in S3
@@ -1699,6 +1719,7 @@ workspace {
     }
   }
 }
+
 ```
 
 ### Use Case 4: Test Migration Before Production
@@ -1730,6 +1751,7 @@ POST /api/v2/admin/migrations/5/rollback
   "delete_migrated_documents": true,
   "restore_original_sync_status": true
 }
+
 ```
 
 ## Benefits
@@ -1920,3 +1942,4 @@ POST /api/v2/admin/migrations/5/rollback
 **Author**: Engineering Team
 **Created**: 2025-11-15
 **Last Updated**: 2025-11-15
+

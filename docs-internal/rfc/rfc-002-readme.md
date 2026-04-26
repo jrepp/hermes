@@ -1,93 +1,66 @@
+---
+id: rfc-002
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: d5212400-cb04-45ef-afec-161c50c6f587
+status: Draft
+title: "RFC Documents (Request for Comments)"
+---
+
 # RFC Documents (Request for Comments)
 
-Architecture proposals, design documents, and implementation specifications for major features and refactorings in Hermes.
+Architecture proposals, design documents, and implementation specifications for major features in Hermes. These describe proposed or in-progress designs — finalized decisions should be recorded as ADRs.
 
 ## Quick Stats
 
-- **Total RFC docs**: 47
-- **Scope**: architecture proposals, implementation plans, status updates, and rollout notes
-
-## Current Patterns
-
-**Key Architectural Patterns** (as of October 2025):
-- **Provider Abstraction**: All external services (search, workspace, auth) use adapter pattern
-- **Backend Proxy**: Frontend proxies all API/search requests through backend (no direct Algolia)
-- **Multi-Auth Support**: Runtime selection of auth provider (Google/Okta/Dex) via flag/env var
-- **Profile-Based Config**: Single HCL file with multiple named environments
-- **Docker Testing**: Full containerized environment with Ember dev server + proxy
-
-**Frontend Development**:
-- Ember 6.7.0 with TypeScript and strict mode templates
-- Development server with `--proxy` flag (no nginx required)
-- MIRAGE_ENABLED=false for backend integration
-- Hot reload via Ember CLI dev server
-
-**Backend Development**:
-- Go 1.25.0+ with provider interfaces
-- Config via HCL with profile support (`-profile=testing`)
-- PostgreSQL + Meilisearch (local) or Algolia (production)
-- Dex OIDC for local auth, Google/Okta for production
+- **Total RFCs**: 18
+- **Scope**: architecture proposals, design documents, feature specifications
 
 ## Index by Category
 
-### Authentication & Authorization (5 RFCs)
-
-| ID | Title | Status | Description |
-|----|-------|--------|-------------|
-| [007](007-multi-provider-auth-architecture.md) | Multi-Provider Auth Architecture | Implemented | Runtime auth provider selection (Google/Okta/Dex) with provider-specific headers |
-| [009](009-auth-provider-selection.md) | Auth Provider Selection | Implemented | Command-line flag and env var for explicit auth provider override |
-| [020](020-dex-authentication-implementation.md) | Dex OIDC Implementation | Implemented | Complete Dex integration for local development and testing |
-| [021](021-dex-authentication.md) | Dex Authentication | Implemented | Dex IDP architecture and deployment configurations |
-| [079](079-session-authentication-fix.md) | Session Authentication Fix | Implemented | Session-based auth flow for OIDC providers |
-
-### Search Architecture (4 RFCs)
-
-| ID | Title | Status | Description |
-|----|-------|--------|-------------|
-| [051](051-outbox-pattern-design.md) | Outbox Pattern Design | Design Phase | Async search index updates with person/identity tracking and transactional consistency |
-| [076](076-search-auth-refactoring.md) | Search & Auth Refactoring | Implemented | Backend-only search eliminating direct Algolia access |
-| [077](077-search-endpoint-impl.md) | Search Endpoint Implementation | Implemented | Search endpoint design and implementation |
-| [078](078-search-service-migration.md) | Search Service Migration | Implemented | Migration to backend proxy pattern for search |
-
-### Document Management (2 RFCs)
-
-| ID | Title | Status | Description |
-|----|-------|--------|-------------|
-| [026](026-document-editor.md) | Document Editor | Implemented | Smart editor supporting Google Workspace (iframe) and local workspace (text editor) |
-| [047](047-local-workspace-setup.md) | Local Workspace Setup | Implemented | File-based document storage provider for testing |
-
-### Frontend Infrastructure (3 RFCs)
-
-| ID | Title | Status | Description |
-|----|-------|--------|-------------|
-| [033](033-ember-dev-server-migration.md) | Ember Dev Server Migration | Implemented | Migration from Mirage to backend proxy |
-| [034](034-ember-upgrade-strategy.md) | Ember Upgrade Strategy | Partially Complete | Strategy for Ember 6.x upgrade |
-| [037](037-frontend-proxy-config.md) | Frontend Proxy Config | Implemented | Frontend-to-backend proxy configuration |
-
-### Configuration & Deployment (2 RFCs)
-
-| ID | Title | Status | Description |
-|----|-------|--------|-------------|
-| [050](050-oauth-redirect-baseurl.md) | OAuth Redirect BaseURL | Implemented | Environment-agnostic OAuth redirect configuration |
-| [068](068-workspace-provider-selection.md) | Workspace Provider Selection | Implemented | Runtime selection of storage backend (Google/Local/S3/Azure) |
-
-### User Experience (1 RFC)
+### Core Architecture
 
 | ID | Title | Status | Description |
 |----|-------|--------|-------------|
 | [083](rfc-083-simplified-local-mode.md) | Simplified Local Mode | Proposed | Zero-config single-binary CMS with embedded database and search |
+| [084](rfc-084-provider-interface-refactoring.md) | Provider Interface Refactoring | In Progress | Multi-backend provider interface refactoring |
+| [085](rfc-085-api-provider-remote-delegation.md) | API Provider Remote Delegation | In Progress | Multi-provider architecture with pass-through, UUID merging |
+| [088](rfc-088-event-driven-indexer.md) | Event-Driven Indexer | In Progress | Event-driven document indexer with pipeline rulesets |
 
-## Index by Status
+### Data & Storage
 
-### ✅ Implemented (many)
-- Most historical RFC plans in this folder are implemented or superseded.
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [051](rfc-051-outbox-pattern-design.md) | Outbox Pattern Design | Design Phase | Async search index updates with transactional consistency |
+| [080](rfc-080-outbox-pattern-document-sync.md) | Outbox Pattern Document Sync | Design Phase | Transactional outbox pattern for DB/search consistency |
+| [089](rfc-089-s3-storage-backend-and-migrations.md) | S3 Storage Backend & Migrations | In Progress | S3 storage backend, document migration between providers |
+| [091](rfc-091-document-revisions-and-migration.md) | Document Revisions & Migration | Design Phase | Provider-project-document-revision model |
+| [092](rfc-092-instance-identity.md) | Instance Identity | Approved | Composite instance + project identity in distributed system |
 
-## Index Notes
+### Indexing
 
-- This index now includes milestone and completion notes for RFC-088 and RFC-089 in addition to earlier RFCs.
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [003](rfc-003-rfc-indexer-architecture.md) | Indexer Architecture | Partially Implemented | Distributed document discovery/indexing architecture |
+| [004](rfc-004-rfc-indexer-architecture.md) | Indexer Architecture (Consolidated) | Partially Implemented | Consolidated indexer architecture design |
 
-### Proposed / In-Progress
-- **051** (Outbox Pattern), **083** (Simplified Local Mode), and newer entries listed with their in-file status.
+### Notifications
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [086](rfc-086-authentication-bearer-tokens.md) | Authentication Bearer Tokens | Design Phase | Bearer token management for delegated operations |
+| [087](rfc-087-notification-backend.md) | Notification Backend | In Progress | Multi-backend notification system with Redpanda message queues |
+
+### Features
+
+| ID | Title | Status | Description |
+|----|-------|--------|-------------|
+| [001](rfc-001-local-developer-mode-with-central-hermes.md) | Local Developer Mode | Draft | Local dev mode with SQLite + bidirectional sync |
+| [078](rfc-078-new-document-types.md) | New Document Types | Proposed | ADR, Memo, FRD, PATH document types |
+| [079](rfc-079-local-editor-e2e-testing.md) | Local Editor E2E Testing | Proposed | In-browser editor for local dev E2E testing |
+| [090](rfc-090-admin-interface.md) | Admin Interface | Proposed | Comprehensive admin UI |
+| [093](rfc-093-projectconfig-integration.md) | ProjectConfig Integration | Planning | Integrating pkg/projectconfig into server/API layer |
 
 ## Document Format
 
@@ -96,43 +69,26 @@ Each RFC follows this structure:
 ```markdown
 # RFC-NNN: Title
 
-**Status**: Design Phase | Implemented | Superseded
+**Status**: Design Phase | In Progress | Implemented | Superseded
 **Date**: YYYY-MM-DD
-**Type**: RFC (Architecture | Configuration | Feature)
 **Related**: Links to related RFCs/ADRs
 
 ## Context
-Problem statement and background
-
 ## Proposal/Solution
-Architecture and implementation approach
-
 ## Benefits
-Key advantages and improvements
-
 ## Implementation Status
-Checkboxes for completed/pending work
-
 ## References
-Source documents and related materials
 ```
 
 ## Contributing
 
-When adding new RFCs:
 1. Assign next sequential ID (NNN format)
-2. Use descriptive kebab-case filename
-3. Include comprehensive front matter
+2. Use descriptive kebab-case filename: `rfc-NNN-description.md`
+3. Include context, proposal, benefits, implementation plan
 4. Link related RFCs and ADRs
 5. Update this README index
+6. When a proposal is finalized and implemented, promote to ADR
 
-## Implementation References
+## Relationship to ADRs
 
-For practical implementation guidance, see:
-- **Memos**: `docs-internal/memo/` - Quick reference guides, trackers, and summaries
-- **Copilot Instructions**: `.github/copilot-instructions.md` - Current project patterns
-
-**Key Implementation Docs**:
-- [MEMO-010: Ember Upgrade & Dev Server](../memo/memo-010-ember-dev-server.md) - Frontend development setup
-- [MEMO-023: Dex Quick Start](../memo/memo-023-dex-quickstart.md) - Local auth setup
-- [MEMO-035: Environment Setup](../memo/memo-035-env-setup.md) - Docker vs native development options
+RFCs describe proposed designs. Once a design is implemented and the decision is finalized, it should be recorded as an ADR. The RFC may remain as reference, but the ADR is the authoritative record of the decision.

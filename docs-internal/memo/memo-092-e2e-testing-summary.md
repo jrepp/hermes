@@ -1,16 +1,26 @@
+---
+id: memo-092
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: adf92ee9-6567-4033-ac08-e12495dcd556
+status: Draft
+title: "E2E Testing with Template Compilation Issues - Summary"
+---
 # E2E Testing with Template Compilation Issues - Summary
 
-**Date:** October 21, 2025  
-**Branch:** jrepp/dev-tidy  
+**Date:** October 21, 2025
+**Branch:** jrepp/dev-tidy
 **Status:** Frontend template compilation error blocks UI rendering
 
 ## Problem
 
 The Hermes web application has a **runtime template compilation error** that prevents pages from rendering:
 
-```
-Error: Attempted to call `precompileTemplate` at runtime, 
+```text
+Error: Attempted to call `precompileTemplate` at runtime,
 but this API is meant to be used at compile time.
+
 ```
 
 **Impact:**
@@ -64,6 +74,7 @@ cd web
 yarn test:unit              # Unit tests
 yarn test:integration       # Component integration tests
 yarn test:acceptance        # Acceptance tests (may fail due to template issue)
+
 ```
 
 ## Root Cause Investigation
@@ -108,12 +119,15 @@ cat ember-cli-build.js
 ### Potential Fixes:
 
 1. **Update ember-template-imports:**
+
    ```bash
    cd web
    yarn upgrade ember-template-imports
+
    ```
 
 2. **Rebuild from clean state:**
+
    ```bash
    cd web
    rm -rf dist tmp node_modules/.cache
@@ -127,10 +141,12 @@ cat ember-cli-build.js
    - Review `app/components/modals.gts` and other .gts files
 
 4. **Bisect recent commits:**
+
    ```bash
    # Test with an earlier commit
    git checkout <earlier-commit>
    cd testing && docker compose build web && docker compose up -d web
+
    ```
 
 ## Testing Environment Status
@@ -157,13 +173,16 @@ cat ember-cli-build.js
 ### Immediate Actions:
 
 1. **Use API-level testing for validation:**
+
    ```bash
    ./tests/api/curl-based-test.sh
    ```
 
 2. **Run existing unit/integration tests:**
+
    ```bash
    cd web && yarn test:unit
+
    ```
 
 3. **Document the template error in a GitHub issue**
@@ -181,6 +200,7 @@ cat ember-cli-build.js
    - Verify with playwright-mcp navigation
 
 3. **Once fixed, resume E2E testing:**
+
    ```bash
    cd tests/e2e-playwright
    npx playwright test document-content-editor.spec.ts
@@ -244,3 +264,4 @@ cat ember-cli-build.js
 **The backend works perfectly** - the API tests will prove this. The frontend has a template compilation bug that needs investigation and fixing, but this doesn't block API-level validation of document creation and update functionality.
 
 **Next action:** Run `./tests/api/curl-based-test.sh` to verify the backend CRUD operations work correctly, then investigate and fix the template compilation issue.
+

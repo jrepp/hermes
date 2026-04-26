@@ -1,3 +1,12 @@
+---
+id: memo-021
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: bd1bfbd0-cde2-4113-a038-f27df7a0b8e1
+status: Draft
+title: "Local Workspace Provider Setup for Testing Environment"
+---
 # Local Workspace Provider Setup for Testing Environment
 
 ## Overview
@@ -27,11 +36,12 @@ local_workspace {
   users_path   = "/app/workspace_data/users"
   tokens_path  = "/app/workspace_data/tokens"
   domain       = "hermes.local"
-  
+
   smtp {
     enabled = false
   }
 }
+
 ```
 
 ### Volume Mounts (`testing/docker-compose.yml`)
@@ -76,6 +86,7 @@ All users have:
 ```bash
 cd testing
 docker compose up -d --build
+
 ```
 
 ### Login
@@ -117,13 +128,14 @@ curl -H "Authorization: Bearer $TOKEN" \
 # Search users
 curl -H "Authorization: Bearer $TOKEN" \
   "http://localhost:8001/api/v1/users?q=admin"
+
 ```
 
 ## Document Persistence
 
 Documents created in the acceptance testing environment are stored in the `hermes_workspace` Docker volume:
 
-```
+```text
 /app/workspace_data/
 ├── users.json          # Static user data (mounted from host)
 ├── docs/               # Published documents (persisted in volume)
@@ -149,6 +161,7 @@ docker run --rm -v testing_hermes_workspace:/data -v $(pwd):/backup \
 # Clear all workspace data (start fresh)
 docker compose down -v
 docker compose up -d
+
 ```
 
 ## Adding More Test Users
@@ -173,6 +186,7 @@ Then restart the Hermes container:
 
 ```bash
 docker compose restart hermes
+
 ```
 
 **Note**: To allow login with the new user, you must also add them to `testing/dex-config.yaml` under `staticPasswords`.
@@ -212,17 +226,20 @@ docker compose restart hermes
 ## Architecture Comparison
 
 ### Previous (Google Workspace)
-```
+
+```text
 Browser → Hermes → Google Drive API → Google Docs
                 → Google People API → User Directory
 ```
 
 ### Current (Local Workspace)
-```
+
+```text
 Browser → Hermes → Local Filesystem → users.json
                                     → docs/*.md
                                     → drafts/*.md
                 → Dex OIDC → Static Passwords
+
 ```
 
 ## Benefits
@@ -247,12 +264,14 @@ Browser → Hermes → Local Filesystem → users.json
 To migrate from local workspace back to Google Workspace:
 
 1. Update `testing/config.hcl`:
+
    ```hcl
    providers {
      workspace = "google"
      search    = "algolia"
    }
    ```
+
 2. Uncomment Google Workspace credentials in config.hcl
 3. Remove or keep users.json (harmless if present)
 4. Restart: `docker compose restart hermes`
@@ -260,6 +279,7 @@ To migrate from local workspace back to Google Workspace:
 ## Related Documentation
 
 - **Design**: `docs-internal/completed/WORKSPACE_ABSTRACTION_DESIGN.md`
-- **Local Adapter**: `pkg/workspace/adapters/local/README.md`
+- **Local Adapter**: `pkg/workspace/adapters/local/readme.md`
 - **Provider Selection**: `docs-internal/PROVIDER_SELECTION.md`
 - **Dex Setup**: `docs-internal/DEX_QUICK_START.md`
+

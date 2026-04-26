@@ -1,6 +1,6 @@
 ---
-id: MEMO-004
-title: Agent Usage Analysis
+id: memo-004
+title: "Agent Usage Analysis"
 date: 2025-10-09
 type: Analysis
 status: Final
@@ -8,13 +8,17 @@ tags: [ai-agents, copilot, productivity, best-practices, prompt-engineering]
 related:
   - MEMO-019
   - MEMO-016
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: a3137993-3b5a-459d-a577-1387a3d6a260
 ---
 
 # AI Agent Usage Analysis: Technical Post-Mortem
 
-**Analysis Date**: October 5, 2025  
-**Project**: Hermes Provider Migration (98 commits, 4 days)  
-**Context**: Single developer + GitHub Copilot completing 4-6 weeks of work in 4 days  
+**Analysis Date**: October 5, 2025
+**Project**: Hermes Provider Migration (98 commits, 4 days)
+**Context**: Single developer + GitHub Copilot completing 4-6 weeks of work in 4 days
 
 ## Executive Summary
 
@@ -65,12 +69,14 @@ This analysis examines **what worked, what didn't, and what to repeat** in AI-as
 ### 3. Structured Multi-Part Prompts for Complex Changes
 
 **Best Prompt Structure**:
-```
+
+```text
 1. Context (link existing files, explain current state)
 2. Goal (specific, measurable outcome)
 3. Constraints (what NOT to change, compatibility requirements)
 4. Verification (how to test success)
 5. Related Work (files to update consistently)
+
 ```
 
 **Example from Hermes**:
@@ -98,12 +104,12 @@ This analysis examines **what worked, what didn't, and what to repeat** in AI-as
 
 ### 1. STOP: Vague Prompts Without File References
 
-**Bad**: "Add logging to the search code"  
+**Bad**: "Add logging to the search code"
 **Good**: "Add debug-level logging to pkg/search/algolia/adapter.go in the Index() method. Log: query, hit count, latency. Use hclog format."
 
 ### 2. STOP: Large Prompts with Multiple Independent Changes
 
-**Bad**: "Implement search abstraction + migrate all API handlers + add tests"  
+**Bad**: "Implement search abstraction + migrate all API handlers + add tests"
 **Good**: Three separate prompts for each concern
 
 ### 3. STOP: Accepting First Output Without Verification
@@ -156,3 +162,4 @@ This analysis examines **what worked, what didn't, and what to repeat** in AI-as
 - Full analysis: `docs-internal/AGENT_USAGE_ANALYSIS.md` (1,604 lines)
 - Velocity metrics: MEMO-019
 - Deliverables: MEMO-016
+

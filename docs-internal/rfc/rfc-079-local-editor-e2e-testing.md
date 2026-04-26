@@ -1,10 +1,14 @@
 ---
-id: RFC-079
-title: Local In-Browser Editor for E2E Testing
+id: rfc-079
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 5cb12597-fa84-4bcc-9d5d-6e506ebfad40
+status: Proposed
+title: "Local In-Browser Editor for E2E Testing"
 date: 2025-10-09
 type: RFC
 subtype: Feature Proposal
-status: Proposed
 tags: [e2e-testing, local-editor, playwright, testing, workspace]
 related:
   - ADR-071
@@ -52,7 +56,7 @@ Implement an in-browser document editor for local development to enable fully au
 
 ### Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │ Frontend (Ember.js)                                      │
 │                                                          │
@@ -87,11 +91,13 @@ Implement an in-browser document editor for local development to enable fully au
 │  │  └──────────────────┘   └──────────────────────┘  │  │
 │  └───────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
+
 ```
 
 ### Component Design
 
 **Editor Selector** (`web/app/components/document/editor.ts`):
+
 ```typescript
 import Component from '@glimmer/component';
 import { service } from '@ember/service';
@@ -127,7 +133,7 @@ export default class DocumentEditor extends Component {
       content: this.content
     });
     this.isDirty = false;
-    
+
     // Reload to reflect saved state
     await this.loadContent();
   }
@@ -135,6 +141,7 @@ export default class DocumentEditor extends Component {
 ```
 
 **Template** (`web/app/components/document/editor.hbs`):
+
 ```handlebars
 {{#if this.useLocalEditor}}
   {{! Local Editor (Development/Testing) }}
@@ -178,9 +185,11 @@ export default class DocumentEditor extends Component {
     data-test-google-docs-iframe
   />
 {{/if}}
+
 ```
 
 **Styling** (`web/app/styles/components/document/editor.scss`):
+
 ```scss
 .local-editor {
   border: 1px solid var(--token-color-border-primary);
@@ -226,12 +235,15 @@ export default class DocumentEditor extends Component {
 ### API Enhancements
 
 **Content Endpoint** (Already Exists):
-```
+
+```text
 GET    /api/v2/documents/{id}/content
 PUT    /api/v2/documents/{id}/content
+
 ```
 
 **Response Format**:
+
 ```json
 {
   "content": "# RFC-123: New Feature\n\n## Summary\n...",
@@ -245,12 +257,13 @@ PUT    /api/v2/documents/{id}/content
 ### Configuration
 
 **Backend Config** (`config.hcl`):
+
 ```hcl
 profile "development" {
   providers {
     workspace = "local"  # Enables local editor
   }
-  
+
   local_workspace {
     data_dir = "./workspace_data"
   }
@@ -260,14 +273,16 @@ profile "production" {
   providers {
     workspace = "google"  # Uses Google Docs
   }
-  
+
   google_workspace {
     credentials_file = "/secrets/credentials.json"
   }
 }
+
 ```
 
 **Frontend Config** (Injected via API):
+
 ```typescript
 // web/app/services/config.ts
 export default class ConfigService extends Service {
@@ -282,6 +297,7 @@ export default class ConfigService extends Service {
 ```
 
 **Config Endpoint** (`internal/api/v2/config.go`):
+
 ```go
 func (h *ConfigHandler) GetConfig(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{
@@ -292,6 +308,7 @@ func (h *ConfigHandler) GetConfig(c *gin.Context) {
         },
     })
 }
+
 ```
 
 ## Implementation Plan
@@ -367,41 +384,42 @@ func (h *ConfigHandler) GetConfig(c *gin.Context) {
 
 **Deliverables**:
 - `docs/local-editor.md` (new file)
-- Update `README.md` with local editor section
+- Update `readme.md` with local editor section
 - Screenshots in `docs/images/local-editor/`
 
 ## E2E Test Examples
 
 ### Test 1: Document Editing Workflow
+
 ```typescript
 // tests/e2e-playwright/tests/local-editor.spec.ts
 test('should edit document content and display after save', async ({ page }) => {
   await page.goto('http://localhost:4200');
-  
+
   // Login
   await page.fill('[data-test-email]', 'test@hermes.local');
   await page.fill('[data-test-password]', 'password');
   await page.click('[data-test-login]');
-  
+
   // Navigate to document
   await page.click('[data-test-document-123]');
   await page.waitForURL(/\/documents\/123/);
-  
+
   // Verify local editor is visible
   await expect(page.locator('[data-test-local-editor]')).toBeVisible();
-  
+
   // Edit content
   const editor = page.locator('[data-test-content-editor]');
   await editor.fill('# Updated Content\n\nThis is the new content.');
-  
+
   // Save
   await page.click('[data-test-save-button]');
   await page.waitForSelector('[data-test-save-indicator]:has-text("Saved")');
-  
+
   // Verify content is displayed (THIS TEST WOULD HAVE CAUGHT THE BUG!)
   const content = await editor.inputValue();
   expect(content).toContain('Updated Content');
-  
+
   // Verify markdown preview
   const preview = page.locator('[data-test-markdown-preview]');
   await expect(preview).toContainText('Updated Content');
@@ -410,46 +428,49 @@ test('should edit document content and display after save', async ({ page }) => 
 ```
 
 ### Test 2: Auto-Save
+
 ```typescript
 test('should auto-save after 3 seconds of inactivity', async ({ page }) => {
   await page.goto('http://localhost:4200/documents/123');
-  
+
   const editor = page.locator('[data-test-content-editor]');
   const indicator = page.locator('[data-test-save-indicator]');
-  
+
   // Type content
   await editor.fill('Auto-save test content');
-  
+
   // Verify "Unsaved changes" indicator
   await expect(indicator).toContainText('Unsaved changes');
-  
+
   // Wait for auto-save (3s + 500ms buffer)
   await page.waitForTimeout(3500);
-  
+
   // Verify "Saved" indicator
   await expect(indicator).toContainText('Saved');
-  
+
   // Verify API call was made
   const requests = page.context().waitForRequest(/\/api\/v2\/documents\/\d+\/content/);
   expect(requests).toBeTruthy();
 });
+
 ```
 
 ### Test 3: Template Markers (Existing Test Updated)
+
 ```typescript
 test('should not display template markers in local editor', async ({ page }) => {
   await page.goto('http://localhost:4200/documents/new?docType=RFC');
-  
+
   // Fill form
   await page.fill('[data-test-title]', 'Test RFC');
   await page.click('[data-test-submit]');
-  
+
   // Wait for editor to load
   await page.waitForSelector('[data-test-local-editor]');
-  
+
   // Get content from editor
   const content = await page.locator('[data-test-content-editor]').inputValue();
-  
+
   // Validate no template markers
   expect(content).not.toMatch(/\{\{[^}]+\}\}/);
   expect(content).not.toContain('{{title}}');
@@ -487,55 +508,55 @@ test('should not display template markers in local editor', async ({ page }) => 
 ## Alternatives Considered
 
 ### 1. ❌ Mock Google Docs in Tests
-**Pros**: No new editor implementation  
-**Cons**: Mocks don't catch real bugs (see current critical bug), complex iframe interaction  
+**Pros**: No new editor implementation
+**Cons**: Mocks don't catch real bugs (see current critical bug), complex iframe interaction
 **Rejected**: Mocks are not realistic enough
 
 ### 2. ❌ Use Real Google Docs in E2E Tests
-**Pros**: Tests production behavior  
-**Cons**: Requires credentials, network dependency, slow, flaky, can't automate iframe  
+**Pros**: Tests production behavior
+**Cons**: Requires credentials, network dependency, slow, flaky, can't automate iframe
 **Rejected**: Too many external dependencies
 
 ### 3. ❌ Headless Chrome Extension for Google Docs
-**Pros**: Automates Google Docs interactions  
-**Cons**: Complex, fragile, Google changes break tests, still requires network  
+**Pros**: Automates Google Docs interactions
+**Cons**: Complex, fragile, Google changes break tests, still requires network
 **Rejected**: Over-engineered, maintenance nightmare
 
 ### 4. ❌ Markdown-Only Editor (No WYSIWYG)
-**Pros**: Simple, text-based, easy to test  
-**Cons**: Poor UX for non-technical users, no formatting toolbar  
+**Pros**: Simple, text-based, easy to test
+**Cons**: Poor UX for non-technical users, no formatting toolbar
 **Rejected**: Want good UX for local dev, but keep it simple (markdown preview is enough)
 
 ### 5. ❌ Rich Text Editor (ProseMirror/Quill)
-**Pros**: Better UX, WYSIWYG  
-**Cons**: Complex implementation, harder to test, overkill for local dev  
+**Pros**: Better UX, WYSIWYG
+**Cons**: Complex implementation, harder to test, overkill for local dev
 **Rejected**: Local editor is for testing, not production UX
 
 ## Risks & Mitigation
 
 ### Risk 1: Feature Parity Drift
-**Problem**: Local editor diverges from Google Docs behavior  
+**Problem**: Local editor diverges from Google Docs behavior
 **Mitigation**:
 - Clear documentation: "Local editor is for development only"
 - Regular testing with both editors
 - Flag differences in docs
 
 ### Risk 2: Maintenance Burden
-**Problem**: Two editors to maintain  
+**Problem**: Two editors to maintain
 **Mitigation**:
 - Local editor is minimal (textarea + markdown preview)
 - Reuse existing API (no new endpoints)
 - Playwright tests catch regressions
 
 ### Risk 3: Confusing UX
-**Problem**: Users expect Google Docs, see different editor  
+**Problem**: Users expect Google Docs, see different editor
 **Mitigation**:
 - Only show local editor in dev/test environments
 - Clear indicator: "Development Mode - Local Editor"
 - Production always uses Google Docs
 
 ### Risk 4: Critical Features Missing
-**Problem**: Local editor lacks Google Docs features (comments, real-time collab)  
+**Problem**: Local editor lacks Google Docs features (comments, real-time collab)
 **Mitigation**:
 - Document limitations clearly
 - Add features as needed (comments API exists)
@@ -618,3 +639,4 @@ test('should not display template markers in local editor', async ({ page }) => 
 - RFC-047: Local Workspace Provider
 - `tests/e2e-playwright/CRITICAL_BUG_TESTS.md`
 - `docs-internal/E2E_PLAYWRIGHT_MCP_TESTING_SUMMARY_2025_10_09.md`
+

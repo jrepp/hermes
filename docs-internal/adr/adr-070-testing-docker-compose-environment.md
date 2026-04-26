@@ -1,17 +1,17 @@
 ---
-id: ADR-070
+id: adr-070
 title: Testing Docker Compose Environment
 date: 2025-10-09
 type: ADR
 subtype: Infrastructure
 status: Accepted
-tags: [infrastructure, docker, testing, environment, dex, meilisearch]
-related:
-  - RFC-020
-  - RFC-047
-  - RFC-076
+tags: ['infrastructure', 'docker', 'testing', 'environment', 'dex', 'meilisearch']
+related: ['RFC-020', 'RFC-047', 'RFC-076']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: 735b0ba9-9507-4a9d-a1ee-6dd1d34d4728
 ---
-
 # Testing Docker Compose Environment
 
 ## Context
@@ -31,6 +31,7 @@ Development and testing required a fully integrated environment that didn't depe
 Create `./testing/docker-compose.yml` with dedicated services and non-conflicting ports.
 
 **Architecture**:
+
 ```yaml
 Services:
 - hermes (backend): Port 8001 (vs 8000 native)
@@ -38,9 +39,11 @@ Services:
 - meilisearch: Port 7701 (vs 7700 native)
 - dex: Ports 5558/5559 (vs 5556/5557 integration tests)
 - web (optional): Port 4201 (vs 4200 native)
+
 ```
 
 **Configuration** (`testing/config.hcl`):
+
 ```hcl
 providers {
   workspace = "local"
@@ -81,27 +84,33 @@ dex {
 ## Measured Results
 
 **Startup Performance** (M1 Mac):
-```
+
+``` text
 Cold start: 8.2s (image pull + first run)
 Warm start: 2.1s (cached images)
 Health checks: All pass within 5s
+
 ```
 
 **Resource Usage**:
-```
+
+``` text
 CPU: <5% idle, 15-20% under load
 Memory: 180MB total (hermes 120MB, postgres 40MB, others 20MB)
 Disk: 450MB images, <10MB data
 ```
 
 **Test Execution**:
-```
+
+``` text
 E2E tests: 45s for full suite (vs 2-3min with external services)
 Integration tests: Can run in parallel with testing environment
+
 ```
 
 **Data Seeding**:
-```
+
+``` text
 Provided: 2 RFC templates, 2 test documents, 2 users
 Load time: <100ms (filesystem read)
 Reset: docker compose down -v && docker compose up -d
@@ -122,13 +131,16 @@ Reset: docker compose down -v && docker compose up -d
 ## Development Workflows Enabled
 
 ### 1. Full Docker (Stable Backend)
+
 ```bash
 cd testing
 docker compose up -d
 # Access at http://localhost:4201
+
 ```
 
 ### 2. Hybrid (Native Frontend + Docker Backend)
+
 ```bash
 cd testing && docker compose up -d
 cd ../web && yarn start:proxy:testing  # port 4200 → 8001
@@ -136,14 +148,17 @@ cd ../web && yarn start:proxy:testing  # port 4200 → 8001
 ```
 
 ### 3. E2E Testing
+
 ```bash
 cd testing && docker compose up -d
 cd ../tests/e2e-playwright
 npx playwright test --reporter=line
 # playwright-mcp or headless tests
+
 ```
 
 ### 4. Backend Development
+
 ```bash
 cd testing && docker compose up -d postgres meilisearch dex
 ./hermes server -config=testing/config.hcl  # native on 8001
@@ -153,23 +168,23 @@ cd testing && docker compose up -d postgres meilisearch dex
 ## Alternatives Considered
 
 ### 1. ❌ Minikube/Kind (Kubernetes)
-**Pros**: Production-like, service mesh capability  
-**Cons**: Slow startup (30s+), complex networking, overkill for development  
+**Pros**: Production-like, service mesh capability
+**Cons**: Slow startup (30s+), complex networking, overkill for development
 **Rejected**: Too heavyweight for local development
 
 ### 2. ❌ Single Port with Path Routing
-**Pros**: One URL for everything  
-**Cons**: Nginx/Traefik complexity, harder debugging  
+**Pros**: One URL for everything
+**Cons**: Nginx/Traefik complexity, harder debugging
 **Rejected**: Added complexity without clear benefit
 
 ### 3. ❌ Dynamic Port Allocation
-**Pros**: No conflicts possible  
-**Cons**: Harder to remember, breaks bookmarks/scripts  
+**Pros**: No conflicts possible
+**Cons**: Harder to remember, breaks bookmarks/scripts
 **Rejected**: Developer experience priority over flexibility
 
 ### 4. ❌ Shared Database with Integration Tests
-**Pros**: Fewer containers  
-**Cons**: Race conditions, data pollution, test flakiness  
+**Pros**: Fewer containers
+**Cons**: Race conditions, data pollution, test flakiness
 **Rejected**: Test isolation critical
 
 ## Future Considerations
@@ -183,5 +198,6 @@ cd testing && docker compose up -d postgres meilisearch dex
 ## Related Documentation
 
 - `TESTING_ENVIRONMENTS.md` - Port allocation reference
-- `testing/README.md` - Quick start guide
+- `testing/readme.md` - Quick start guide
 - `docs-internal/ENV_SETUP.md` - Environment setup instructions
+

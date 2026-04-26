@@ -1,16 +1,17 @@
 ---
-id: ADR-075
+id: adr-075
 title: Meilisearch as Local Search Solution
 date: 2025-10-09
 type: ADR
 subtype: Infrastructure
 status: Accepted
-tags: [infrastructure, search, meilisearch, local-search, testing]
-related:
-  - ADR-070
-  - RFC-076
+tags: ['infrastructure', 'search', 'meilisearch', 'local-search', 'testing']
+related: ['ADR-070', 'RFC-076']
+created: 2026-04-24
+deciders: Hermes Team
+project_id: hermes
+doc_uuid: 68c866e8-bcce-4a0d-9b10-7fbb58379b90
 ---
-
 # Meilisearch as Local Search Solution
 
 ## Context
@@ -30,7 +31,8 @@ Hermes originally used Algolia for document search, which created challenges for
 - Highlighting of search terms
 
 **Original Pain Points**:
-```
+
+``` text
 Problem                      | Impact
 -----------------------------|----------------------------------
 Algolia API keys required    | Onboarding friction
@@ -38,6 +40,7 @@ Network dependency           | Can't develop on airplane/train
 Shared dev index             | Test data conflicts
 API rate limits              | CI/CD pipeline throttling
 Cost per search              | $1.50/1000 requests
+
 ```
 
 ## Decision
@@ -47,6 +50,7 @@ Use **Meilisearch** for local development and testing, keep Algolia for producti
 ### Meilisearch Architecture
 
 **Deployment**:
+
 ```yaml
 # docker-compose.yml
 meilisearch:
@@ -63,6 +67,7 @@ meilisearch:
 ```
 
 **Configuration**:
+
 ```hcl
 profile "development" {
   search {
@@ -83,9 +88,11 @@ profile "production" {
     }
   }
 }
+
 ```
 
 **Provider Implementation** (`pkg/search/meilisearch/adapter.go`):
+
 ```go
 type MeilisearchAdapter struct {
     client *meilisearch.Client
@@ -136,15 +143,18 @@ func (m *MeilisearchAdapter) Search(ctx context.Context, indexName string, query
 ### Performance Comparison
 
 **Search Latency** (1000 queries, localhost):
-```
+
+``` text
 Provider     | P50   | P95   | P99   | Improvement
 -------------|-------|-------|-------|------------
 Algolia      | 120ms | 280ms | 450ms | Baseline
 Meilisearch  | 18ms  | 35ms  | 62ms  | 6.7x faster
+
 ```
 
 **Index Time** (1000 documents):
-```
+
+``` text
 Operation           | Algolia | Meilisearch | Improvement
 --------------------|---------|-------------|------------
 Initial index       | 8.2s    | 1.4s        | 5.9x faster
@@ -153,7 +163,8 @@ Delete 100 docs     | 0.8s    | 0.2s        | 4x faster
 ```
 
 **Resource Usage** (idle + 100 searches/min):
-```
+
+``` text
 Metric           | Meilisearch
 -----------------|------------
 Memory (RSS)     | 42 MB
@@ -161,12 +172,14 @@ CPU (avg)        | 0.8%
 Disk             | 120 MB
 Network          | 0 (local)
 Startup time     | 0.6s
+
 ```
 
 ### Cost Analysis
 
 **Development Team (5 developers, 30 days)**:
-```
+
+``` text
 Scenario                | Algolia Cost | Meilisearch Cost | Savings
 ------------------------|--------------|------------------|--------
 Search requests/dev/day | 500          | 500              | -
@@ -175,12 +188,14 @@ API cost                | $112.50      | $0               | $112.50
 ```
 
 **CI/CD Pipeline** (20 builds/day, 100 searches/build):
-```
+
+``` text
 Metric              | Algolia | Meilisearch | Savings
 --------------------|---------|-------------|--------
 Searches/month      | 60,000  | 60,000      | -
 API cost            | $90     | $0          | $90/month
 Network latency     | 120ms   | 15ms        | 8x faster builds
+
 ```
 
 ### Feature Parity Analysis
@@ -202,6 +217,7 @@ Network latency     | 120ms   | 15ms        | 8x faster builds
 ## Index Configuration
 
 ### Searchable Attributes
+
 ```json
 {
   "searchableAttributes": [
@@ -216,6 +232,7 @@ Network latency     | 120ms   | 15ms        | 8x faster builds
 ```
 
 ### Faceted Attributes
+
 ```json
 {
   "filterableAttributes": [
@@ -227,9 +244,11 @@ Network latency     | 120ms   | 15ms        | 8x faster builds
     "modifiedTime"
   ]
 }
+
 ```
 
 ### Ranking Rules
+
 ```json
 {
   "rankingRules": [
@@ -244,6 +263,7 @@ Network latency     | 120ms   | 15ms        | 8x faster builds
 ```
 
 ### Typo Tolerance
+
 ```json
 {
   "typoTolerance": {
@@ -254,11 +274,13 @@ Network latency     | 120ms   | 15ms        | 8x faster builds
     }
   }
 }
+
 ```
 
 ## Migration Strategy
 
 ### Initial Setup
+
 ```bash
 # Start Meilisearch
 docker compose -f testing/docker-compose.yml up -d meilisearch
@@ -279,6 +301,7 @@ curl -X PATCH 'http://localhost:7700/indexes/documents/settings' \
 ```
 
 ### Data Seeding
+
 ```bash
 # Export from Algolia (production)
 hermes operator algolia-export --index=documents --output=documents.json
@@ -292,9 +315,11 @@ curl -X POST 'http://localhost:7700/indexes/documents/documents' \
 curl 'http://localhost:7700/indexes/documents/search' \
   -H 'Authorization: Bearer test-master-key' \
   -d '{"q": "RFC", "limit": 5}'
+
 ```
 
 ### Provider Switching
+
 ```bash
 # Development (local)
 hermes server -config=config.hcl -profile=development
@@ -313,15 +338,18 @@ hermes server -config=config.hcl -profile=production
 
 ### Query Syntax
 **Algolia**:
+
 ```javascript
 algolia.search('RFC', {
   filters: 'status:approved AND docType:RFC',
   hitsPerPage: 20,
   page: 0
 })
+
 ```
 
 **Meilisearch**:
+
 ```javascript
 meilisearch.search('RFC', {
   filter: 'status = approved AND docType = RFC',
@@ -332,6 +360,7 @@ meilisearch.search('RFC', {
 
 ### Highlighting
 **Algolia**:
+
 ```json
 {
   "_highlightResult": {
@@ -341,9 +370,11 @@ meilisearch.search('RFC', {
     }
   }
 }
+
 ```
 
 **Meilisearch**:
+
 ```json
 {
   "_formatted": {
@@ -357,6 +388,7 @@ meilisearch.search('RFC', {
 
 ### Adapter Abstraction
 The `SearchProvider` interface hides these differences:
+
 ```go
 type SearchResult struct {
     Hits      []Document
@@ -366,11 +398,13 @@ type SearchResult struct {
 }
 
 // Both adapters return this normalized format
+
 ```
 
 ## Testing Strategy
 
 ### Unit Tests (Mock Provider)
+
 ```go
 type MockSearch struct {
     SearchFunc func(ctx, indexName, query) (*SearchResult, error)
@@ -389,19 +423,20 @@ func TestDocumentSearch(t *testing.T) {
 ```
 
 ### Integration Tests (Real Meilisearch)
+
 ```go
 func TestMeilisearchIntegration(t *testing.T) {
     // Requires Docker Compose
     if testing.Short() {
         t.Skip("Skipping integration test")
     }
-    
+
     adapter := meilisearch.NewAdapter(cfg)
-    
+
     // Index documents
     err := adapter.Index(ctx, "test_docs", testDocuments)
     require.NoError(t, err)
-    
+
     // Search
     result, err := adapter.Search(ctx, "test_docs", SearchQuery{
         Query: "RFC",
@@ -410,24 +445,26 @@ func TestMeilisearchIntegration(t *testing.T) {
     require.NoError(t, err)
     assert.Len(t, result.Hits, 3)
 }
+
 ```
 
 ### E2E Tests (Frontend + Meilisearch)
+
 ```typescript
 // tests/e2e-playwright/tests/search.spec.ts
 test('should search documents', async ({ page }) => {
   await page.goto('http://localhost:4200');
-  
+
   // Type in search box
   await page.fill('[data-test-search-input]', 'RFC-123');
-  
+
   // Wait for results (debounced)
   await page.waitForSelector('[data-test-search-result]');
-  
+
   // Verify results
   const results = await page.locator('[data-test-search-result]').count();
   expect(results).toBeGreaterThan(0);
-  
+
   // Verify highlighting
   const firstResult = page.locator('[data-test-search-result]').first();
   await expect(firstResult).toContainText('RFC-123');
@@ -437,6 +474,7 @@ test('should search documents', async ({ page }) => {
 ## Operational Considerations
 
 ### Monitoring
+
 ```bash
 # Health check
 curl http://localhost:7700/health
@@ -458,9 +496,11 @@ curl http://localhost:7700/stats \
 # Version
 curl http://localhost:7700/version
 # {"commitSha": "...", "version": "v1.11.0"}
+
 ```
 
 ### Backup & Restore
+
 ```bash
 # Dump (backup)
 curl -X POST 'http://localhost:7700/dumps' \
@@ -478,52 +518,54 @@ docker run -v ./dumps:/dumps \
 ```
 
 ### Data Migration
+
 ```go
 // Migrate from Algolia to Meilisearch
 func MigrateSearchIndex(algolia, meilisearch search.Provider) error {
     // 1. Export from Algolia
     docs, err := algolia.GetAll(ctx, "documents")
-    
+
     // 2. Transform schema if needed
     for i := range docs {
         docs[i].CustomRanking = convertRanking(docs[i].AlgoliaRanking)
     }
-    
+
     // 3. Import to Meilisearch
     return meilisearch.Index(ctx, "documents", docs)
 }
+
 ```
 
 ## Alternatives Considered
 
 ### 1. ❌ Elasticsearch
-**Pros**: Feature-rich, mature, powerful analytics  
-**Cons**: Heavy (1GB+ RAM), complex setup, JVM required, overkill for current needs  
+**Pros**: Feature-rich, mature, powerful analytics
+**Cons**: Heavy (1GB+ RAM), complex setup, JVM required, overkill for current needs
 **Rejected**: Too resource-intensive for local development
 
 ### 2. ❌ Typesense
-**Pros**: Fast, typo-tolerant, similar API to Algolia  
-**Cons**: Less mature, smaller community, documentation gaps  
+**Pros**: Fast, typo-tolerant, similar API to Algolia
+**Cons**: Less mature, smaller community, documentation gaps
 **Rejected**: Meilisearch more actively developed
 
 ### 3. ❌ Bleve (Pure Go)
-**Pros**: No external dependencies, embedded in binary  
-**Cons**: Slower, limited features, manual index management  
+**Pros**: No external dependencies, embedded in binary
+**Cons**: Slower, limited features, manual index management
 **Rejected**: Not performant enough for production
 
 ### 4. ❌ PostgreSQL Full-Text Search
-**Pros**: Already using PostgreSQL, no extra service  
-**Cons**: Limited relevance ranking, no typo tolerance, slower  
+**Pros**: Already using PostgreSQL, no extra service
+**Cons**: Limited relevance ranking, no typo tolerance, slower
 **Rejected**: Poor search UX, not competitive with dedicated solutions
 
 ### 5. ❌ Mock/Stub Search
-**Pros**: Simplest, no real search  
-**Cons**: Can't test search features, unrealistic behavior  
+**Pros**: Simplest, no real search
+**Cons**: Can't test search features, unrealistic behavior
 **Rejected**: Search is core feature, must test properly
 
 ### 6. ❌ Use Algolia for Everything
-**Pros**: Feature parity between dev/prod  
-**Cons**: Requires API keys, network dependency, cost, shared state  
+**Pros**: Feature parity between dev/prod
+**Cons**: Requires API keys, network dependency, cost, shared state
 **Rejected**: Pain points too severe
 
 ## Future Considerations
@@ -539,9 +581,10 @@ func MigrateSearchIndex(algolia, meilisearch search.Provider) error {
 
 ## Related Documentation
 
-- `pkg/search/README.md` - Search provider architecture
-- `pkg/search/meilisearch/README.md` - Meilisearch adapter guide
-- `testing/README.md` - Testing environment setup
+- `pkg/search/readme.md` - Search provider architecture
+- `pkg/search/meilisearch/readme.md` - Meilisearch adapter guide
+- `testing/readme.md` - Testing environment setup
 - ADR-070 - Testing Docker Compose Environment
 - ADR-073 - Provider Abstraction Architecture
 - RFC-076 - Search and Auth Refactoring
+

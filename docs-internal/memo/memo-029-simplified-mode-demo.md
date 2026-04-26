@@ -1,3 +1,12 @@
+---
+id: memo-029
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 299b78b3-3e07-4414-842f-7292bbbbcf25
+status: Draft
+title: "Simplified Local Mode - Demo"
+---
 # Simplified Local Mode - Demo
 
 This document demonstrates the zero-config simplified mode implemented in RFC-083.
@@ -14,15 +23,16 @@ This document demonstrates the zero-config simplified mode implemented in RFC-08
 # - Start Bleve search indexer (embedded)
 # - Launch browser to http://localhost:8000
 # - Display colorful startup banner
+
 ```
 
 ## What Gets Created
 
 When you run `./hermes serve` for the first time, it automatically creates:
 
-```
+```text
 docs-cms/
-├── README.md              # Workspace documentation
+├── readme.md              # Workspace documentation
 ├── config.yaml            # Optional configuration overrides
 ├── documents/             # Published documents
 ├── drafts/                # Work-in-progress documents
@@ -40,7 +50,7 @@ docs-cms/
 
 When you run `./hermes serve`, you see:
 
-```
+```text
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
 ║  Hermes CMS - Simplified Mode                                ║
@@ -60,6 +70,7 @@ When you run `./hermes serve`, you see:
    • All data is stored locally in the docs-cms directory
 
 Press Ctrl+C to stop the server
+
 ```
 
 ## Command Options
@@ -82,6 +93,7 @@ Press Ctrl+C to stop the server
 ```bash
 # Use explicit config file (switches to traditional mode)
 ./hermes serve -config=config.hcl
+
 ```
 
 ## Features Comparison
@@ -109,9 +121,10 @@ Press Ctrl+C to stop the server
    - Creates directory structure
    - Writes default templates (RFC, PRD, FRD)
    - Generates config.yaml
-   - Writes README.md
+   - Writes readme.md
 
 3. **Auto-Configuration Generation**:
+
    ```go
    cfg := config.GenerateSimplifiedConfig(workspacePath)
    // Sets:
@@ -187,6 +200,7 @@ Press Ctrl+C to stop the server
 
 # Browser opens automatically to http://localhost:8000
 # Server is ready!
+
 ```
 
 ## Implementation Commits
@@ -228,7 +242,7 @@ All work completed in 5 commits on branch `jrepp/dev-tidy`:
 - Phase 3: Simplified mode API detection
 
 **Remaining** (Phase 4):
-- [ ] Update README.md with Quick Start section
+- [ ] Update readme.md with Quick Start section
 - [ ] Add `make serve` Makefile target
 - [ ] End-to-end testing
 
@@ -247,3 +261,4 @@ cd /tmp/test-hermes
 
 # Open http://localhost:8000 and start creating documents!
 ```
+

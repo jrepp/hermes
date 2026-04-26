@@ -1,9 +1,14 @@
 ---
 date: 2025-11-15
-title: RFC-088 Week 2-3 Complete - Embeddings Pipeline
+title: "RFC-088 Week 2-3 Complete - Embeddings Pipeline"
 type: milestone
 status: complete
 tags: [rfc-088, embeddings, vector-search, milestone, implementation]
+id: memo-002
+created: 2025-11-15
+author: Hermes Team
+project_id: hermes
+doc_uuid: 0fd2d80a-b2f7-41ba-b7fc-7bd021e3e6f0
 ---
 
 # RFC-088 Week 2-3 Complete: Embeddings Pipeline
@@ -47,12 +52,14 @@ Successfully completed the embeddings pipeline phase of RFC-088 (Event-Driven Do
 - **Batch Ordering**: Preserves order even with out-of-order API responses
 
 **API Integration**:
+
 ```go
 client.GenerateEmbeddings(ctx, "Document text", "text-embedding-3-small", 1536)
 // Returns: []float64 with 1536 dimensions
 
 client.GenerateEmbeddingsBatch(ctx, []string{...}, "text-embedding-3-small", 1536)
 // Returns: [][]float64 with embeddings for each text
+
 ```
 
 ### 2. Database Schema ✅
@@ -123,6 +130,7 @@ client.GenerateEmbeddingsBatch(ctx, []string{...}, "text-embedding-3-small", 153
 - Handles empty documents gracefully
 
 #### Configuration Options
+
 ```go
 config = {
   embeddings = {
@@ -142,9 +150,11 @@ config = {
 5. Save each chunk with its index
 
 **Example**:
-```
+
+```text
 Document: 20,000 characters, chunk_size = 8000
 Result: 3 chunks (index 0, 1, 2) with 3 embeddings
+
 ```
 
 ---
@@ -153,7 +163,7 @@ Result: 3 chunks (index 0, 1, 2) with 3 embeddings
 
 All tests passing across all components:
 
-```
+```text
 Component                           Tests  Status
 ────────────────────────────────────────────────
 pkg/llm/openai_embeddings_test.go   9      ✅ PASS
@@ -257,6 +267,7 @@ indexer {
     }
   ]
 }
+
 ```
 
 ---
@@ -265,7 +276,7 @@ indexer {
 
 ### Embeddings Generation Flow
 
-```
+```text
 1. Document Revision Created
    ↓
 2. Event Published to Redpanda
@@ -306,13 +317,14 @@ indexer {
   "tokens_used": 250,
   "generation_time_ms": 450
 }
+
 ```
 
 ### Chunking Example
 
 Document (12,000 chars, chunk_size = 4000):
 
-```
+```text
 Chunk 0 (index=0): Characters 0-4000
   "This is the introduction paragraph. This RFC proposes..."
 
@@ -502,3 +514,4 @@ Assumptions:
 **Last Updated**: 2025-11-15 15:00 PST
 **Version**: 1.0
 **Status**: Milestone Complete ✅
+

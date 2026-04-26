@@ -1,8 +1,19 @@
+---
+id: adr-001
+created: 2025-10-10
+deciders: Hermes Team
+author: Hermes Team
+project_id: hermes
+doc_uuid: ab8079d7-5eb8-4aab-8faf-4ca65a24ccb9
+status: Accepted
+title: Stay with Classic Ember CLI Build System
+---
+
 # ADR-001: Stay with Classic Ember CLI Build System
 
-**Date**: October 10, 2025  
-**Status**: Accepted  
-**Deciders**: Engineering Team  
+**Date**: October 10, 2025
+**Status**: Accepted
+**Deciders**: Engineering Team
 **Technical Story**: Evaluated migration to Embroider + Vite for build performance improvements
 
 ---
@@ -197,7 +208,7 @@ An aggressive migration attempt to Embroider + Vite revealed several blockers:
 ## References
 
 ### Documentation
-- [Investigation Report](../EMBROIDER_VITE_MIGRATION.md) - Full technical analysis
+- [Investigation Report](../EMBROIDER_VITE_migration.md) - Full technical analysis
 - [Embroider GitHub](https://github.com/embroider-build/embroider)
 - [Ember CLI Build Pipeline](https://cli.emberjs.com/release/advanced-use/build-pipeline/)
 
@@ -231,9 +242,9 @@ An aggressive migration attempt to Embroider + Vite revealed several blockers:
 
 ## Decision Review
 
-**Review Date**: January 10, 2026 (3 months)  
-**Reviewers**: Engineering team, Tech Lead  
-**Success Criteria**: 
+**Review Date**: January 10, 2026 (3 months)
+**Reviewers**: Engineering team, Tech Lead
+**Success Criteria**:
 - Classic build continues to work reliably
 - No blocking build performance issues
 - Team velocity maintained or improved
@@ -272,5 +283,6 @@ An aggressive migration attempt to Embroider + Vite revealed several blockers:
 
 ---
 
-**Approved by**: Engineering Team  
+**Approved by**: Engineering Team
 **Date**: October 10, 2025
+

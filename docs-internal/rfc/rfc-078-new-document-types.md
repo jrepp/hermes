@@ -1,10 +1,14 @@
 ---
-id: RFC-078
-title: New Document Types for HashiCorp Documentation
+id: rfc-078
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 3815ffef-4c22-4d5b-99c7-3d6810aace1e
+status: Proposed
+title: "New Document Types for HashiCorp Documentation"
 date: 2025-10-09
 type: RFC
 subtype: Feature Proposal
-status: Proposed
 tags: [document-types, adr, memo, frd, path, feature-proposal]
 related:
   - ADR-073
@@ -23,7 +27,7 @@ Expand Hermes document type system beyond RFC/PRD to support additional HashiCor
 
 Hermes currently supports only 3 document types:
 - **RFC** (Request for Comments) - Technical proposals
-- **PRD** (Product Requirements Document) - Product specifications  
+- **PRD** (Product Requirements Document) - Product specifications
 - **FRD** (Functional Requirements Document) - Functional specifications (partially implemented)
 
 **Problems**:
@@ -55,12 +59,13 @@ Hermes currently supports only 3 document types:
 **Purpose**: Document significant architectural decisions with context, rationale, and consequences.
 
 **Template Structure**:
+
 ```markdown
 # ADR-{number}: {Short Title}
 
-**Status**: Proposed | Accepted | Deprecated | Superseded  
-**Date**: YYYY-MM-DD  
-**Type**: ADR (System Architecture | Infrastructure | Development Tooling)  
+**Status**: Proposed | Accepted | Deprecated | Superseded
+**Date**: YYYY-MM-DD
+**Type**: ADR (System Architecture | Infrastructure | Development Tooling)
 **Related**: RFC-XXX, ADR-YYY
 
 ## Context
@@ -85,9 +90,11 @@ What other options did we evaluate? Why did we reject them?
 
 ## Future Considerations
 What might we revisit later?
+
 ```
 
 **Metadata**:
+
 ```yaml
 docType: ADR
 number: 73
@@ -111,12 +118,13 @@ relatedRFCs: [RFC-047, RFC-076]
 **Purpose**: Formal internal announcements, policy changes, technical updates.
 
 **Template Structure**:
+
 ```markdown
 # Memo: {Subject}
 
-**From**: {Author/Team}  
-**To**: {Audience}  
-**Date**: YYYY-MM-DD  
+**From**: {Author/Team}
+**To**: {Audience}
+**Date**: YYYY-MM-DD
 **Classification**: Public | Internal | Confidential
 
 ## Summary
@@ -138,9 +146,11 @@ When does this take effect?
 
 ## Questions?
 How to get clarification?
+
 ```
 
 **Metadata**:
+
 ```yaml
 docType: Memo
 from: engineering-team
@@ -162,12 +172,13 @@ expirationDate: null
 **Purpose**: Detailed functional specifications (currently partially implemented, needs enhancement).
 
 **Template Structure** (revised):
+
 ```markdown
 # FRD-{number}: {Feature Name}
 
-**Status**: Draft | Review | Approved | Implemented  
-**Owner**: {PM Name}  
-**Engineering Lead**: {Engineer Name}  
+**Status**: Draft | Review | Approved | Implemented
+**Owner**: {PM Name}
+**Engineering Lead**: {Engineer Name}
 **Target Release**: Q3 2025
 
 ## Objective
@@ -213,9 +224,11 @@ Unit | Integration | E2E | Load
 
 ## Rollout Plan
 Phased rollout, feature flags, rollback strategy
+
 ```
 
 **Metadata**:
+
 ```yaml
 docType: FRD
 number: 42
@@ -232,11 +245,12 @@ epic: JIRA-456
 **Purpose**: Chronological record of product evolution, feature history, technical milestones.
 
 **Template Structure**:
+
 ```markdown
 # PATH: {Product/Feature Name}
 
-**Product**: {Hermes | Terraform | Vault | ...}  
-**Timeframe**: {Start Date} - {End Date or "Present"}  
+**Product**: {Hermes | Terraform | Vault | ...}
+**Timeframe**: {Start Date} - {End Date or "Present"}
 **Owner**: {Product/Engineering Team}
 
 ## Overview
@@ -245,7 +259,7 @@ High-level summary of this product/feature area.
 ## Timeline
 
 ### YYYY-MM: {Milestone}
-**Status**: {Concept | Development | Beta | GA | Deprecated}  
+**Status**: {Concept | Development | Beta | GA | Deprecated}
 **Key Changes**:
 - Change 1
 - Change 2
@@ -276,9 +290,11 @@ What worked? What didn't? What would we do differently?
 
 ## Future Direction
 Where is this heading?
+
 ```
 
 **Metadata**:
+
 ```yaml
 docType: PATH
 product: hermes
@@ -300,6 +316,7 @@ relatedProducts: [terraform-docs, vault-docs]
 ### Phase 1: Backend Schema (Week 1-2)
 
 **Database Migration**:
+
 ```go
 // pkg/models/document.go
 type Document struct {
@@ -312,10 +329,12 @@ type Document struct {
     Supersedes    []string `gorm:"type:jsonb"` // For ADRs: [ADR-45, ADR-67]
     SupersededBy  *string // For ADRs: ADR-89
 }
+
 ```
 
 **API Endpoints**:
-```
+
+```text
 POST   /api/v2/documents?docType=adr
 GET    /api/v2/documents?docType=adr&status=accepted
 GET    /api/v2/documents/adr/73
@@ -323,6 +342,7 @@ DELETE /api/v2/documents/adr/73
 ```
 
 **Validation**:
+
 ```go
 // pkg/hashicorpdocs/adr/validator.go
 func (v *ADRValidator) Validate(doc *Document) error {
@@ -337,12 +357,14 @@ func (v *ADRValidator) Validate(doc *Document) error {
     }
     // ... more validation
 }
+
 ```
 
 ### Phase 2: Template System (Week 3-4)
 
 **Template Storage** (`pkg/hashicorpdocs/templates/`):
-```
+
+```text
 templates/
 ├── adr.md          # ADR template
 ├── memo.md         # Memo template
@@ -351,6 +373,7 @@ templates/
 ```
 
 **Template Variables**:
+
 ```go
 // pkg/hashicorpdocs/template.go
 type TemplateVars struct {
@@ -370,9 +393,11 @@ func RenderTemplate(docType string, vars TemplateVars) (string, error) {
     tmpl := loadTemplate(docType)
     return executeTemplate(tmpl, vars)
 }
+
 ```
 
 **Auto-Numbering**:
+
 ```go
 func GetNextDocNumber(docType string) (int, error) {
     var maxNumber int
@@ -387,6 +412,7 @@ func GetNextDocNumber(docType string) (int, error) {
 ### Phase 3: Frontend UI (Week 5-6)
 
 **Document Type Selector** (`web/app/components/document-type-selector.ts`):
+
 ```typescript
 export default class DocumentTypeSelector extends Component {
   @tracked selectedType = 'RFC';
@@ -406,14 +432,16 @@ export default class DocumentTypeSelector extends Component {
     this.args.onChange(type);
   }
 }
+
 ```
 
 **Type-Specific Forms**:
+
 ```typescript
 // web/app/components/document-form/adr.ts
 export default class ADRForm extends Component {
   @service declare store: Store;
-  
+
   @tracked number: number;
   @tracked title: string;
   @tracked status = 'proposed';
@@ -443,6 +471,7 @@ export default class ADRForm extends Component {
 ```
 
 **Search Facets**:
+
 ```typescript
 // Add docType facet to search
 facets = [
@@ -450,11 +479,13 @@ facets = [
   { name: 'Status', key: 'status', values: ['draft', 'review', 'approved', 'implemented'] },
   { name: 'Category', key: 'category', values: ['system-architecture', 'infrastructure', ...] },
 ];
+
 ```
 
 ### Phase 4: Search Integration (Week 7)
 
 **Meilisearch Configuration**:
+
 ```json
 {
   "filterableAttributes": [
@@ -484,7 +515,8 @@ facets = [
 ```
 
 **Search Queries**:
-```
+
+```text
 # Find all architecture ADRs
 docType:ADR AND category:"System Architecture"
 
@@ -496,6 +528,7 @@ docType:FRD AND targetRelease:"Q3-2025"
 
 # Find deprecated decisions
 docType:ADR AND status:deprecated
+
 ```
 
 ### Phase 5: Documentation & Testing (Week 8)
@@ -507,6 +540,7 @@ docType:ADR AND status:deprecated
 - Add examples to `docs/examples/`
 
 **Testing**:
+
 ```go
 // pkg/models/document_test.go
 func TestDocumentTypes(t *testing.T) {
@@ -528,19 +562,20 @@ func TestDocumentTypes(t *testing.T) {
 test('should create ADR with auto-number', async ({ page }) => {
   await page.goto('http://localhost:4200/documents/new');
   await page.selectOption('[data-test-doc-type]', 'ADR');
-  
+
   // Verify auto-number
   const number = await page.inputValue('[data-test-doc-number]');
   expect(number).toMatch(/^\d+$/);
-  
+
   // Fill form
   await page.fill('[data-test-title]', 'Test ADR');
   await page.selectOption('[data-test-category]', 'System Architecture');
   await page.click('[data-test-submit]');
-  
+
   // Verify created
   await page.waitForURL(/\/documents\/adr\/\d+/);
 });
+
 ```
 
 ## Success Metrics
@@ -568,23 +603,23 @@ test('should create ADR with auto-number', async ({ page }) => {
 ## Alternatives Considered
 
 ### 1. ❌ Use External ADR Tools (adr-tools, log4brains)
-**Pros**: Purpose-built, markdown-based, CLI-friendly  
-**Cons**: Separate system, not searchable in Hermes, poor integration  
+**Pros**: Purpose-built, markdown-based, CLI-friendly
+**Cons**: Separate system, not searchable in Hermes, poor integration
 **Rejected**: Hermes should be single source of truth
 
 ### 2. ❌ Store ADRs in Git (docs/ directory)
-**Pros**: Version controlled, familiar to engineers  
-**Cons**: Not searchable, no metadata, poor discoverability  
+**Pros**: Version controlled, familiar to engineers
+**Cons**: Not searchable, no metadata, poor discoverability
 **Rejected**: Want full-text search, faceting, notifications
 
 ### 3. ❌ Use Confluence/Notion
-**Pros**: Rich formatting, comments, integrations  
-**Cons**: External dependency, not HashiCorp-owned, poor API  
+**Pros**: Rich formatting, comments, integrations
+**Cons**: External dependency, not HashiCorp-owned, poor API
 **Rejected**: Want self-hosted, consistent with existing workflow
 
 ### 4. ❌ Generic "Document" Type with Tags
-**Pros**: Flexible, no schema changes  
-**Cons**: No structure, inconsistent format, poor search  
+**Pros**: Flexible, no schema changes
+**Cons**: No structure, inconsistent format, poor search
 **Rejected**: Structure enforces quality and consistency
 
 ## Risks & Mitigation
@@ -651,3 +686,4 @@ test('should create ADR with auto-number', async ({ page }) => {
 - **Week 12**: Retrospective, metrics baseline
 
 **Total Effort**: 12 weeks (1 engineer + 1 PM)
+

@@ -1,10 +1,14 @@
 ---
-id: RFC-051
-title: Document Search Index Outbox Pattern
+id: rfc-051
+created: 2025-10-08
+author: Hermes Team
+project_id: hermes
+doc_uuid: 04c6abd6-d1e3-4c2f-8503-8ceb1ca529c0
+status: Draft
+title: "Document Search Index Outbox Pattern"
 date: 2025-10-08
 type: RFC
 subtype: Architecture Design
-status: Design Phase
 tags: [outbox-pattern, search, architecture, design, meilisearch]
 related:
   - RFC-047
@@ -97,13 +101,15 @@ CREATE TABLE document_outbox (
     processed_at TIMESTAMP
 );
 
-CREATE INDEX idx_outbox_pending ON document_outbox(status, created_at) 
+CREATE INDEX idx_outbox_pending ON document_outbox(status, created_at)
     WHERE status = 'pending';
+
 ```
 
 **Documents Table Additions**:
+
 ```sql
-ALTER TABLE documents 
+ALTER TABLE documents
     ADD COLUMN workspace_provider TEXT NOT NULL DEFAULT 'google',
     ADD COLUMN last_modified_by_person_id BIGINT REFERENCES person(id);
 ```
@@ -111,6 +117,7 @@ ALTER TABLE documents
 ### GORM Models
 
 **Person** (`pkg/models/person.go`):
+
 ```go
 type Person struct {
     ID          uint      `gorm:"primaryKey"`
@@ -130,9 +137,11 @@ type PersonIdentity struct {
     PrimaryIdentity bool   `gorm:"not null;default:false"`
     CreatedAt       time.Time
 }
+
 ```
 
 **DocumentModificationLog** (`pkg/models/document_modification_log.go`):
+
 ```go
 type DocumentModificationLog struct {
     ID                  uint       `gorm:"primaryKey"`
@@ -148,6 +157,7 @@ type DocumentModificationLog struct {
 ```
 
 **DocumentOutbox** (`pkg/models/document_outbox.go`):
+
 ```go
 type DocumentOutbox struct {
     ID                  uint       `gorm:"primaryKey"`
@@ -168,6 +178,7 @@ type DocumentOutbox struct {
 func (DocumentOutbox) FindPendingOutboxEntries(db *gorm.DB, limit int) ([]DocumentOutbox, error)
 func (o *DocumentOutbox) MarkProcessed(db *gorm.DB) error
 func (o *DocumentOutbox) IncrementRetry(db *gorm.DB, err error) error
+
 ```
 
 ### API Handler Pattern
@@ -185,7 +196,7 @@ type DocumentContext struct {
 func (h *DocumentHandler) PatchDocument(c *gin.Context) {
     // 1. Resolve person from auth context
     person, err := auth.ResolvePersonFromContext(c, h.DB)
-    
+
     // 2. Build DocumentContext
     ctx := DocumentContext{
         Person:            person,
@@ -193,7 +204,7 @@ func (h *DocumentHandler) PatchDocument(c *gin.Context) {
         WorkspaceProvider: h.WorkspaceProvider.Type(), // "google" or "local"
         APIEndpoint:       c.Request.URL.Path,
     }
-    
+
     // 3. Upsert with context (single transaction)
     err = doc.UpsertWithContext(h.DB, ctx)
     // Commits: document + modification_log + outbox
@@ -203,6 +214,7 @@ func (h *DocumentHandler) PatchDocument(c *gin.Context) {
 ### Outbox Worker
 
 **Process** (`pkg/outbox/worker.go`):
+
 ```go
 type Worker struct {
     db             *gorm.DB
@@ -229,6 +241,7 @@ func (w *Worker) processBatch(ctx context.Context) error {
         w.processEntry(ctx, &entry)
     }
 }
+
 ```
 
 ### Benefits
@@ -243,25 +256,26 @@ func (w *Worker) processBatch(ctx context.Context) error {
 
 ## Migration Strategy
 
-**Phase 1**: Add `person` and `person_identity` tables, migrate from `users`  
-**Phase 2**: Add `workspace_provider` to `documents`, backfill existing records  
-**Phase 3**: Add `document_modification_log` table, start logging modifications  
-**Phase 4**: Add `document_outbox` table, modify API handlers to use `UpsertWithContext`  
-**Phase 5**: Deploy outbox worker, remove synchronous search indexing goroutines  
+**Phase 1**: Add `person` and `person_identity` tables, migrate from `users`
+**Phase 2**: Add `workspace_provider` to `documents`, backfill existing records
+**Phase 3**: Add `document_modification_log` table, start logging modifications
+**Phase 4**: Add `document_outbox` table, modify API handlers to use `UpsertWithContext`
+**Phase 5**: Deploy outbox worker, remove synchronous search indexing goroutines
 
 ## Implementation Status
 
-❌ Person/Identity models  
-❌ DocumentModificationLog model  
-❌ DocumentOutbox model  
-❌ Document model enhancements  
-❌ Identity resolution helpers  
-❌ UpsertWithContext implementation  
-❌ API handler integration  
-❌ Workspace provider Type() method  
-❌ Outbox worker process  
+❌ Person/Identity models
+❌ DocumentModificationLog model
+❌ DocumentOutbox model
+❌ Document model enhancements
+❌ Identity resolution helpers
+❌ UpsertWithContext implementation
+❌ API handler integration
+❌ Workspace provider Type() method
+❌ Outbox worker process
 
 ## References
 
 - Source: `OUTBOX_PATTERN_DESIGN.md`, `OUTBOX_PATTERN_QUICK_REF.md`
-- Related: `LOCAL_WORKSPACE_PROVIDER_COMPLETE.md`, `DOCUMENT_EDITOR_IMPLEMENTATION.md`
+- Related: `LOCAL_WORKSPACE_PROVIDER_complete.md`, `DOCUMENT_EDITOR_implementation.md`
+

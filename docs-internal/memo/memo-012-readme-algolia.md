@@ -1,3 +1,12 @@
+---
+id: memo-012
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: dbff934e-b32a-484a-b194-e470450ca210
+status: Draft
+title: "Algolia Search Setup"
+---
 # Algolia Search Setup
 
 This guide covers setting up Algolia as the search provider for Hermes.
@@ -23,7 +32,7 @@ Algolia provides:
 - You need a fully open-source solution
 - You're cost-sensitive (Algolia has usage-based pricing)
 
-See [README-meilisearch.md](README-meilisearch.md) for the self-hosted alternative.
+See [readme-meilisearch.md](readme-meilisearch.md) for the self-hosted alternative.
 
 ## Setup Steps
 
@@ -55,6 +64,7 @@ algolia {
 providers {
   search = "algolia"  # Enable Algolia as search provider
 }
+
 ```
 
 ### 4. Configure Frontend (Optional)
@@ -131,6 +141,7 @@ After configuring Algolia, run the indexer to populate the search index:
 ```bash
 # Index all documents
 ./hermes indexer -config=config.hcl
+
 ```
 
 The indexer will:
@@ -163,6 +174,7 @@ indexer {
   update_header_enabled = true   # Rewrite document headers with metadata
   update_draft_headers = false   # Don't update headers for drafts
 }
+
 ```
 
 ## Search API
@@ -184,9 +196,10 @@ const results = await algolia.search('query', {
 
 All search requests go through the backend proxy at `/1/indexes/*`:
 
-```
+```text
 GET /1/indexes/docs/query
 POST /1/indexes/docs/query
+
 ```
 
 This provides:
@@ -232,6 +245,7 @@ Algolia pricing is based on:
 **Cause**: Index not populated or backend not configured
 
 **Solution**:
+
 ```bash
 # Check indexer logs
 ./hermes indexer -config=config.hcl 2>&1 | grep -i algolia
@@ -264,18 +278,22 @@ curl -H "X-Algolia-API-Key: YOUR_ADMIN_KEY" \
 
 If you want to switch to Meilisearch:
 
-1. Set up Meilisearch (see [README-meilisearch.md](README-meilisearch.md))
+1. Set up Meilisearch (see [readme-meilisearch.md](readme-meilisearch.md))
 2. Update `config.hcl`:
+
    ```hcl
    providers {
      search = "meilisearch"  # Switch provider
    }
+
    ```
+
 3. Run indexer to populate Meilisearch
 4. Algolia indices can be kept as backup or deleted
 
 ## See Also
 
-- [Meilisearch Setup](README-meilisearch.md) - Self-hosted alternative
+- [Meilisearch Setup](readme-meilisearch.md) - Self-hosted alternative
 - [Configuration Documentation](CONFIG_HCL_DOCUMENTATION.md)
 - [Search Adapter Code](../pkg/search/adapters/algolia/)
+

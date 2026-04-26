@@ -1,3 +1,12 @@
+---
+id: memo-013
+created: 2026-04-24
+author: Hermes Team
+project_id: hermes
+doc_uuid: 80dfea2e-510a-432b-906b-99e11756e93f
+status: Draft
+title: "Authentication Provider Testing Guide"
+---
 # Authentication Provider Testing Guide
 
 This directory contains configuration examples for testing Hermes with different authentication providers.
@@ -19,6 +28,7 @@ docker run -d \
   -v $(pwd)/dex-config.yaml:/etc/dex/config.yaml \
   ghcr.io/dexidp/dex:latest \
   dex serve /etc/dex/config.yaml
+
 ```
 
 ### 2. Build Hermes
@@ -40,6 +50,7 @@ yarn build
 
 ```bash
 ./build/bin/hermes server -config=testing/config-dex.hcl
+
 ```
 
 ### 4. Access Application
@@ -57,6 +68,7 @@ The frontend will:
 ### Using Google OAuth
 
 **Backend `config.hcl`**:
+
 ```hcl
 google_workspace {
   oauth2 {
@@ -68,10 +80,12 @@ google_workspace {
 ```
 
 **Web Build**:
+
 ```bash
 # Optional: Can provide Google OAuth client ID
 export HERMES_WEB_GOOGLE_OAUTH2_CLIENT_ID="123-abc.apps.googleusercontent.com"
 cd web && yarn build
+
 ```
 
 **Runtime Result**: `auth_provider = "google"`
@@ -81,6 +95,7 @@ cd web && yarn build
 ### Using Dex OIDC
 
 **Backend `config-dex.hcl`**:
+
 ```hcl
 dex {
   issuer_url    = "http://localhost:5556/dex"
@@ -92,9 +107,11 @@ dex {
 ```
 
 **Web Build**:
+
 ```bash
 # No authentication env vars needed!
 cd web && yarn build
+
 ```
 
 **Runtime Result**: `auth_provider = "dex"`
@@ -104,6 +121,7 @@ cd web && yarn build
 ### Using Okta OIDC
 
 **Backend `config-okta.hcl`**:
+
 ```hcl
 okta {
   auth_server_url = "https://hashicorp.okta.com/oauth2/default"
@@ -115,9 +133,11 @@ okta {
 ```
 
 **Web Build**:
+
 ```bash
 # No authentication env vars needed!
 cd web && yarn build
+
 ```
 
 **Runtime Result**: `auth_provider = "okta"`
@@ -183,21 +203,26 @@ volumes:
 ## Testing Different Providers
 
 ### Test Google OAuth
+
 ```bash
 cp configs/config.hcl testing/config.hcl
 # Edit to ensure google_workspace block is configured
 ./build/bin/hermes server -config=testing/config.hcl
+
 ```
 
 ### Test Dex OIDC
+
 ```bash
 ./build/bin/hermes server -config=testing/config-dex.hcl
 ```
 
 ### Test Okta OIDC
+
 ```bash
 cp testing/config-okta.hcl testing/config.hcl
 ./build/bin/hermes server -config=testing/config.hcl
+
 ```
 
 ## Verification
@@ -215,6 +240,7 @@ curl http://localhost:8080/api/v2/web/config | jq '{
 ```
 
 **Expected for Dex**:
+
 ```json
 {
   "auth_provider": "dex",
@@ -222,9 +248,11 @@ curl http://localhost:8080/api/v2/web/config | jq '{
   "google_oauth2_client_id": "",
   "skip_google_auth": true
 }
+
 ```
 
 **Expected for Google**:
+
 ```json
 {
   "auth_provider": "google",
@@ -241,16 +269,17 @@ curl http://localhost:8080/api/v2/web/config | jq '{
 curl -H "Authorization: Bearer {your-token}" \
   http://localhost:8080/1/indexes/docs/query \
   -d '{"query":"test"}'
+
 ```
 
 Backend will forward to Algolia with its own credentials.
 
 ## Key Benefits
 
-✅ **Single Web Build** - Same build works with any auth provider  
-✅ **No External Credentials at Build Time** - Auth config comes from backend at runtime  
-✅ **Easy Provider Switching** - Just change backend config, no rebuild needed  
-✅ **Testing-Friendly** - Use Dex for CI/testing, Google/Okta for production  
+✅ **Single Web Build** - Same build works with any auth provider
+✅ **No External Credentials at Build Time** - Auth config comes from backend at runtime
+✅ **Easy Provider Switching** - Just change backend config, no rebuild needed
+✅ **Testing-Friendly** - Use Dex for CI/testing, Google/Okta for production
 ✅ **Search Simplified** - All search goes through backend proxy, no direct Algolia access
 
 ## Troubleshooting
@@ -274,3 +303,4 @@ Backend will forward to Algolia with its own credentials.
 - **Implementation**: `/docs-internal/SEARCH_AND_AUTH_REFACTORING.md`
 - **Analysis**: `/docs-internal/WEB_EXTERNAL_DEPENDENCIES_ANALYSIS.md`
 - **Dex Documentation**: https://dexidp.io/docs/
+

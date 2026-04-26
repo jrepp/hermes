@@ -1,10 +1,14 @@
 ---
-id: makefile-root-targets
-title: Root Makefile Quick Start Targets
+id: memo-096
+title: "Root Makefile Quick Start Targets"
 date: 2025-10-09
 type: memo
 status: active
 tags: [development, makefile, tooling]
+created: 2025-10-09
+author: Hermes Team
+project_id: hermes
+doc_uuid: 8207123f-bb6b-4eb2-a89d-fdc6062fd903
 ---
 
 # Root Makefile Quick Start Targets
@@ -18,7 +22,7 @@ This document describes the quick-start targets added to the root Makefile for e
 
 Starts the complete containerized testing environment with all services:
 - Frontend (Ember.js) on port 4201
-- Backend (Go) on port 8001  
+- Backend (Go) on port 8001
 - PostgreSQL on port 5433
 - Meilisearch on port 7701
 - Dex (OIDC provider) on ports 5558/5559
@@ -29,6 +33,7 @@ make up
 # Frontend: http://localhost:4201
 # Backend:  http://localhost:8001
 # Dex:      http://localhost:5558
+
 ```
 
 **Use case**: Full integration testing, E2E tests, or when you want everything running in containers.
@@ -49,6 +54,7 @@ Runs the canary test script that validates the full testing environment:
 
 ```bash
 make canary
+
 ```
 
 This script:
@@ -89,6 +95,7 @@ make canary
 
 # Stop when done
 make down
+
 ```
 
 ### Workflow 2: Native Backend + Native Frontend
@@ -117,6 +124,7 @@ make web/proxy  # Auto-detects port 8001
 # Run E2E tests
 cd tests/e2e-playwright
 npx playwright test --reporter=line
+
 ```
 
 ### Workflow 4: Quick Validation
@@ -147,20 +155,21 @@ make canary
 
 ## 🎯 Target Dependencies
 
-```
+```text
 make up
   └─> cd testing && docker compose up --build -d
-  
+
 make down
   └─> cd testing && docker compose down
-  
+
 make canary
   └─> ./scripts/canary-local.sh
-  
+
 make web/proxy
   └─> make web/install-deps
   └─> Auto-detect backend (8001 or 8000)
   └─> yarn ember server --proxy <detected-backend>
+
 ```
 
 ## 🔍 Implementation Details
@@ -201,6 +210,7 @@ web/proxy: web/install-deps
 		echo "Start backend first with: make run (native) or make up (testing)"; \
 		exit 1; \
 	fi
+
 ```
 
 ## 📝 Notes
@@ -222,6 +232,7 @@ web/proxy: web/install-deps
 **Problem**: `make up` fails with port conflicts
 
 **Solution**: Check for running services and stop them:
+
 ```bash
 lsof -i :4201 :8001 :5433 :7701 :5558
 make down  # Stop testing environment
@@ -230,17 +241,20 @@ make down  # Stop testing environment
 **Problem**: `make web/proxy` says no backend detected
 
 **Solution**: Start a backend first:
+
 ```bash
 # Option 1: Testing backend (Docker)
 make up
 
 # Option 2: Native backend
 make bin && ./hermes server -config=config.hcl
+
 ```
 
 **Problem**: `make canary` fails
 
 **Solution**: Ensure testing environment is running and healthy:
+
 ```bash
 make up
 sleep 30  # Wait for all services
@@ -250,7 +264,7 @@ make canary
 
 ## 🔗 Related Documentation
 
-- [Testing Environment](../testing/README.md) - Complete testing environment documentation
+- [Testing Environment](../testing/readme.md) - Complete testing environment documentation
 - [GitHub Copilot Instructions](../.github/copilot-instructions.md) - Development workflow guide
 - [Playwright E2E Testing](./PLAYWRIGHT_E2E_AGENT_GUIDE.md) - E2E testing with playwright-mcp
 
@@ -261,3 +275,4 @@ make canary
 - Added `make web/proxy` with auto-detection
 - Documented `make canary` (already existed)
 - Created comprehensive workflow examples
+
