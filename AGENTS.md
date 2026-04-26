@@ -50,6 +50,7 @@ These are project-wide commitments. Cite the ADR when you invoke them; flag cont
 - Read [`docs-internal/adr/adr-003-readme.md`](docs-internal/adr/adr-003-readme.md) for the full index and the cross-cutting principles table.
 - If a request appears to contradict an ADR, surface the conflict and ask before proceeding.
 - Proposing a new architectural direction → write an RFC under `docs-internal/rfc/`. Recording an accepted decision → write an ADR under `docs-internal/adr/` and update the index.
+- **Authoring any new ADR / RFC / memo, or demoting an ADR, starts from [`docs-internal/templates/readme.md`](docs-internal/templates/readme.md).** That guide pins the templates, frontmatter vocabularies, and the demotion / RFC-migration checklists.
 
 ## Documentation Source of Truth
 

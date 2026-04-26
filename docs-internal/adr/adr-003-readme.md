@@ -15,6 +15,8 @@ Authoritative record of architectural decisions for Hermes. Each ADR documents t
 
 **This index is the ground-truth map of binding architectural commitments.** New work must conform to the principles listed in [Cross-Cutting Principles](#cross-cutting-principles) unless an ADR is explicitly superseded.
 
+> **Authoring a new ADR or demoting one?** Start from [`docs-internal/templates/readme.md`](../templates/readme.md). It pins the templates, controlled vocabularies for `status` / `decision_type`, and the demotion / RFC-migration checklists.
+
 ## What Belongs in an ADR
 
 An ADR records a **decision with ongoing force** — a rule, pattern, or constraint that future contributors must follow or explicitly supersede. Every ADR must declare a `decision_type`:

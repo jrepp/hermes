@@ -12,6 +12,8 @@ title: "RFC Documents (Request for Comments)"
 
 Architecture proposals, design documents, and implementation specifications for major features in Hermes. These describe proposed or in-progress designs — finalized decisions should be recorded as ADRs.
 
+> **Authoring a new RFC?** Start from [`docs-internal/templates/readme.md`](../templates/readme.md) and use [`rfc-template.md`](../templates/rfc-template.md). The guide pins frontmatter conventions and the ADR/RFC split.
+
 ## Quick Stats
 
 - **Total RFCs**: 18

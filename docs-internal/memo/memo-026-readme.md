@@ -11,6 +11,8 @@ title: "Memo Documents"
 
 Implementation notes, quick reference guides, session summaries, and completion reports from Hermes development.
 
+> **Authoring a new memo?** Start from [`docs-internal/templates/readme.md`](../templates/readme.md) and use [`memo-template.md`](../templates/memo-template.md). The guide pins memo `status` and `type` conventions and the demotion checklist for converting an ADR into a memo.
+
 ## Index
 
 ### Quick Reference Guides

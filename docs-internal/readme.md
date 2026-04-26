@@ -12,6 +12,7 @@ docs-internal/
 ├── plans/                    # Plans (non-durable work items and checklists)
 ├── archive/                  # Archived (completed/superseded documents)
 ├── ember-development-guide/  # Ember + frontend developer workflow guide
+├── templates/                # ADR / RFC / Memo templates and authoring guide
 └── readme.md                 # This file
 ```
 
@@ -28,6 +29,7 @@ docs-internal/
 - [RFC index](rfc/rfc-002-readme.md) — 18 active design proposals
 - [Memo index](memo/memo-026-readme.md) — Implementation notes and guides
 - [Plans index](plans/readme.md) — Non-durable work items
+- [Templates & authoring guide](templates/readme.md) — Start here when writing a new ADR, RFC, or memo
 - [Archive index](archive/readme.md) — Completed and superseded documents
 - [Documentation hub](memo/memo-073-docs-internal-hub.md)
 
