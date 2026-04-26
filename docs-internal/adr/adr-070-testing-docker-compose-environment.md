@@ -4,9 +4,10 @@ title: Testing Docker Compose Environment
 date: 2025-10-09
 type: ADR
 subtype: Infrastructure
+decision_type: Infrastructure
 status: Accepted
-tags: ['infrastructure', 'docker', 'testing', 'environment', 'dex', 'meilisearch']
-related: ['RFC-020', 'RFC-047', 'RFC-076']
+tags: ['infrastructure', 'docker', 'testing', 'environment']
+related: ['ADR-072', 'ADR-075']
 created: 2026-04-24
 deciders: Hermes Team
 project_id: hermes
@@ -14,190 +15,46 @@ doc_uuid: 735b0ba9-9507-4a9d-a1ee-6dd1d34d4728
 ---
 # Testing Docker Compose Environment
 
+> The `testing/` Docker Compose stack runs the full Hermes integration environment on **+1-offset ports** so it never collides with native development or integration-test fixtures: hermes `8001`, postgres `5433`, meilisearch `7701`, dex `5557/5559`, web `4201`.
+
 ## Context
 
-Development and testing required a fully integrated environment that didn't depend on external services (Google Workspace, Algolia) and could run consistently across developer machines and CI/CD pipelines.
-
-**Requirements**:
-- Backend API with local workspace provider
-- PostgreSQL database
-- Search engine (Meilisearch)
-- OIDC authentication (Dex)
-- Consistent port allocation to avoid conflicts
-- Support for both native and containerized frontend
+Hermes needs a reproducible local stack — backend, database, search, OIDC, and optionally the frontend — that runs without Google Workspace, Algolia, or any external SaaS. Native dev and integration tests already occupy the canonical ports (`8000`, `5432`, `7700`, `5556/5558`, `4200`), so the testing stack must coexist with them.
 
 ## Decision
 
-Create `./testing/docker-compose.yml` with dedicated services and non-conflicting ports.
+Provide `testing/docker-compose.yml` with a fixed, documented +1 port offset and an HCL config (`testing/config.hcl`) wiring the local workspace, Meilisearch, and Dex providers. The stack is the canonical target for E2E tests and agent-driven exploration.
 
-**Architecture**:
+**Port allocation:**
 
-```yaml
-Services:
-- hermes (backend): Port 8001 (vs 8000 native)
-- postgres: Port 5433 (vs 5432 integration tests)
-- meilisearch: Port 7701 (vs 7700 native)
-- dex: Ports 5558/5559 (vs 5556/5557 integration tests)
-- web (optional): Port 4201 (vs 4200 native)
+| Service     | Native | Integration | Testing   | Production |
+|-------------|--------|-------------|-----------|------------|
+| Backend     | 8000   | —           | **8001**  | 8080       |
+| Frontend    | 4200   | —           | **4201**  | —          |
+| Postgres    | 5432   | 5432        | **5433**  | 5432       |
+| Meilisearch | 7700   | —           | **7701**  | 7700       |
+| Dex         | —      | 5556/5558   | **5557/5559** | —      |
 
-```
-
-**Configuration** (`testing/config.hcl`):
-
-```hcl
-providers {
-  workspace = "local"
-  search    = "meilisearch"
-}
-
-local_workspace {
-  root_path = "/app/workspace_data"
-}
-
-meilisearch {
-  url = "http://meilisearch:7700"
-  api_key = "test-master-key"
-}
-
-dex {
-  issuer_url = "http://dex:5557/dex"
-  client_id = "hermes-acceptance"
-}
-```
+The stack supports three modes: full Docker, hybrid (native frontend → Docker backend on `8001`), and infra-only (native backend, containerized Postgres/Meilisearch/Dex).
 
 ## Consequences
 
-### Positive ✅
-- **Isolation**: No conflicts with native development or integration tests
-- **Reproducibility**: Same environment across all machines and CI
-- **Speed**: Fast startup (~5s), no external API rate limits
-- **Completeness**: Full stack including auth, search, storage
-- **Flexibility**: Can run frontend natively or containerized
-- **Data Seeding**: Pre-populated users, documents, templates in `workspace_data/`
+### Positive
+- No conflicts with native dev or integration tests; both stacks can run concurrently.
+- Single `docker compose up` produces a complete environment with no external credentials.
+- Numbers are memorable (`+1` from canonical), so the offset is easy to teach and recall.
 
-### Negative ❌
-- **Port Management**: Must document and remember port differences
-- **Container Overhead**: ~500MB disk, 200MB RAM for all services
-- **Configuration Duplication**: Separate config files for each environment
-- **No Hot Reload**: Backend requires rebuild for code changes
-
-## Measured Results
-
-**Startup Performance** (M1 Mac):
-
-``` text
-Cold start: 8.2s (image pull + first run)
-Warm start: 2.1s (cached images)
-Health checks: All pass within 5s
-
-```
-
-**Resource Usage**:
-
-``` text
-CPU: <5% idle, 15-20% under load
-Memory: 180MB total (hermes 120MB, postgres 40MB, others 20MB)
-Disk: 450MB images, <10MB data
-```
-
-**Test Execution**:
-
-``` text
-E2E tests: 45s for full suite (vs 2-3min with external services)
-Integration tests: Can run in parallel with testing environment
-
-```
-
-**Data Seeding**:
-
-``` text
-Provided: 2 RFC templates, 2 test documents, 2 users
-Load time: <100ms (filesystem read)
-Reset: docker compose down -v && docker compose up -d
-```
-
-## Port Allocation Strategy
-
-| Service | Native | Integration | Testing | Production |
-|---------|--------|-------------|---------|------------|
-| Backend | 8000 | - | 8001 | 8080 |
-| Frontend | 4200 | - | 4201 | - |
-| Postgres | 5432 | 5432 | 5433 | 5432 |
-| Meilisearch | 7700 | - | 7701 | 7700 |
-| Dex | - | 5556/5558 | 5557/5559 | - |
-
-**Rationale**: +1 offset for testing environment avoids conflicts while keeping numbers memorable.
-
-## Development Workflows Enabled
-
-### 1. Full Docker (Stable Backend)
-
-```bash
-cd testing
-docker compose up -d
-# Access at http://localhost:4201
-
-```
-
-### 2. Hybrid (Native Frontend + Docker Backend)
-
-```bash
-cd testing && docker compose up -d
-cd ../web && yarn start:proxy:testing  # port 4200 → 8001
-# Fast frontend iteration with stable backend
-```
-
-### 3. E2E Testing
-
-```bash
-cd testing && docker compose up -d
-cd ../tests/e2e-playwright
-npx playwright test --reporter=line
-# playwright-mcp or headless tests
-
-```
-
-### 4. Backend Development
-
-```bash
-cd testing && docker compose up -d postgres meilisearch dex
-./hermes server -config=testing/config.hcl  # native on 8001
-# Backend hot reload, shared services
-```
+### Negative
+- Two sets of ports to remember; documentation must stay current.
+- Backend changes require a rebuild (no in-container hot reload).
 
 ## Alternatives Considered
 
-### 1. ❌ Minikube/Kind (Kubernetes)
-**Pros**: Production-like, service mesh capability
-**Cons**: Slow startup (30s+), complex networking, overkill for development
-**Rejected**: Too heavyweight for local development
+- **Kubernetes (kind/minikube):** Production-like but slow startup and overkill for a dev loop.
+- **Dynamic port allocation:** Avoids conflicts but breaks bookmarks, scripts, and muscle memory.
+- **Shared DB with integration tests:** Causes data pollution and flakiness; isolation is non-negotiable.
 
-### 2. ❌ Single Port with Path Routing
-**Pros**: One URL for everything
-**Cons**: Nginx/Traefik complexity, harder debugging
-**Rejected**: Added complexity without clear benefit
+## References
 
-### 3. ❌ Dynamic Port Allocation
-**Pros**: No conflicts possible
-**Cons**: Harder to remember, breaks bookmarks/scripts
-**Rejected**: Developer experience priority over flexibility
-
-### 4. ❌ Shared Database with Integration Tests
-**Pros**: Fewer containers
-**Cons**: Race conditions, data pollution, test flakiness
-**Rejected**: Test isolation critical
-
-## Future Considerations
-
-- **Multi-Environment Support**: Add staging/production compose files
-- **Volume Persistence**: Optional data persistence between restarts
-- **Health Check Dashboard**: Web UI showing service status
-- **Performance Profiling**: Built-in pprof endpoints
-- **Log Aggregation**: Centralized logging (Loki, ELK)
-
-## Related Documentation
-
-- `TESTING_ENVIRONMENTS.md` - Port allocation reference
-- `testing/readme.md` - Quick start guide
-- `docs-internal/ENV_SETUP.md` - Environment setup instructions
-
+- `testing/docker-compose.yml`, `testing/config.hcl`, `testing/readme.md`
+- ADR-072 (Dex), ADR-075 (Meilisearch)
