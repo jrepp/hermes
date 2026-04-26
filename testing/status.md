@@ -1,4 +1,4 @@
-# RFC-089 Migration Testing Status
+# RFC-015 Migration Testing Status
 
 ## ✅ COMPLETE: Pure Go Testing Implementation
 
@@ -121,7 +121,7 @@ Validation correctly detected:
 - `testing/test-migration-worker.sh` (removed)
 - `testing/test-rfc089-api.sh` (removed)
 
-**Result**: No bash scripts needed for RFC-089 migration testing
+**Result**: No bash scripts needed for RFC-015 migration testing
 
 ---
 
@@ -201,7 +201,7 @@ Validation correctly detected:
 
 ## Summary
 
-**✅ RFC-089 migration testing is production-ready**
+**✅ RFC-015 migration testing is production-ready**
 
 - Pure Go implementation
 - No bash scripts required

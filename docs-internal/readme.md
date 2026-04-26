@@ -18,20 +18,20 @@ docs-internal/
 
 ## Quick Start
 
-- **New contributors** → `memo/memo-035-env-setup.md`
-- **Development quick reference** → `memo/memo-017-dev-quickref.md`
+- **New contributors** → `memo/memo-024-env-setup.md`
+- **Development quick reference** → `memo/memo-012-dev-quickref.md`
 - **RFC index** → `rfc/rfc-002-readme.md`
 - **Current planning status** → `memo/memo-003-2025-11-15-rfc-implementation-tracker.md`
 
 ## Core Indexes
 
-- [ADR index](adr/adr-003-readme.md) — 24 finalized architectural decisions
+- [ADR index](adr/adr-002-readme.md) — 24 finalized architectural decisions
 - [RFC index](rfc/rfc-002-readme.md) — 18 active design proposals
-- [Memo index](memo/memo-026-readme.md) — Implementation notes and guides
+- [Memo index](memo/memo-020-readme.md) — Implementation notes and guides
 - [Plans index](plans/readme.md) — Non-durable work items
 - [Templates & authoring guide](templates/readme.md) — Start here when writing a new ADR, RFC, or memo
 - [Archive index](archive/readme.md) — Completed and superseded documents
-- [Documentation hub](memo/memo-073-docs-internal-hub.md)
+- [Documentation hub](memo/memo-031-docs-internal-hub.md)
 
 ## Document Categories
 

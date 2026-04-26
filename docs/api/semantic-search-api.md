@@ -1,5 +1,5 @@
 # Semantic Search API Documentation
-## RFC-088 Semantic and Hybrid Search Endpoints
+## RFC-014 Semantic and Hybrid Search Endpoints
 
 **Version**: 2.0
 **Base URL**: `/api/v2`
@@ -285,7 +285,7 @@ const balanced = await hybridSearch('API design patterns', {
 });
 
 // Keyword-focused (for exact term matching)
-const keywordFocused = await hybridSearch('RFC-088', {
+const keywordFocused = await hybridSearch('RFC-014', {
   keywordWeight: 0.7,
   semanticWeight: 0.2,
   boostBoth: 0.1
@@ -315,7 +315,7 @@ async function hybridSearch(query, weights) {
 - **General purpose search**: Use balanced weights
 - **Looking for specific terms**: Use keyword-focused weights
 - **Looking for concepts**: Use semantic-focused weights
-- **Acronyms/codes**: Use keyword-focused (e.g., "RFC-088", "HTTP-500")
+- **Acronyms/codes**: Use keyword-focused (e.g., "RFC-014", "HTTP-500")
 - **Natural language questions**: Use semantic-focused (e.g., "how do I...")
 
 **Status Codes**:
@@ -520,7 +520,7 @@ async function searchWithErrorHandling(query) {
 Choose weights based on query type:
 
 **Keyword-focused (0.7/0.2/0.1)**:
-- Exact terms: "RFC-088", "CVE-2023-1234"
+- Exact terms: "RFC-014", "CVE-2023-1234"
 - Codes/IDs: "DOC-456", "TICKET-789"
 - Acronyms: "API", "SLA", "RBAC"
 
@@ -621,4 +621,4 @@ curl https://hermes.example.com/health
 
 *Last Updated: November 15, 2025*
 *API Version: 2.0*
-*RFC-088 Implementation*
+*RFC-014 Implementation*

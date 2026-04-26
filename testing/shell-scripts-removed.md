@@ -2,7 +2,7 @@
 
 ## Summary
 
-Removed RFC-089 migration-related bash test scripts in favor of pure Go integration tests.
+Removed RFC-015 migration-related bash test scripts in favor of pure Go integration tests.
 
 ## Removed Scripts
 
@@ -18,7 +18,7 @@ Removed RFC-089 migration-related bash test scripts in favor of pure Go integrat
 - **Reason**: Worker testing now integrated into Go test suite
 
 ### 3. `test-rfc089-api.sh` ❌ REMOVED
-- **Purpose**: RFC-089 API endpoint testing
+- **Purpose**: RFC-015 API endpoint testing
 - **Replaced by**: Can be added to Go API integration tests
 - **Reason**: API testing should be in Go, not bash
 
@@ -114,7 +114,7 @@ The following bash scripts remain in `./testing`:
 
 ## Result
 
-✅ **RFC-089 migration testing is now 100% Go-based**
+✅ **RFC-015 migration testing is now 100% Go-based**
 - No bash scripts required
 - Simple make commands
 - Automatic prerequisite checking

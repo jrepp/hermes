@@ -2,7 +2,7 @@
 
 **Date**: 2025-11-13
 **Status**: ✅ Complete
-**RFC**: RFC-085 & RFC-086
+**RFC**: RFC-011 & RFC-012
 
 ## Summary
 
@@ -455,9 +455,9 @@ make test-edge-sync || exit 1
 1. **This Document**: Implementation overview and migration guide
 2. **`tests/integration/edgesync/readme.md`**: Comprehensive test documentation
 3. **`testing/create-edge-token.sh`**: Token generation script (updated)
-4. **`docs/development/rfc-085-phase3-authentication.md`**: Authentication implementation
+4. **`docs/development/rfc-011-phase3-authentication.md`**: Authentication implementation
 5. **`docs/development/edge-token-rotation-guide.md`**: Token management
-6. **`docs/development/rfc-085-086-completion-summary.md`**: Implementation summary
+6. **`docs/development/rfc-011-086-completion-summary.md`**: Implementation summary
 
 ## Success Criteria
 

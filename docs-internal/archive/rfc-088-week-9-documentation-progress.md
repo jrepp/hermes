@@ -1,14 +1,14 @@
 ---
-id: rfc-088
+id: rfc-014
 created: 2026-04-24
-title: "RFC-088 Week 9: Documentation and Examples Phase"
+title: "RFC-014 Week 9: Documentation and Examples Phase"
 author: Hermes Team
 project_id: hermes
 doc_uuid: c25cad96-4a1f-470a-9f11-732e7e16f3ca
 status: Draft
 ---
 
-# RFC-088 Week 9: Documentation and Examples Phase
+# RFC-014 Week 9: Documentation and Examples Phase
 ## User Documentation, API Examples, and Best Practices
 
 **Phase**: 4 Weeks of Polish (Week 9 of 10)
@@ -20,7 +20,7 @@ status: Draft
 
 ## Overview
 
-Week 9 focuses on creating comprehensive user-facing documentation, API usage examples, performance tuning guides, and best practices for the RFC-088 Event-Driven Document Indexer with Semantic Search.
+Week 9 focuses on creating comprehensive user-facing documentation, API usage examples, performance tuning guides, and best practices for the RFC-014 Event-Driven Document Indexer with Semantic Search.
 
 ---
 
@@ -390,12 +390,12 @@ docs/
 
 ## Commits Made
 
-1. **de50f9e** - docs(rfc-088): add Week 9 progress tracking and comprehensive API documentation
-2. **b1552db** - docs(rfc-088): add comprehensive performance tuning guide
-3. **9724c2f** - docs(rfc-088): add comprehensive best practices guide
-4. **4511302** - docs(rfc-088): add comprehensive search configuration guide
-5. **d9160e2** - docs(rfc-088): add comprehensive monitoring setup guide
-6. **ac209c6** - docs(rfc-088): add comprehensive troubleshooting guide
+1. **de50f9e** - docs(rfc-014): add Week 9 progress tracking and comprehensive API documentation
+2. **b1552db** - docs(rfc-014): add comprehensive performance tuning guide
+3. **9724c2f** - docs(rfc-014): add comprehensive best practices guide
+4. **4511302** - docs(rfc-014): add comprehensive search configuration guide
+5. **d9160e2** - docs(rfc-014): add comprehensive monitoring setup guide
+6. **ac209c6** - docs(rfc-014): add comprehensive troubleshooting guide
 
 ---
 
@@ -445,7 +445,7 @@ docs/
 - **Code Examples**: 50+ complete examples
 - **Troubleshooting Scenarios**: 20+ common issues documented
 
-### RFC-088 Overall Progress
+### RFC-014 Overall Progress
 
 **After Week 9**:
 - Implementation: 98% (unchanged - polish phase)
@@ -490,7 +490,7 @@ docs/
 **Status**: Week 9 Complete ✅
 **Next Milestone**: Week 10 (Final Polish and Release Preparation)
 **Target Completion**: Week 10 (end of polish phase)
-**RFC-088 Progress**: 95% complete
+**RFC-014 Progress**: 95% complete
 
 ---
 

@@ -6,7 +6,7 @@ type: Analysis
 status: Final
 tags: [ai-agents, copilot, productivity, best-practices, prompt-engineering]
 related:
-  - MEMO-019
+  - MEMO-016
   - MEMO-016
 created: 2025-10-09
 author: Hermes Team
@@ -160,6 +160,6 @@ This analysis examines **what worked, what didn't, and what to repeat** in AI-as
 ## Recommended Reading
 
 - Full analysis: `docs-internal/AGENT_USAGE_ANALYSIS.md` (1,604 lines)
-- Velocity metrics: MEMO-019
+- Velocity metrics: MEMO-016
 - Deliverables: MEMO-016
 

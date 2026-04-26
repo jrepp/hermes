@@ -1,6 +1,6 @@
 # Edge Sync Authentication Testing
 
-This document describes the authentication testing infrastructure for RFC-085 & RFC-086 implementation.
+This document describes the authentication testing infrastructure for RFC-011 & RFC-012 implementation.
 
 ## Overview
 
@@ -74,7 +74,7 @@ docker compose up -d
 **Expected Output**:
 ```
 =================================================================
-RFC-085 Edge Sync API - Authentication Integration Tests
+RFC-011 Edge Sync API - Authentication Integration Tests
 =================================================================
 Central URL: http://localhost:8000
 Edge Instance: edge-dev-test
@@ -100,7 +100,7 @@ Failed: 0
 ╔════════════════════════════════════════════════════════╗
 ║  ✓ All authentication tests passed successfully!      ║
 ║                                                        ║
-║  RFC-086 Bearer Token Authentication: VERIFIED ✓      ║
+║  RFC-012 Bearer Token Authentication: VERIFIED ✓      ║
 ╚════════════════════════════════════════════════════════╝
 ```
 
@@ -398,9 +398,9 @@ grep -i "auth\|token" /tmp/hermes-server.log
 
 ## References
 
-- **RFC-085**: Multi-Provider Architecture with Document Synchronization
-- **RFC-086**: Authentication and Bearer Token Management
-- **Implementation Guide**: `docs/development/rfc-085-phase3-authentication.md`
+- **RFC-011**: Multi-Provider Architecture with Document Synchronization
+- **RFC-012**: Authentication and Bearer Token Management
+- **Implementation Guide**: `docs/development/rfc-011-phase3-authentication.md`
 - **Token Rotation Guide**: `docs/development/edge-token-rotation-guide.md`
 - **API Documentation**: `internal/api/v2/edge_sync.go`
 - **Auth Middleware**: `internal/api/v2/edge_sync_auth.go`

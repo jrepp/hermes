@@ -146,7 +146,7 @@ Common questions addressed in `demo-narrative.md`:
 - Summary (1 min)
 
 ### Deep Dive (30 minutes)
-- Add architecture walkthrough (show ADR-073)
+- Add architecture walkthrough (show ADR-009)
 - Live code tour: provider interfaces
 - Database schema exploration
 - Performance profiling demonstration
@@ -214,9 +214,9 @@ docker compose up -d
 ### Share with Stakeholders
 
 1. **Narrative Document**: Email `demo-narrative.md` (comprehensive context)
-2. **ADR-073**: Provider abstraction architecture
-3. **ADR-071**: Local file workspace system
-4. **RFC-080**: Outbox pattern for document sync
+2. **ADR-009**: Provider abstraction architecture
+3. **ADR-007**: Local file workspace system
+4. **RFC-008**: Outbox pattern for document sync
 5. **Testing README**: `testing/readme.md` for setup details
 
 ### Next Steps Discussion
@@ -237,10 +237,10 @@ docker compose up -d
 
 - `demo-narrative.md` - Complete presentation script and talking points
 - `DEMO-SCRIPT.sh` - Automated demo execution script
-- `docs-internal/adr/adr-071-local-file-workspace-system.md` - Local workspace design
-- `docs-internal/adr/adr-073-provider-abstraction-architecture.md` - Provider pattern
-- `docs-internal/adr/adr-075-meilisearch-as-local-search-solution.md` - Search provider
-- `docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md` - Migration design
+- `docs-internal/adr/adr-007-local-file-workspace-system.md` - Local workspace design
+- `docs-internal/adr/adr-009-provider-abstraction-architecture.md` - Provider pattern
+- `docs-internal/adr/adr-011-meilisearch-as-local-search-solution.md` - Search provider
+- `docs-internal/rfc/rfc-008-outbox-pattern-document-sync.md` - Migration design
 - `testing/readme.md` - Complete testing environment documentation
 - `tests/e2e-playwright/` - E2E test suite
 
@@ -275,10 +275,10 @@ cat workspace_data/drafts/RFC-001-example.md
 ### Demo 3: Architecture
 ```bash
 # Show provider abstraction
-cat ../docs-internal/adr/adr-073-provider-abstraction-architecture.md | head -50
+cat ../docs-internal/adr/adr-009-provider-abstraction-architecture.md | head -50
 
 # Show migration RFC
-cat ../docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md | head -50
+cat ../docs-internal/rfc/rfc-008-outbox-pattern-document-sync.md | head -50
 ```
 
 ### Demo 4: Testing

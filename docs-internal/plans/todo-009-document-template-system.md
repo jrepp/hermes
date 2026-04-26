@@ -8,7 +8,7 @@ status: open
 tags: [templates, documents, email, customization]
 related:
   - TODO-004
-  - RFC-078
+  - RFC-006
 ---
 
 # Implement Document Template System
@@ -155,7 +155,7 @@ templates/
 ## Dependencies
 
 - **Relates to**: TODO-004 (Async email sending)
-- **Enables**: RFC-078 (New document types)
+- **Enables**: RFC-006 (New document types)
 
 ## References
 

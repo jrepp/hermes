@@ -1,5 +1,5 @@
 # Performance Tuning Guide
-## RFC-088 Semantic Search and Document Indexer
+## RFC-014 Semantic Search and Document Indexer
 
 **Version**: 2.0
 **Audience**: DevOps Engineers, Database Administrators, SRE Teams
@@ -9,7 +9,7 @@
 
 ## Overview
 
-This guide provides comprehensive performance tuning recommendations for the RFC-088 Event-Driven Document Indexer with Semantic Search. Proper configuration can result in **50-200x performance improvements** for vector search operations.
+This guide provides comprehensive performance tuning recommendations for the RFC-014 Event-Driven Document Indexer with Semantic Search. Proper configuration can result in **50-200x performance improvements** for vector search operations.
 
 **Key Performance Areas**:
 - Database configuration and indexing
@@ -767,12 +767,12 @@ Before deploying to production, verify:
 
 - [pgvector Documentation](https://github.com/pgvector/pgvector)
 - [PostgreSQL Performance Tuning](https://www.postgresql.org/docs/current/performance-tips.html)
-- [RFC-088 Query Optimization Analysis](../../docs-internal/rfc/rfc-088-query-optimization-analysis.md)
+- [RFC-014 Query Optimization Analysis](../../docs-internal/rfc/rfc-014-query-optimization-analysis.md)
 - [API Documentation](../api/semantic-search-api.md)
 - [Troubleshooting Guide](../guides/troubleshooting.md)
 
 ---
 
 *Last Updated: November 15, 2025*
-*RFC-088 Implementation*
+*RFC-014 Implementation*
 *Version 2.0*

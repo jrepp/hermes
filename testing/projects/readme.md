@@ -56,7 +56,7 @@ project "short-name" {
 ### Short Names
 
 Short names are used in:
-- **Document identifiers**: `RFC-001`, `PRD-042`, `TEST-123`
+- **Document identifiers**: `RFC-001`, `PRD 042`, `TEST-123`
 - **URLs**: `/projects/testing`, `/docs/RFC-001`
 - **Search facets**: Filter by project short name
 - **Display**: Compact project reference
@@ -223,7 +223,7 @@ Documents use the project short name in their display ID:
 
 ```
 RFC-001: API Design Guidelines
-PRD-042: New Feature Specification
+PRD 042: New Feature Specification
 TEST-123: Integration Test Document
 ```
 

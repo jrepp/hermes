@@ -106,7 +106,7 @@ Scenario: basic
 Count: 10
 ...
 ✅ Generated: workspaces/testing/rfcs/RFC-001-test-rfc.md
-✅ Generated: workspaces/testing/prds/PRD-001-test-product.md
+✅ Generated: workspaces/testing/prds/PRD 001-test-product.md
 ✅ Generated: workspaces/testing/meetings/MEET-001-test-meeting.md
 ...
 === Seeding Complete ===

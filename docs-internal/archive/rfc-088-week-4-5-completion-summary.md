@@ -1,25 +1,25 @@
 ---
-id: rfc-088
+id: rfc-014
 created: 2026-04-24
-title: "RFC-088 Week 4-5 Completion Summary"
+title: "RFC-014 Week 4-5 Completion Summary"
 author: Hermes Team
 project_id: hermes
 doc_uuid: 1e0f8948-2a89-4b2e-a9d9-93a413575a89
 status: Draft
 ---
 
-# RFC-088 Week 4-5 Completion Summary
+# RFC-014 Week 4-5 Completion Summary
 ## Integration Testing & E2E Tests
 
 **Date**: November 15, 2025
 **Status**: ✅ COMPLETED
-**Progress**: RFC-088 is now at 95% completion
+**Progress**: RFC-014 is now at 95% completion
 
 ---
 
 ## Overview
 
-Week 4-5 focused on comprehensive integration testing and end-to-end validation of the RFC-088 Event-Driven Document Indexer pipeline. All E2E tests, performance tests, and load tests have been implemented and are passing.
+Week 4-5 focused on comprehensive integration testing and end-to-end validation of the RFC-014 Event-Driven Document Indexer pipeline. All E2E tests, performance tests, and load tests have been implemented and are passing.
 
 ---
 
@@ -27,7 +27,7 @@ Week 4-5 focused on comprehensive integration testing and end-to-end validation 
 
 ### 1. End-to-End Pipeline Tests (`tests/integration/indexer/rfc088_e2e_test.go`)
 
-Created comprehensive E2E tests covering the complete RFC-088 pipeline:
+Created comprehensive E2E tests covering the complete RFC-014 pipeline:
 
 #### **TestRFC088_FullPipeline**
 - Tests complete document processing flow: Document → LLM Summary → Embeddings → Search
@@ -210,7 +210,7 @@ Total: 724 lines of comprehensive test coverage
 ### Running E2E Tests
 
 ```bash
-# Run all RFC-088 E2E tests
+# Run all RFC-014 E2E tests
 go test -v ./tests/integration/indexer -run TestRFC088
 
 # Skip in short mode
@@ -331,14 +331,14 @@ Based on the 8-week roadmap, the next priorities are:
 
 ## Commits
 
-1. **`2907e45`** - feat(rfc-088): add comprehensive E2E pipeline tests
-2. **`605468b`** - feat(rfc-088): add performance and load tests
+1. **`2907e45`** - feat(rfc-014): add comprehensive E2E pipeline tests
+2. **`605468b`** - feat(rfc-014): add performance and load tests
 
 ---
 
 ## Summary
 
-Week 4-5 successfully delivered comprehensive integration testing infrastructure for RFC-088:
+Week 4-5 successfully delivered comprehensive integration testing infrastructure for RFC-014:
 
 - ✅ **3 E2E Test Suites**: Full pipeline, ruleset matching, chunked embeddings
 - ✅ **4 Performance Tests**: Single doc, chunked doc, throughput, memory
@@ -346,7 +346,7 @@ Week 4-5 successfully delivered comprehensive integration testing infrastructure
 - ✅ **100% Test Pass Rate**: All tests passing consistently
 - ✅ **Clear Documentation**: Test execution and performance metrics
 
-**RFC-088 Progress**: 90% → 95%
+**RFC-014 Progress**: 90% → 95%
 
 **Ready for Week 5-6**: API implementation and production prep
 

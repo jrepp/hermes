@@ -124,7 +124,7 @@ testing/workspace_data/
 ├── in-review/
 │   └── MEMO-003-project-update.md
 └── approved/
-    └── PRD-004-feature-specification.md
+    └── PRD 004-feature-specification.md
 ```
 
 ### Example Document Format
@@ -320,8 +320,8 @@ docker compose logs hermes-backend | grep -i auth
 - [Local Workspace Documentation](../../docs-internal/memo/README-local-workspace.md)
 - [Dex Authentication Setup](../../docs-internal/memo/README-dex.md)
 - [Meilisearch Configuration](../../docs-internal/memo/README-meilisearch.md)
-- [ADR-071: Local File Workspace](../../docs-internal/adr/adr-071-local-file-workspace-system.md)
-- [ADR-073: Provider Abstraction](../../docs-internal/adr/adr-073-provider-abstraction-architecture.md)
+- [ADR-007: Local File Workspace](../../docs-internal/adr/adr-007-local-file-workspace-system.md)
+- [ADR-009: Provider Abstraction](../../docs-internal/adr/adr-009-provider-abstraction-architecture.md)
 
 ## Key Takeaways
 

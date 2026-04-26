@@ -1,14 +1,14 @@
 ---
-id: rfc-088
+id: rfc-014
 created: 2026-04-24
-title: "RFC-088 Week 5-6 Implementation Summary"
+title: "RFC-014 Week 5-6 Implementation Summary"
 author: Hermes Team
 project_id: hermes
 doc_uuid: 0cb2a956-f22c-4a02-8a6a-98b214c347a4
 status: Draft
 ---
 
-# RFC-088 Week 5-6 Implementation Summary
+# RFC-014 Week 5-6 Implementation Summary
 ## REST APIs, Configuration, and Deployment Preparation
 
 **Timeline**: Week 5-6
@@ -19,7 +19,7 @@ status: Draft
 
 ## Overview
 
-Week 5-6 focused on production readiness for RFC-088 Event-Driven Document Indexer, implementing REST APIs for semantic search, creating configuration management for indexer workers, and documenting production deployment procedures.
+Week 5-6 focused on production readiness for RFC-014 Event-Driven Document Indexer, implementing REST APIs for semantic search, creating configuration management for indexer workers, and documenting production deployment procedures.
 
 ---
 
@@ -28,7 +28,7 @@ Week 5-6 focused on production readiness for RFC-088 Event-Driven Document Index
 ### 1. REST API Endpoints for Semantic Search
 
 **File**: `internal/api/v2/search_semantic.go` (452 lines)
-**Commit**: `0acea97` - "feat(rfc-088): add semantic and hybrid search REST APIs"
+**Commit**: `0acea97` - "feat(rfc-014): add semantic and hybrid search REST APIs"
 
 #### Three New Endpoints
 
@@ -99,11 +99,11 @@ type SemanticSearchResult struct {
 type Server struct {
     // ... existing fields ...
 
-    // SemanticSearch provides semantic/vector search capabilities (RFC-088).
+    // SemanticSearch provides semantic/vector search capabilities (RFC-014).
     // Uses OpenAI embeddings and pgvector for similarity search.
     SemanticSearch *search.SemanticSearch
 
-    // HybridSearch combines keyword and semantic search (RFC-088).
+    // HybridSearch combines keyword and semantic search (RFC-014).
     // Provides weighted combination of Meilisearch and pgvector results.
     HybridSearch *search.HybridSearch
 }
@@ -126,7 +126,7 @@ authenticatedEndpoints := []endpoint{
 ### 3. HCL Ruleset Configuration Loader
 
 **File**: `pkg/indexer/config/ruleset.go` (226 lines)
-**Commit**: `81df8f4` - "feat(rfc-088): add HCL ruleset configuration loader"
+**Commit**: `81df8f4` - "feat(rfc-014): add HCL ruleset configuration loader"
 
 #### Configuration Structure
 
@@ -246,8 +246,8 @@ Applied automatically when not specified:
 
 ### 5. Production Deployment Guide
 
-**File**: `docs-internal/rfc/rfc-088-production-deployment.md` (647 lines)
-**Commit**: `abfc1ef` - "docs(rfc-088): add comprehensive production deployment guide"
+**File**: `docs-internal/rfc/rfc-014-production-deployment.md` (647 lines)
+**Commit**: `abfc1ef` - "docs(rfc-014): add comprehensive production deployment guide"
 
 #### Guide Contents
 
@@ -350,9 +350,9 @@ Applied automatically when not specified:
 
 ## Commits Made
 
-1. **0acea97** - feat(rfc-088): add semantic and hybrid search REST APIs
-2. **81df8f4** - feat(rfc-088): add HCL ruleset configuration loader
-3. **abfc1ef** - docs(rfc-088): add comprehensive production deployment guide
+1. **0acea97** - feat(rfc-014): add semantic and hybrid search REST APIs
+2. **81df8f4** - feat(rfc-014): add HCL ruleset configuration loader
+3. **abfc1ef** - docs(rfc-014): add comprehensive production deployment guide
 
 ---
 
@@ -460,7 +460,7 @@ All success criteria met:
 
 ---
 
-## RFC-088 Overall Progress
+## RFC-014 Overall Progress
 
 **Week 1-2**: Architecture and core implementation (40%)
 **Week 3-4**: Document indexer worker and pipeline (75%)
@@ -507,7 +507,7 @@ Focus areas for polish phase:
 
 **Status**: Week 5-6 COMPLETE ✅
 **Next**: Begin Week 7 (Testing and Quality)
-**RFC-088 Completion**: 98%
+**RFC-014 Completion**: 98%
 
 ---
 

@@ -7,8 +7,8 @@ priority: medium
 status: open
 tags: [abstractions, interfaces, compile-time-checks, workspace, search]
 related:
-  - ADR-073
-  - RFC-076
+  - ADR-009
+  - ADR-016
 ---
 
 # Add Compile-Time Interface Checks for Abstractions
@@ -45,4 +45,4 @@ var _ search.Provider = (*MeilisearchAdapter)(nil)
 
 - `pkg/workspace/` - Workspace abstractions
 - `pkg/search/` - Search abstractions
-- ADR-073 - Provider Abstraction Architecture
+- ADR-009 - Provider Abstraction Architecture

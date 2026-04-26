@@ -1,11 +1,11 @@
 {
   "uuid": "550e8400-e29b-41d4-a716-446655440000",
-  "title": "RFC-123: Test Document",
+  "title": "RFC 123: Test Document",
   "document_type": "RFC",
   "status": "In-Review",
   "owners": ["test@example.com"],
   "edge_instance": "edge-dev-1",
-  "provider_id": "local:docs/rfc-123.md",
+  "provider_id": "local:docs/rfc-example.md",
   "product": "Test Product",
   "tags": ["test", "rfc"],
   "parents": ["/docs"],

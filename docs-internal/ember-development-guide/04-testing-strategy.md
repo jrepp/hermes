@@ -503,7 +503,7 @@ export default function (server: Server) {
   server.create('document', {
     id: '2',
     title: 'Draft PRD',
-    docNumber: 'PRD-042',
+    docNumber: 'PRD 042',
     status: 'draft',
   });
 }

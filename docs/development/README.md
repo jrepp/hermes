@@ -4,11 +4,11 @@ This folder contains implementation planning and validation notes for active or 
 
 ## Current Focused Docs
 
-- **RFC-085 Edge-to-Central sync**
-  - [Implementation plan](rfc-085-implementation-plan.md)
-  - [Implementation status](rfc-085-implementation-status.md)
-  - [Phase 3 authentication notes](rfc-085-phase3-authentication.md)
-  - [Completion summary](rfc-085-086-completion-summary.md)
+- **RFC-011 Edge-to-Central sync**
+  - [Implementation plan](rfc-011-implementation-plan.md)
+  - [Implementation status](rfc-011-implementation-status.md)
+  - [Phase 3 authentication notes](rfc-011-phase3-authentication.md)
+  - [Completion summary](rfc-011-086-completion-summary.md)
 
 - **Edge sync testing**
   - [Testing implementation notes](edge-sync-testing-implementation.md)
@@ -19,6 +19,6 @@ This folder contains implementation planning and validation notes for active or 
 
 ## Suggested reading for this area
 
-- `rfc-085-implementation-status.md` for the current implementation checkpoint.
-- `rfc-085-implementation-plan.md` for phase-by-phase details.
+- `rfc-011-implementation-status.md` for the current implementation checkpoint.
+- `rfc-011-implementation-plan.md` for phase-by-phase details.
 - `EDGE-SYNC_AUTH_TESTING.md` in `testing/` for end-to-end validation flow that consumes these docs.

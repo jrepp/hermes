@@ -7,7 +7,7 @@ priority: high
 status: open
 tags: [email, async, performance, api, documents, reviews]
 related:
-  - RFC-080
+  - RFC-008
 ---
 
 # Implement Asynchronous Email Sending
@@ -55,7 +55,7 @@ Multiple API endpoints currently send emails synchronously, which blocks the HTT
 ## Proposed Solution
 
 ### Option 1: Outbox Pattern (Recommended)
-Use the outbox pattern already proposed in RFC-080:
+Use the outbox pattern already proposed in RFC-008:
 - Write email events to database outbox table
 - Background worker processes outbox events
 - Provides reliability and audit trail
@@ -86,11 +86,11 @@ Use the outbox pattern already proposed in RFC-080:
 
 ## Related Work
 
-This connects to RFC-080 (Outbox Pattern) which proposes the same pattern for document search indexing.
+This connects to RFC-008 (Outbox Pattern) which proposes the same pattern for document search indexing.
 
 ## References
 
-- RFC-080 - Outbox Pattern for Document Synchronization
+- RFC-008 - Outbox Pattern for Document Synchronization
 - `internal/api/documents.go` - Document status change emails
 - `internal/api/v2/documents.go` - V2 document emails
 - `internal/api/reviews.go` - V1 review notification emails

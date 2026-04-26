@@ -1,4 +1,4 @@
-# RFC-089 Migration E2E Tests - Quick Start
+# RFC-015 Migration E2E Tests - Quick Start
 
 ## TL;DR
 
@@ -18,7 +18,7 @@ make db-migrate
 
 ```
 =========================================
-RFC-089 Migration E2E Integration Tests
+RFC-015 Migration E2E Integration Tests
 =========================================
 
 Step 1: Checking prerequisites
@@ -40,8 +40,8 @@ Step 3: Verifying MinIO configuration
 
 Step 4: Verifying database migrations
 ---------------------------------------
-✓ Migration 000011 (RFC-089 tables) is applied
-Checking RFC-089 tables... ✓ All required tables exist
+✓ Migration 000011 (RFC-015 tables) is applied
+Checking RFC-015 tables... ✓ All required tables exist
 
 Step 5: Running Go integration tests
 ---------------------------------------
@@ -197,4 +197,4 @@ This test follows Hermes testing standards:
 
 For detailed troubleshooting and advanced usage, see:
 - [migration-e2e-testing.md](migration-e2e-testing.md)
-- [rfc-089-testing-guide.md](rfc-089-testing-guide.md)
+- [rfc-015-testing-guide.md](rfc-015-testing-guide.md)

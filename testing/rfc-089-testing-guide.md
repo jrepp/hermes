@@ -1,8 +1,8 @@
-# RFC-089 Testing Guide
+# RFC-015 Testing Guide
 
 ## Overview
 
-This guide explains how to test the RFC-089 S3 storage backend and migration system implementation.
+This guide explains how to test the RFC-015 S3 storage backend and migration system implementation.
 
 ## Current Status
 
@@ -407,8 +407,8 @@ docker compose exec postgres psql -U postgres -d hermes_test \
 
 ## Support
 
-- **RFC Documentation:** `docs-internal/rfc/rfc-089-s3-storage-backend-and-migrations.md`
-- **Implementation Summary:** `docs-internal/rfc/rfc-089-implementation-summary.md`
+- **RFC Documentation:** `docs-internal/rfc/rfc-015-s3-storage-backend-and-migrations.md`
+- **Implementation Summary:** `docs-internal/rfc/rfc-015-implementation-summary.md`
 - **Source Code:**
   - S3 Adapter: `pkg/workspace/adapters/s3/`
   - Migration System: `pkg/migration/`

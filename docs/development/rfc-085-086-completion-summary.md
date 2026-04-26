@@ -1,4 +1,4 @@
-# RFC-085 & RFC-086 Implementation - Completion Summary
+# RFC-011 & RFC-012 Implementation - Completion Summary
 
 **Date**: 2025-11-13
 **Session**: Claude Code Implementation
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-Successfully implemented the foundation for RFC-085 (Multi-Provider Architecture) and RFC-086 (Authentication & Bearer Token Management), establishing edge-to-central Hermes communication with secure service-to-service authentication.
+Successfully implemented the foundation for RFC-011 (Multi-Provider Architecture) and RFC-012 (Authentication & Bearer Token Management), establishing edge-to-central Hermes communication with secure service-to-service authentication.
 
 **Key Achievement**: Edge instances can now register documents with central Hermes and perform authenticated API operations using Bearer token authentication.
 
@@ -18,7 +18,7 @@ Successfully implemented the foundation for RFC-085 (Multi-Provider Architecture
 
 **What Was Built**:
 - Complete multi-provider workspace manager
-- Implements all 7 RFC-084 workspace interfaces
+- Implements all 7 RFC-010 workspace interfaces
 - Intelligent routing between primary (local) and secondary (API) providers
 - Automatic fallback and error handling
 
@@ -119,7 +119,7 @@ unauthenticatedEndpoints := []endpoint{
 
 ### Technical Documentation
 
-1. **rfc-085-phase3-authentication.md** (547 lines)
+1. **rfc-011-phase3-authentication.md** (547 lines)
    - Complete authentication implementation guide
    - Token generation and validation procedures
    - API usage examples with curl commands
@@ -135,7 +135,7 @@ unauthenticatedEndpoints := []endpoint{
    - Monitoring queries and alerts
    - Real-world rotation scenarios
 
-3. **rfc-085-implementation-status.md** (updated, 696 lines)
+3. **rfc-011-implementation-status.md** (updated, 696 lines)
    - Complete implementation tracking
    - All phases documented with status
    - Build verification results
@@ -284,12 +284,12 @@ curl -X POST http://central:8000/api/v2/edge/documents/register \
   -H "Content-Type: application/json" \
   -d '{
     "uuid": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "RFC-123: Example Document",
+    "title": "RFC 123: Example Document",
     "document_type": "RFC",
     "status": "In-Review",
     "owners": ["user@example.com"],
     "edge_instance": "edge-dev-1",
-    "provider_id": "local:docs/rfc-123.md",
+    "provider_id": "local:docs/rfc-example.md",
     "product": "Engineering",
     "content_hash": "sha256:abc123",
     "created_at": "2025-11-13T00:00:00Z",
@@ -476,15 +476,15 @@ curl -H "Authorization: Bearer $HERMES_EDGE_TOKEN" \
 ## References
 
 ### RFC Documents
-- **RFC-085**: Multi-Provider Architecture with Automatic Pass-Through and Document Synchronization
-- **RFC-086**: Authentication and Bearer Token Management
-- **RFC-086 Appendix**: API Provider Permissions Model
-- **RFC-084**: Provider Interface Refactoring
+- **RFC-011**: Multi-Provider Architecture with Automatic Pass-Through and Document Synchronization
+- **RFC-012**: Authentication and Bearer Token Management
+- **RFC-012 Appendix**: API Provider Permissions Model
+- **RFC-010**: Provider Interface Refactoring
 
 ### Implementation Guides
-- `docs/development/rfc-085-phase3-authentication.md`
+- `docs/development/rfc-011-phase3-authentication.md`
 - `docs/development/edge-token-rotation-guide.md`
-- `docs/development/rfc-085-implementation-status.md`
+- `docs/development/rfc-011-implementation-status.md`
 
 ### Code Locations
 - Multi-Provider: `pkg/workspace/adapters/multiprovider/`
@@ -519,7 +519,7 @@ curl -H "Authorization: Bearer $HERMES_EDGE_TOKEN" \
 
 ## Conclusion
 
-**Phases 1-3 of RFC-085 and RFC-086 are complete and operational.** The foundation for edge-to-central Hermes communication is established with:
+**Phases 1-3 of RFC-011 and RFC-012 are complete and operational.** The foundation for edge-to-central Hermes communication is established with:
 
 - ✅ Working multi-provider architecture
 - ✅ Complete document synchronization infrastructure

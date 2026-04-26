@@ -10,8 +10,8 @@ tags: [api, v1, search-provider, migration, refactoring, obsolete]
 related:
   - TODO-003
   - TODO-014
-  - ADR-073
-  - RFC-076
+  - ADR-009
+  - ADR-016
 superseded_by: TODO-014
 ---
 

@@ -1,8 +1,8 @@
-# RFC-089 Migration E2E Integration Testing Guide
+# RFC-015 Migration E2E Integration Testing Guide
 
 ## Overview
 
-This guide explains how to run comprehensive end-to-end integration tests for the RFC-089 S3 storage backend and document migration system.
+This guide explains how to run comprehensive end-to-end integration tests for the RFC-015 S3 storage backend and document migration system.
 
 ## Test Architecture
 
@@ -69,7 +69,7 @@ The tests require the following services to be running:
 ### 2. Database Migrations
 
 Ensure all database migrations are applied, especially:
-- `000011_add_s3_migration_tables.up.sql` - RFC-089 tables
+- `000011_add_s3_migration_tables.up.sql` - RFC-015 tables
 
 ```bash
 # Apply migrations
@@ -536,9 +536,9 @@ Expected performance on standard development hardware:
 
 ## Related Documentation
 
-- **RFC-089:** [docs-internal/rfc/rfc-089-s3-storage-backend-and-migrations.md](../docs-internal/rfc/rfc-089-s3-storage-backend-and-migrations.md)
-- **Implementation Summary:** [docs-internal/rfc/rfc-089-implementation-summary.md](../docs-internal/rfc/rfc-089-implementation-summary.md)
-- **Testing Guide:** [testing/rfc-089-testing-guide.md](rfc-089-testing-guide.md)
+- **RFC-015:** [docs-internal/rfc/rfc-015-s3-storage-backend-and-migrations.md](../docs-internal/rfc/rfc-015-s3-storage-backend-and-migrations.md)
+- **Implementation Summary:** [docs-internal/rfc/rfc-015-implementation-summary.md](../docs-internal/rfc/rfc-015-implementation-summary.md)
+- **Testing Guide:** [testing/rfc-015-testing-guide.md](rfc-015-testing-guide.md)
 - **API Tests:** [testing/test-rfc089-api.sh](test-rfc089-api.sh)
 - **Worker Tests:** [testing/test-migration-worker.sh](test-migration-worker.sh)
 

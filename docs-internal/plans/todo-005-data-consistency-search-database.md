@@ -7,7 +7,7 @@ priority: critical
 status: open
 tags: [data-consistency, search, database, fixme, bug]
 related:
-  - RFC-080
+  - RFC-008
   - TODO-003
 ---
 
@@ -44,7 +44,7 @@ The code performs direct writes to both database and search index without:
 
 ## Proposed Solution
 
-Implement **Outbox Pattern** (RFC-080):
+Implement **Outbox Pattern** (RFC-008):
 
 ### Phase 1: Write to Outbox
 1. Wrap database writes in transaction
@@ -104,10 +104,10 @@ tx.Commit()
 
 ## Related Work
 
-- **RFC-080**: Outbox Pattern for Document Synchronization (detailed design)
+- **RFC-008**: Outbox Pattern for Document Synchronization (detailed design)
 - **TODO-003**: Migrate handlers to SearchProvider (prerequisite)
 
 ## References
 
 - `internal/api/drafts.go` - Lines 335, 661, 1096, 1151
-- RFC-080 - Complete outbox pattern specification
+- RFC-008 - Complete outbox pattern specification

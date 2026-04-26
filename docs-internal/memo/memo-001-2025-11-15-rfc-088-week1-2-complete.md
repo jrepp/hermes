@@ -1,9 +1,9 @@
 ---
 date: 2025-11-15
-title: "RFC-088 Weeks 1-2 Complete - LLM Integration"
+title: "RFC-014 Weeks 1-2 Complete - LLM Integration"
 type: milestone
 status: complete
-tags: [rfc-088, llm, milestone, implementation]
+tags: [rfc-014, llm, milestone, implementation]
 id: memo-001
 created: 2025-11-15
 author: Hermes Team
@@ -11,7 +11,7 @@ project_id: hermes
 doc_uuid: 7bc126d5-3904-4dcd-a8f1-927fee1e3284
 ---
 
-# RFC-088 Weeks 1-2 Complete: LLM Integration
+# RFC-014 Weeks 1-2 Complete: LLM Integration
 
 **Date**: November 15, 2025
 **Milestone**: Weeks 1-2 of 8-week implementation plan
@@ -22,7 +22,7 @@ doc_uuid: 7bc126d5-3904-4dcd-a8f1-927fee1e3284
 
 ## Executive Summary
 
-Successfully completed the LLM integration phase of RFC-088 (Event-Driven Document Indexer). All three LLM providers (OpenAI, Ollama, AWS Bedrock) are now fully integrated with comprehensive testing, a client factory for dynamic provider selection, and complete configuration examples.
+Successfully completed the LLM integration phase of RFC-014 (Event-Driven Document Indexer). All three LLM providers (OpenAI, Ollama, AWS Bedrock) are now fully integrated with comprehensive testing, a client factory for dynamic provider selection, and complete configuration examples.
 
 **Key Achievement**: Production-ready AI document summarization with multi-provider support and 100% test coverage.
 
@@ -393,7 +393,7 @@ The following work is planned for the next phase:
 
 ## Conclusion
 
-**Weeks 1-2 of RFC-088 implementation are complete.** All LLM integration work is done with production-ready quality:
+**Weeks 1-2 of RFC-014 implementation are complete.** All LLM integration work is done with production-ready quality:
 
 - ✅ 3 LLM providers fully integrated
 - ✅ 35 tests, 100% passing
@@ -410,10 +410,10 @@ The following work is planned for the next phase:
 
 ## Related Documents
 
-- [RFC-088: Event-Driven Indexer](../rfc/rfc-088-event-driven-indexer.md)
-- [RFC-088 Implementation Summary](../rfc/rfc-088-implementation-summary.md)
+- [RFC-014: Event-Driven Indexer](../rfc/rfc-014-event-driven-indexer.md)
+- [RFC-014 Implementation Summary](../rfc/rfc-014-implementation-summary.md)
 - [Implementation Tracker](./2025-11-15-rfc-implementation-tracker.md)
-- Commit: `ed51f9e` - feat(rfc-088): complete LLM integration
+- Commit: `ed51f9e` - feat(rfc-014): complete LLM integration
 
 ---
 

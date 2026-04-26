@@ -25,20 +25,20 @@ Architecture proposals, design documents, and implementation specifications for 
 
 | ID | Title | Status | Description |
 |----|-------|--------|-------------|
-| [083](rfc-083-simplified-local-mode.md) | Simplified Local Mode | Proposed | Zero-config single-binary CMS with embedded database and search |
-| [084](rfc-084-provider-interface-refactoring.md) | Provider Interface Refactoring | In Progress | Multi-backend provider interface refactoring |
-| [085](rfc-085-api-provider-remote-delegation.md) | API Provider Remote Delegation | In Progress | Multi-provider architecture with pass-through, UUID merging |
-| [088](rfc-088-event-driven-indexer.md) | Event-Driven Indexer | In Progress | Event-driven document indexer with pipeline rulesets |
+| [083](rfc-009-simplified-local-mode.md) | Simplified Local Mode | Proposed | Zero-config single-binary CMS with embedded database and search |
+| [084](rfc-010-provider-interface-refactoring.md) | Provider Interface Refactoring | In Progress | Multi-backend provider interface refactoring |
+| [085](rfc-011-api-provider-remote-delegation.md) | API Provider Remote Delegation | In Progress | Multi-provider architecture with pass-through, UUID merging |
+| [088](rfc-014-event-driven-indexer.md) | Event-Driven Indexer | In Progress | Event-driven document indexer with pipeline rulesets |
 
 ### Data & Storage
 
 | ID | Title | Status | Description |
 |----|-------|--------|-------------|
-| [051](rfc-051-outbox-pattern-design.md) | Outbox Pattern Design | Design Phase | Async search index updates with transactional consistency |
-| [080](rfc-080-outbox-pattern-document-sync.md) | Outbox Pattern Document Sync | Design Phase | Transactional outbox pattern for DB/search consistency |
-| [089](rfc-089-s3-storage-backend-and-migrations.md) | S3 Storage Backend & Migrations | In Progress | S3 storage backend, document migration between providers |
-| [091](rfc-091-document-revisions-and-migration.md) | Document Revisions & Migration | Design Phase | Provider-project-document-revision model |
-| [092](rfc-092-instance-identity.md) | Instance Identity | Approved | Composite instance + project identity in distributed system |
+| [051](rfc-005-outbox-pattern-design.md) | Outbox Pattern Design | Design Phase | Async search index updates with transactional consistency |
+| [080](rfc-008-outbox-pattern-document-sync.md) | Outbox Pattern Document Sync | Design Phase | Transactional outbox pattern for DB/search consistency |
+| [089](rfc-015-s3-storage-backend-and-migrations.md) | S3 Storage Backend & Migrations | In Progress | S3 storage backend, document migration between providers |
+| [091](rfc-017-document-revisions-and-migration.md) | Document Revisions & Migration | Design Phase | Provider-project-document-revision model |
+| [092](rfc-018-instance-identity.md) | Instance Identity | Approved | Composite instance + project identity in distributed system |
 
 ### Indexing
 
@@ -51,18 +51,18 @@ Architecture proposals, design documents, and implementation specifications for 
 
 | ID | Title | Status | Description |
 |----|-------|--------|-------------|
-| [086](rfc-086-authentication-bearer-tokens.md) | Authentication Bearer Tokens | Design Phase | Bearer token management for delegated operations |
-| [087](rfc-087-notification-backend.md) | Notification Backend | In Progress | Multi-backend notification system with Redpanda message queues |
+| [086](rfc-012-authentication-bearer-tokens.md) | Authentication Bearer Tokens | Design Phase | Bearer token management for delegated operations |
+| [087](rfc-013-notification-backend.md) | Notification Backend | In Progress | Multi-backend notification system with Redpanda message queues |
 
 ### Features
 
 | ID | Title | Status | Description |
 |----|-------|--------|-------------|
 | [001](rfc-001-local-developer-mode-with-central-hermes.md) | Local Developer Mode | Draft | Local dev mode with SQLite + bidirectional sync |
-| [078](rfc-078-new-document-types.md) | New Document Types | Proposed | ADR, Memo, FRD, PATH document types |
-| [079](rfc-079-local-editor-e2e-testing.md) | Local Editor E2E Testing | Proposed | In-browser editor for local dev E2E testing |
-| [090](rfc-090-admin-interface.md) | Admin Interface | Proposed | Comprehensive admin UI |
-| [093](rfc-093-projectconfig-integration.md) | ProjectConfig Integration | Planning | Integrating pkg/projectconfig into server/API layer |
+| [078](rfc-006-new-document-types.md) | New Document Types | Proposed | ADR, Memo, FRD, PATH document types |
+| [079](rfc-007-local-editor-e2e-testing.md) | Local Editor E2E Testing | Proposed | In-browser editor for local dev E2E testing |
+| [090](rfc-016-admin-interface.md) | Admin Interface | Proposed | Comprehensive admin UI |
+| [093](rfc-019-projectconfig-integration.md) | ProjectConfig Integration | Planning | Integrating pkg/projectconfig into server/API layer |
 
 ## Document Format
 

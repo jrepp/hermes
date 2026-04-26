@@ -21,18 +21,18 @@ doc_uuid: 0f27b5ed-a8fc-40e4-b098-5a22c5f10b98
 
 This memo tracks the implementation status of all active RFCs and provides recommendations for prioritization. As of Nov 15, 2025:
 
-- **RFC-089 (S3 Storage & Migrations)**: ✅ Phase 1 Complete, All Tests Passing
-- **RFC-088 (Event-Driven Indexer)**: ⚙️ 40% Complete, Architecture Done
-- **RFC-087 (Notifications)**: 🔔 85% Complete, Production Ready
-- **RFC-090 (Admin Interface)**: 📝 Design Only, Not Started
+- **RFC-015 (S3 Storage & Migrations)**: ✅ Phase 1 Complete, All Tests Passing
+- **RFC-014 (Event-Driven Indexer)**: ⚙️ 40% Complete, Architecture Done
+- **RFC-013 (Notifications)**: 🔔 85% Complete, Production Ready
+- **RFC-016 (Admin Interface)**: 📝 Design Only, Not Started
 
-**Recommended Next Focus**: Complete RFC-088 (Event-Driven Indexer) to unblock AI document features.
+**Recommended Next Focus**: Complete RFC-014 (Event-Driven Indexer) to unblock AI document features.
 
 ---
 
 ## Current Implementation Status
 
-### ✅ RFC-089: S3 Storage Backend and Document Migration System
+### ✅ RFC-015: S3 Storage Backend and Document Migration System
 
 **Status**: Phase 1 Complete, All Tests Passing ✅
 **Progress**: 90% Complete
@@ -40,7 +40,7 @@ This memo tracks the implementation status of all active RFCs and provides recom
 
 #### Completed
 - ✅ S3 adapter fully implemented (8 files, 2,040 LOC)
-  - Full RFC-084 WorkspaceProvider interface
+  - Full RFC-010 WorkspaceProvider interface
   - S3 versioning support
   - Metadata storage strategies (tags, manifest, DynamoDB planned)
   - Content validation with SHA-256 hashing
@@ -114,7 +114,7 @@ This memo tracks the implementation status of all active RFCs and provides recom
   - Migration cookbook
   - Operator runbook
   - Example HCL configurations
-- [ ] Admin UI integration (depends on RFC-090)
+- [ ] Admin UI integration (depends on RFC-016)
 
 #### Files
 **Core Implementation**:
@@ -135,9 +135,9 @@ This memo tracks the implementation status of all active RFCs and provides recom
 - `pkg/workspace/adapters/s3/adapter_test.go` - S3 adapter tests
 
 **Documentation**:
-- `docs-internal/rfc/rfc-089-s3-storage-backend-and-migrations.md` - Full RFC
-- `docs-internal/rfc/rfc-089-implementation-summary.md` - Progress tracking
-- `testing/rfc-089-testing-guide.md` - Testing documentation
+- `docs-internal/rfc/rfc-015-s3-storage-backend-and-migrations.md` - Full RFC
+- `docs-internal/rfc/rfc-015-implementation-summary.md` - Progress tracking
+- `testing/rfc-015-testing-guide.md` - Testing documentation
 - `testing/status.md` - Quick status overview
 
 #### Estimate to Completion
@@ -146,7 +146,7 @@ This memo tracks the implementation status of all active RFCs and provides recom
 
 ---
 
-### ⚙️ RFC-088: Event-Driven Document Indexer with Pipeline Rulesets
+### ⚙️ RFC-014: Event-Driven Document Indexer with Pipeline Rulesets
 
 **Status**: Phase 1 Complete, Phase 2 In Progress
 **Progress**: 40% Complete
@@ -239,10 +239,10 @@ This memo tracks the implementation status of all active RFCs and provides recom
 - `pkg/indexer/*/` - Unit tests throughout
 
 **Documentation**:
-- `docs-internal/rfc/rfc-088-event-driven-indexer.md` - Full RFC
-- `docs-internal/rfc/rfc-088-implementation-summary.md` - Progress tracking
-- `docs-internal/rfc/rfc-088-architecture-refactoring.md` - Architecture changes
-- `docs-internal/rfc/rfc-088-testing-status.md` - Test status
+- `docs-internal/rfc/rfc-014-event-driven-indexer.md` - Full RFC
+- `docs-internal/rfc/rfc-014-implementation-summary.md` - Progress tracking
+- `docs-internal/rfc/rfc-014-architecture-refactoring.md` - Architecture changes
+- `docs-internal/rfc/rfc-014-testing-status.md` - Test status
 - `configs/indexer-worker-example.hcl` - Configuration example
 
 #### Estimate to Completion
@@ -257,7 +257,7 @@ This memo tracks the implementation status of all active RFCs and provides recom
 
 ---
 
-### 🔔 RFC-087: Multi-Backend Notification System
+### 🔔 RFC-013: Multi-Backend Notification System
 
 **Status**: Phase 1-3 Complete, Production Ready
 **Progress**: 85% Complete
@@ -340,12 +340,12 @@ This memo tracks the implementation status of all active RFCs and provides recom
 - `testing/notifier-ntfy.hcl` - Ntfy notifier config
 
 **Documentation**:
-- `docs-internal/rfc/rfc-087-notification-backend.md` - Main RFC
-- `docs-internal/rfc/rfc-087-implementation-status.md` - Progress tracking
-- `docs-internal/rfc/rfc-087-addendum.md` - Critical fixes
-- `docs-internal/rfc/rfc-087-template-scheme.md` - Template architecture
-- `docs-internal/rfc/rfc-087-message-schema.md` - Message format
-- `docs-internal/rfc/rfc-087-backends.md` - Backend implementations
+- `docs-internal/rfc/rfc-013-notification-backend.md` - Main RFC
+- `docs-internal/rfc/rfc-013-implementation-status.md` - Progress tracking
+- `docs-internal/rfc/rfc-013-addendum.md` - Critical fixes
+- `docs-internal/rfc/rfc-013-template-scheme.md` - Template architecture
+- `docs-internal/rfc/rfc-013-message-schema.md` - Message format
+- `docs-internal/rfc/rfc-013-backends.md` - Backend implementations
 
 #### Estimate to Completion
 **Remaining Work**: Optional enhancements, 1 week if desired
@@ -356,7 +356,7 @@ Deploy current implementation to production. Enhancements can be added later bas
 
 ---
 
-### 📝 RFC-090: Hermes Admin Interface
+### 📝 RFC-016: Hermes Admin Interface
 
 **Status**: Design Only, Not Started
 **Progress**: 0% Complete
@@ -381,12 +381,12 @@ Deploy current implementation to production. Enhancements can be added later bas
    - Permissions and metadata
    - Team assignments
 
-3. **Migration Orchestration** (depends on RFC-089)
+3. **Migration Orchestration** (depends on RFC-015)
    - Schedule and monitor migrations
    - Retry failed migrations
    - View migration progress
 
-4. **Indexer Health Dashboard** (depends on RFC-088)
+4. **Indexer Health Dashboard** (depends on RFC-014)
    - Real-time pipeline health monitoring
    - Consumer lag metrics
    - Failed execution management
@@ -404,14 +404,14 @@ Deploy current implementation to production. Enhancements can be added later bas
 - Monitor progress
 - Retry failed items
 - Cancel jobs
-**Dependency**: RFC-089 API endpoints
+**Dependency**: RFC-015 API endpoints
 
 **Phase 2**: Indexer Health Dashboard (1 week)
 - Pipeline execution stats
 - Consumer lag metrics
 - Failed executions
 - Retry management
-**Dependency**: RFC-088 in production
+**Dependency**: RFC-014 in production
 
 **Phase 3**: Identity Management (1 week)
 - View unified identities
@@ -425,7 +425,7 @@ Deploy current implementation to production. Enhancements can be added later bas
 
 #### Files
 **Documentation**:
-- `docs-internal/rfc/rfc-090-admin-interface.md` - Complete RFC design
+- `docs-internal/rfc/rfc-016-admin-interface.md` - Complete RFC design
 
 **To Be Created**:
 - Frontend: React/TypeScript SPA
@@ -434,10 +434,10 @@ Deploy current implementation to production. Enhancements can be added later bas
 
 #### Estimate to Completion
 **Total Work**: 6-8 weeks (all phases)
-**Confidence**: Medium (depends on RFC-088 and RFC-089 completion)
+**Confidence**: Medium (depends on RFC-014 and RFC-015 completion)
 
 #### Recommendation
-Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complete. This provides immediate value and builds momentum for subsequent phases.
+Start with Phase 1 (Migration Dashboard) after RFC-015 API endpoints are complete. This provides immediate value and builds momentum for subsequent phases.
 
 ---
 
@@ -447,15 +447,15 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 | RFC | Status | Impact | Effort | Priority | Start When |
 |-----|--------|--------|--------|----------|------------|
-| **RFC-088** | 40% | HIGH | Medium (2-3w) | **1st** | **Now** |
-| **RFC-089 API** | 90% | HIGH | Small (1w) | **2nd** | After RFC-088 |
-| **RFC-090 Phase 1** | 0% | HIGH | Medium (2w) | **3rd** | After RFC-089 API |
-| **RFC-090 Phase 2** | 0% | HIGH | Medium (1w) | **4th** | After Phase 1 |
-| **RFC-087 Hardening** | 85% | Medium | Small (1w) | **5th** | Later |
+| **RFC-014** | 40% | HIGH | Medium (2-3w) | **1st** | **Now** |
+| **RFC-015 API** | 90% | HIGH | Small (1w) | **2nd** | After RFC-014 |
+| **RFC-016 Phase 1** | 0% | HIGH | Medium (2w) | **3rd** | After RFC-015 API |
+| **RFC-016 Phase 2** | 0% | HIGH | Medium (1w) | **4th** | After Phase 1 |
+| **RFC-013 Hardening** | 85% | Medium | Small (1w) | **5th** | Later |
 
 ### Recommended Sequence
 
-#### **Weeks 1-2: RFC-088 LLM Integration**
+#### **Weeks 1-2: RFC-014 LLM Integration**
 **Goal**: Enable AI-generated document summaries
 
 **Tasks**:
@@ -478,7 +478,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ---
 
-#### **Week 3: RFC-088 Embeddings & Semantic Search**
+#### **Week 3: RFC-014 Embeddings & Semantic Search**
 **Goal**: Enable semantic document search
 
 **Tasks**:
@@ -498,7 +498,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ---
 
-#### **Week 4: RFC-088 Production Testing & Migration**
+#### **Week 4: RFC-014 Production Testing & Migration**
 **Goal**: Production-ready indexer deployment
 
 **Tasks**:
@@ -522,7 +522,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ---
 
-#### **Week 5: RFC-089 API Endpoints**
+#### **Week 5: RFC-015 API Endpoints**
 **Goal**: REST API for migration management
 
 **Tasks**:
@@ -547,7 +547,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ---
 
-#### **Weeks 6-7: RFC-090 Phase 1 (Migration Dashboard)**
+#### **Weeks 6-7: RFC-016 Phase 1 (Migration Dashboard)**
 **Goal**: Admin UI for migration management
 
 **Tasks**:
@@ -570,7 +570,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ---
 
-#### **Week 8: RFC-090 Phase 2 (Indexer Health Dashboard)**
+#### **Week 8: RFC-016 Phase 2 (Indexer Health Dashboard)**
 **Goal**: Operational visibility for indexer system
 
 **Tasks**:
@@ -592,7 +592,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ---
 
-#### **Week 9+: RFC-090 Phase 3-4 (Identity & Analytics)**
+#### **Week 9+: RFC-016 Phase 3-4 (Identity & Analytics)**
 **Goal**: Complete admin interface
 
 **Tasks**:
@@ -611,19 +611,19 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ### Why This Order?
 
-1. **RFC-088 First**: Unblocks AI features that teams are waiting for. Core infrastructure already done, just needs LLM integration.
+1. **RFC-014 First**: Unblocks AI features that teams are waiting for. Core infrastructure already done, just needs LLM integration.
 
-2. **RFC-089 API Second**: Quick win (1 week) that enables migration capabilities. Builds on tested foundation.
+2. **RFC-015 API Second**: Quick win (1 week) that enables migration capabilities. Builds on tested foundation.
 
-3. **RFC-090 Phases 3-4**: Provides UI for managing systems built in earlier weeks. Each phase builds on previous work.
+3. **RFC-016 Phases 3-4**: Provides UI for managing systems built in earlier weeks. Each phase builds on previous work.
 
-4. **RFC-087 Hardening Last**: Already production ready. Enhancements are nice-to-have, not critical.
+4. **RFC-013 Hardening Last**: Already production ready. Enhancements are nice-to-have, not critical.
 
 ---
 
 ## Success Metrics
 
-### RFC-088 (Event-Driven Indexer)
+### RFC-014 (Event-Driven Indexer)
 - [ ] 100% of documents have AI summaries within 1 hour of creation/update
 - [ ] Semantic search returns relevant results (>80% accuracy on test queries)
 - [ ] Indexer processes 1000+ documents/hour under load
@@ -631,21 +631,21 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 - [ ] Consumer lag < 100 messages at peak load
 - [ ] Token usage tracked and under budget
 
-### RFC-089 (S3 Storage & Migrations)
+### RFC-015 (S3 Storage & Migrations)
 - [ ] API can create and monitor migration jobs via REST endpoints
 - [ ] Provider routing directs reads to correct storage backend
 - [ ] Can migrate 10,000 documents with 100% content integrity
 - [ ] Zero downtime during provider failover
 - [ ] Migration jobs complete in < 2 hours for 1000 documents
 
-### RFC-090 (Admin Interface)
+### RFC-016 (Admin Interface)
 - [ ] Admin can view all migrations in one dashboard
 - [ ] Admin can monitor indexer health without database queries
 - [ ] Identity management reduces support tickets by 50%
 - [ ] Analytics dashboard used weekly by leadership
 - [ ] Time to resolve admin tasks reduced by 75%
 
-### RFC-087 (Notifications)
+### RFC-013 (Notifications)
 - [ ] 100% notification delivery rate (with retries)
 - [ ] < 5 second latency from event to notification
 - [ ] DLQ messages < 0.1% of total
@@ -656,7 +656,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ## Risk Assessment
 
-### RFC-088 Risks
+### RFC-014 Risks
 **Risk**: LLM integration complexity
 **Mitigation**: Start with OpenAI (simpler), add Ollama/Bedrock later
 **Impact**: Medium
@@ -669,7 +669,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 **Mitigation**: Test with Meilisearch first (simpler), evaluate Pinecone later
 **Impact**: Low
 
-### RFC-089 Risks
+### RFC-015 Risks
 **Risk**: Provider routing bugs cause data loss
 **Mitigation**: Extensive testing, canary deployments
 **Impact**: High (but well-tested)
@@ -678,7 +678,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 **Mitigation**: Start with small batches, load test thoroughly
 **Impact**: Medium
 
-### RFC-090 Risks
+### RFC-016 Risks
 **Risk**: Scope creep (too many features)
 **Mitigation**: Stick to phased approach, resist feature additions
 **Impact**: High
@@ -687,7 +687,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 **Mitigation**: Use proven React patterns, keep UI simple
 **Impact**: Medium
 
-### RFC-087 Risks
+### RFC-013 Risks
 **Risk**: None - already production ready
 **Mitigation**: N/A
 **Impact**: None
@@ -697,10 +697,10 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 ## Resource Requirements
 
 ### Development Time
-- **RFC-088**: 2-3 weeks (1 developer)
-- **RFC-089 API**: 1 week (1 developer)
-- **RFC-090**: 6-8 weeks (1-2 developers)
-- **RFC-087 Hardening**: Optional, 1 week
+- **RFC-014**: 2-3 weeks (1 developer)
+- **RFC-015 API**: 1 week (1 developer)
+- **RFC-016**: 6-8 weeks (1-2 developers)
+- **RFC-013 Hardening**: Optional, 1 week
 
 **Total**: ~10-13 weeks for complete implementation
 
@@ -722,18 +722,18 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 
 ## Decision Log
 
-### 2025-11-15: Prioritize RFC-088 Over RFC-089 API
-**Decision**: Complete RFC-088 (indexer) before RFC-089 API endpoints
+### 2025-11-15: Prioritize RFC-014 Over RFC-015 API
+**Decision**: Complete RFC-014 (indexer) before RFC-015 API endpoints
 **Rationale**: Higher user impact, already 40% complete, unblocks AI features
-**Alternative Considered**: RFC-089 API first (rejected due to lower urgency)
+**Alternative Considered**: RFC-015 API first (rejected due to lower urgency)
 
-### 2025-11-15: Phased Approach for RFC-090
-**Decision**: Break RFC-090 into 4 phases instead of all-at-once
+### 2025-11-15: Phased Approach for RFC-016
+**Decision**: Break RFC-016 into 4 phases instead of all-at-once
 **Rationale**: Reduces risk, delivers value incrementally, easier to manage
 **Alternative Considered**: Full implementation (rejected due to scope)
 
-### 2025-11-15: Defer RFC-087 Hardening
-**Decision**: Skip RFC-087 enhancements for now
+### 2025-11-15: Defer RFC-013 Hardening
+**Decision**: Skip RFC-013 enhancements for now
 **Rationale**: Already production ready, enhancements are nice-to-have
 **Alternative Considered**: Add encryption first (rejected due to time)
 
@@ -742,8 +742,8 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 ## Next Actions
 
 ### Immediate (This Week)
-1. ✅ Commit RFC-089 test fixes - **DONE**
-2. 🎯 Start RFC-088 LLM integration
+1. ✅ Commit RFC-015 test fixes - **DONE**
+2. 🎯 Start RFC-014 LLM integration
    - Set up OpenAI API credentials
    - Complete openai.go client implementation
    - Write integration tests for summary generation
@@ -765,21 +765,21 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 3. Update API handlers
 
 ### Week 5+
-1. RFC-089 API endpoints
-2. RFC-090 Phase 1 (Migration Dashboard)
+1. RFC-015 API endpoints
+2. RFC-016 Phase 1 (Migration Dashboard)
 3. Continue through roadmap phases
 
 ---
 
 ## Related Documents
 
-- [RFC-088: Event-Driven Indexer](../rfc/rfc-088-event-driven-indexer.md)
-- [RFC-089: S3 Storage & Migrations](../rfc/rfc-089-s3-storage-backend-and-migrations.md)
-- [RFC-087: Notification Backend](../rfc/rfc-087-notification-backend.md)
-- [RFC-090: Admin Interface](../rfc/rfc-090-admin-interface.md)
-- [RFC-088 Implementation Summary](../rfc/rfc-088-implementation-summary.md)
-- [RFC-089 Implementation Summary](../rfc/rfc-089-implementation-summary.md)
-- [RFC-087 Implementation Status](../rfc/rfc-087-implementation-status.md)
+- [RFC-014: Event-Driven Indexer](../rfc/rfc-014-event-driven-indexer.md)
+- [RFC-015: S3 Storage & Migrations](../rfc/rfc-015-s3-storage-backend-and-migrations.md)
+- [RFC-013: Notification Backend](../rfc/rfc-013-notification-backend.md)
+- [RFC-016: Admin Interface](../rfc/rfc-016-admin-interface.md)
+- [RFC-014 Implementation Summary](../rfc/rfc-014-implementation-summary.md)
+- [RFC-015 Implementation Summary](../rfc/rfc-015-implementation-summary.md)
+- [RFC-013 Implementation Status](../rfc/rfc-013-implementation-status.md)
 
 ---
 
@@ -789,7 +789,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-089 API endpoints are complet
 **Review Status**: Draft
 **Target Audience**: Development team, product management, leadership
 
-**Next Review**: After RFC-088 completion (Week 3)
+**Next Review**: After RFC-014 completion (Week 3)
 **Document Owner**: Development Lead
 
 ---

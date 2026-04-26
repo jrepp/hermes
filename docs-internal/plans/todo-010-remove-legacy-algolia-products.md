@@ -8,7 +8,7 @@ status: open
 tags: [algolia, products, legacy, technical-debt]
 related:
   - TODO-003
-  - RFC-076
+  - ADR-016
 ---
 
 # Remove Legacy Algolia Products Requirement

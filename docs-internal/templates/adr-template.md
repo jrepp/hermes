@@ -75,7 +75,7 @@ DO:
 - Keep the file under ~150 lines.
 - Write the rule in present tense and active voice.
 - Use code paths (`pkg/docid/uuid.go`) instead of pasting code.
-- Update `adr-003-readme.md` (index + cross-cutting principles if relevant) in the same change.
+- Update `adr-002-readme.md` (index + cross-cutting principles if relevant) in the same change.
 
 DO NOT:
 - Pin specific package versions in an ADR. Pinning lives in `package.json` / `go.mod`.

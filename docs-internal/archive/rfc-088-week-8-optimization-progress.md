@@ -1,14 +1,14 @@
 ---
-id: rfc-088
+id: rfc-014
 created: 2026-04-24
-title: "RFC-088 Week 8: Optimization Phase Progress"
+title: "RFC-014 Week 8: Optimization Phase Progress"
 author: Hermes Team
 project_id: hermes
 doc_uuid: a1d79277-ae82-4de3-922d-332133701d41
 status: Draft
 ---
 
-# RFC-088 Week 8: Optimization Phase Progress
+# RFC-014 Week 8: Optimization Phase Progress
 ## Performance Tuning and Efficiency Improvements
 
 **Phase**: 4 Weeks of Polish (Week 8 of 10)
@@ -20,7 +20,7 @@ status: Draft
 
 ## Overview
 
-Week 8 focuses on optimization and performance improvements for the RFC-088 Event-Driven Document Indexer with Semantic Search, building on the performance baseline established in Week 7.
+Week 8 focuses on optimization and performance improvements for the RFC-014 Event-Driven Document Indexer with Semantic Search, building on the performance baseline established in Week 7.
 
 ---
 
@@ -85,7 +85,7 @@ From Week 7 performance analysis, the following optimization opportunities were 
 
 **File**: `pkg/database/database.go` (modified)
 **File**: `pkg/database/connection_pool_test.go` (new, 166 lines)
-**Commit**: `aa9615f` - "perf(rfc-088): implement database connection pooling for improved performance"
+**Commit**: `aa9615f` - "perf(rfc-014): implement database connection pooling for improved performance"
 
 #### Implementation
 
@@ -97,7 +97,7 @@ Added comprehensive connection pooling configuration to the shared database conn
 type Config struct {
     // ... existing fields ...
 
-    // Connection pool settings (RFC-088 optimization)
+    // Connection pool settings (RFC-014 optimization)
     MaxIdleConns    int           // Maximum idle connections in pool (default: 10)
     MaxOpenConns    int           // Maximum open connections (default: 25)
     ConnMaxLifetime time.Duration // Maximum connection lifetime (default: 5 minutes)
@@ -175,8 +175,8 @@ These metrics are valuable for:
 
 ### 2. Query Optimization Analysis
 
-**File**: `docs-internal/rfc/rfc-088-query-optimization-analysis.md` (new, 545 lines)
-**Commit**: `8489a6e` - "perf(rfc-088): parallelize hybrid search and add query optimization analysis"
+**File**: `docs-internal/rfc/rfc-014-query-optimization-analysis.md` (new, 545 lines)
+**Commit**: `8489a6e` - "perf(rfc-014): parallelize hybrid search and add query optimization analysis"
 
 #### Comprehensive Analysis
 
@@ -420,13 +420,13 @@ ORDER BY mean_exec_time DESC;
 
 ## Commits Made
 
-1. **aa9615f** - perf(rfc-088): implement database connection pooling
-2. **3391251** - docs(rfc-088): update Week 8 progress with connection pooling
-3. **8489a6e** - perf(rfc-088): parallelize hybrid search and query analysis
+1. **aa9615f** - perf(rfc-014): implement database connection pooling
+2. **3391251** - docs(rfc-014): update Week 8 progress with connection pooling
+3. **8489a6e** - perf(rfc-014): parallelize hybrid search and query analysis
 
 ---
 
-## RFC-088 Overall Progress
+## RFC-014 Overall Progress
 
 **Before Week 8**:
 - Implementation: 98%

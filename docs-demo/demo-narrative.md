@@ -125,11 +125,11 @@
    - Location: `tests/e2e-playwright/`
 
 **Recent Milestones**:
-- ✅ ADR-071: Local file workspace system (filesystem-based storage)
-- ✅ ADR-072: Dex OIDC authentication for development
-- ✅ ADR-073: Provider abstraction architecture
-- ✅ ADR-074: Playwright for local iteration
-- ✅ ADR-075: Meilisearch as local search solution
+- ✅ ADR-007: Local file workspace system (filesystem-based storage)
+- ✅ ADR-008: Dex OIDC authentication for development
+- ✅ ADR-009: Provider abstraction architecture
+- ✅ ADR-010: Playwright for local iteration
+- ✅ ADR-011: Meilisearch as local search solution
 
 ---
 
@@ -228,7 +228,7 @@ providers {
 # Result: Documents preserved with all metadata
 
 # Show indexer with LLM integration
-cat docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md | head -50
+cat docs-internal/rfc/rfc-008-outbox-pattern-document-sync.md | head -50
 ```
 
 **Explain**:
@@ -283,9 +283,9 @@ npx playwright test --reporter=line
 
 ## Architecture Deep Dive (Optional - if time permits)
 
-**Show ADR-073: Provider Abstraction Architecture**
+**Show ADR-009: Provider Abstraction Architecture**
 ```bash
-cat docs-internal/adr/adr-073-provider-abstraction-architecture.md
+cat docs-internal/adr/adr-009-provider-abstraction-architecture.md
 ```
 
 **Highlight**:
@@ -297,7 +297,7 @@ cat docs-internal/adr/adr-073-provider-abstraction-architecture.md
 
 **Show Migration RFC**:
 ```bash
-cat docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md | head -100
+cat docs-internal/rfc/rfc-008-outbox-pattern-document-sync.md | head -100
 ```
 
 **Key Concepts**:
@@ -390,7 +390,7 @@ A: Flexibility and risk mitigation. Organizations may have Google Workspace, Mic
 A: Minimal. Provider interfaces are thin wrappers. Benchmarks show <5ms overhead per operation. The flexibility gains far outweigh the negligible performance cost.
 
 **Q: How mature is the local workspace implementation?**
-A: Production-ready. ADR-071 and ADR-074 document the design. E2E tests validate all workflows. Used daily in development (eating our own dog food).
+A: Production-ready. ADR-007 and ADR-010 document the design. E2E tests validate all workflows. Used daily in development (eating our own dog food).
 
 **Q: Can we migrate existing Google Workspace documents?**
 A: Yes. The migration pipeline preserves all metadata, versions, and relationships. Command: `hermes migrate --source google --target local` (or vice versa).
@@ -414,7 +414,7 @@ A: Today for local/development use cases. Google Workspace + Algolia is producti
 
 **Risk Assessment**: Core architecture is solid. Provider abstractions proven through Dex, Google, and Meilisearch implementations. Office365 provider is low-risk extension of existing patterns.
 
-**Recommendation**: Continue current trajectory. Local-first capabilities enable faster development velocity. Multi-provider support de-risks vendor lock-in. Architecture decisions (ADR-071 through ADR-075) are sound and well-documented.
+**Recommendation**: Continue current trajectory. Local-first capabilities enable faster development velocity. Multi-provider support de-risks vendor lock-in. Architecture decisions (ADR-007 through ADR-011) are sound and well-documented.
 
 ---
 

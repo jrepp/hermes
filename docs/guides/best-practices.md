@@ -1,5 +1,5 @@
 # Best Practices Guide
-## RFC-088 Semantic Search and Document Indexer
+## RFC-014 Semantic Search and Document Indexer
 
 **Version**: 2.0
 **Audience**: All Users (Developers, Operators, Administrators)
@@ -9,7 +9,7 @@
 
 ## Overview
 
-This guide provides best practices for deploying, operating, and maintaining the RFC-088 Event-Driven Document Indexer with Semantic Search in production environments.
+This guide provides best practices for deploying, operating, and maintaining the RFC-014 Event-Driven Document Indexer with Semantic Search in production environments.
 
 **Key Topics**:
 - Production deployment
@@ -926,10 +926,10 @@ make lint-fix
 - [Performance Tuning Guide](../deployment/performance-tuning.md)
 - [API Documentation](../api/semantic-search-api.md)
 - [Troubleshooting Guide](./troubleshooting.md)
-- [RFC-088 Implementation Summary](../../docs-internal/rfc/rfc-088-implementation-summary.md)
+- [RFC-014 Implementation Summary](../../docs-internal/rfc/rfc-014-implementation-summary.md)
 
 ---
 
 *Last Updated: November 15, 2025*
-*RFC-088 Implementation*
+*RFC-014 Implementation*
 *Version 2.0*

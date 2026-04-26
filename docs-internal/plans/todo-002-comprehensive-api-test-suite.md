@@ -8,8 +8,8 @@ status: in-progress
 progress: 29%
 tags: [testing, api, integration-tests, coverage, v1-api, v2-api]
 related:
-  - ADR-070
-  - RFC-079
+  - ADR-006
+  - RFC-007
 ---
 
 # Build Comprehensive API Test Suite
@@ -110,4 +110,4 @@ Build a comprehensive, well-organized test suite for the Hermes API that covers:
 - `tests/api/` - Integration test suite
 - `internal/api/` - v1 API handlers
 - `internal/api/v2/` - v2 API handlers
-- ADR-070 - Testing Docker Compose Environment
+- ADR-006 - Testing Docker Compose Environment

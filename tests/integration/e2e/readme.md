@@ -6,10 +6,10 @@ Comprehensive integration tests for the Hermes central-edge architecture, valida
 
 These tests validate:
 - **Service Health**: All services running and accessible
-- **RFC-086**: Bearer token authentication for edge-to-central communication
-- **RFC-085**: Edge document registry and synchronization
+- **RFC-012**: Bearer token authentication for edge-to-central communication
+- **RFC-011**: Edge document registry and synchronization
 - **Meilisearch**: Search functionality and indexing
-- **RFC-087**: Multi-backend notification system (Redpanda, Mailhog, notifiers)
+- **RFC-013**: Multi-backend notification system (Redpanda, Mailhog, notifiers)
 - **System Stability**: No critical errors, all services remain healthy
 
 ## Architecture
@@ -137,7 +137,7 @@ go test -tags=integration -v ./tests/integration/e2e -run TestComprehensiveE2E/P
     comprehensive_e2e_test.go:225: ✅ All services healthy and operational
 
 === RUN   TestComprehensiveE2E/Phase2_Authentication
-    comprehensive_e2e_test.go:232: === Phase 2: Bearer Token Authentication (RFC-086) ===
+    comprehensive_e2e_test.go:232: === Phase 2: Bearer Token Authentication (RFC-012) ===
     comprehensive_e2e_test.go:240: Generated test token: hermes-edge-token-a1b2c3d4-5678...
 === RUN   TestComprehensiveE2E/Phase2_Authentication/StoreToken
     comprehensive_e2e_test.go:253: ✓ Token stored in service_tokens table
@@ -156,10 +156,10 @@ go test -tags=integration -v ./tests/integration/e2e -run TestComprehensiveE2E/P
     comprehensive_e2e_test.go:595: ║                                                        ║
     comprehensive_e2e_test.go:596: ║  Validated:                                            ║
     comprehensive_e2e_test.go:597: ║   ✓ Service Health & Connectivity                     ║
-    comprehensive_e2e_test.go:598: ║   ✓ RFC-086 Bearer Token Authentication               ║
-    comprehensive_e2e_test.go:599: ║   ✓ RFC-085 Edge-to-Central Synchronization           ║
+    comprehensive_e2e_test.go:598: ║   ✓ RFC-012 Bearer Token Authentication               ║
+    comprehensive_e2e_test.go:599: ║   ✓ RFC-011 Edge-to-Central Synchronization           ║
     comprehensive_e2e_test.go:600: ║   ✓ Meilisearch Integration                           ║
-    comprehensive_e2e_test.go:601: ║   ✓ RFC-087 Notification System                       ║
+    comprehensive_e2e_test.go:601: ║   ✓ RFC-013 Notification System                       ║
     comprehensive_e2e_test.go:602: ║   ✓ System Stability & Error-Free Operation           ║
     comprehensive_e2e_test.go:603: ╚════════════════════════════════════════════════════════╝
 --- PASS: TestComprehensiveE2E (8.34s)
@@ -208,7 +208,7 @@ Validates all required services are running and healthy.
 - Container not running → `docker logs <container>`
 - Database connection → Verify migrations applied
 
-### Phase 2: Bearer Token Authentication (RFC-086)
+### Phase 2: Bearer Token Authentication (RFC-012)
 
 Validates bearer token authentication for edge-to-central communication.
 
@@ -223,7 +223,7 @@ Validates bearer token authentication for edge-to-central communication.
 - Token storage fails → Check database schema: `\d service_tokens`
 - Auth failures → Verify token hash: `SELECT * FROM service_tokens WHERE token_type = 'edge'`
 
-### Phase 3: Edge-to-Central Synchronization (RFC-085)
+### Phase 3: Edge-to-Central Synchronization (RFC-011)
 
 Validates edge document registry and sync endpoints.
 
@@ -249,7 +249,7 @@ Validates Meilisearch functionality.
 - Search failures → Check Meilisearch health: `curl http://localhost:7701/health`
 - No results → Check indexer: `docker logs hermes-central-indexer`
 
-### Phase 5: Notification System (RFC-087)
+### Phase 5: Notification System (RFC-013)
 
 Validates Redpanda message broker and notification backends.
 
@@ -506,9 +506,9 @@ func myHelper(t *testing.T, ctx context.Context, param string) result {
 
 ## References
 
-- **RFC-085**: Multi-Provider Architecture with Document Synchronization
-- **RFC-086**: Authentication and Bearer Token Management
-- **RFC-087**: Multi-Backend Notification System
+- **RFC-011**: Multi-Provider Architecture with Document Synchronization
+- **RFC-012**: Authentication and Bearer Token Management
+- **RFC-013**: Multi-Backend Notification System
 - **Docker Compose**: `testing/docker-compose.yml`
 - **Design Doc**: `testing/COMPREHENSIVE_E2E_TEST_DESIGN.md`
 

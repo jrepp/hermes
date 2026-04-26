@@ -12,7 +12,7 @@ date: 2025-10-10
 type: ADR
 tags: [ember, build, broccoli, embroider]
 related:
-  - MEMO-128
+  - MEMO-064
 ---
 
 # ADR-001: Stay with Classic Ember CLI Build System

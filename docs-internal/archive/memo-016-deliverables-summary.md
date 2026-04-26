@@ -7,7 +7,7 @@ status: Final
 tags: [deliverables, templates, documentation, summary]
 related:
   - MEMO-004
-  - MEMO-019
+  - MEMO-016
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes
@@ -69,7 +69,7 @@ Added **"AI Agent Commit Standards"** section mandating:
 
 ### 3. Analysis Documents
 
-**DEV_VELOCITY_ANALYSIS.md** (MEMO-019):
+**DEV_VELOCITY_ANALYSIS.md** (MEMO-016):
 - Statistical analysis of 98 commits
 - Day-by-day breakdown with time estimates
 - 10-15x speedup quantification

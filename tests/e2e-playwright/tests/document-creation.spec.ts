@@ -226,7 +226,7 @@ test.describe('Document Creation Flow', () => {
     await page.waitForLoadState('networkidle', { timeout: 10000 });
     
     // Wait for either:
-    // 1. URL to change to document view (e.g., /document/RFC-123)
+    // 1. URL to change to document view (e.g., /document/RFC 123)
     // 2. Success message to appear
     // 3. Document title to appear on the page
     

@@ -1,4 +1,4 @@
-# RFC-085 Phase 3: Authentication Implementation
+# RFC-011 Phase 3: Authentication Implementation
 
 **Status**: ✅ Complete
 **Date**: 2025-11-13
@@ -221,12 +221,12 @@ curl -X POST http://central-hermes:8000/api/v2/edge/documents/register \
   -H "Content-Type: application/json" \
   -d '{
     "uuid": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "RFC-123: Example Document",
+    "title": "RFC 123: Example Document",
     "document_type": "RFC",
     "status": "In-Review",
     "owners": ["user@example.com"],
     "edge_instance": "edge-dev-1",
-    "provider_id": "local:docs/rfc-123.md",
+    "provider_id": "local:docs/rfc-example.md",
     "product": "Engineering",
     "tags": ["rfc", "example"],
     "parents": ["/docs"],

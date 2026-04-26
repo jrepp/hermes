@@ -1,5 +1,5 @@
 # Search Configuration Guide
-## RFC-088 Semantic Search and Document Indexer
+## RFC-014 Semantic Search and Document Indexer
 
 **Version**: 2.0
 **Audience**: System Administrators, DevOps Engineers
@@ -9,7 +9,7 @@
 
 ## Overview
 
-This guide explains how to configure the RFC-088 Event-Driven Document Indexer with Semantic Search, including rulesets for selective indexing, embedding model selection, pipeline configuration, and worker deployment.
+This guide explains how to configure the RFC-014 Event-Driven Document Indexer with Semantic Search, including rulesets for selective indexing, embedding model selection, pipeline configuration, and worker deployment.
 
 **Key Configuration Areas**:
 - Rulesets for document filtering
@@ -930,5 +930,5 @@ kubectl top pods -l app=hermes-indexer
 ---
 
 *Last Updated: November 15, 2025*
-*RFC-088 Implementation*
+*RFC-014 Implementation*
 *Version 2.0*

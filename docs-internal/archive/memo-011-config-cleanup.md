@@ -219,7 +219,7 @@ $ cd testing && docker compose config | grep dex-config
 - [CONFIG_HCL_DOCUMENTATION.md](./CONFIG_HCL_DOCUMENTATION.md) - Comprehensive config.hcl guide
 - [MAKEFILE_ROOT_TARGETS.md](./MAKEFILE_ROOT_TARGETS.md) - Development workflows
 - [testing/readme.md](../testing/readme.md) - Testing environment setup
-- [ADR-072: Dex OIDC Authentication](./adr/adr-072-dex-oidc-authentication-for-development.md)
+- [ADR-008: Dex OIDC Authentication](./adr/adr-008-dex-oidc-authentication-for-development.md)
 
 ## Commit Message
 

@@ -1,14 +1,14 @@
 ---
-id: rfc-088
+id: rfc-014
 created: 2026-04-24
-title: "RFC-088 Week 7 Completion Summary"
+title: "RFC-014 Week 7 Completion Summary"
 author: Hermes Team
 project_id: hermes
 doc_uuid: 16b1cd0d-765e-4f60-9fd1-da1965ea823c
 status: Draft
 ---
 
-# RFC-088 Week 7 Completion Summary
+# RFC-014 Week 7 Completion Summary
 ## Polish Phase: Testing, Benchmarking, and Code Quality
 
 **Timeline**: Week 7 of 10
@@ -20,7 +20,7 @@ status: Draft
 
 ## Overview
 
-Week 7 focused on testing, performance benchmarking, and code quality improvements for RFC-088 Event-Driven Document Indexer. This marks the beginning of the 4-week polish phase requested to ensure production readiness.
+Week 7 focused on testing, performance benchmarking, and code quality improvements for RFC-014 Event-Driven Document Indexer. This marks the beginning of the 4-week polish phase requested to ensure production readiness.
 
 ---
 
@@ -85,7 +85,7 @@ These tests focus on **error paths and validation** without requiring mocked sea
 ### 2. Performance Benchmarking Suite
 
 **File**: `pkg/search/semantic_bench_test.go` (373 lines)
-**Commit**: `25b3f9e` - "perf(rfc-088): add performance benchmark suite and comprehensive analysis"
+**Commit**: `25b3f9e` - "perf(rfc-014): add performance benchmark suite and comprehensive analysis"
 
 #### Benchmark Scenarios
 
@@ -146,7 +146,7 @@ Created 7 comprehensive benchmark functions:
 
 ### 3. Performance Analysis Document
 
-**File**: `docs-internal/rfc/rfc-088-performance-benchmarks.md` (357 lines)
+**File**: `docs-internal/rfc/rfc-014-performance-benchmarks.md` (357 lines)
 **Commit**: `25b3f9e` (same commit as benchmarks)
 
 #### Comprehensive Analysis
@@ -209,11 +209,11 @@ Created 7 comprehensive benchmark functions:
 
 ### 4. Code Quality Improvements
 
-**Commit**: `f3f0d3f` - "refactor(rfc-088): fix golangci-lint errors in RFC-088 code"
+**Commit**: `f3f0d3f` - "refactor(rfc-014): fix golangci-lint errors in RFC-014 code"
 
 #### Issues Identified and Fixed
 
-Ran `golangci-lint` on all RFC-088 related packages and fixed 18 issues:
+Ran `golangci-lint` on all RFC-014 related packages and fixed 18 issues:
 
 **Error Handling Improvements** (9 issues):
 
@@ -267,7 +267,7 @@ Benefits:
 
 #### Linter Status After Fixes
 
-All RFC-088 related packages now pass `golangci-lint`:
+All RFC-014 related packages now pass `golangci-lint`:
 - ✅ `pkg/search/...` - No issues (already clean)
 - ✅ `pkg/indexer/...` - All 9 errors fixed
 - ✅ `internal/api/v2/search_semantic*.go` - No issues (already clean)
@@ -312,15 +312,15 @@ All RFC-088 related packages now pass `golangci-lint`:
 
 ### 3. Comprehensive vs. Targeted Linting
 
-**Decision**: Focus linting on RFC-088 related packages only.
+**Decision**: Focus linting on RFC-014 related packages only.
 
 **Rationale**:
-- RFC-088 code should be production-ready
+- RFC-014 code should be production-ready
 - Other codebase issues outside Week 7 scope
 - Efficient use of polish phase time
 - Clear separation of concerns
 
-**Result**: All RFC-088 code now passes linters while respecting existing codebase conventions.
+**Result**: All RFC-014 code now passes linters while respecting existing codebase conventions.
 
 ---
 
@@ -340,11 +340,11 @@ All RFC-088 related packages now pass `golangci-lint`:
 
 ## Commits Made
 
-1. **d035503** - docs(rfc-088): add Week 7 polish phase progress summary
+1. **d035503** - docs(rfc-014): add Week 7 polish phase progress summary
 2. **8b17a64** - test(api): add integration tests for semantic search API endpoints
-3. **25b3f9e** - perf(rfc-088): add performance benchmark suite and comprehensive analysis
-4. **f3f0d3f** - refactor(rfc-088): fix golangci-lint errors in RFC-088 code
-5. **0be30f8** - docs(rfc-088): update Week 7 progress with benchmarks and code quality improvements
+3. **25b3f9e** - perf(rfc-014): add performance benchmark suite and comprehensive analysis
+4. **f3f0d3f** - refactor(rfc-014): fix golangci-lint errors in RFC-014 code
+5. **0be30f8** - docs(rfc-014): update Week 7 progress with benchmarks and code quality improvements
 
 ---
 
@@ -372,7 +372,7 @@ All RFC-088 related packages now pass `golangci-lint`:
 
 - ✅ All tests passing (9/9)
 - ✅ All benchmarks passing (7/7)
-- ✅ No linter errors in RFC-088 code
+- ✅ No linter errors in RFC-014 code
 - ✅ Pre-commit hooks passing
 - ✅ Comprehensive documentation
 - ✅ Performance baseline established
@@ -393,7 +393,7 @@ Efficiency metrics:
 
 ---
 
-## RFC-088 Overall Progress
+## RFC-014 Overall Progress
 
 ### Progress Tracking
 
@@ -506,7 +506,7 @@ Establishing performance baseline before optimization:
 ### 3. Code Quality Tools Catch Important Issues
 
 Running linters on production code:
-- Found 18 issues in RFC-088 code
+- Found 18 issues in RFC-014 code
 - Improved error handling in 6 locations
 - Cleaned up test code in 7 locations
 - Removed unused code
@@ -573,7 +573,7 @@ Week 7 successfully completed the first phase of the 4-week polish period with:
 - ✅ Code quality improvements (18 issues fixed)
 - ✅ Production readiness significantly improved
 
-RFC-088 is now 92% complete, with a clear path to 100% through optimization (Week 8), documentation (Week 9), and final refinements (Week 10).
+RFC-014 is now 92% complete, with a clear path to 100% through optimization (Week 8), documentation (Week 9), and final refinements (Week 10).
 
 The project demonstrates strong engineering practices:
 - Test-driven quality assurance

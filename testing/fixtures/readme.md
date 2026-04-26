@@ -51,11 +51,11 @@ Product Requirements Document template with:
 **Usage**:
 ```bash
 # Manually
-cp fixtures/prds/prd-template.md workspaces/testing/prds/PRD-001-my-feature.md
+cp fixtures/prds/prd-template.md workspaces/testing/prds/PRD 001-my-feature.md
 
 # Or use the generator
 source scripts/lib/document-generator.sh
-generate_prd 1 "$(generate_uuid)" "My Feature" > workspace/testing/prds/PRD-001.md
+generate_prd 1 "$(generate_uuid)" "My Feature" > workspace/testing/prds/PRD 001.md
 ```
 
 ## Customizing Templates
@@ -96,7 +96,7 @@ generate_prd 1 "$(generate_uuid)" "My Feature" > workspace/testing/prds/PRD-001.
 - `modified`: ISO 8601 timestamp
 
 **Optional**:
-- `document-number`: RFC-001, PRD-042, etc.
+- `document-number`: RFC-001, PRD 042, etc.
 - `status`: draft, review, approved, published
 - `authors`: Array of email addresses
 - `tags`: Array of keywords for search
@@ -109,7 +109,7 @@ generate_prd 1 "$(generate_uuid)" "My Feature" > workspace/testing/prds/PRD-001.
 ---
 hermes-uuid: 550e8400-e29b-41d4-a716-446655440000
 document-type: RFC
-document-number: RFC-042
+document-number: RFC 042
 status: review
 title: "API Gateway Redesign"
 authors:
@@ -150,9 +150,9 @@ The `scripts/lib/document-generator.sh` library provides programmatic generation
 
 ### Naming Conventions
 - **Files**: `TYPE-NNN-kebab-case-title.md`
-  - Examples: `RFC-001-api-gateway.md`, `PRD-042-search-feature.md`
+  - Examples: `RFC-001-api-gateway.md`, `PRD 042-search-feature.md`
 - **Document Numbers**: `TYPE-NNN` (zero-padded to 3 digits)
-  - Examples: `RFC-001`, `PRD-042`, `MEET-005`
+  - Examples: `RFC-001`, `PRD 042`, `MEET-005`
 - **UUIDs**: Lowercase, standard format
   - Example: `550e8400-e29b-41d4-a716-446655440000`
 

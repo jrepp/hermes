@@ -1,6 +1,6 @@
-# RFC-088 Deployment Quick Start Guide
+# RFC-014 Deployment Quick Start Guide
 
-**⚡ Get RFC-088 semantic search deployed in 15 minutes**
+**⚡ Get RFC-014 semantic search deployed in 15 minutes**
 
 ---
 
@@ -205,7 +205,7 @@ docker-compose -f docker-compose.monitoring.yml down
 | `config-production/docker-compose.production.yml` | Docker deployment |
 | `monitoring-config/prometheus/prometheus.yml` | Prometheus scrape config |
 | `monitoring-config/prometheus/alerts.yml` | Alert rules (40+ alerts) |
-| `monitoring-config/grafana/rfc-088-dashboard.json` | Grafana dashboard |
+| `monitoring-config/grafana/rfc-014-dashboard.json` | Grafana dashboard |
 
 ---
 
@@ -291,7 +291,7 @@ If you encounter issues:
 2. Review logs: `docker-compose logs -f`
 3. Run validation: `./scripts/deployment/phase2-validation.sh`
 4. Check documentation in `scripts/deployment/readme.md`
-5. Review RFC-088 docs in `docs-internal/rfc/`
+5. Review RFC-014 docs in `docs-internal/rfc/`
 
 ---
 

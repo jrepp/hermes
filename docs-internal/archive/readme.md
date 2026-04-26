@@ -6,15 +6,15 @@ Superseded, completed, and historical documents that no longer require active ma
 
 ### Archived RFC Progress Logs
 
-Weekly development progress reports from RFC-088 (event-driven indexer) implementation. Superseded by the final implementation summary (`memo-117-event-driven-indexer-summary.md`).
+Weekly development progress reports from RFC-014 (event-driven indexer) implementation. Superseded by the final implementation summary (`memo-053-event-driven-indexer-summary.md`).
 
-- `rfc-088-week-4-5-completion-summary.md`
-- `rfc-088-week-5-6-summary.md`
-- `rfc-088-week-7-completion-summary.md`
-- `rfc-088-week-7-polish-progress.md`
-- `rfc-088-week-8-optimization-progress.md`
-- `rfc-088-week-9-documentation-progress.md`
-- `rfc-088-week-10-final-polish-progress.md`
+- `rfc-014-week-4-5-completion-summary.md`
+- `rfc-014-week-5-6-summary.md`
+- `rfc-014-week-7-completion-summary.md`
+- `rfc-014-week-7-polish-progress.md`
+- `rfc-014-week-8-optimization-progress.md`
+- `rfc-014-week-9-documentation-progress.md`
+- `rfc-014-week-10-final-polish-progress.md`
 
 ### Archived Memos
 
@@ -22,12 +22,12 @@ Superseded or one-time memos with no ongoing reference value:
 
 - `memo-006-embedded-web-assets-status.md` — Build status report, now standard practice
 - `memo-011-config-cleanup.md` — One-time cleanup task
-- `memo-016-deliverables-summary.md` — Superseded by memo-100 (prompt templates)
-- `memo-031-validation-auto-migration.md` — Superseded by adr-083 (SQLite conflict)
-- `memo-086-memo-organization-2025-10-09.md` — Historical reorganization record
-- `memo-087-e2e-testing-alternatives.md` — Temporary workaround for resolved compilation error
-- `memo-089-config-hcl-docs.md` — One-time documentation task
-- `memo-103-v1-api-catalog.md` — One-time audit; cleanup tracked in completed TODO-014
+- `memo-016-deliverables-summary.md` — Superseded by memo-037 (prompt templates)
+- `memo-031-validation-auto-migration.md` — Superseded by adr-019 (SQLite conflict)
+- `archive memo 086-memo-organization-2025-10-09.md` — Historical reorganization record
+- `archive memo 087-e2e-testing-alternatives.md` — Temporary workaround for resolved compilation error
+- `archive memo 089-config-hcl-docs.md` — One-time documentation task
+- `archive memo 103-v1-api-catalog.md` — One-time audit; cleanup tracked in completed TODO-014
 
 ### Archived Plans
 

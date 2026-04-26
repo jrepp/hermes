@@ -1,8 +1,8 @@
-# RFC-089 Migration Tests: Strong Signal Validation Summary
+# RFC-015 Migration Tests: Strong Signal Validation Summary
 
 ## Overview
 
-The RFC-089 migration e2e tests include **27+ strong signal validation checks** that provide high-confidence proof of migration correctness. This goes far beyond simple "did it complete?" checks to cryptographically and mathematically verify data integrity.
+The RFC-015 migration e2e tests include **27+ strong signal validation checks** that provide high-confidence proof of migration correctness. This goes far beyond simple "did it complete?" checks to cryptographically and mathematically verify data integrity.
 
 ## Quick Stats
 

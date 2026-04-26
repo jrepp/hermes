@@ -7,7 +7,7 @@ This directory holds deployment, configuration, and product-facing documentation
 - `api/` - API reference and usage examples
 - `guides/` - troubleshooting and best-practice guides
 - `deployment/` - monitoring and performance setup guides
-- `development/` - RFC-085 edge-to-central implementation planning docs
+- `development/` - RFC-011 edge-to-central implementation planning docs
 
 ## Getting Started from docs/
 

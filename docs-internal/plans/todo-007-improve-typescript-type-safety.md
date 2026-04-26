@@ -7,7 +7,7 @@ priority: medium
 status: open
 tags: [typescript, types, frontend, type-safety, hds]
 related:
-  - MEMO-125
+  - MEMO-061
 ---
 
 # Improve TypeScript Type Safety Across Codebase

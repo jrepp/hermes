@@ -208,7 +208,7 @@ Complete task list for refactoring the Hermes indexer to use command pattern and
 
 - [ ] Create `testing/indexer/test-data/` directory
   - [ ] `testing/indexer/test-data/docs/RFC-001.md`
-  - [ ] `testing/indexer/test-data/docs/PRD-002.md`
+  - [ ] `testing/indexer/test-data/docs/PRD 002.md`
   - [ ] `testing/indexer/test-data/docs/FRD-003.md`
   - [ ] `testing/indexer/test-data/drafts/DRAFT-001.md`
 

@@ -1,5 +1,5 @@
 ---
-hermes-uuid: TEMPLATE-PRD-001
+hermes-uuid: TEMPLATE-PRD 001
 document-type: PRD
 document-number: PRD-XXX
 status: draft
@@ -212,5 +212,5 @@ Links to user research, competitive analysis, etc.
 ---
 
 **Document ID**: PRD-XXX  
-**Hermes UUID**: TEMPLATE-PRD-001  
+**Hermes UUID**: TEMPLATE-PRD 001  
 **Version**: 1.0

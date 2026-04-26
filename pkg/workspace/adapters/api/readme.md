@@ -1,6 +1,6 @@
 # API Workspace Provider
 
-The API workspace provider implements all RFC-084 WorkspaceProvider interfaces by delegating operations to a remote Hermes instance via REST API.
+The API workspace provider implements all RFC-010 WorkspaceProvider interfaces by delegating operations to a remote Hermes instance via REST API.
 
 ## Overview
 
@@ -37,7 +37,7 @@ api_workspace {
 
 ## Implemented Interfaces
 
-The API provider implements all 8 RFC-084 interfaces:
+The API provider implements all 8 RFC-010 interfaces:
 
 - `workspace.WorkspaceProvider` - Core provider metadata
 - `workspace.DocumentProvider` - Document CRUD operations
@@ -74,7 +74,7 @@ The integration test suite covers:
 All tests pass without requiring a live Hermes server. Tests validate:
 
 - ✅ Configuration validation (missing fields, invalid URLs, negative values)
-- ✅ All 8 RFC-084 interfaces implemented
+- ✅ All 8 RFC-010 interfaces implemented
 - ✅ Provider metadata correctly set
 - ✅ Defaults applied (TLSVerify, Timeout, MaxRetries, RetryDelay)
 - ✅ Graceful error handling for connection failures

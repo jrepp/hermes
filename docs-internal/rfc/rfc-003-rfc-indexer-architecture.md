@@ -307,7 +307,7 @@ CREATE TABLE indexers (
 **Scenario**: Developer adds RFC to local workspace
 
 ```text
-1. Developer creates docs/rfcs/RFC-042-distributed-auth.md
+1. Developer creates docs/rfcs/RFC 042-distributed-auth.md
    ---
    hermes-uuid: 7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d
    status: draft
@@ -321,10 +321,10 @@ CREATE TABLE indexers (
    POST /api/v2/documents
    {
      "uuid": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-     "title": "RFC-042: Distributed Auth",
+     "title": "RFC 042: Distributed Auth",
      "project_id": "rfcs",
      "provider_type": "local",
-     "provider_document_id": "docs/rfcs/RFC-042-distributed-auth.md",
+     "provider_document_id": "docs/rfcs/RFC 042-distributed-auth.md",
      "content_hash": "sha256:def456..."
    }
 
@@ -547,7 +547,7 @@ ai_metadata:
   complexity: intermediate
   related_documents:
     - RFC-015: OAuth Integration
-    - PRD-042: SSO Requirements
+    - PRD 042: SSO Requirements
   duplicate_confidence: 0.0
   staleness_score: 0.2
 

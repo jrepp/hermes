@@ -18,8 +18,8 @@ tags:
   - providers
   - flexibility
 related_documents:
-  - "ADR-073: Provider Abstraction Architecture"
-  - "RFC-080: Outbox Pattern Document Sync"
+  - "ADR-009: Provider Abstraction Architecture"
+  - "RFC-008: Outbox Pattern Document Sync"
 ---
 
 # RFC-001: Multi-Provider Architecture
@@ -175,7 +175,7 @@ providers {
 **Deliverables**:
 - `cmd/hermes-migrate/` - Migration CLI tool
 - `pkg/migration/` - Migration library
-- RFC-080 - Outbox pattern design
+- RFC-008 - Outbox pattern design
 
 ### Phase 5: Office365 Provider (🚧 Planned - Q1 2025)
 
@@ -286,11 +286,11 @@ providers {
 
 ## References
 
-- [ADR-071: Local File Workspace System](../../docs-internal/adr/adr-071-local-file-workspace-system.md)
-- [ADR-072: Dex OIDC Authentication](../../docs-internal/adr/adr-072-dex-oidc-authentication-for-development.md)
-- [ADR-073: Provider Abstraction Architecture](../../docs-internal/adr/adr-073-provider-abstraction-architecture.md)
-- [ADR-075: Meilisearch as Local Search Solution](../../docs-internal/adr/adr-075-meilisearch-as-local-search-solution.md)
-- [RFC-080: Outbox Pattern Document Sync](../../docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md)
+- [ADR-007: Local File Workspace System](../../docs-internal/adr/adr-007-local-file-workspace-system.md)
+- [ADR-008: Dex OIDC Authentication](../../docs-internal/adr/adr-008-dex-oidc-authentication-for-development.md)
+- [ADR-009: Provider Abstraction Architecture](../../docs-internal/adr/adr-009-provider-abstraction-architecture.md)
+- [ADR-011: Meilisearch as Local Search Solution](../../docs-internal/adr/adr-011-meilisearch-as-local-search-solution.md)
+- [RFC-008: Outbox Pattern Document Sync](../../docs-internal/rfc/rfc-008-outbox-pattern-document-sync.md)
 
 ## Appendix A: Provider Comparison
 

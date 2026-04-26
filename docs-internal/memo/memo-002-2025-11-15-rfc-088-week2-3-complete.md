@@ -1,9 +1,9 @@
 ---
 date: 2025-11-15
-title: "RFC-088 Week 2-3 Complete - Embeddings Pipeline"
+title: "RFC-014 Week 2-3 Complete - Embeddings Pipeline"
 type: milestone
 status: complete
-tags: [rfc-088, embeddings, vector-search, milestone, implementation]
+tags: [rfc-014, embeddings, vector-search, milestone, implementation]
 id: memo-002
 created: 2025-11-15
 author: Hermes Team
@@ -11,7 +11,7 @@ project_id: hermes
 doc_uuid: 0fd2d80a-b2f7-41ba-b7fc-7bd021e3e6f0
 ---
 
-# RFC-088 Week 2-3 Complete: Embeddings Pipeline
+# RFC-014 Week 2-3 Complete: Embeddings Pipeline
 
 **Date**: November 15, 2025
 **Milestone**: Week 2-3 of 8-week implementation plan
@@ -22,7 +22,7 @@ doc_uuid: 0fd2d80a-b2f7-41ba-b7fc-7bd021e3e6f0
 
 ## Executive Summary
 
-Successfully completed the embeddings pipeline phase of RFC-088 (Event-Driven Document Indexer). The system now generates vector embeddings for documents using OpenAI's embedding models, enabling semantic search capabilities. The implementation includes automatic document chunking, batch processing, and comprehensive testing.
+Successfully completed the embeddings pipeline phase of RFC-014 (Event-Driven Document Indexer). The system now generates vector embeddings for documents using OpenAI's embedding models, enabling semantic search capabilities. The implementation includes automatic document chunking, batch processing, and comprehensive testing.
 
 **Key Achievement**: Production-ready vector embeddings with support for large documents, chunking, and idempotent generation.
 
@@ -307,7 +307,7 @@ indexer {
 ```json
 {
   "id": 1,
-  "document_id": "RFC-123",
+  "document_id": "RFC 123",
   "embedding": [0.123, -0.456, 0.789, ...], // 1536 floats
   "dimensions": 1536,
   "model": "text-embedding-3-small",
@@ -481,7 +481,7 @@ Assumptions:
 
 ## Conclusion
 
-**Week 2-3 of RFC-088 implementation is complete.** Embeddings pipeline is operational with production-ready quality:
+**Week 2-3 of RFC-014 implementation is complete.** Embeddings pipeline is operational with production-ready quality:
 
 - ✅ OpenAI embeddings integration complete
 - ✅ Document chunking working
@@ -499,11 +499,11 @@ Assumptions:
 
 ## Related Documents
 
-- [RFC-088: Event-Driven Indexer](../rfc/rfc-088-event-driven-indexer.md)
-- [RFC-088 Implementation Summary](../rfc/rfc-088-implementation-summary.md)
-- [Week 1-2 Completion: LLM Integration](./2025-11-15-rfc-088-week1-2-complete.md)
+- [RFC-014: Event-Driven Indexer](../rfc/rfc-014-event-driven-indexer.md)
+- [RFC-014 Implementation Summary](../rfc/rfc-014-implementation-summary.md)
+- [Week 1-2 Completion: LLM Integration](./2025-11-15-rfc-014-week1-2-complete.md)
 - [Implementation Tracker](./2025-11-15-rfc-implementation-tracker.md)
-- Commit: `1398426` - feat(rfc-088): implement embeddings pipeline
+- Commit: `1398426` - feat(rfc-014): implement embeddings pipeline
 
 ---
 

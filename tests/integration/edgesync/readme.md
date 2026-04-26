@@ -1,6 +1,6 @@
 # Edge Sync Authentication Integration Tests
 
-This package contains comprehensive integration tests for RFC-085 & RFC-086 edge-to-central authentication.
+This package contains comprehensive integration tests for RFC-011 & RFC-012 edge-to-central authentication.
 
 ## Overview
 
@@ -376,8 +376,8 @@ Tests run automatically with `make test-edge-sync` or `make test-integration`
 
 ## References
 
-- **RFC-085**: Multi-Provider Architecture with Document Synchronization
-- **RFC-086**: Authentication and Bearer Token Management
+- **RFC-011**: Multi-Provider Architecture with Document Synchronization
+- **RFC-012**: Authentication and Bearer Token Management
 - **Implementation**: `internal/api/v2/edge_sync_auth.go`
 - **API Endpoints**: `internal/api/v2/edge_sync.go`
 - **Models**: `pkg/models/indexer_token.go`

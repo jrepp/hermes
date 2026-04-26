@@ -1,8 +1,8 @@
-# RFC-089 Migration E2E Integration Tests - Summary
+# RFC-015 Migration E2E Integration Tests - Summary
 
 ## Overview
 
-Comprehensive, repeatable e2e integration tests have been created for RFC-089 migration system following Hermes testing standards and framework.
+Comprehensive, repeatable e2e integration tests have been created for RFC-015 migration system following Hermes testing standards and framework.
 
 ## Files Created
 
@@ -113,7 +113,7 @@ Phase 10: Cleanup
   - SHA-256 hash validation
   - Content match verification
 
-- **Outbox Pattern (RFC-080)**
+- **Outbox Pattern (RFC-008)**
   - Transactional event creation
   - Atomic DB + outbox writes
   - Idempotency key generation
@@ -246,7 +246,7 @@ Complete `workspace.WorkspaceProvider` implementation:
 ### Database (PostgreSQL)
 
 - Uses fixture from `tests/integration` package
-- Verifies RFC-089 migration tables
+- Verifies RFC-015 migration tables
 - Tests transactional outbox pattern
 - Validates foreign key relationships
 
@@ -292,7 +292,7 @@ Complete `workspace.WorkspaceProvider` implementation:
    - Manual test execution
    - Result inspection
 
-3. **[rfc-089-testing-guide.md](rfc-089-testing-guide.md)** - API testing
+3. **[rfc-015-testing-guide.md](rfc-015-testing-guide.md)** - API testing
    - API endpoint tests
    - Worker integration tests
    - Migration system overview

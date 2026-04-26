@@ -1,5 +1,5 @@
 # Monitoring Setup Guide
-## RFC-088 Semantic Search and Document Indexer
+## RFC-014 Semantic Search and Document Indexer
 
 **Version**: 2.0
 **Audience**: SRE Teams, Operations, DevOps Engineers
@@ -9,7 +9,7 @@
 
 ## Overview
 
-This guide provides comprehensive monitoring setup for the RFC-088 Event-Driven Document Indexer with Semantic Search using Prometheus, Grafana, and standard alerting tools.
+This guide provides comprehensive monitoring setup for the RFC-014 Event-Driven Document Indexer with Semantic Search using Prometheus, Grafana, and standard alerting tools.
 
 **Key Monitoring Areas**:
 - Prometheus metrics collection
@@ -461,7 +461,7 @@ Save as `hermes-dashboard.json`:
 {
   "dashboard": {
     "title": "Hermes - Semantic Search & Indexer",
-    "tags": ["hermes", "semantic-search", "rfc-088"],
+    "tags": ["hermes", "semantic-search", "rfc-014"],
     "timezone": "utc",
     "panels": [
       {
@@ -949,5 +949,5 @@ histogram_quantile(0.95,
 ---
 
 *Last Updated: November 15, 2025*
-*RFC-088 Implementation*
+*RFC-014 Implementation*
 *Version 2.0*

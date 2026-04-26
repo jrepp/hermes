@@ -92,12 +92,12 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 ✅ **Architecture Coverage**:
 - Provider abstraction pattern explained
 - Document UUID system for cross-provider identity
-- Migration pipeline design (RFC-080 reference)
+- Migration pipeline design (RFC-008 reference)
 - Configuration-driven backend selection
 
 ✅ **Implementation References**:
-- Points to actual ADRs (ADR-071, 072, 073, 075)
-- References RFCs (RFC-080)
+- Points to actual ADRs (ADR-007, 072, 073, 075)
+- References RFCs (RFC-008)
 - Links to code locations (pkg/auth/, pkg/workspace/, pkg/search/)
 - Testing infrastructure (tests/e2e-playwright/)
 
@@ -180,13 +180,13 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 
 ### ✅ Indexer Upgrades
 - **Covered**: Demo 3 (migration pipeline), narrative mentions LLM integration
-- **Evidence**: Document migration command, RFC-080 reference
+- **Evidence**: Document migration command, RFC-008 reference
 - **Status**: Migration complete, LLM partial (testing phase)
 
 ### ✅ Multiple Provider Document Representation
 - **Covered**: Demo 3 (migration), example-document.md structure
 - **Evidence**: UUID system, version tracking, metadata preservation
-- **Design**: RFC-080 Outbox pattern
+- **Design**: RFC-008 Outbox pattern
 
 ### ✅ Local Binary Mode with Distributed Backend
 - **Covered**: Demo 1 (local environment), Demo 2 (hybrid config)
@@ -247,7 +247,7 @@ A comprehensive demonstration package for Hermes' local-first, multi-provider do
 
 2. **Understanding Architecture**:
    - Read demo1/example-document.md
-   - Review ADR-073 (provider abstraction)
+   - Review ADR-009 (provider abstraction)
    - Explore pkg/auth/, pkg/workspace/, pkg/search/
 
 3. **Running Tests**:

@@ -107,7 +107,7 @@ from hc_hermes import Hermes
 from hc_hermes.utils import parse_markdown_document
 
 # Parse a local Markdown file with frontmatter
-doc_data = parse_markdown_document("path/to/rfc-123.md")
+doc_data = parse_markdown_document("path/to/rfc-example.md")
 
 # Create document in Hermes
 client = Hermes(base_url="...", auth_token="...")
@@ -135,7 +135,7 @@ hermes documents get DOC-123
 hermes search "RFC kubernetes"
 
 # Create from Markdown
-hermes documents create-from-file rfc-123.md
+hermes documents create-from-file rfc-example.md
 
 # Update document content
 hermes documents update-content DOC-123 --file updated-content.md
@@ -238,7 +238,7 @@ doc = Document(
 from hc_hermes.utils import parse_markdown_document, DocumentParser
 
 # Simple parsing
-data = parse_markdown_document("rfc-123.md")
+data = parse_markdown_document("rfc-example.md")
 print(data.title, data.content)
 
 # Advanced parsing with custom schema

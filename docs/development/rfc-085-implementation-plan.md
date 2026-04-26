@@ -1,8 +1,8 @@
-# RFC-085 Implementation Plan: Edge-to-Central Architecture
+# RFC-011 Implementation Plan: Edge-to-Central Architecture
 
 ## Executive Summary
 
-This document outlines the implementation plan for RFC-085's edge-to-central Hermes architecture, where an edge Hermes instance (local authoring) delegates operations to a central Hermes server (tracking, directory, permissions).
+This document outlines the implementation plan for RFC-011's edge-to-central Hermes architecture, where an edge Hermes instance (local authoring) delegates operations to a central Hermes server (tracking, directory, permissions).
 
 **Goal**: Enable docker-compose testing infrastructure with edge Hermes reporting to central Hermes.
 
@@ -95,7 +95,7 @@ type Manager struct {
     syncMode    SyncMode                   // immediate, batch, manual
 }
 
-// Implements all 8 RFC-084 interfaces by routing to appropriate provider
+// Implements all 8 RFC-010 interfaces by routing to appropriate provider
 var (
     _ workspace.WorkspaceProvider = (*Manager)(nil)
     _ workspace.DocumentProvider = (*Manager)(nil)
@@ -563,7 +563,7 @@ products {
 
 set -e
 
-echo "=== RFC-085 Edge-to-Central Integration Test ==="
+echo "=== RFC-011 Edge-to-Central Integration Test ==="
 
 # Start all services
 echo "Starting docker-compose services..."
@@ -873,7 +873,7 @@ cd testing && ./test-edge-to-central.sh
 
 | Phase | Tasks | Estimated Time | Dependencies |
 |-------|-------|----------------|--------------|
-| 1 | Multi-provider manager | 3-4 days | RFC-084 interfaces |
+| 1 | Multi-provider manager | 3-4 days | RFC-010 interfaces |
 | 2 | Document sync endpoints | 2-3 days | Database migration |
 | 3 | Docker-compose setup | 1-2 days | Phase 1 complete |
 | 4 | Configuration files | 1 day | Phase 1, 3 |
@@ -883,7 +883,7 @@ cd testing && ./test-edge-to-central.sh
 
 ## Success Criteria
 
-- [ ] Multi-provider manager implements all 8 RFC-084 interfaces
+- [ ] Multi-provider manager implements all 8 RFC-010 interfaces
 - [ ] Document creation on edge syncs metadata to central
 - [ ] Directory search from edge delegates to central
 - [ ] Notification sending from edge delegates to central
@@ -914,8 +914,8 @@ cd testing && ./test-edge-to-central.sh
 
 ## References
 
-- [RFC-084: Workspace Provider Interfaces](../../docs-internal/rfc/rfc-084-provider-interface-refactoring.md)
-- [RFC-085: API Provider Remote Delegation](../../docs-internal/rfc/rfc-085-api-provider-remote-delegation.md)
+- [RFC-010: Workspace Provider Interfaces](../../docs-internal/rfc/rfc-010-provider-interface-refactoring.md)
+- [RFC-011: API Provider Remote Delegation](../../docs-internal/rfc/rfc-011-api-provider-remote-delegation.md)
 - [API Provider README](../../pkg/workspace/adapters/api/readme.md)
 - [Validation Tools Documentation](./validation-tools.md)
 

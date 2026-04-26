@@ -65,7 +65,7 @@ AUTHORING REMINDERS — delete before committing.
 DO:
 - Use `type: Memo` (not `MEMO`, not `memo`, not `Guide`).
 - Pick a `status` from: Draft, Final, Reference, Archived.
-- Update `memo-073-docs-internal-hub.md` in the same change.
+- Update `memo-031-docs-internal-hub.md` in the same change.
 - If this memo demotes an ADR, follow the demotion checklist in `templates/readme.md`.
 
 DO NOT:

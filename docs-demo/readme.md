@@ -70,8 +70,8 @@ The demo is organized into four sections:
    - Production flexibility
 
 3. **Provider Abstraction Architecture** (2 minutes)
-   - Design decisions (ADR-073)
-   - Migration pipeline (RFC-080)
+   - Design decisions (ADR-009)
+   - Migration pipeline (RFC-008)
    - Document identity and versioning
 
 4. **Local Testing Excellence** (3 minutes)
@@ -272,9 +272,9 @@ docker compose up -d
 ### Documentation
 - [Testing Environment Guide](../testing/readme.md)
 - [Configuration Documentation](../docs-internal/CONFIG_HCL_DOCUMENTATION.md)
-- [ADR-071: Local File Workspace](../docs-internal/adr/adr-071-local-file-workspace-system.md)
-- [ADR-073: Provider Abstraction](../docs-internal/adr/adr-073-provider-abstraction-architecture.md)
-- [RFC-080: Document Sync](../docs-internal/rfc/rfc-080-outbox-pattern-document-sync.md)
+- [ADR-007: Local File Workspace](../docs-internal/adr/adr-007-local-file-workspace-system.md)
+- [ADR-009: Provider Abstraction](../docs-internal/adr/adr-009-provider-abstraction-architecture.md)
+- [RFC-008: Document Sync](../docs-internal/rfc/rfc-008-outbox-pattern-document-sync.md)
 
 ### Related Guides
 - [Dex Authentication Setup](../docs-internal/memo/README-dex.md)
@@ -287,9 +287,9 @@ docker compose up -d
 ### Share with Stakeholders
 
 1. **demo-narrative.md** - Complete context and talking points
-2. **ADR-073** - Provider abstraction architecture
-3. **ADR-071** - Local file workspace system
-4. **RFC-080** - Document migration design
+2. **ADR-009** - Provider abstraction architecture
+3. **ADR-007** - Local file workspace system
+4. **RFC-008** - Document migration design
 
 ### Discussion Points
 

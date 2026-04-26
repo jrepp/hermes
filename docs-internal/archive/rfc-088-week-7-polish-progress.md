@@ -1,14 +1,14 @@
 ---
-id: rfc-088
+id: rfc-014
 created: 2026-04-24
-title: "RFC-088 Week 7: Polish Phase - Testing and Quality"
+title: "RFC-014 Week 7: Polish Phase - Testing and Quality"
 author: Hermes Team
 project_id: hermes
 doc_uuid: 8ffcabf7-d425-4a4a-813b-1f609cb3d9f9
 status: Draft
 ---
 
-# RFC-088 Week 7: Polish Phase - Testing and Quality
+# RFC-014 Week 7: Polish Phase - Testing and Quality
 ## Progress Summary
 
 **Phase**: 4 Weeks of Polish (Week 7 of 10)
@@ -20,7 +20,7 @@ status: Draft
 
 ## Overview
 
-Week 7 focuses on comprehensive testing, quality assurance, and error scenario validation for the RFC-088 Event-Driven Document Indexer with Semantic Search.
+Week 7 focuses on comprehensive testing, quality assurance, and error scenario validation for the RFC-014 Event-Driven Document Indexer with Semantic Search.
 
 ---
 
@@ -100,7 +100,7 @@ These tests focus on **error paths and validation** without requiring mocked sea
 ### 2. Performance Benchmarking
 
 **File**: `pkg/search/semantic_bench_test.go` (373 lines)
-**Commit**: `25b3f9e` - "perf(rfc-088): add performance benchmark suite and comprehensive analysis"
+**Commit**: `25b3f9e` - "perf(rfc-014): add performance benchmark suite and comprehensive analysis"
 
 #### Benchmark Suite
 
@@ -135,7 +135,7 @@ Created comprehensive performance benchmarks for semantic search:
 
 #### Performance Analysis Document
 
-**File**: `docs-internal/rfc/rfc-088-performance-benchmarks.md` (357 lines)
+**File**: `docs-internal/rfc/rfc-014-performance-benchmarks.md` (357 lines)
 
 Comprehensive analysis including:
 - Benchmark results and interpretation
@@ -150,7 +150,7 @@ Comprehensive analysis including:
 
 ### 3. Code Quality Improvements
 
-**Commit**: `f3f0d3f` - "refactor(rfc-088): fix golangci-lint errors in RFC-088 code"
+**Commit**: `f3f0d3f` - "refactor(rfc-014): fix golangci-lint errors in RFC-014 code"
 
 #### Issues Fixed
 
@@ -174,7 +174,7 @@ Comprehensive analysis including:
 
 #### Linter Status
 
-All RFC-088 related packages now pass golangci-lint:
+All RFC-014 related packages now pass golangci-lint:
 - ✅ `pkg/search/...` - No issues
 - ✅ `pkg/indexer/...` - All 9 errors fixed
 - ✅ `internal/api/v2/search_semantic*.go` - No issues
@@ -294,10 +294,10 @@ type Server struct {
 
 ## Commits Made
 
-1. **0f72956** - docs(rfc-088): add Week 5-6 implementation completion summary
+1. **0f72956** - docs(rfc-014): add Week 5-6 implementation completion summary
 2. **8b17a64** - test(api): add integration tests for semantic search API endpoints
-3. **25b3f9e** - perf(rfc-088): add performance benchmark suite and comprehensive analysis
-4. **f3f0d3f** - refactor(rfc-088): fix golangci-lint errors in RFC-088 code
+3. **25b3f9e** - perf(rfc-014): add performance benchmark suite and comprehensive analysis
+4. **f3f0d3f** - refactor(rfc-014): fix golangci-lint errors in RFC-014 code
 
 ---
 
@@ -392,7 +392,7 @@ type Server struct {
 
 ---
 
-## RFC-088 Overall Progress
+## RFC-014 Overall Progress
 
 **Implementation**: 98% → 98% (Testing phase doesn't change implementation)
 **Testing**: 60% → 80% (API tests + performance benchmarks + code quality)
@@ -428,7 +428,7 @@ type Server struct {
 ### Quality Indicators
 - All tests passing: ✅
 - All benchmarks passing: ✅
-- No lint errors in RFC-088 code: ✅
+- No lint errors in RFC-014 code: ✅
 - Pre-commit hooks passing: ✅
 - Comprehensive documentation: ✅
 - Performance baseline established: ✅

@@ -8,9 +8,9 @@ status: in-progress
 progress: 71%
 tags: [refactoring, search, algolia, meilisearch, handlers, migration]
 related:
-  - ADR-073
-  - ADR-075
-  - RFC-076
+  - ADR-009
+  - ADR-011
+  - ADR-016
 ---
 
 # Migrate API Handlers to Search Provider Abstraction
@@ -198,6 +198,6 @@ For each migration step:
 
 - `internal/api/v2/drafts.go` - Main file needing migration
 - `pkg/search/search.go` - Search abstraction interface
-- ADR-073 - Provider Abstraction Architecture
-- ADR-075 - Meilisearch as Local Search Solution
-- RFC-076 - Search and Authentication Refactoring
+- ADR-009 - Provider Abstraction Architecture
+- ADR-011 - Meilisearch as Local Search Solution
+- ADR-016 - Search and Authentication Refactoring

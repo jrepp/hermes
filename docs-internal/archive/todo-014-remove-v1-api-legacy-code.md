@@ -10,7 +10,7 @@ tags: [api, v1, cleanup, technical-debt, refactoring]
 related:
   - TODO-003
   - TODO-006
-  - ADR-073
+  - ADR-009
 ---
 
 # Remove V1 API Legacy Code
@@ -334,7 +334,7 @@ The following V1 handlers exist in `internal/api/` but are **not registered** in
 
 - **TODO-003**: Migrate API Handlers to Search Provider (V2 migration complete)
 - **TODO-006**: Migrate V1 API to Search Provider (blocked, but irrelevant if V1 removed)
-- **ADR-073**: Search Provider Abstraction (V2 migration architecture)
+- **ADR-009**: Search Provider Abstraction (V2 migration architecture)
 
 ---
 

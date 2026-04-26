@@ -1,5 +1,5 @@
 ---
-id: memo-086
+id: archive memo 086
 title: "Memo Organization 2025-10-09"
 date: 2025-10-09
 type: Implementation
@@ -7,13 +7,13 @@ status: Final
 tags: [documentation, organization, memos, frontmatter]
 related:
   - MEMO-004
-  - MEMO-008
+  - MEMO-007
   - MEMO-016
-  - MEMO-017
-  - MEMO-019
-  - MEMO-023
-  - MEMO-052
-  - MEMO-058
+  - MEMO-014
+  - MEMO-016
+  - MEMO-020
+  - MEMO-028
+  - MEMO-029
 created: 2025-10-09
 author: Hermes Team
 project_id: hermes
@@ -39,16 +39,16 @@ Added frontmatter specification to `docs-internal/memo/readme.md`:
 ### 2. Created 8 Core Memos
 
 **Quick Reference Guides** (5 memos):
-- **MEMO-008**: Auth Provider Quick Reference - Command-line provider selection
-- **MEMO-017**: Dev Quick Reference - Workflows, ports, debugging
-- **MEMO-023**: Dex Quick Start - 5-minute Dex setup guide
-- **MEMO-052**: Outbox Pattern Quick Reference - Database patterns, SQL queries
-- **MEMO-058**: Playwright E2E Agent Guide - Testing workflows for AI agents
+- **MEMO-007**: Auth Provider Quick Reference - Command-line provider selection
+- **MEMO-014**: Dev Quick Reference - Workflows, ports, debugging
+- **MEMO-020**: Dex Quick Start - 5-minute Dex setup guide
+- **MEMO-028**: Outbox Pattern Quick Reference - Database patterns, SQL queries
+- **MEMO-029**: Playwright E2E Agent Guide - Testing workflows for AI agents
 
 **Analysis & Metrics** (3 memos):
 - **MEMO-004**: Agent Usage Analysis - Start/Stop/Continue from 10-15x project
 - **MEMO-016**: Deliverables Summary - Prompt templates and outcomes
-- **MEMO-019**: Dev Velocity Analysis - Statistical breakdown of 98 commits
+- **MEMO-016**: Dev Velocity Analysis - Statistical breakdown of 98 commits
 
 ### 3. Updated README Index
 
@@ -86,17 +86,17 @@ related:
 
 ### Phase 2: Investigation & Root Cause (2 memos)
 - MEMO-001: Admin login hang root cause
-- MEMO-075: FetchPeople hang analysis
+- MEMO 075: FetchPeople hang analysis
 
 ### Phase 3: Implementation & Completion (3 memos)
-- MEMO-025: Document content integration complete
+- MEMO-022: Document content integration complete
 - MEMO-045: Local workspace provider complete
-- MEMO-084: Testing environment complete
+- MEMO 084: Testing environment complete
 
 ### Phase 4: README Documentation (3 memos)
-- MEMO-071: Auth providers README
-- MEMO-072: Local workspace README
-- MEMO-073: Main docs-internal README
+- MEMO-030: Auth providers README
+- MEMO 072: Local workspace README
+- MEMO-031: Main docs-internal README
 
 ## File Locations
 
@@ -105,13 +105,13 @@ docs-internal/
 ├── memo/
 │   ├── readme.md (updated with frontmatter spec)
 │   ├── memo-004-agent-usage-analysis.md ✅
-│   ├── memo-008-auth-provider-quickref.md ✅
+│   ├── memo-006-auth-provider-quickref.md ✅
 │   ├── memo-016-deliverables-summary.md ✅
-│   ├── memo-017-dev-quickref.md ✅
-│   ├── memo-019-dev-velocity-analysis.md ✅
-│   ├── memo-023-dex-quickstart.md ✅
-│   ├── memo-052-outbox-pattern-quickref.md ✅
-│   └── memo-058-playwright-agent-guide.md ✅
+│   ├── memo-012-dev-quickref.md ✅
+│   ├── memo-016-dev-velocity-analysis.md ✅
+│   ├── memo-017-dex-quickstart.md ✅
+│   ├── memo-025-outbox-pattern-quickref.md ✅
+│   └── memo-026-playwright-agent-guide.md ✅
 └── DOCUMENT_CLASSIFICATION.csv (source reference)
 ```
 

@@ -1,6 +1,6 @@
-# RFC-088 Production Deployment Scripts
+# RFC-014 Production Deployment Scripts
 
-This directory contains automated deployment scripts for RFC-088 semantic search implementation.
+This directory contains automated deployment scripts for RFC-014 semantic search implementation.
 
 ## Overview
 
@@ -66,7 +66,7 @@ cp .env.template .env
 This script:
 - ✓ Verifies PostgreSQL connectivity
 - ✓ Installs pgvector extension
-- ✓ Runs RFC-088 database migrations
+- ✓ Runs RFC-014 database migrations
 - ✓ Creates vector indexes (IVFFlat or HNSW)
 - ✓ Creates lookup indexes
 - ✓ Updates table statistics
@@ -146,7 +146,7 @@ Creates:
 - ✓ Prometheus configuration (scrape targets, retention)
 - ✓ Prometheus alert rules (40+ production-ready alerts)
 - ✓ Alertmanager configuration (email, Slack, PagerDuty)
-- ✓ Grafana dashboard (RFC-088 semantic search metrics)
+- ✓ Grafana dashboard (RFC-014 semantic search metrics)
 - ✓ Docker Compose monitoring stack
 - ✓ Grafana provisioning (datasources, dashboards)
 
@@ -223,7 +223,7 @@ Monitoring includes 40+ production-ready alert rules:
 
 ## Grafana Dashboard
 
-The RFC-088 dashboard includes panels for:
+The RFC-014 dashboard includes panels for:
 
 1. **Semantic Search Request Rate** - Requests per second
 2. **Semantic Search Error Rate** - Error percentage
@@ -396,7 +396,7 @@ curl http://localhost:9090/metrics
 curl http://localhost:3000/api/datasources
 
 # Import dashboard manually
-# Copy monitoring-config/grafana/rfc-088-dashboard.json
+# Copy monitoring-config/grafana/rfc-014-dashboard.json
 # Import in Grafana UI
 ```
 
@@ -507,4 +507,4 @@ After successful deployment:
 
 **Version**: 1.0
 **Last Updated**: November 15, 2025
-**RFC**: RFC-088 Event-Driven Indexer with Semantic Search
+**RFC**: RFC-014 Event-Driven Indexer with Semantic Search

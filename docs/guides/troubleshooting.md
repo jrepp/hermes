@@ -1,5 +1,5 @@
 # Troubleshooting Guide
-## RFC-088 Semantic Search and Document Indexer
+## RFC-014 Semantic Search and Document Indexer
 
 **Version**: 2.0
 **Audience**: All Users (Developers, Operators, Administrators)
@@ -9,7 +9,7 @@
 
 ## Overview
 
-This guide provides troubleshooting procedures for common issues with the RFC-088 Event-Driven Document Indexer with Semantic Search.
+This guide provides troubleshooting procedures for common issues with the RFC-014 Event-Driven Document Indexer with Semantic Search.
 
 **Quick Links**:
 - [Common Error Messages](#common-error-messages)
@@ -715,7 +715,7 @@ curl http://localhost:9090/metrics | grep openai_api_calls_total
 
 **Solutions**:
 
-1. **Implement exponential backoff** (already implemented in RFC-088):
+1. **Implement exponential backoff** (already implemented in RFC-014):
 ```hcl
 openai {
   max_retries = 5
@@ -1131,5 +1131,5 @@ If you can't resolve the issue:
 ---
 
 *Last Updated: November 15, 2025*
-*RFC-088 Implementation*
+*RFC-014 Implementation*
 *Version 2.0*

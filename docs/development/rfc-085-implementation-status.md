@@ -1,4 +1,4 @@
-# RFC-085 Implementation Status
+# RFC-011 Implementation Status
 
 **Document**: Edge-to-Central Hermes Architecture Implementation
 **Status**: Phase 3 Complete - Authentication & API Endpoints ✅
@@ -7,7 +7,7 @@
 
 ## Overview
 
-This document tracks the implementation status of RFC-085, which enables edge-to-central Hermes architecture where edge instances handle local authoring and delegate directory/permission operations to a central Hermes server.
+This document tracks the implementation status of RFC-011, which enables edge-to-central Hermes architecture where edge instances handle local authoring and delegate directory/permission operations to a central Hermes server.
 
 ## Architecture Summary
 
@@ -41,7 +41,7 @@ This document tracks the implementation status of RFC-085, which enables edge-to
 - `manager.go` (907 lines) - Manager implementation with intelligent routing
 
 **Key Features**:
-- Implements all 7 RFC-084 WorkspaceProvider interfaces:
+- Implements all 7 RFC-010 WorkspaceProvider interfaces:
   - `DocumentProvider` - Document CRUD
   - `ContentProvider` - Content management
   - `RevisionTrackingProvider` - Version control
@@ -301,7 +301,7 @@ FROM edge_document_registry;
 
 ### Type Safety
 ```go
-✅ Multi-provider manager implements all 7 RFC-084 interfaces
+✅ Multi-provider manager implements all 7 RFC-010 interfaces
 ✅ Compile-time interface verification passes
 ✅ All method signatures match workspace.Provider interfaces
 ```
@@ -520,7 +520,7 @@ func (IndexerToken) TableName() string {
 #### 3.6 Documentation
 
 **Files Created**:
-- `docs/development/rfc-085-phase3-authentication.md` (547 lines) - Complete authentication implementation guide
+- `docs/development/rfc-011-phase3-authentication.md` (547 lines) - Complete authentication implementation guide
 - `docs/development/edge-token-rotation-guide.md` (560 lines) - Token rotation procedures and best practices
 
 **Key Topics**:
@@ -586,7 +586,7 @@ func (IndexerToken) TableName() string {
 ## Success Criteria
 
 ### ✅ Completed (Phases 1-3)
-- [x] Multi-provider manager implements all RFC-084 interfaces
+- [x] Multi-provider manager implements all RFC-010 interfaces
 - [x] Document sync database schema created with proper indexes
 - [x] Document sync service provides full CRUD operations
 - [x] Edge sync API endpoints registered and protected
@@ -604,10 +604,10 @@ func (IndexerToken) TableName() string {
 - [ ] Edge document creation syncs metadata to central
 - [ ] Central people directory queries work from edge
 - [ ] Full integration tests pass
-- [ ] API provider implementation (RFC-085 Phase 5)
-- [ ] Identity joining (RFC-085 Phase 6)
-- [ ] Notification replication (RFC-085 Phase 7)
-- [ ] UUID merging for document drift (RFC-085 Phase 8)
+- [ ] API provider implementation (RFC-011 Phase 5)
+- [ ] Identity joining (RFC-011 Phase 6)
+- [ ] Notification replication (RFC-011 Phase 7)
+- [ ] UUID merging for document drift (RFC-011 Phase 8)
 - [ ] Production deployment guide completed
 
 ---
@@ -662,10 +662,10 @@ func (IndexerToken) TableName() string {
 | `internal/migrate/migrations/000009_rename_indexer_tokens_to_service_tokens.up.sql` | 49 | Token table rename (up) |
 | `internal/migrate/migrations/000009_rename_indexer_tokens_to_service_tokens.down.sql` | 28 | Token table rename (down) |
 | `internal/api/v2/edge_sync_auth.go` | 132 | Authentication middleware |
-| `docs/development/rfc-085-phase3-authentication.md` | 547 | Authentication guide |
+| `docs/development/rfc-011-phase3-authentication.md` | 547 | Authentication guide |
 | `docs/development/edge-token-rotation-guide.md` | 560 | Token rotation guide |
 | `testing/test-edge-sync-api.sh` | 238 | Integration tests |
-| `docs/development/rfc-085-implementation-status.md` | - | This document |
+| `docs/development/rfc-011-implementation-status.md` | - | This document |
 
 **Total**: ~3,570 lines of production code + documentation
 
@@ -683,9 +683,9 @@ func (IndexerToken) TableName() string {
 
 ## References
 
-- **RFC-084**: Provider Interface Refactoring
-- **RFC-085**: API Provider Remote Delegation
-- **Implementation Plan**: `docs/development/rfc-085-implementation-plan.md`
+- **RFC-010**: Provider Interface Refactoring
+- **RFC-011**: API Provider Remote Delegation
+- **Implementation Plan**: `docs/development/rfc-011-implementation-plan.md`
 
 ---
 

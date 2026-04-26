@@ -1,8 +1,8 @@
-# Strong Signal Validation for RFC-089 Migration Tests
+# Strong Signal Validation for RFC-015 Migration Tests
 
 ## Overview
 
-The RFC-089 migration e2e tests include **comprehensive strong signal validation** to ensure data integrity and correctness beyond simple status checks. These validations provide high-confidence signals that migrations completed successfully without data loss, corruption, or inconsistency.
+The RFC-015 migration e2e tests include **comprehensive strong signal validation** to ensure data integrity and correctness beyond simple status checks. These validations provide high-confidence signals that migrations completed successfully without data loss, corruption, or inconsistency.
 
 ## Philosophy
 
@@ -75,7 +75,7 @@ Strong signal validation checks:
 
 ### 3. Outbox Integrity Validation
 
-**Purpose:** Verify the transactional outbox pattern worked correctly (RFC-080).
+**Purpose:** Verify the transactional outbox pattern worked correctly (RFC-008).
 
 **Strong Signals Checked:**
 
@@ -380,7 +380,7 @@ assert.Equal(t, storedHash, computedHash)
 - [migration-e2e-testing.md](migration-e2e-testing.md) - Complete testing guide
 - [migration-e2e-quickstart.md](migration-e2e-quickstart.md) - Quick reference
 - [migration-test-summary.md](migration-test-summary.md) - Implementation summary
-- [rfc-089-testing-guide.md](rfc-089-testing-guide.md) - API testing guide
+- [rfc-015-testing-guide.md](rfc-015-testing-guide.md) - API testing guide
 
 ## Summary
 

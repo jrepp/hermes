@@ -1,4 +1,4 @@
-# Docker Compose for Testing Environment - RFC-085 Edge-to-Central Architecture
+# Docker Compose for Testing Environment - RFC-011 Edge-to-Central Architecture
 #
 # Purpose: Full-stack containerized environment for testing edge-to-central Hermes architecture.
 #          Runs both central Hermes (full capabilities) and edge Hermes (local authoring + delegation).
@@ -14,7 +14,7 @@
 #
 # Architecture:
 #   - Central Hermes: Full capabilities (documents, directory, permissions, notifications)
-#   - Edge Hermes: Local authoring + API delegation to central (RFC-085)
+#   - Edge Hermes: Local authoring + API delegation to central (RFC-011)
 #   - Shared infrastructure: PostgreSQL, Meilisearch, Dex authentication
 #   - Frontend: Node.js serve package serving pre-built Ember app (SPA mode)
 #
@@ -68,7 +68,7 @@ services:
     networks:
       - hermes-testing
 
-  # MinIO - S3-compatible object storage (RFC-089)
+  # MinIO - S3-compatible object storage (RFC-015)
   minio:
     image: minio/minio:RELEASE.2024-11-07T00-52-20Z
     container_name: hermes-minio
@@ -304,7 +304,7 @@ services:
     networks:
       - hermes-testing
 
-  # Redpanda - Kafka-compatible message broker for notifications (RFC-087)
+  # Redpanda - Kafka-compatible message broker for notifications (RFC-013)
   redpanda:
     image: docker.redpanda.com/redpandadata/redpanda:v24.2.11
     container_name: hermes-redpanda
@@ -334,7 +334,7 @@ services:
     networks:
       - hermes-testing
 
-  # Mailhog - Test SMTP server for email testing (RFC-087)
+  # Mailhog - Test SMTP server for email testing (RFC-013)
   mailhog:
     image: mailhog/mailhog:v1.0.1
     container_name: hermes-mailhog
@@ -349,7 +349,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # RFC-087 Notifiers - Multiple instances for different backends
+  # RFC-013 Notifiers - Multiple instances for different backends
   # Each notifier handles only specific backends to avoid head-of-queue blocking
   # All notifiers share the same consumer group for load balancing
 
@@ -403,8 +403,8 @@ services:
       - hermes-testing
     restart: unless-stopped
 
-  # RFC-088 Indexer Services - Event-Driven Document Indexing
-  # NOTE: Relay is now embedded in the main hermes-central server (see RFC-088)
+  # RFC-014 Indexer Services - Event-Driven Document Indexing
+  # NOTE: Relay is now embedded in the main hermes-central server (see RFC-014)
   # Only the stateless consumer worker runs as a separate service
 
   # Indexer Consumer - Processes document revision events from Redpanda (stateless)
@@ -441,8 +441,8 @@ networks:
 volumes:
   postgres_testing:
   meilisearch_testing:
-  minio_data:                # MinIO S3-compatible storage (RFC-089)
+  minio_data:                # MinIO S3-compatible storage (RFC-015)
   hermes_central_workspace:  # Central Hermes workspace data
   hermes_edge_workspace:     # Edge Hermes workspace data
   indexer_shared:
-  redpanda_data:             # Redpanda data storage (RFC-087)
+  redpanda_data:             # Redpanda data storage (RFC-013)

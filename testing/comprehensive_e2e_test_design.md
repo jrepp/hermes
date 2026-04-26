@@ -27,7 +27,7 @@ This test validates the complete Hermes system from document creation on an edge
 │ │ 2. Edge Indexer                                              │ │
 │ │    - Detects new document                                    │ │
 │ │    - Indexes to edge Meilisearch                            │ │
-│ │    - Registers with central registry (RFC-085)              │ │
+│ │    - Registers with central registry (RFC-011)              │ │
 │ └──────────────────────┬──────────────────────────────────────┘ │
 └────────────────────────┼───────────────────────────────────────┘
                          │
@@ -35,7 +35,7 @@ This test validates the complete Hermes system from document creation on an edge
 ┌─────────────────────────────────────────────────────────────────┐
 │ Central Hermes Instance                                          │
 │ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ 3. Edge Document Registry (RFC-085/086)                      │ │
+│ │ 3. Edge Document Registry (RFC-011/086)                      │ │
 │ │    - Receives document registration                          │ │
 │ │    - Validates bearer token authentication                   │ │
 │ │    - Stores in edge_document_registry table                  │ │
@@ -58,7 +58,7 @@ This test validates the complete Hermes system from document creation on an edge
                          │
                          ▼ (Publish to Redpanda)
 ┌─────────────────────────────────────────────────────────────────┐
-│ Notification System (RFC-087)                                    │
+│ Notification System (RFC-013)                                    │
 │ ┌─────────────────────────────────────────────────────────────┐ │
 │ │ 6. Redpanda Message Broker                                   │ │
 │ │    - Receives notification message                           │ │
@@ -109,7 +109,7 @@ This test validates the complete Hermes system from document creation on an edge
 
 ### Phase 2: Authentication & Token Management
 
-**Purpose**: Validate RFC-085/086 bearer token authentication
+**Purpose**: Validate RFC-011/086 bearer token authentication
 
 **Tests**:
 1. ✓ Create edge sync token for edge instance
@@ -148,7 +148,7 @@ This test validates the complete Hermes system from document creation on an edge
 ---
 hermes-uuid: test-e2e-{timestamp}
 document-type: RFC
-document-number: RFC-999
+document-number: RFC 999
 status: WIP
 title: "E2E Test Document"
 owners:
@@ -159,7 +159,7 @@ tags:
   - e2e
 ---
 
-# RFC-999: E2E Test Document
+# RFC 999: E2E Test Document
 
 This is an end-to-end test document created at {timestamp}.
 
@@ -190,7 +190,7 @@ Validate the complete Hermes central-edge architecture.
 
 ### Phase 4: Edge-to-Central Synchronization
 
-**Purpose**: Validate RFC-085 edge-to-central document synchronization
+**Purpose**: Validate RFC-011 edge-to-central document synchronization
 
 **Tests**:
 1. ✓ Edge registers document with central
@@ -277,7 +277,7 @@ docker logs hermes-notifier-audit --tail 100 2>&1
 
 Expected patterns:
 - Notification ID appears
-- Subject: "RFC-999 approved by {approver}"
+- Subject: "RFC 999 approved by {approver}"
 - Body contains document title
 - Body contains approver name
 - Body contains document URL
@@ -472,9 +472,9 @@ go test -tags=integration -coverprofile=coverage.out ./tests/integration/e2e/...
 - **reviewer@example.com**: Document reviewer
 
 ### Test Documents
-- **RFC-999**: Created on edge
-- **RFC-998**: Created on central
-- **PRD-100**: Product requirement doc (multi-owner)
+- **RFC 999**: Created on edge
+- **RFC 998**: Created on central
+- **PRD 100**: Product requirement doc (multi-owner)
 
 ### Test Configuration
 
@@ -572,7 +572,7 @@ curl -s http://localhost:8025/api/v2/messages | jq .
 curl -s http://localhost:8025/api/v2/messages | jq '.total'
 
 # Search emails
-curl -s http://localhost:8025/api/v2/search?query=RFC-999 | jq .
+curl -s http://localhost:8025/api/v2/search?query=RFC 999 | jq .
 ```
 
 ---
@@ -615,8 +615,8 @@ Phase 2: Authentication & Token Management
 =================================================================
 Phase 3: Edge Document Creation & Local Indexing
 =================================================================
-✓ Created document: test-e2e-1731582600 (RFC-999)
-✓ Document file written: /app/workspaces/edge/docs/RFC-999.md
+✓ Created document: test-e2e-1731582600 (RFC 999)
+✓ Document file written: /app/workspaces/edge/docs/RFC 999.md
 ✓ Edge indexer detected document (5.2s)
 ✓ Document indexed in edge Meilisearch
 ✓ Document searchable from edge (3 results)
@@ -635,8 +635,8 @@ Phase 4: Edge-to-Central Synchronization
 =================================================================
 Phase 5: Central Document Creation & Indexing
 =================================================================
-✓ Created document: test-e2e-central-1731582600 (RFC-998)
-✓ Document file written: /app/workspaces/central/docs/RFC-998.md
+✓ Created document: test-e2e-central-1731582600 (RFC 998)
+✓ Document file written: /app/workspaces/central/docs/RFC 998.md
 ✓ Central indexer detected document (4.8s)
 ✓ Document indexed in central Meilisearch
 ✓ Document searchable from central
@@ -645,14 +645,14 @@ Phase 5: Central Document Creation & Indexing
 =================================================================
 Phase 6: Workflow Actions & Notifications
 =================================================================
-✓ Approved document RFC-999
+✓ Approved document RFC 999
 ✓ Notification published to Redpanda (ID: notif-1731582615)
 ✓ Notification message well-formed (JSON valid)
 ✓ Template resolved server-side
 ✓ Audit backend logged notification (12.3s)
 ✓ Mail backend sent email to Mailhog
 ✓ Ntfy backend sent push notification
-✓ Email in Mailhog: RFC-999 approved by Approver
+✓ Email in Mailhog: RFC 999 approved by Approver
 ✓ Audit log contains: Subject, Body, DocumentURL
 
 =================================================================
@@ -697,9 +697,9 @@ Performance Metrics:
 ║  ✓ All E2E tests passed successfully!                 ║
 ║                                                        ║
 ║  Hermes Central-Edge Architecture: VERIFIED ✓         ║
-║  RFC-085 Edge Sync: VERIFIED ✓                        ║
-║  RFC-086 Authentication: VERIFIED ✓                   ║
-║  RFC-087 Notifications: VERIFIED ✓                    ║
+║  RFC-011 Edge Sync: VERIFIED ✓                        ║
+║  RFC-012 Authentication: VERIFIED ✓                   ║
+║  RFC-013 Notifications: VERIFIED ✓                    ║
 ╚════════════════════════════════════════════════════════╝
 ```
 
@@ -864,9 +864,9 @@ jobs:
 
 ## References
 
-- **RFC-085**: Multi-Provider Architecture with Document Synchronization
-- **RFC-086**: Authentication and Bearer Token Management
-- **RFC-087**: Multi-Backend Notification System
+- **RFC-011**: Multi-Provider Architecture with Document Synchronization
+- **RFC-012**: Authentication and Bearer Token Management
+- **RFC-013**: Multi-Backend Notification System
 - **Existing Tests**:
   - `testing/test-edge-sync-auth.sh`
   - `testing/test-notifications-e2e.sh`
