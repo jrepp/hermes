@@ -5,6 +5,7 @@ date: 2025-10-09
 type: TODO
 priority: critical
 status: open
+progress: 20%
 tags: [data-consistency, search, database, fixme, bug]
 related:
   - RFC-008
@@ -15,24 +16,22 @@ related:
 
 ## Description
 
-Multiple FIXME comments indicate data consistency issues between the search index (Algolia/Meilisearch) and PostgreSQL database. This can lead to:
+Direct API-layer writes to both PostgreSQL and the search index (Algolia/Meilisearch) can diverge. Earlier FIXME comments have been removed, but the direct-write consistency risk remains in current v2 mutation handlers. This can lead to:
 - Stale search results showing outdated document data
 - Missing documents in search that exist in database
 - Search showing documents that were deleted from database
 
-## Code References
+## Current Code References
 
-### Drafts API (v1)
-- **File**: `internal/api/drafts.go`
-- **Lines**: 335, 661, 1096, 1151
+- `internal/api/v2/drafts.go:415` — draft create writes `DraftIndex().Index` in a post-response goroutine.
+- `internal/api/v2/drafts.go:1493` — draft patch writes `DraftIndex().Index` in a post-response goroutine.
+- `internal/api/v2/drafts.go:1008` — draft delete writes `DraftIndex().Delete` inline after workspace delete.
+- `internal/api/v2/reviews.go:665` and `:677` — publish/review flow writes `DocumentIndex().Index` and `DraftIndex().Delete` in a post-response goroutine.
+- `internal/api/v2/documents.go:803` — document patch writes `DocumentIndex().Index` in a post-response goroutine.
+- `internal/api/v2/approvals.go:675` — approval/review-state change writes `DocumentIndex().Index` via `indexAndValidateDocument`.
+- `internal/api/v2/projects.go:297`, `:552`, `:635` — project create/patch writes `ProjectIndex().Index` via `saveProjectInAlgolia`.
 
-```go
-// FIXME: Data consistency check between search index and database.
-
-// Line 1096:
-// FIXME: The doc.ToAlgoliaObject() call was removed since we're not using 
-// Algolia anymore. Need to implement proper search provider indexing.
-```
+`rg "FIXME: Data consistency" internal/` currently returns zero results; TODO-005 should now track the direct-write migration described in [Trajectory T1](trajectory-001-data-consistency-outbox.md).
 
 ## Root Cause
 
@@ -44,23 +43,23 @@ The code performs direct writes to both database and search index without:
 
 ## Proposed Solution
 
-Implement **Outbox Pattern** (RFC-008):
+Implement the **search outbox pattern** from accepted RFC-008:
 
 ### Phase 1: Write to Outbox
-1. Wrap database writes in transaction
-2. Write index operation to outbox table in same transaction
-3. Commit both atomically
+1. Wrap each authoritative database mutation in a transaction.
+2. Write a `search_outbox_events` row in the same transaction.
+3. Commit both atomically.
 
 ### Phase 2: Background Processor
-1. Worker reads from outbox table
-2. Applies operations to search index
-3. Marks outbox entry as processed
-4. Retries on failure with exponential backoff
+1. Relay reads due `search_outbox_events` rows.
+2. Applies operations to search through `search.Provider`.
+3. Marks outbox entries as completed.
+4. Retries with exponential backoff and moves poison events to inspectable DLQ rows.
 
 ### Phase 3: Reconciliation
-1. Periodic job compares database vs search index
-2. Detects and logs inconsistencies
-3. Queues repair operations to outbox
+1. Backfill/rebuild tooling emits `search.backfill` events from database truth.
+2. Integration tests compare search cache contents against database rows after relay restart.
+3. Operators can retry, skip, or rebuild current projection from DLQ rows.
 
 ## Example Implementation
 
@@ -81,17 +80,19 @@ tx.Commit()
 
 ## Tasks
 
-- [ ] Design outbox table schema
-- [ ] Implement outbox write in all document/draft operations
+- [x] Accept RFC-008 with event identity, idempotency, ordering, retry, DLQ, replay, and observability contract
+- [x] Add T1 audit matrix for current direct API-layer search writes
+- [ ] Design `search_outbox_events` core+deltas migration
+- [ ] Implement transactional outbox writes in all document/draft/review/project operations
 - [ ] Create background worker for processing outbox
 - [ ] Add retry logic with exponential backoff
-- [ ] Implement reconciliation job
-- [ ] Add monitoring/alerting for drift detection
-- [ ] Remove FIXME comments once implemented
+- [ ] Implement DLQ inspection/retry/skip and rebuild-current tooling
+- [ ] Add monitoring/alerting for lag, failures, and DLQ age
+- [ ] Add CI guard for direct API-layer search writes
 
 ## Impact
 
-**Files Affected**: 1 file (`internal/api/drafts.go`), 4 FIXME locations  
+**Files Affected**: v2 drafts, documents, reviews, approvals, projects, outbox model/migrations, relay package, tests, and operations docs
 **Complexity**: High  
 **Risk**: Critical - data inconsistency affects search reliability
 
@@ -104,10 +105,11 @@ tx.Commit()
 
 ## Related Work
 
-- **RFC-008**: Outbox Pattern for Document Synchronization (detailed design)
+- **RFC-008**: Outbox Pattern for Document Synchronization (accepted design)
+- **Trajectory T1**: Data Consistency & Outbox (execution plan and audit matrix)
 - **TODO-003**: Migrate handlers to SearchProvider (prerequisite)
 
 ## References
 
-- `internal/api/drafts.go` - Lines 335, 661, 1096, 1151
-- RFC-008 - Complete outbox pattern specification
+- [Trajectory T1 — Data Consistency & Outbox](trajectory-001-data-consistency-outbox.md)
+- [RFC-008 — Outbox Pattern for Document Synchronization](../rfc/rfc-008-outbox-pattern-document-sync.md)

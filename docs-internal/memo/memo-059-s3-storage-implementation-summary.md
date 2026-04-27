@@ -22,6 +22,8 @@ type: Memo
 
 Successfully implemented a complete S3-compatible storage backend and document migration system for Hermes, enabling multi-provider document storage with seamless migration capabilities between storage providers (Local, S3, Google, Azure, etc.).
 
+For v1.0, the active execution scope is narrower than the original RFC: REST API, provider router, copy-style migrations, and an operator runbook. Admin UI, multi-writable storage, rollback, and recurring migrations are deferred to T7/v1.x. See [RFC-015](../rfc/rfc-015-s3-storage-backend-and-migrations.md#v10-execution-addendum), [Trajectory T4](../plans/trajectory-004-storage-migration.md), and the [Google to S3 migration playbook](../guides/workspace/migrate-google-to-s3.md).
+
 **Key Achievements:**
 - ✅ Production-ready S3 adapter with full RFC-010 interface implementation
 - ✅ Transactional migration system with outbox pattern

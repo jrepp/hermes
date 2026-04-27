@@ -1,31 +1,48 @@
 ---
-title: RFC Implementation Tracker & Roadmap
-type: Memo
-status: Draft
-author: Claude Code
-tags: [implementation, planning, rfc, roadmap]
-id: memo-003
+id: roadmap-tracker
+title: "Roadmap Implementation Tracker"
+status: Reference
 created: 2025-11-15
+date: 2026-04-27
+author: Hermes Team
 project_id: hermes
 doc_uuid: 0f27b5ed-a8fc-40e4-b098-5a22c5f10b98
+type: Memo
+subtype: Reference
+tags: [implementation, planning, rfc, roadmap, tracker]
+related:
+  - RFC-013
+  - RFC-014
+  - RFC-015
+  - RFC-016
+supersedes: MEMO-003
 ---
 
-# RFC Implementation Tracker & Roadmap
+# Roadmap Implementation Tracker
 
-**Date**: November 15, 2025
-**Status**: Active Tracking Document
-**Last Updated**: 2025-11-15 13:33 PST
+**Status**: Living document — re-anchored to the v1.0 trajectories defined in [`/ROADMAP.md`](../../ROADMAP.md).
+**Last Updated**: 2026-04-27 (promoted from `memo-003-2025-11-15-rfc-implementation-tracker.md`)
 
 ## Executive Summary
 
-This memo tracks the implementation status of all active RFCs and provides recommendations for prioritization. As of Nov 15, 2025:
+This document is the **detailed implementation tracker** behind the v1.0 roadmap defined in [`/ROADMAP.md`](../../ROADMAP.md). The roadmap groups all open work into seven trajectories (T1–T7) with explicit phase exit criteria; this tracker is where per-RFC status, decision log, and risk live.
 
-- **RFC-015 (S3 Storage & Migrations)**: ✅ Phase 1 Complete, All Tests Passing
-- **RFC-014 (Event-Driven Indexer)**: ⚙️ 40% Complete, Architecture Done
-- **RFC-013 (Notifications)**: 🔔 85% Complete, Production Ready
-- **RFC-016 (Admin Interface)**: 📝 Design Only, Not Started
+**v1.0 trajectories (must close before v1.0):**
 
-**Recommended Next Focus**: Complete RFC-014 (Event-Driven Indexer) to unblock AI document features.
+- **T1 — Data Consistency & Outbox** (RFC-008 Accepted) — Phase 0 ready, *critical path*
+- **T2 — Event-Driven Indexer Cutover** (RFC-014) — Phase 2, ~40 %
+- **T3 — Notifications Hardening** (RFC-013, TODO-004) — Phase 3, ~85 %
+- **T4 — Storage & Migration Surface** (RFC-015) — Phase 1 done, API surface pending
+- **T5 — Local Mode & Workspace Abstraction** (RFC-009, optional RFC-007) — Phase 2
+- **T6 — E2E Coverage & Tech Debt** (TODO-002/011/012/013, AutoMigrate removal) — Phase 0
+
+**Post-1.0 trajectory:**
+
+- **T7 — Multi-Provider Federation & Admin UI** (RFC-001/010/011/012/016/017) — explicitly v1.x.
+
+**Recommended next focus:** execute T1 Phase 0 by converting the audit matrix into owned work, confirming transaction owners, and adding the CI direct-write guard design. T1 remains the only critical-priority item and gates removal of direct API-layer search writes.
+
+The per-RFC sections below remain authoritative for fine-grained status; the trajectory plans under [`docs-internal/plans/trajectory-*.md`](../plans/) are authoritative for phase order and exit criteria.
 
 ---
 
@@ -772,13 +789,18 @@ Start with Phase 1 (Migration Dashboard) after RFC-015 API endpoints are complet
 
 ## Related Documents
 
+- [`/ROADMAP.md`](../../ROADMAP.md) — public v1.0 roadmap
+- [Trajectory T1 — Data Consistency & Outbox](../plans/trajectory-001-data-consistency-outbox.md)
+- [Trajectory T2 — Event-Driven Indexer Cutover](../plans/trajectory-002-indexer-cutover.md)
+- [Trajectory T3 — Notifications Hardening](../plans/trajectory-003-notifications-hardening.md)
+- [Trajectory T4 — Storage & Migration Surface](../plans/trajectory-004-storage-migration.md)
+- [Trajectory T5 — Local Mode & Workspace Abstraction](../plans/trajectory-005-local-mode.md)
+- [Trajectory T6 — E2E Coverage & Tech Debt](../plans/trajectory-006-e2e-and-tech-debt.md)
+- [Trajectory T7 — Federation & Admin UI (post-1.0)](../plans/trajectory-007-federation-and-admin.md)
 - [RFC-014: Event-Driven Indexer](../rfc/rfc-014-event-driven-indexer.md)
 - [RFC-015: S3 Storage & Migrations](../rfc/rfc-015-s3-storage-backend-and-migrations.md)
 - [RFC-013: Notification Backend](../rfc/rfc-013-notification-backend.md)
 - [RFC-016: Admin Interface](../rfc/rfc-016-admin-interface.md)
-- [RFC-014 Implementation Summary](../rfc/rfc-014-implementation-summary.md)
-- [RFC-015 Implementation Summary](../rfc/rfc-015-implementation-summary.md)
-- [RFC-013 Implementation Status](../rfc/rfc-013-implementation-status.md)
 
 ---
 
@@ -793,6 +815,6 @@ Start with Phase 1 (Migration Dashboard) after RFC-015 API endpoints are complet
 
 ---
 
-**Last Updated**: 2025-11-15 13:33 PST
-**Version**: 1.0
-**Status**: Active Tracking
+**Last Updated**: 2026-04-27
+**Version**: 1.1
+**Status**: Active Tracking — re-anchored to v1.0 trajectories T1–T7

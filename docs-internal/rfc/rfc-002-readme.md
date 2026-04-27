@@ -36,8 +36,8 @@ Architecture proposals, design documents, and implementation specifications for 
 | ID | Title | Status | Description |
 |----|-------|--------|-------------|
 | [051](rfc-005-outbox-pattern-design.md) | Outbox Pattern Design | Design Phase | Async search index updates with transactional consistency |
-| [080](rfc-008-outbox-pattern-document-sync.md) | Outbox Pattern Document Sync | Design Phase | Transactional outbox pattern for DB/search consistency |
-| [089](rfc-015-s3-storage-backend-and-migrations.md) | S3 Storage Backend & Migrations | In Progress | S3 storage backend, document migration between providers |
+| [080](rfc-008-outbox-pattern-document-sync.md) | Outbox Pattern Document Sync | Accepted | Transactional search outbox pattern for DB/search consistency |
+| [089](rfc-015-s3-storage-backend-and-migrations.md) | S3 Storage Backend & Migrations | Accepted | S3 storage backend and narrowed v1.0 migration API/router contract |
 | [091](rfc-017-document-revisions-and-migration.md) | Document Revisions & Migration | Design Phase | Provider-project-document-revision model |
 | [092](rfc-018-instance-identity.md) | Instance Identity | Approved | Composite instance + project identity in distributed system |
 

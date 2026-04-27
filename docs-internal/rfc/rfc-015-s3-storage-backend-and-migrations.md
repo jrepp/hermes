@@ -4,26 +4,308 @@ created: 2025-11-15
 author: Hermes Team
 project_id: hermes
 doc_uuid: 3727c043-2d93-477d-b13c-60e27364f8ae
-status: Draft
+status: Accepted
 title: S3-Compatible Storage Backend and Document Migration System
 type: RFC
 subtype: Architecture Design
 tags: [archival, migration, multi-backend, provider, s3, storage]
-related: [RFC-010, RFC-008, RFC-005, RFC-014]
+related: [ADR-009, ADR-017, ADR-018, ADR-019, RFC-005, RFC-008, RFC-010, RFC-014, MEMO-059]
 ---
 
 # RFC-015: S3-Compatible Storage Backend and Document Migration System
 
 ## Executive Summary
 
-This RFC proposes adding S3-compatible object storage as a first-class storage backend for Hermes, enabling primary document storage, archival, and provider migration capabilities. The design leverages the existing multi-backend document model (RFC-010), outbox pattern (RFC-008/051), and extends it with a migration orchestration system that can move entire document stores between providers (Google Docs → S3 → Office365 → Markdown) while maintaining document identity, revision history, and metadata.
+This RFC proposes adding S3-compatible object storage as a first-class storage backend for Hermes, enabling primary document storage, archival, and provider migration capabilities. The design leverages the existing multi-backend document model (RFC-010), outbox pattern (RFC-008/051), and extends it with a migration orchestration system that can move document stores between providers while maintaining document identity, revision history, and metadata.
 
-**Key Capabilities**:
+**Long-term capabilities**:
 - S3-compatible storage backend for primary document storage and archival
 - Scheduled migration system to move documents between any providers
 - Multi-writable storage support (documents can exist in multiple active backends simultaneously)
 - Migration tracking with progress monitoring and rollback capabilities
 - Admin interface for migration management and status monitoring
+
+For v1.0, only the narrowed contract in the next section is approved for implementation. Later sections retain the broader design context and examples, but any conflict is resolved in favor of the v1.0 addendum.
+
+## v1.0 Execution Addendum
+
+This addendum is the controlling contract for [Trajectory T4](../plans/trajectory-004-storage-migration.md). It narrows the earlier broad RFC so v1.0 can safely expose storage migrations without shipping the full admin UI, multi-writable storage, recurring scheduler, or rollback system. The provider abstraction and handler rules remain governed by [ADR-009](../adr/adr-009-provider-abstraction-architecture.md), [ADR-017](../adr/adr-017-api-refactoring-and-testing-strategy.md), [ADR-018](../adr/adr-018-document-identification-system.md), and [ADR-019](../adr/adr-019-split-server-and-migrate-binaries.md).
+
+### v1.0 Scope
+
+In scope for v1.0:
+
+- Copy-style migrations between configured workspace providers.
+- REST endpoints for provider listing, job creation, job inspection, item listing, failed-item retry, and best-effort cancellation.
+- Provider router selection using `provider_storage` and `docid.CompositeID` routing data.
+- Operator runbook and HCL examples.
+- E2E coverage for at least one non-Google workspace provider path.
+
+Deferred to v1.x/T7:
+
+- Admin UI screens and dashboards.
+- Multi-writable storage, automatic mirroring, conflict resolution, and cutover automation.
+- Rollback that deletes or rewrites destination objects after a partial migration.
+- Scheduled or recurring migrations.
+- DynamoDB metadata storage strategy.
+- Office365/Azure/GitHub/GitLab/Confluence providers.
+
+### Authorization
+
+All v1.0 migration endpoints are admin-only. The server must reject non-admin users before reading or mutating migration records. Project-owner delegation is intentionally deferred to RFC-012 or a successor because migration creation can copy whole projects across storage boundaries.
+
+Required authorization behavior:
+
+- `POST /api/v2/migrations/jobs`, `POST /api/v2/migrations/jobs/:id/retry`, and `POST /api/v2/migrations/jobs/:id/cancel` require admin authorization.
+- `GET /api/v2/migrations/jobs/:id`, `GET /api/v2/migrations/jobs/:id/items`, and `GET /api/v2/providers` require admin authorization for v1.0.
+- Every handler must still scope reads and writes by project. Cross-project job lookup returns `404` or an equivalent not-found typed error rather than exposing existence.
+- Tests must cover unauthenticated, non-admin, admin cross-project, and admin same-project cases.
+
+### API Contract
+
+Handlers use the ADR-017 single-parameter form: `func Handler(srv *server.Server) http.Handler`. They must call provider abstractions and migration services through `server.Server`; handlers must not import concrete S3, Google, or local provider packages.
+
+| Endpoint | Purpose | Auth | Idempotency | Success | Main error cases |
+|---|---|---|---|---|---|
+| `GET /api/v2/providers` | List configured workspace providers visible to the admin. | Admin | Safe read | `200` provider summaries | `401`, `403`, `500` |
+| `POST /api/v2/migrations/jobs` | Create a copy migration job and enqueue pending items. | Admin | `Idempotency-Key` required | `201` new job or `200` existing matching job | `400`, `401`, `403`, `409`, `422`, `500`, `503` |
+| `GET /api/v2/migrations/jobs/:id` | Fetch job state and progress counters. | Admin | Safe read | `200` job summary | `401`, `403`, `404`, `500` |
+| `GET /api/v2/migrations/jobs/:id/items` | List job items with optional `status`, `limit`, and `cursor`. | Admin | Safe read | `200` paginated items | `400`, `401`, `403`, `404`, `500` |
+| `POST /api/v2/migrations/jobs/:id/retry` | Requeue failed retryable items. | Admin | `Idempotency-Key` required | `202` retry summary | `400`, `401`, `403`, `404`, `409`, `422`, `500`, `503` |
+| `POST /api/v2/migrations/jobs/:id/cancel` | Stop scheduling new item work for a pending or running job. | Admin | `Idempotency-Key` required | `202` cancellation state | `401`, `403`, `404`, `409`, `500`, `503` |
+
+#### `GET /api/v2/providers`
+
+Response shape:
+
+```json
+{
+  "providers": [
+    {
+      "name": "s3-archive",
+      "type": "s3",
+      "status": "active",
+      "is_primary": false,
+      "is_writable": true,
+      "capabilities": {
+        "content": true,
+        "versioning": true,
+        "permissions": false
+      },
+      "health_status": "healthy",
+      "last_health_check": "2026-04-27T12:00:00Z"
+    }
+  ]
+}
+```
+
+Provider responses must never include secret configuration values.
+
+#### `POST /api/v2/migrations/jobs`
+
+Request shape:
+
+```json
+{
+  "project_id": "hermes",
+  "name": "google-to-s3-rfcs",
+  "source_provider": "google-prod",
+  "destination_provider": "s3-archive",
+  "strategy": "copy",
+  "filter": {
+    "document_type": "RFC",
+    "status": "Published",
+    "limit": 500
+  },
+  "validate_after_migration": true,
+  "concurrency": 5
+}
+```
+
+Response shape:
+
+```json
+{
+  "job": {
+    "id": "0f3e1c9c-1781-43ab-a31e-5b3a6f9b0f15",
+    "project_id": "hermes",
+    "name": "google-to-s3-rfcs",
+    "source_provider": "google-prod",
+    "destination_provider": "s3-archive",
+    "strategy": "copy",
+    "status": "pending",
+    "total_documents": 500,
+    "migrated_documents": 0,
+    "failed_documents": 0,
+    "skipped_documents": 0,
+    "created_at": "2026-04-27T12:00:00Z",
+    "created_by": "admin@example.com"
+  }
+}
+```
+
+Only `strategy: "copy"` is accepted for v1.0. Requests for `move`, `mirror`, rollback-enabled jobs, scheduled jobs, or recurring jobs return `422` with a typed validation error.
+
+#### `GET /api/v2/migrations/jobs/:id`
+
+Response shape:
+
+```json
+{
+  "job": {
+    "id": "0f3e1c9c-1781-43ab-a31e-5b3a6f9b0f15",
+    "project_id": "hermes",
+    "status": "running",
+    "source_provider": "google-prod",
+    "destination_provider": "s3-archive",
+    "total_documents": 500,
+    "migrated_documents": 245,
+    "failed_documents": 3,
+    "skipped_documents": 0,
+    "validation_status": "pending",
+    "lossy_fields": ["comments"],
+    "started_at": "2026-04-27T12:05:00Z",
+    "updated_at": "2026-04-27T12:40:00Z"
+  }
+}
+```
+
+#### `GET /api/v2/migrations/jobs/:id/items`
+
+Response shape:
+
+```json
+{
+  "items": [
+    {
+      "id": "d4ebd5c9-9f5b-4c30-9e68-cd0996f40d69",
+      "document_uuid": "550e8400-e29b-41d4-a716-446655440000",
+      "source_provider_id": "google:1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs",
+      "destination_provider_id": "s3:hermes-docs/rfcs/rfc-001.md",
+      "status": "completed",
+      "attempt_count": 1,
+      "source_content_hash": "sha256:abc123",
+      "destination_content_hash": "sha256:abc123",
+      "content_match": true,
+      "lossy_fields": [],
+      "updated_at": "2026-04-27T12:40:00Z"
+    }
+  ],
+  "next_cursor": null
+}
+```
+
+#### `POST /api/v2/migrations/jobs/:id/retry`
+
+Request shape:
+
+```json
+{
+  "item_ids": ["d4ebd5c9-9f5b-4c30-9e68-cd0996f40d69"],
+  "retry_failed_only": true
+}
+```
+
+If `item_ids` is omitted, the server retries all failed retryable items for the job. Retrying completed, in-progress, skipped, non-retryable, or cross-project items returns `409`.
+
+Response shape:
+
+```json
+{
+  "job_id": "0f3e1c9c-1781-43ab-a31e-5b3a6f9b0f15",
+  "requeued_items": 3,
+  "skipped_items": 1
+}
+```
+
+#### `POST /api/v2/migrations/jobs/:id/cancel`
+
+Request shape:
+
+```json
+{
+  "reason": "maintenance window ended"
+}
+```
+
+Cancel is best-effort. The server marks the job `cancelling`, prevents new item claims, and lets already in-progress item work finish or fail. Already-written destination objects are retained and visible in item results. Completed and failed jobs are terminal in v1.0 and return `409` if cancellation is requested.
+
+Response shape:
+
+```json
+{
+  "job_id": "0f3e1c9c-1781-43ab-a31e-5b3a6f9b0f15",
+  "status": "cancelling"
+}
+```
+
+### State Machine
+
+Job states:
+
+```text
+pending -> running -> completed
+pending -> cancelled
+running -> cancelling -> cancelled
+running -> failed
+pending -> failed
+```
+
+Item states:
+
+```text
+pending -> in_progress -> completed
+pending -> in_progress -> failed
+failed -> pending      # retry only
+pending -> skipped
+```
+
+Rules:
+
+- `completed`, `failed`, and `cancelled` are terminal job states for v1.0.
+- Cancellation does not imply rollback.
+- Retry creates new outbox work only for failed retryable items and must preserve attempt history.
+- Duplicate job creation with the same `Idempotency-Key` and same normalized body returns the original job. The same key with a different body returns `409`.
+- Duplicate retry or cancel requests with the same `Idempotency-Key` return the original retry/cancel response.
+
+### Provider Router Semantics
+
+The provider router lives behind `workspace.Provider` so handlers stay within ADR-009 and ADR-017 boundaries. It must not special-case S3, Google, or local behavior in HTTP handlers.
+
+Routing rules for v1.0:
+
+- Reads without a provider-qualified ID use the canonical provider recorded for the document/project.
+- Reads with a full `docid.CompositeID` route to the specified provider if the provider is configured, active, and belongs to the same project.
+- Copy migrations never change the canonical provider automatically.
+- Writes during a copy migration continue to target the canonical provider.
+- The router must return typed workspace errors for missing providers, inactive providers, project mismatch, and document-not-found cases so handlers can use `errors.Is`.
+- Cutover from source to destination is a separate future operation and is not part of T4 v1.0.
+
+### Migration Invariants
+
+Every completed item must record validation results for these invariants:
+
+- Stable `docid.UUID` is unchanged.
+- Source and destination `ProviderID` values are recorded.
+- Project identity is unchanged.
+- Title, document type, status, and content hash match unless a transform explicitly declares a lossy field.
+- Created/updated audit timestamps are preserved where the destination provider supports them, or reported as lossy.
+- Permissions, comments, review state, and revision history are preserved where both providers support them, or reported in `lossy_fields` and the runbook.
+
+The API must make lossy fields visible at job and item level. A migration may complete with `validation_status: "passed_with_warnings"` when content and identity are correct but provider-specific metadata could not be preserved.
+
+### Testing Requirements
+
+Phase 1 implementation is not complete until tests cover:
+
+- Unauthorized and non-admin access to every endpoint.
+- Admin access scoped to the wrong project.
+- Duplicate job creation with matching and conflicting idempotency keys.
+- Retry of completed, retryable failed, non-retryable failed, and in-progress items.
+- Cancel of pending, running, completed, and failed jobs.
+- Partial source or destination provider outage.
+- Router reads and writes while a migration item is in progress.
+- Invariant validation for UUID, provider mapping, project, title, type, status, timestamps, content hash, and lossy metadata reporting.
 
 ## Context
 
@@ -1222,6 +1504,8 @@ func (m *Manager) validateMigration(ctx context.Context, job *models.MigrationJo
 
 ### 4. Admin Interface
 
+The admin interface described below is deferred to T7/v1.x. For v1.0, implement only the REST endpoints in the [v1.0 Execution Addendum](#v10-execution-addendum), mounted without the `/admin` path segment.
+
 #### REST API Endpoints
 
 ```go
@@ -1504,6 +1788,8 @@ func (h *AdminHandler) RollbackMigration(c *gin.Context) {
 ```
 
 ## Implementation Plan
+
+The original phased plan below describes the broad RFC. The active v1.0 execution plan is [Trajectory T4](../plans/trajectory-004-storage-migration.md): API/router/runbook first, admin UI and multi-writable storage later.
 
 ### Phase 1: S3 Backend Foundation (Weeks 1-2)
 
@@ -1892,6 +2178,9 @@ POST /api/v2/admin/migrations/5/rollback
   - `pkg/notifications/backends/backend.go` - Backend interface pattern
   - `internal/migrate/migrations/000001_core_schema.up.sql` - Document revision schema
 
+- **Operational Guides**:
+  - [Migrate a Project from Google Workspace to S3](../guides/workspace/migrate-google-to-s3.md) - v1.0 operator playbook
+
 ## Open Questions
 
 1. **S3 Metadata Storage Strategy**
@@ -1933,7 +2222,7 @@ POST /api/v2/admin/migrations/5/rollback
 ---
 
 **Document ID**: RFC-015
-**Status**: Draft
+**Status**: Accepted
 **Author**: Engineering Team
 **Created**: 2025-11-15
-**Last Updated**: 2025-11-15
+**Last Updated**: 2026-04-27

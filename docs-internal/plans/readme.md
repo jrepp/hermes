@@ -1,15 +1,42 @@
 # Plans Directory
 
-This directory contains non-durable planning artifacts for the Hermes project. Plans are work items that track progress toward implementation. When a plan is completed, its knowledge should be folded into durable documentation (ADRs, RFCs, or memos), and the plan itself should be archived.
+This directory contains non-durable planning artifacts for the Hermes project. There are two kinds:
+
+1. **Trajectory plans (`trajectory-NNN-*.md`)** — durable, phased completion plans tied to the v1.0 roadmap defined in [`/ROADMAP.md`](../../ROADMAP.md). Each trajectory groups a body of work with explicit phase exit criteria. These stay in place across the v1.0 release; only their internal status changes.
+2. **TODO plans (`todo-NNN-*.md`)** — narrower, single-feature work items. Each TODO is owned by exactly one trajectory. When a TODO completes, fold its durable knowledge into the relevant ADR/RFC/memo and archive the TODO under `docs-internal/archive/`.
+
+## v1.0 Trajectories
+
+The detailed implementation tracker is [`roadmap-tracker.md`](roadmap-tracker.md) (formerly MEMO-003).
+
+| ID | Trajectory | v1.0? | Owns these TODOs |
+|---|---|---|---|
+| [T1](trajectory-001-data-consistency-outbox.md) | Data Consistency & Outbox | yes | TODO-005, parts of TODO-003 |
+| [T2](trajectory-002-indexer-cutover.md) | Event-Driven Indexer Cutover | yes | (RFC-014 driven) |
+| [T3](trajectory-003-notifications-hardening.md) | Notifications Hardening | yes | TODO-004 |
+| [T4](trajectory-004-storage-migration.md) | Storage & Migration Surface | yes | TODO-010 |
+| [T5](trajectory-005-local-mode.md) | Local Mode & Workspace Abstraction | yes | (RFC-009 driven) |
+| [T6](trajectory-006-e2e-and-tech-debt.md) | E2E Coverage & Tech Debt | yes | TODO-001, TODO-002, TODO-011/012/013, `database_migration_fix_session.md`, `indexer-refactor.md` |
+| [T7](trajectory-007-federation-and-admin.md) | Federation & Admin UI | **no — v1.x** | TODO-007, TODO-008, TODO-009 (deferred) |
+
+### Adversarial Reviews
+
+Read these before running a trajectory. They list failure modes, missing decisions, and go/no-go gates intended to harden each plan before implementation starts.
+
+- [T1 adversarial review](trajectory-001-adversarial-review.md)
+- [T2 adversarial review](trajectory-002-adversarial-review.md)
+- [T3 adversarial review](trajectory-003-adversarial-review.md)
+- [T4 adversarial review](trajectory-004-adversarial-review.md)
+- [T5 adversarial review](trajectory-005-adversarial-review.md)
+- [T6 adversarial review](trajectory-006-adversarial-review.md)
+- [T7 adversarial review](trajectory-007-adversarial-review.md)
 
 ## Naming Convention
 
-All plan files follow the pattern: `todo-NNN-short-description.md`
+- **Trajectories:** `trajectory-NNN-short-description.md` — frontmatter follows the memo schema (`type: Memo`, `subtype: Milestone`).
+- **TODOs:** `todo-NNN-short-description.md` — frontmatter as below.
 
-- **NNN**: Zero-padded 3-digit sequential number (001, 002, 003, etc.)
-- **short-description**: Kebab-case brief description of the plan
-
-## Front Matter Format
+## TODO Front Matter Format
 
 ```yaml
 ---

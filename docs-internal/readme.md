@@ -23,7 +23,7 @@ docs-internal/
 - **Development quick reference** → [`guides/dev/quickref.md`](guides/dev/quickref.md)
 - **All setup & how-to guides** → [`guides/readme.md`](guides/readme.md)
 - **RFC index** → [`rfc/rfc-002-readme.md`](rfc/rfc-002-readme.md)
-- **Current planning status** → [`memo/memo-003-2025-11-15-rfc-implementation-tracker.md`](memo/memo-003-2025-11-15-rfc-implementation-tracker.md)
+- **Current planning status** → [`plans/roadmap-tracker.md`](plans/roadmap-tracker.md)
 
 ## Core Indexes
 

@@ -41,7 +41,7 @@ These memos used to be ADRs; the binding rules they once carried have been retir
 
 - **memo-001** — RFC-014 milestone log (week 1-2).
 - **memo-002** — RFC-014 milestone log (week 2-3).
-- **memo-003** — Active RFC priority tracker and roadmap.
+- **memo-003** — *Retired.* Promoted out of the memo namespace to [`docs-internal/plans/roadmap-tracker.md`](../plans/roadmap-tracker.md) on 2026-04-27 to reflect its role as the living index of v1.0 trajectories. The MEMO-003 number is not reused.
 - **memo-038** — UUID integration summary.
 - **memo-039** — UUID migration summary.
 - **memo-053** — Event-driven indexer implementation summary.

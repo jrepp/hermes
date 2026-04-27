@@ -91,6 +91,7 @@ guides/
 ### Workspace (`workspace/`)
 
 - [Local Workspace Provider](workspace/local.md) — local Markdown+YAML workspace setup for testing.
+- [Migrate a Project from Google Workspace to S3](workspace/migrate-google-to-s3.md) — v1.0 operator playbook for copy-style storage migrations.
 
 ## Authoring
 
