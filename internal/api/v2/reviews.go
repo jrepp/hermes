@@ -19,7 +19,6 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/structs"
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
-	"github.com/hashicorp-forge/hermes/pkg/links"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
@@ -426,42 +425,6 @@ func ReviewsHandler(srv server.Server) http.Handler {
 				"path", r.URL.Path,
 			)
 
-			// Create go-link.
-			// TODO: use database for this instead of Algolia.
-			err = links.SaveDocumentRedirectDetails(
-				srv.SearchProvider, docID, doc.DocType, doc.DocNumber)
-			revertFuncs = append(revertFuncs, func() error {
-				if err := links.DeleteDocumentRedirectDetails(
-					srv.SearchProvider, doc.ObjectID, doc.DocType, doc.DocNumber,
-				); err != nil {
-					return fmt.Errorf("error deleting go-link: %w", err)
-				}
-
-				return nil
-			})
-			if err != nil {
-				srv.Logger.Error("error creating go-link",
-					"error", err,
-					"doc_id", docID,
-					"method", r.Method,
-					"path", r.URL.Path)
-				http.Error(w, "Error creating review",
-					http.StatusInternalServerError)
-				if err := revertReviewsPost(revertFuncs); err != nil {
-					srv.Logger.Error("error reverting review creation",
-						"error", err,
-						"doc_id", docID,
-						"method", r.Method,
-						"path", r.URL.Path)
-				}
-				return
-			}
-			srv.Logger.Info("doc redirect details saved",
-				"doc_id", docID,
-				"method", r.Method,
-				"path", r.URL.Path,
-			)
-
 			// Update document in the database.
 			d := models.Document{
 				GoogleFileID: docID,
@@ -742,7 +705,26 @@ func enqueueReviewCreatedSearchOutbox(tx *gorm.DB, doc *document.Document) error
 		return fmt.Errorf("enqueue draft published search event: %w", err)
 	}
 
-	return nil
+	return enqueueDocumentRedirectSearchOutbox(tx, doc)
+}
+
+func enqueueDocumentRedirectSearchOutbox(tx *gorm.DB, doc *document.Document) error {
+	if doc.DocNumber == "" || doc.DocType == "" {
+		return nil
+	}
+
+	objectID := fmt.Sprintf("/%s/%s", strings.ToLower(doc.DocType), strings.ToLower(doc.DocNumber))
+	return models.EnqueueSearchOutboxEventWithSequence(tx, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventLinkCreated,
+		AggregateID:   objectID,
+		AggregateType: models.SearchAggregateLink,
+		IndexName:     models.SearchIndexLinks,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Payload: map[string]any{
+			"documentID": doc.ObjectID,
+			"objectID":   objectID,
+		},
+	})
 }
 
 // createShortcut creates a shortcut in the hierarchical folder structure

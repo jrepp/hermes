@@ -54,6 +54,8 @@ const (
 	SearchEventReviewStateChanged = "review_state.changed"
 	SearchEventProjectCreated     = "project.created"
 	SearchEventProjectUpdated     = "project.updated"
+	SearchEventLinkCreated        = "link.created"
+	SearchEventLinkDeleted        = "link.deleted"
 	SearchEventBackfill           = "search.backfill"
 )
 
@@ -61,6 +63,7 @@ const (
 const (
 	SearchAggregateDocument = "document"
 	SearchAggregateDraft    = "draft"
+	SearchAggregateLink     = "link"
 	SearchAggregateProject  = "project"
 )
 
@@ -68,6 +71,7 @@ const (
 const (
 	SearchIndexDocuments = "documents"
 	SearchIndexDrafts    = "drafts"
+	SearchIndexLinks     = "links"
 	SearchIndexProjects  = "projects"
 )
 

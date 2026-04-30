@@ -34,7 +34,7 @@ func TestEnqueueReviewCreatedSearchOutbox(t *testing.T) {
 
 	var events []models.SearchOutboxEvent
 	require.NoError(t, db.Order("id ASC").Find(&events).Error)
-	require.Len(t, events, 2)
+	require.Len(t, events, 3)
 
 	assert.Equal(t, models.SearchEventDocumentPublished, events[0].EventType)
 	assert.Equal(t, models.SearchAggregateDocument, events[0].AggregateType)
@@ -49,4 +49,12 @@ func TestEnqueueReviewCreatedSearchOutbox(t *testing.T) {
 	assert.Equal(t, models.SearchOutboxOperationDelete, events[1].Operation)
 	assert.Equal(t, int64(1), events[1].Sequence)
 	assert.Empty(t, events[1].Payload)
+
+	assert.Equal(t, models.SearchEventLinkCreated, events[2].EventType)
+	assert.Equal(t, models.SearchAggregateLink, events[2].AggregateType)
+	assert.Equal(t, models.SearchIndexLinks, events[2].IndexName)
+	assert.Equal(t, models.SearchOutboxOperationUpsert, events[2].Operation)
+	assert.Equal(t, int64(1), events[2].Sequence)
+	assert.Equal(t, "/rfc/h-003", events[2].AggregateID)
+	assert.Equal(t, "doc-publish-1", events[2].Payload["documentID"])
 }

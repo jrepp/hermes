@@ -33,6 +33,16 @@ func TestSearchOutboxEventValidation(t *testing.T) {
 		assert.Equal(t, "documents:doc-1:document.updated:7", key)
 	})
 
+	t.Run("generates link idempotency key", func(t *testing.T) {
+		key := GenerateSearchOutboxIdempotencyKey(
+			SearchIndexLinks,
+			"/rfc/h-003",
+			SearchEventLinkCreated,
+			1,
+		)
+		assert.Equal(t, "links:/rfc/h-003:link.created:1", key)
+	})
+
 	t.Run("before create validates required fields", func(t *testing.T) {
 		event := &SearchOutboxEvent{}
 		err := event.BeforeCreate(nil)

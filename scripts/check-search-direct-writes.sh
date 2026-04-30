@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-SEARCH_WRITE_RE='(\.SearchProvider\.[[:alnum:]_]+Index\(\)\.(Index|Delete)\(|[[:alnum:]_]+\.[[:alnum:]_]+Index\(\)\.(Index|Delete)\(|saveProjectInAlgolia\(|indexAndValidateDocument\()'
+SEARCH_WRITE_RE='(\.SearchProvider\.[[:alnum:]_]+Index\(\)\.(Index|Delete)\(|[[:alnum:]_]+\.[[:alnum:]_]+Index\(\)\.(Index|Delete)\(|saveProjectInAlgolia\(|indexAndValidateDocument\(|links\.(SaveDocumentRedirectDetails|DeleteDocumentRedirectDetails)\()'
 failures=0
 
 is_exempt_path() {
@@ -84,6 +84,7 @@ require_max internal/api/v2/approvals.go 'srv\.SearchProvider\.DocumentIndex\(\)
 require_max internal/api/v2/approvals.go 'indexAndValidateDocument\(' 0 'approval helper-call baseline'
 require_max internal/api/v2/projects.go 'saveProjectInAlgolia\(' 0 'project helper-call baseline'
 require_max internal/api/v2/projects.go 'provider\.ProjectIndex\(\)\.Index\(' 0 'project direct index baseline'
+require_max internal/api/v2/reviews.go 'links\.(SaveDocumentRedirectDetails|DeleteDocumentRedirectDetails)\(' 0 'review direct link-write baseline'
 
 if [ "$failures" -ne 0 ]; then
   printf '\nDirect API-layer search writes must enqueue search_outbox_events instead.\n' >&2

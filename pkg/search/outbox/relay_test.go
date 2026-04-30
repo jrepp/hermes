@@ -101,6 +101,48 @@ func TestRelayProcessesDraftDelete(t *testing.T) {
 	assert.Equal(t, []string{"draft-1"}, provider.drafts.deletedIDs)
 }
 
+func TestRelayProcessesLinkUpsert(t *testing.T) {
+	provider := newMockSearchProvider()
+	db, relay, _ := setupRelayTest(t, provider)
+
+	event := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventLinkCreated,
+		AggregateID:   "/rfc/h-003",
+		AggregateType: models.SearchAggregateLink,
+		IndexName:     models.SearchIndexLinks,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Payload: map[string]any{
+			"documentID": "doc-1",
+			"objectID":   "/rfc/h-003",
+		},
+	})
+
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+
+	reloaded := reloadSearchOutboxEvent(t, db, event.ID)
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloaded.Status)
+	assert.Equal(t, []string{"/rfc/h-003"}, provider.links.savedIDs)
+}
+
+func TestRelayProcessesLinkDelete(t *testing.T) {
+	provider := newMockSearchProvider()
+	db, relay, _ := setupRelayTest(t, provider)
+
+	event := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventLinkDeleted,
+		AggregateID:   "/rfc/h-003",
+		AggregateType: models.SearchAggregateLink,
+		IndexName:     models.SearchIndexLinks,
+		Operation:     models.SearchOutboxOperationDelete,
+	})
+
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+
+	reloaded := reloadSearchOutboxEvent(t, db, event.ID)
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloaded.Status)
+	assert.Equal(t, []string{"/rfc/h-003"}, provider.links.deletedIDs)
+}
+
 func TestRelayMovesFailedEventToDLQAfterRetries(t *testing.T) {
 	provider := newMockSearchProvider()
 	provider.documents.indexErr = errors.New("search unavailable")
@@ -209,6 +251,7 @@ func TestRelayBlocksLaterSameAggregateButProcessesUnrelated(t *testing.T) {
 type mockSearchProvider struct {
 	documents *mockDocumentIndex
 	drafts    *mockDocumentIndex
+	links     *mockLinksIndex
 	projects  *mockProjectIndex
 }
 
@@ -216,6 +259,7 @@ func newMockSearchProvider() *mockSearchProvider {
 	return &mockSearchProvider{
 		documents: &mockDocumentIndex{},
 		drafts:    &mockDocumentIndex{},
+		links:     &mockLinksIndex{},
 		projects:  &mockProjectIndex{},
 	}
 }
@@ -223,7 +267,7 @@ func newMockSearchProvider() *mockSearchProvider {
 func (p *mockSearchProvider) DocumentIndex() search.DocumentIndex { return p.documents }
 func (p *mockSearchProvider) DraftIndex() search.DraftIndex       { return p.drafts }
 func (p *mockSearchProvider) ProjectIndex() search.ProjectIndex   { return p.projects }
-func (p *mockSearchProvider) LinksIndex() search.LinksIndex       { return mockLinksIndex{} }
+func (p *mockSearchProvider) LinksIndex() search.LinksIndex       { return p.links }
 func (p *mockSearchProvider) Name() string                        { return "mock" }
 func (p *mockSearchProvider) Healthy(context.Context) error       { return nil }
 
@@ -316,10 +360,28 @@ func (i *mockProjectIndex) GetObject(context.Context, string) (map[string]any, e
 
 func (i *mockProjectIndex) Clear(context.Context) error { return nil }
 
-type mockLinksIndex struct{}
+type mockLinksIndex struct {
+	saveErr    error
+	deleteErr  error
+	savedIDs   []string
+	deletedIDs []string
+}
 
-func (mockLinksIndex) SaveLink(context.Context, map[string]string) error { return nil }
-func (mockLinksIndex) DeleteLink(context.Context, string) error          { return nil }
+func (i *mockLinksIndex) SaveLink(_ context.Context, link map[string]string) error {
+	if i.saveErr != nil {
+		return i.saveErr
+	}
+	i.savedIDs = append(i.savedIDs, link["objectID"])
+	return nil
+}
+
+func (i *mockLinksIndex) DeleteLink(_ context.Context, objectID string) error {
+	if i.deleteErr != nil {
+		return i.deleteErr
+	}
+	i.deletedIDs = append(i.deletedIDs, objectID)
+	return nil
+}
 func (mockLinksIndex) GetLink(context.Context, string) (map[string]string, error) {
 	return nil, nil
 }

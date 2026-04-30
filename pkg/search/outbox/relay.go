@@ -219,6 +219,8 @@ func (r *Relay) applyEvent(ctx context.Context, event *models.SearchOutboxEvent)
 		return applyDocumentEvent(ctx, r.provider.DocumentIndex(), event)
 	case models.SearchIndexDrafts:
 		return applyDraftEvent(ctx, r.provider.DraftIndex(), event)
+	case models.SearchIndexLinks:
+		return applyLinkEvent(ctx, r.provider.LinksIndex(), event)
 	case models.SearchIndexProjects:
 		return applyProjectEvent(ctx, r.provider.ProjectIndex(), event)
 	default:
@@ -254,6 +256,18 @@ func applyProjectEvent(ctx context.Context, idx search.ProjectIndex, event *mode
 	return idx.Index(ctx, event.Payload)
 }
 
+func applyLinkEvent(ctx context.Context, idx search.LinksIndex, event *models.SearchOutboxEvent) error {
+	if event.Operation == models.SearchOutboxOperationDelete {
+		return idx.DeleteLink(ctx, event.AggregateID)
+	}
+
+	link, err := eventPayloadAsLink(event)
+	if err != nil {
+		return err
+	}
+	return idx.SaveLink(ctx, link)
+}
+
 func eventPayloadAsDocument(event *models.SearchOutboxEvent) (*search.Document, error) {
 	if event.Payload == nil {
 		return nil, errors.New("document search event payload is required")
@@ -276,6 +290,26 @@ func eventPayloadAsDocument(event *models.SearchOutboxEvent) (*search.Document, 
 	}
 
 	return &doc, nil
+}
+
+func eventPayloadAsLink(event *models.SearchOutboxEvent) (map[string]string, error) {
+	if event.Payload == nil {
+		return nil, errors.New("link search event payload is required")
+	}
+
+	link := make(map[string]string, len(event.Payload))
+	for key, value := range event.Payload {
+		str, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("link payload field %q must be string", key)
+		}
+		link[key] = str
+	}
+	if link["objectID"] == "" {
+		link["objectID"] = event.AggregateID
+	}
+
+	return link, nil
 }
 
 func (r *Relay) markCompleted(event *models.SearchOutboxEvent) error {

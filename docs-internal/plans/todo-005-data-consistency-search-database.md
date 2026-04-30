@@ -24,7 +24,7 @@ Direct API-layer writes to both PostgreSQL and the search index (Algolia/Meilise
 ## Current Code References
 
 - `internal/api/v2/drafts.go` — migrated draft create/update/delete writes to transactional `search_outbox_events`.
-- `internal/api/v2/reviews.go` — migrated publish/review flow to transactional `search_outbox_events`.
+- `internal/api/v2/reviews.go` — migrated publish/review flow, including go-link redirect projection, to transactional `search_outbox_events`.
 - `internal/api/v2/documents.go` — migrated document patch writes to transactional `search_outbox_events`.
 - `internal/api/v2/approvals.go` — migrated approval/review-state changes to transactional `search_outbox_events`.
 - `internal/api/v2/projects.go` — migrated project create/patch writes to transactional `search_outbox_events`.
