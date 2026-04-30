@@ -4,8 +4,8 @@ title: Fix Data Consistency Between Search Index and Database
 date: 2025-10-09
 type: TODO
 priority: critical
-status: open
-progress: 20%
+status: in-progress
+progress: 78%
 tags: [data-consistency, search, database, fixme, bug]
 related:
   - RFC-008
@@ -23,13 +23,11 @@ Direct API-layer writes to both PostgreSQL and the search index (Algolia/Meilise
 
 ## Current Code References
 
-- `internal/api/v2/drafts.go:415` — draft create writes `DraftIndex().Index` in a post-response goroutine.
-- `internal/api/v2/drafts.go:1493` — draft patch writes `DraftIndex().Index` in a post-response goroutine.
-- `internal/api/v2/drafts.go:1008` — draft delete writes `DraftIndex().Delete` inline after workspace delete.
-- `internal/api/v2/reviews.go:665` and `:677` — publish/review flow writes `DocumentIndex().Index` and `DraftIndex().Delete` in a post-response goroutine.
-- `internal/api/v2/documents.go:803` — document patch writes `DocumentIndex().Index` in a post-response goroutine.
-- `internal/api/v2/approvals.go:675` — approval/review-state change writes `DocumentIndex().Index` via `indexAndValidateDocument`.
-- `internal/api/v2/projects.go:297`, `:552`, `:635` — project create/patch writes `ProjectIndex().Index` via `saveProjectInAlgolia`.
+- `internal/api/v2/drafts.go` — migrated draft create/update/delete writes to transactional `search_outbox_events`.
+- `internal/api/v2/reviews.go` — migrated publish/review flow to transactional `search_outbox_events`.
+- `internal/api/v2/documents.go` — migrated document patch writes to transactional `search_outbox_events`.
+- `internal/api/v2/approvals.go` — migrated approval/review-state changes to transactional `search_outbox_events`.
+- `internal/api/v2/projects.go` — migrated project create/patch writes to transactional `search_outbox_events`.
 
 `rg "FIXME: Data consistency" internal/` currently returns zero results; TODO-005 should now track the direct-write migration described in [Trajectory T1](trajectory-001-data-consistency-outbox.md).
 
@@ -82,13 +80,23 @@ tx.Commit()
 
 - [x] Accept RFC-008 with event identity, idempotency, ordering, retry, DLQ, replay, and observability contract
 - [x] Add T1 audit matrix for current direct API-layer search writes
-- [ ] Design `search_outbox_events` core+deltas migration
+- [x] Confirm transaction-owner expectations for every audited direct-write flow
+- [x] Add CI guard baseline for new direct API-layer search writes
+- [x] Design `search_outbox_events` migration
+- [x] Add `SearchOutboxEvent` model and transaction-required enqueue helper
+- [x] Add transaction-bound per-aggregate sequence allocation helper
+- [x] Create background relay for processing search outbox events
+- [x] Add retry logic with exponential backoff
+- [x] Wire search outbox relay into server lifecycle
+- [x] Migrate project create/update direct search writes to transactional outbox
+- [x] Migrate document patch direct search write to transactional outbox
+- [x] Migrate approval/review-state direct search write to transactional outbox
+- [x] Migrate publish/review direct search writes to transactional outbox
+- [x] Migrate draft create/update/delete direct search writes to transactional outbox
 - [ ] Implement transactional outbox writes in all document/draft/review/project operations
-- [ ] Create background worker for processing outbox
-- [ ] Add retry logic with exponential backoff
 - [ ] Implement DLQ inspection/retry/skip and rebuild-current tooling
 - [ ] Add monitoring/alerting for lag, failures, and DLQ age
-- [ ] Add CI guard for direct API-layer search writes
+- [x] Add CI guard for direct API-layer search writes
 
 ## Impact
 

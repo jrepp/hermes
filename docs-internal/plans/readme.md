@@ -23,7 +23,6 @@ The detailed implementation tracker is [`roadmap-tracker.md`](roadmap-tracker.md
 
 Read these before running a trajectory. They list failure modes, missing decisions, and go/no-go gates intended to harden each plan before implementation starts.
 
-- [T1 adversarial review](trajectory-001-adversarial-review.md)
 - [T2 adversarial review](trajectory-002-adversarial-review.md)
 - [T3 adversarial review](trajectory-003-adversarial-review.md)
 - [T4 adversarial review](trajectory-004-adversarial-review.md)

@@ -133,7 +133,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        category: [format, vet, golangci-lint, complexity]
+        category: [format, vet, golangci-lint, complexity, search-direct-writes]
 
     steps:
       - name: Checkout
@@ -200,6 +200,12 @@ jobs:
         run: |
           echo "Running complexity analysis..."
           ./scripts/check-complexity.sh
+
+      - name: Run search direct-write guard
+        if: matrix.category == 'search-direct-writes'
+        run: |
+          echo "Checking for unapproved direct search writes..."
+          ./scripts/check-search-direct-writes.sh
 
   # Job 3: Build Go binaries
   build-go:

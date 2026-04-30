@@ -216,7 +216,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			revisionName := fmt.Sprintf("Changes requested by %s", userEmail)
 			doc.SetFileRevision(latestRev.RevisionID, revisionName)
 
-			// Create file revision in the database.
+			// Build file revision for the database.
 			fr := models.DocumentFileRevision{
 				Document: models.Document{
 					GoogleFileID: docID,
@@ -224,26 +224,15 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				GoogleDriveFileRevisionID: latestRev.RevisionID,
 				Name:                      revisionName,
 			}
-			if err := fr.Create(srv.DB); err != nil {
-				srv.Logger.Error("error creating document file revision",
+
+			// Update review state and enqueue search projection atomically.
+			if err := updateReviewStateWithSearchOutbox(srv.DB, &fr, doc); err != nil {
+				srv.Logger.Error("error updating review state",
 					"error", err,
 					"method", r.Method,
 					"path", r.URL.Path,
 					"doc_id", docID,
 					"rev_id", latestRev.RevisionID)
-				http.Error(w, "Error updating document status",
-					http.StatusInternalServerError)
-				return
-			}
-
-			// Update document reviews in the database.
-			if err := updateDocumentReviewsInDatabase(*doc, srv.DB, srv.IsSharePoint()); err != nil {
-				srv.Logger.Error("error updating document reviews in the database",
-					"error", err,
-					"doc_id", docID,
-					"method", r.Method,
-					"path", r.URL.Path,
-				)
 				http.Error(w, "Error updating document status",
 					http.StatusInternalServerError)
 				return
@@ -280,35 +269,6 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				"method", r.Method,
 				"path", r.URL.Path,
 			)
-
-			// Log document access with Datadog ACCESS tag
-			srv.Logger.Info("ACCESS",
-				"user_email", userEmail,
-				"doc_id", docID,
-				"operation", "changes_requested",
-				"updated_attributes", "[changesRequestedBy, approvedBy, fileRevision]",
-				"mode", "published",
-			)
-
-			// Request post-processing.
-			go func() {
-				// Convert document to search index object.
-				docObjMap, err := doc.ToAlgoliaObject(true)
-				if err != nil {
-					srv.Logger.Error("error converting document to search object",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					http.Error(w, "Error updating document status",
-						http.StatusInternalServerError)
-					return
-				}
-
-				// Save new modified doc object in search index.
-				indexAndValidateDocument(srv, w, r, docObjMap, docID)
-			}()
 
 		case "OPTIONS":
 			// Document is not in review or approved status.
@@ -413,25 +373,10 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			}
 
 			// If the user is a group approver, they won't be in the approvers list.
+			addApprover := false
 			if !contains(doc.Approvers, userEmail) {
+				addApprover = true
 				doc.Approvers = append(doc.Approvers, userEmail)
-
-				// Add approver in database.
-				model.Approvers = append(model.Approvers, &models.User{
-					EmailAddress: userEmail,
-				})
-				if err := model.Upsert(srv.DB); err != nil {
-					srv.Logger.Error(
-						"error updating document in the database to add approver",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					http.Error(w, "Error approving document",
-						http.StatusInternalServerError)
-					return
-				}
 			}
 
 			// Add email to slice of users who have approved the document.
@@ -480,7 +425,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 			revisionName := fmt.Sprintf("Approved by %s", userEmail)
 			doc.SetFileRevision(latestRev.RevisionID, revisionName)
 
-			// Create file revision in the database.
+			// Build file revision for the database.
 			fr := models.DocumentFileRevision{
 				Document: models.Document{
 					GoogleFileID: docID,
@@ -488,27 +433,29 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 				GoogleDriveFileRevisionID: latestRev.RevisionID,
 				Name:                      revisionName,
 			}
-			if err := fr.Create(srv.DB); err != nil {
-				srv.Logger.Error("error creating document file revision",
+
+			// Update review state and enqueue search projection atomically.
+			if err := updateReviewStateWithSearchOutbox(srv.DB, &fr, doc, func(tx *gorm.DB) error {
+				if !addApprover {
+					return nil
+				}
+
+				model.Approvers = append(model.Approvers, &models.User{
+					EmailAddress: userEmail,
+				})
+				if err := model.Upsert(tx); err != nil {
+					return fmt.Errorf("error updating document in the database to add approver: %w", err)
+				}
+
+				return nil
+			}); err != nil {
+				srv.Logger.Error("error updating review state",
 					"error", err,
 					"method", r.Method,
 					"path", r.URL.Path,
 					"doc_id", docID,
 					"rev_id", latestRev.RevisionID)
 				http.Error(w, "Error updating document status",
-					http.StatusInternalServerError)
-				return
-			}
-
-			// Update document reviews in the database.
-			if err := updateDocumentReviewsInDatabase(*doc, srv.DB, srv.IsSharePoint()); err != nil {
-				srv.Logger.Error("error updating document reviews in the database",
-					"error", err,
-					"doc_id", docID,
-					"method", r.Method,
-					"path", r.URL.Path,
-				)
-				http.Error(w, "Error approving document",
 					http.StatusInternalServerError)
 				return
 			}
@@ -624,28 +571,54 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 					}
 				}
 
-				// Convert document to search index object.
-				docObjMap, err := doc.ToAlgoliaObject(true)
-				if err != nil {
-					srv.Logger.Error("error converting document to search object",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					http.Error(w, "Error updating document status",
-						http.StatusInternalServerError)
-					return
-				}
-
-				// Save new modified doc object in search index.
-				indexAndValidateDocument(srv, w, r, docObjMap, docID)
 			}()
 
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
+	})
+}
+
+func updateReviewStateWithSearchOutbox(
+	db *gorm.DB,
+	fr *models.DocumentFileRevision,
+	doc *document.Document,
+	extraMutations ...func(*gorm.DB) error,
+) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, mutation := range extraMutations {
+			if mutation == nil {
+				continue
+			}
+			if err := mutation(tx); err != nil {
+				return err
+			}
+		}
+
+		if fr != nil {
+			if err := fr.Create(tx); err != nil {
+				return fmt.Errorf("error creating document file revision: %w", err)
+			}
+		}
+
+		if err := updateDocumentReviewsInDatabase(*doc, tx); err != nil {
+			return fmt.Errorf("error updating document reviews in the database: %w", err)
+		}
+
+		payload, err := documentSearchPayload(doc)
+		if err != nil {
+			return err
+		}
+
+		return models.EnqueueSearchOutboxEventWithSequence(tx, &models.SearchOutboxEvent{
+			EventType:     models.SearchEventReviewStateChanged,
+			AggregateID:   doc.ObjectID,
+			AggregateType: models.SearchAggregateDocument,
+			IndexName:     models.SearchIndexDocuments,
+			Operation:     models.SearchOutboxOperationUpsert,
+			Payload:       payload,
+		})
 	})
 }
 
@@ -680,86 +653,4 @@ func updateDocumentReviewsInDatabase(doc document.Document, db *gorm.DB, useShar
 	}
 
 	return nil
-}
-
-// indexAndValidateDocument indexes a document in the search provider and validates consistency
-// between the search index and database. This is a helper to reduce code duplication.
-func indexAndValidateDocument(
-	srv server.Server,
-	w http.ResponseWriter,
-	r *http.Request,
-	docObjMap map[string]any,
-	docID string,
-) {
-	if srv.SearchProvider == nil {
-		return
-	}
-
-	// Convert map to search.Document via JSON round-trip
-	docObj, err := mapToSearchDocument(docObjMap)
-	if err != nil {
-		srv.Logger.Error("error converting document to search document",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-
-	ctx := r.Context()
-	err = srv.SearchProvider.DocumentIndex().Index(ctx, docObj)
-	if err != nil {
-		srv.Logger.Error("error saving approved document in search index",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID)
-		http.Error(w, "Error updating document status",
-			http.StatusInternalServerError)
-		return
-	}
-
-	// Compare search index and database documents to find data inconsistencies.
-	// Get document from database.
-	dbDoc := models.Document{
-		GoogleFileID: docID,
-	}
-	if err := dbDoc.Get(srv.DB); err != nil {
-		srv.Logger.Error(
-			"error getting document from database for data comparison",
-			"error", err,
-			"path", r.URL.Path,
-			"method", r.Method,
-			"doc_id", docID,
-		)
-		return
-	}
-	// Get all reviews for the document.
-	var reviews models.DocumentReviews
-	if err := reviews.Find(srv.DB, models.DocumentReview{
-		Document: models.Document{
-			GoogleFileID: docID,
-		},
-	}); err != nil {
-		srv.Logger.Error(
-			"error getting all reviews for document for data comparison",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-	if err := CompareAlgoliaAndDatabaseDocument(
-		docObjMap, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
-	); err != nil {
-		srv.Logger.Warn(
-			"inconsistencies detected between search index and database docs",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-	}
 }

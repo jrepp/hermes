@@ -300,7 +300,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 				Summary: &req.Summary,
 				Title:   req.Title,
 			}
-			if err := model.Create(srv.DB); err != nil {
+			if err := createDraftWithSearchOutbox(srv.DB, &model, doc); err != nil {
 				srv.Logger.Error("error creating document in database",
 					"error", err,
 					"method", r.Method,
@@ -393,116 +393,6 @@ func DraftsHandler(srv server.Server) http.Handler {
 				"path", r.URL.Path,
 				"doc_id", fileID,
 			)
-
-			// Request post-processing.
-			go func() {
-				// Convert document.Document to search.Document for indexing
-				searchDoc := &search.Document{
-					ObjectID:     doc.ObjectID,
-					DocID:        doc.ObjectID,
-					Title:        doc.Title,
-					DocNumber:    doc.DocNumber,
-					DocType:      doc.DocType,
-					Product:      doc.Product,
-					Status:       doc.Status,
-					Owners:       doc.Owners,
-					Contributors: doc.Contributors,
-					Approvers:    doc.Approvers,
-					Summary:      doc.Summary,
-					Content:      doc.Content,
-					CreatedTime:  doc.CreatedTime,
-					ModifiedTime: doc.ModifiedTime,
-				}
-
-				// Save document object in search index.
-				err := srv.SearchProvider.DraftIndex().Index(r.Context(), searchDoc)
-				if err != nil {
-					srv.Logger.Error("error saving draft doc in search index",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", fileID,
-					)
-					http.Error(w, "Error creating document draft",
-						http.StatusInternalServerError)
-					return
-				}
-
-				// Compare search index and database documents to find data inconsistencies.
-				// Get document object from search index.
-				indexedDoc, err := srv.SearchProvider.DraftIndex().GetObject(r.Context(), fileID)
-				if err != nil {
-					srv.Logger.Error("error getting search object for data comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", fileID,
-					)
-					return
-				}
-
-				// Convert search.Document to map for comparison
-				algoDocBytes, err := json.Marshal(indexedDoc)
-				if err != nil {
-					srv.Logger.Error("error marshaling indexed document for comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", fileID)
-					return
-				}
-				var algoDoc map[string]any
-				if err := json.Unmarshal(algoDocBytes, &algoDoc); err != nil {
-					srv.Logger.Error("error unmarshaling indexed document for comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", fileID)
-					return
-				}
-
-				// Get document from database.
-				dbDoc := models.Document{
-					GoogleFileID: fileID,
-				}
-				if err := dbDoc.Get(srv.DB); err != nil {
-					srv.Logger.Error(
-						"error getting document from database for data comparison",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", fileID,
-					)
-					return
-				}
-				// Get all reviews for the document.
-				var reviews models.DocumentReviews
-				if err := reviews.Find(srv.DB, models.DocumentReview{
-					Document: models.Document{
-						GoogleFileID: fileID,
-					},
-				}); err != nil {
-					srv.Logger.Error(
-						"error getting all reviews for document for data comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", fileID,
-					)
-					return
-				}
-				if err := CompareAlgoliaAndDatabaseDocument(
-					algoDoc, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
-				); err != nil {
-					srv.Logger.Warn(
-						"inconsistencies detected between Algolia and database docs",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", fileID,
-					)
-				}
-			}()
 
 		case httpMethodGet:
 			// Try database-first approach for better testability
@@ -1012,38 +902,11 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Delete object from search index.
-			err := srv.SearchProvider.DraftIndex().Delete(r.Context(), docID)
-			if err != nil {
-				srv.Logger.Error(
-					"error deleting document draft from search index",
-					"error", err,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"doc_id", docID,
-				)
-				http.Error(w, "Error deleting document draft",
-					http.StatusInternalServerError)
-				return
+			// Delete document in the database and enqueue search projection update.
+			d := models.Document{
+				GoogleFileID: docID,
 			}
-
-			// Note: Delete is synchronous with the new provider API
-			if false { // Remove the old Wait() logic
-				srv.Logger.Error(
-					"error deleting document draft from search index",
-					"error", err,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"doc_id", docID,
-				)
-				http.Error(w, "Error deleting document draft",
-					http.StatusInternalServerError)
-				return
-			}
-
-			// Delete document in the database.
-			d := srv.NewDocumentByFileID(docID)
-			if err := d.Delete(srv.DB); err != nil {
+			if err := deleteDraftWithSearchOutbox(srv.DB, &d, docID); err != nil {
 				srv.Logger.Error(
 					"error deleting document draft in database",
 					"error", err,
@@ -1634,8 +1497,8 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				}
 			}
 
-			// Update document in the database.
-			if err := model.Upsert(srv.DB); err != nil {
+			// Update document in the database and enqueue search projection update.
+			if err := updateDraftWithSearchOutbox(srv.DB, &model, doc); err != nil {
 				srv.Logger.Error("error updating document in the database",
 					"error", err,
 					"method", r.Method,
@@ -1682,136 +1545,70 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				"doc_id", docID,
 			)
 
-			// Log document access with Datadog ACCESS tag
-			operation, updatedAttrs := buildDraftOperation(req)
-			srv.Logger.Info("ACCESS",
-				"user_email", userEmail,
-				"doc_id", docID,
-				"operation", operation,
-				"updated_attributes", updatedAttrs,
-				"mode", "draft",
-			)
-
-			// Request post-processing.
-			go func() {
-				// Convert document.Document to search.Document for indexing
-				searchDoc := &search.Document{
-					ObjectID:     doc.ObjectID,
-					DocID:        doc.ObjectID,
-					Title:        doc.Title,
-					DocNumber:    doc.DocNumber,
-					DocType:      doc.DocType,
-					Product:      doc.Product,
-					Status:       doc.Status,
-					Owners:       doc.Owners,
-					Contributors: doc.Contributors,
-					Approvers:    doc.Approvers,
-					Summary:      doc.Summary,
-					Content:      doc.Content,
-					CreatedTime:  doc.CreatedTime,
-					ModifiedTime: doc.ModifiedTime,
-				}
-
-				// Save modified draft doc object in search index.
-				err := srv.SearchProvider.DraftIndex().Index(r.Context(), searchDoc)
-				if err != nil {
-					srv.Logger.Error("error saving patched draft doc in search index",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-
-				// Note: Index is synchronous with the new provider API
-				if false { // Remove the old Wait() logic
-					srv.Logger.Error("error saving patched draft doc in search index",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-
-				// Compare search index and database documents to find data inconsistencies.
-				// Get document object from search index.
-				indexedDoc, err := srv.SearchProvider.DraftIndex().GetObject(r.Context(), docID)
-				if err != nil {
-					srv.Logger.Error("error getting search object for data comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-
-				// Convert search.Document to map for comparison
-				algoDocBytes, err := json.Marshal(indexedDoc)
-				if err != nil {
-					srv.Logger.Error("error marshaling indexed document for comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID)
-					return
-				}
-				var algoDoc map[string]any
-				if err := json.Unmarshal(algoDocBytes, &algoDoc); err != nil {
-					srv.Logger.Error("error unmarshaling indexed document for comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID)
-					return
-				}
-
-				// Get document from database.
-				dbDoc := srv.NewDocumentByFileID(docID)
-				if err := dbDoc.Get(srv.DB); err != nil {
-					srv.Logger.Error(
-						"error getting document from database for data comparison",
-						"error", err,
-						"path", r.URL.Path,
-						"method", r.Method,
-						"doc_id", docID,
-					)
-					return
-				}
-				// Get all reviews for the document.
-				var reviews models.DocumentReviews
-				if err := reviews.Find(srv.DB, models.DocumentReview{
-					Document: srv.NewDocumentByFileID(docID),
-				}); err != nil {
-					srv.Logger.Error(
-						"error getting all reviews for document for data comparison",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-				if err := CompareAlgoliaAndDatabaseDocument(
-					algoDoc, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
-				); err != nil {
-					srv.Logger.Warn(
-						"inconsistencies detected between Algolia and database docs",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-				}
-			}()
-
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 	})
+}
+
+func createDraftWithSearchOutbox(db *gorm.DB, model *models.Document, doc *document.Document) error {
+	return enqueueDraftUpsertWithSearchOutbox(db, model.Create, doc, models.SearchEventDraftCreated)
+}
+
+func updateDraftWithSearchOutbox(db *gorm.DB, model *models.Document, doc *document.Document) error {
+	return enqueueDraftUpsertWithSearchOutbox(db, model.Upsert, doc, models.SearchEventDraftUpdated)
+}
+
+func enqueueDraftUpsertWithSearchOutbox(
+	db *gorm.DB,
+	mutate func(*gorm.DB) error,
+	doc *document.Document,
+	eventType string,
+) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := mutate(tx); err != nil {
+			return err
+		}
+
+		payload, err := draftSearchPayload(doc)
+		if err != nil {
+			return err
+		}
+
+		return models.EnqueueSearchOutboxEventWithSequence(tx, &models.SearchOutboxEvent{
+			EventType:     eventType,
+			AggregateID:   doc.ObjectID,
+			AggregateType: models.SearchAggregateDraft,
+			IndexName:     models.SearchIndexDrafts,
+			Operation:     models.SearchOutboxOperationUpsert,
+			Payload:       payload,
+		})
+	})
+}
+
+func deleteDraftWithSearchOutbox(db *gorm.DB, model *models.Document, docID string) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := model.Delete(tx); err != nil {
+			return err
+		}
+
+		return models.EnqueueSearchOutboxEventWithSequence(tx, &models.SearchOutboxEvent{
+			EventType:     models.SearchEventDraftDeleted,
+			AggregateID:   docID,
+			AggregateType: models.SearchAggregateDraft,
+			IndexName:     models.SearchIndexDrafts,
+			Operation:     models.SearchOutboxOperationDelete,
+		})
+	})
+}
+
+func draftSearchPayload(doc *document.Document) (map[string]any, error) {
+	payload, err := doc.ToAlgoliaObject(false)
+	if err != nil {
+		return nil, fmt.Errorf("error converting draft to search object: %w", err)
+	}
+	return payload, nil
 }
 
 // getDocTypeTemplate returns the file ID of the template for a specified

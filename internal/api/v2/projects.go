@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +16,6 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/server"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp-forge/hermes/pkg/search"
 )
 
 const (
@@ -271,8 +269,8 @@ func ProjectsHandler(srv server.Server) http.Handler {
 				Title:       req.Title,
 			}
 
-			// Create project.
-			if err := proj.Create(srv.DB); err != nil {
+			// Create project and enqueue search projection atomically.
+			if err := createProjectWithSearchOutbox(srv.DB, &proj); err != nil {
 				srv.Logger.Error("error creating project",
 					append([]interface{}{
 						"error", err,
@@ -305,19 +303,6 @@ func ProjectsHandler(srv server.Server) http.Handler {
 				append([]interface{}{
 					"user", userEmail,
 				}, logArgs...)...)
-
-			// Request post-processing.
-			go func() {
-				// Save project in search index.
-				if err := saveProjectInAlgolia(proj, srv.SearchProvider); err != nil {
-					srv.Logger.Error("error saving project in search index",
-						append([]interface{}{
-							"error", err,
-						}, logArgs...)...,
-					)
-					return
-				}
-			}()
 
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -541,8 +526,8 @@ func ProjectHandler(srv server.Server) http.Handler {
 					patch.Title = *req.Title
 				}
 
-				// Update project in the database.
-				if err := patch.Update(srv.DB); err != nil {
+				// Update project and enqueue search projection atomically.
+				if err := updateProjectWithSearchOutbox(srv.DB, &patch); err != nil {
 					srv.Logger.Error("error updating project",
 						append([]interface{}{
 							"error", err,
@@ -565,19 +550,6 @@ func ProjectHandler(srv server.Server) http.Handler {
 						"request", string(reqJSON),
 						"user", userEmail,
 					}, logArgs...)...)
-
-				// Request post-processing.
-				go func() {
-					// Save project in search index.
-					if err := saveProjectInAlgolia(patch, srv.SearchProvider); err != nil {
-						srv.Logger.Error("error saving project in search index",
-							append([]interface{}{
-								"error", err,
-							}, logArgs...)...,
-						)
-						return
-					}
-				}()
 
 			default:
 				w.WriteHeader(http.StatusMethodNotAllowed)
@@ -633,13 +605,39 @@ func getProjectIDFromPath(path string, re *regexp.Regexp) (uint, error) {
 	return safeIntToUint(projectID), nil
 }
 
-// saveProjectInAlgolia saves a project in Algolia.
-func saveProjectInAlgolia(
-	proj models.Project,
-	provider search.Provider,
-) error {
-	// Convert project to search index object.
-	projObj := map[string]any{
+func createProjectWithSearchOutbox(db *gorm.DB, proj *models.Project) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := proj.Create(tx); err != nil {
+			return err
+		}
+
+		return enqueueProjectSearchOutbox(tx, proj, models.SearchEventProjectCreated)
+	})
+}
+
+func updateProjectWithSearchOutbox(db *gorm.DB, proj *models.Project) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := proj.Update(tx); err != nil {
+			return err
+		}
+
+		return enqueueProjectSearchOutbox(tx, proj, models.SearchEventProjectUpdated)
+	})
+}
+
+func enqueueProjectSearchOutbox(tx *gorm.DB, proj *models.Project, eventType string) error {
+	return models.EnqueueSearchOutboxEventWithSequence(tx, &models.SearchOutboxEvent{
+		EventType:     eventType,
+		AggregateID:   fmt.Sprintf("%d", proj.ID),
+		AggregateType: models.SearchAggregateProject,
+		IndexName:     models.SearchIndexProjects,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Payload:       projectSearchPayload(proj),
+	})
+}
+
+func projectSearchPayload(proj *models.Project) map[string]any {
+	return map[string]any{
 		"createdTime":  proj.ProjectCreatedAt.Unix(),
 		"creator":      proj.Creator.EmailAddress,
 		"description":  proj.Description,
@@ -649,15 +647,6 @@ func saveProjectInAlgolia(
 		"status":       proj.Status.String(),
 		"title":        proj.Title,
 	}
-
-	// Save project in search index.
-	ctx := context.Background()
-	err := provider.ProjectIndex().Index(ctx, projObj)
-	if err != nil {
-		return fmt.Errorf("error saving object: %w", err)
-	}
-
-	return nil
 }
 
 // updateRecentlyViewedProjects updates the recently viewed projects for a user

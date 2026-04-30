@@ -33,6 +33,8 @@ func ToAutoMigrate() []interface{} {
 		&ProjectRelatedResource{},
 		&ProjectRelatedResourceExternalLink{},
 		&ProjectRelatedResourceHermesDocument{},
+		&SearchOutboxEvent{},
+		&SearchOutboxSequence{},
 		&User{},
 		&WorkspaceProject{},
 		// Do NOT include: HermesInstance, Indexer, IndexerToken (fully in migrations)

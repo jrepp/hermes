@@ -46,6 +46,7 @@ import (
 	searchalgolia "github.com/hashicorp-forge/hermes/pkg/search/adapters/algolia"
 	bleveadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/bleve"
 	meilisearchadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
+	searchoutbox "github.com/hashicorp-forge/hermes/pkg/search/outbox"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	localadapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
@@ -886,6 +887,29 @@ func (c *Command) Run(args []string) int {
 			os.Exit(1)
 		}
 	}()
+
+	if db != nil && searchProvider != nil {
+		ctx, cancel := context.WithCancel(c.Context)
+		defer cancel()
+
+		searchRelay, err := searchoutbox.New(searchoutbox.Config{
+			DB:       db,
+			Provider: searchProvider,
+			Logger:   c.Log.Named("search-outbox-relay"),
+		})
+		if err != nil {
+			c.Log.Error(fmt.Sprintf("failed to create search outbox relay service: %v", err))
+			return 1
+		}
+
+		go func() {
+			c.Log.Info("starting search outbox relay service",
+				"search_provider", searchProvider.Name())
+			if err := searchRelay.Start(ctx); err != nil && err != context.Canceled {
+				c.Log.Error(fmt.Sprintf("search outbox relay service failed: %v", err))
+			}
+		}()
+	}
 
 	// RFC-088: Start outbox relay goroutine (publishes outbox events to Redpanda)
 	// The relay runs in the main server process to keep database writes transactional

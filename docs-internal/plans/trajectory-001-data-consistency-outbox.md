@@ -24,7 +24,17 @@ related:
 
 ## Readiness status
 
-Phase 0 is execution-ready after the adversarial review. RFC-008 is now accepted with the required event identity, transaction-boundary, ordering, replay, DLQ, and observability contracts. Phase 1 must not start until the audit matrix below is converted into tracked implementation issues or checklist rows with owners.
+Phase 0 is complete. RFC-008 is accepted with the required event identity, transaction-boundary, ordering, replay, DLQ, and observability contracts; the audit matrix has owned checklist rows; and `scripts/check-search-direct-writes.sh` is wired into CI with a T1 baseline so new direct search writes fail while the audited legacy sites are migrated.
+
+## Adversarial review disposition
+
+The T1 adversarial review is resolved and folded into this source plan plus [RFC-008](../rfc/rfc-008-outbox-pattern-document-sync.md). The controls to preserve during implementation are:
+
+- T1 owns search projection events in `search_outbox_events`; `document_revision_outbox` remains revision/indexer-owned per [ADR-020](../adr/adr-020-dual-database-support-stateless-indexer.md).
+- Event identity, idempotency keys, same-aggregate ordering, retry, replay, DLQ, and observability semantics are defined by RFC-008.
+- Every audited API-layer search projection enqueue must happen inside the same `*gorm.DB` transaction as the authoritative database mutation.
+- Phase 1 tests must compare final search contents against canonical database rows, not just assert that search writes happened.
+- Direct API-layer `SearchProvider.*Index().Index/Delete` calls must be blocked by a CI guard, with explicit exemptions for relay, backfill/reindex tooling, read-only search endpoints, canary tooling, and tests.
 
 ## Stable-release criteria served
 
@@ -55,45 +65,73 @@ Out of scope:
 - RFC-008 accepted search-outbox contract — done.
 - TODO-003 progress on `search.Provider` abstraction — remaining write handlers will be migrated as part of Phase 2 here.
 
-## Phase 0 audit matrix
+## Phase 0 implementation checklist
 
-Phase 0 inventory found no remaining `FIXME: Data consistency` comments under `internal/`, so the implementation gate is direct search writes rather than FIXME removal. Current write sites to migrate or explicitly exempt:
+Phase 0 inventory found no remaining `FIXME: Data consistency` comments under `internal/`, so the implementation gate is direct search writes rather than FIXME removal. Each row is owned by T1 and the audited v2 mutation direct writes are now migrated to transactional outbox events:
 
 | Endpoint / flow | Handler file | Mutation type | Current search call | Desired event type | Transaction boundary | Test coverage target | Owner |
 |-----------------|--------------|---------------|---------------------|--------------------|----------------------|----------------------|-------|
-| Draft create | `internal/api/v2/drafts.go:415` | draft create | `DraftIndex().Index` in post-response goroutine | `draft.created` | Same transaction as draft DB create; workspace creation may precede DB transaction | Relay-stopped draft create converges from DB to drafts index | T1 |
-| Draft patch | `internal/api/v2/drafts.go:1493` | draft update | `DraftIndex().Index` in post-response goroutine | `draft.updated` | Same transaction as draft DB update | Duplicate draft update replay is idempotent | T1 |
-| Draft delete | `internal/api/v2/drafts.go:1008` | draft delete | `DraftIndex().Delete` inline after workspace delete | `draft.deleted` | Same transaction as draft DB/tombstone delete; record resulting DB truth | Delete replay leaves no draft object | T1 |
-| Publish / review creation | `internal/api/v2/reviews.go:665` and `:677` | publish transition | `DocumentIndex().Index`, `DraftIndex().Delete` in post-response goroutine | `document.published` plus `draft.published` | Same transaction as document/review state transition | Create -> update -> publish with relay stopped converges to documents index and removes draft | T1 |
-| Review-state read/compare path | `internal/api/v2/reviews.go:742` | post-write consistency read | `DocumentIndex().GetObject` for comparison | remove or move to relay/test assertion | Not a durable mutation | Covered by DB-to-search convergence test, not handler readback | T1 |
-| Document patch | `internal/api/v2/documents.go:803` | document update | `DocumentIndex().Index` in post-response goroutine | `document.updated` | Same transaction as document DB patch | Patch while relay stopped converges from DB truth | T1 |
-| Approval/review state change | `internal/api/v2/approvals.go:675` | review-state change | `DocumentIndex().Index` via `indexAndValidateDocument` | `review_state.changed` | Same transaction as review DB update | Review-state change replay is idempotent | T1 |
-| Project create | `internal/api/v2/projects.go:297` / `:635` | project create | `ProjectIndex().Index` via `saveProjectInAlgolia` | `project.created` | Same transaction as project DB create | Project search projection converges after relay restart | T1 |
-| Project patch | `internal/api/v2/projects.go:552` / `:635` | project update | `ProjectIndex().Index` via `saveProjectInAlgolia` | `project.updated` | Same transaction as project DB update | Duplicate project update replay is idempotent | T1 |
+| Draft create | `internal/api/v2/drafts.go` | draft create | migrated to `search_outbox_events` | `draft.created` | Same transaction as draft DB create; workspace creation may precede DB transaction | Relay-stopped draft create converges from DB to drafts index | T1 |
+| Draft patch | `internal/api/v2/drafts.go` | draft update | migrated to `search_outbox_events` | `draft.updated` | Same transaction as draft DB update | Duplicate draft update replay is idempotent | T1 |
+| Draft delete | `internal/api/v2/drafts.go` | draft delete | migrated to `search_outbox_events` | `draft.deleted` | Same transaction as draft DB/tombstone delete; record resulting DB truth | Delete replay leaves no draft object | T1 |
+| Publish / review creation | `internal/api/v2/reviews.go` | publish transition | migrated to `search_outbox_events` | `document.published` plus `draft.published` | Same transaction as document/review state transition | Create -> update -> publish with relay stopped converges to documents index and removes draft | T1 |
+| Review-state read/compare path | `internal/api/v2/reviews.go` | post-write consistency read | removed from handler post-processing | remove or move to relay/test assertion | Not a durable mutation | Covered by DB-to-search convergence test, not handler readback | T1 |
+| Document patch | `internal/api/v2/documents.go` | document update | migrated to `search_outbox_events` | `document.updated` | Same transaction as document DB patch | Patch while relay stopped converges from DB truth | T1 |
+| Approval/review state change | `internal/api/v2/approvals.go` | review-state change | migrated to `search_outbox_events` | `review_state.changed` | Same transaction as review DB update | Review-state change replay is idempotent | T1 |
+| Project create | `internal/api/v2/projects.go` | project create | migrated to `search_outbox_events` | `project.created` | Same transaction as project DB create | Project search projection converges after relay restart | T1 |
+| Project patch | `internal/api/v2/projects.go` | project update | migrated to `search_outbox_events` | `project.updated` | Same transaction as project DB update | Duplicate project update replay is idempotent | T1 |
 
 Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject` calls used to serve read-only related-resource or legacy compatibility paths, and tests. These are not mutation dual writes but should be revisited separately when database-backed reads replace search-backed compatibility behavior.
+
+### Transaction owners
+
+- Draft create: `createDraftWithSearchOutbox` wraps document create plus `draft.created` enqueue in one transaction after workspace document creation returns the provider ID.
+- Draft patch: `updateDraftWithSearchOutbox` wraps document update plus `draft.updated` enqueue in one transaction after workspace-side sharing/header/title changes succeed.
+- Draft delete: workspace delete remains outside the DB transaction; `deleteDraftWithSearchOutbox` wraps database delete plus `draft.deleted` enqueue in one transaction, with database truth defining the projection.
+- Publish / review creation: `reviews.go` now enqueues `document.published` and `draft.published` in the existing review transaction before commit; post-response direct indexing and search readback comparison are removed.
+- Document patch: the document update path currently performs DB mutation before post-response indexing; Phase 1 must wrap the DB update and `document.updated` enqueue in one transaction.
+- Approval/review-state change: `updateReviewStateWithSearchOutbox` now wraps review-row changes, file-revision creation, optional group-approver DB updates, and `review_state.changed` enqueue in one transaction; `indexAndValidateDocument` is removed from the request path.
+- Project create: `models.Project.Create` currently owns the DB write; Phase 1 must wrap project create and `project.created` enqueue in one transaction.
+- Project patch: `models.Project.Update` currently owns the DB write; Phase 1 must wrap project update and `project.updated` enqueue in one transaction.
+
+### Migrated write paths
+
+- Project create/update: `internal/api/v2/projects.go` now uses `createProjectWithSearchOutbox` and `updateProjectWithSearchOutbox`; `saveProjectInAlgolia` and direct `ProjectIndex().Index` writes are removed from the API handler baseline.
+- Document patch: `internal/api/v2/documents.go` now uses `upsertDocumentWithSearchOutbox`; the post-response `DocumentIndex().Index` goroutine is removed from the API handler baseline.
+- Approval/review-state changes: `internal/api/v2/approvals.go` now uses `updateReviewStateWithSearchOutbox`; the direct `DocumentIndex().Index` helper and handler readback comparison are removed from the API handler baseline.
+- Publish / review creation: `internal/api/v2/reviews.go` now uses `enqueueReviewCreatedSearchOutbox`; the direct document upsert, draft delete, and handler readback comparison are removed from the API handler baseline.
+- Draft create/update/delete: `internal/api/v2/drafts.go` now uses `createDraftWithSearchOutbox`, `updateDraftWithSearchOutbox`, and `deleteDraftWithSearchOutbox`; direct draft index writes are removed from the API handler baseline.
+
+### CI direct-write guard
+
+`scripts/check-search-direct-writes.sh` is the Phase 0 guard. It is wired into `.github/workflows/parallel-ci.yml` as the `search-direct-writes` lint category.
+
+- The guard scans API Go files for `SearchProvider.*Index().Index/Delete`, equivalent direct `provider.*Index().Index/Delete` calls, and the known wrapper helpers `saveProjectInAlgolia` and `indexAndValidateDocument`.
+- It permits tests, `pkg/search/outbox/`, `pkg/indexer/relay/`, canary tooling, and future backfill/reindex commands.
+- The audited v2 mutation direct-write baselines have been reduced to zero. Remaining search usage in v2 API handlers is read-path search, tests, or explicitly exempted tooling.
 
 ## Phases & exit criteria
 
 ### Phase 0 — Audit & finalize RFC-008
 
-- Convert the audit matrix above into tracked implementation checklist rows with owners.
-- Use RFC-008's accepted decision: introduce a dedicated `search_outbox_events` table for search projection events rather than extending `document_revision_outbox`.
-- Confirm operation-specific idempotency keys for create, update, publish, delete, draft update, review-state, project, backfill, and reindex events.
-- Confirm per-aggregate sequence allocation and same-aggregate blocking behavior for failed/DLQ events.
-- Confirm the DB transaction owner for every row in the audit matrix.
+- Completed: converted the audit matrix above into owned implementation checklist rows.
+- Completed: RFC-008's accepted decision uses a dedicated `search_outbox_events` table for search projection events rather than extending `document_revision_outbox`.
+- Completed: RFC-008 confirms operation-specific idempotency keys for create, update, publish, delete, draft update, review-state, project, backfill, and reindex events.
+- Completed: RFC-008 confirms per-aggregate sequence allocation and same-aggregate blocking behavior for failed/DLQ events.
+- Completed: transaction-owner expectations are listed above for every row in the audit matrix.
 
 **Exit when:**
 
-- RFC-008 remains `Accepted` with event shape, idempotency, ordering, retry, DLQ, replay, and observability semantics.
-- Audit matrix lists every direct API-layer search write with mutation type, desired event type, transaction boundary, coverage target, and owner.
-- CI guard design is documented: fail direct API-layer `SearchProvider.*Index().Index/Delete` writes while allowing relay, backfill/reindex tooling, read-only search endpoints, and tests.
+- Done: RFC-008 remains `Accepted` with event shape, idempotency, ordering, retry, DLQ, replay, and observability semantics.
+- Done: audit matrix lists every direct API-layer search write with mutation type, desired event type, transaction boundary, coverage target, and owner.
+- Done: CI guard is implemented and documented: fail new direct API-layer `SearchProvider.*Index().Index/Delete` writes while allowing relay, backfill/reindex tooling, canary, read-only search endpoints, and tests.
 
 ### Phase 1 — Schema, relay, and write-path integration (v2 first)
 
-- Migration adds `search_outbox_events` via `cmd/hermes-migrate` using ADR-020 core+deltas files (no AutoMigrate, no SQLite driver in `cmd/hermes`).
-- Outbox enqueue helper requires a transaction handle and allocates the per-aggregate sequence used in RFC-008 idempotency keys.
-- Relay loop (reused or new) drains outbox rows into the existing `search.Provider` index `Index/Delete` calls with retry, backoff, visibility-timeout recovery, DLQ rows, and replay modes.
+- Done: migration adds `search_outbox_events` via `cmd/hermes-migrate` migrations (no SQLite driver in `cmd/hermes`). The current migration tree is still pre-core-suffix, so this uses the existing runner-compatible `000014_add_search_outbox_events.*.sql` layout while preserving the ADR-020 table boundary.
+- Done: `pkg/models.SearchOutboxEvent`, `SearchOutboxSequence`, and enqueue helpers require a transaction handle, validate RFC-008 event basics, and allocate per-aggregate sequence numbers inside the caller's transaction.
+- Done: `pkg/search/outbox.Relay` claims due events, applies `Index/Delete` through `search.Provider`, recovers stale `processing` rows, retries with backoff, moves exhausted rows to DLQ, and blocks later same-aggregate events behind pending/processing/failed/DLQ predecessors.
+- Done: search outbox relay is wired into the server lifecycle when both DB and `search.Provider` are present; it uses the command context for shutdown.
 - Load/restart smoke test is added here, not deferred, to catch relay infrastructure regressions early.
 
 **Exit when:**
@@ -101,11 +139,11 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 - Integration test (testcontainers + Meilisearch) demonstrates: stop the relay, perform create -> update -> publish -> review-state change -> delete, restart relay, and verify final search contents exactly match database truth.
 - Duplicate/reorder test inserts repeated events and verifies idempotent convergence.
 - Poison-message test proves one bad aggregate does not block unrelated aggregates and documents same-aggregate blocking.
-- All v2 mutation handlers compile with no direct `SearchProvider.*Index().Index/Delete` references outside allowed packages (enforced by CI).
+- Done: all audited v2 mutation handlers compile with no direct `SearchProvider.*Index().Index/Delete` references outside allowed packages (enforced by CI).
 
 ### Phase 2 — v1 handler migration & FIXME removal
 
-- Migrate the audit matrix write sites: drafts, documents, reviews/publish, approvals/review state, and projects.
+- Done for audited v2 handlers: drafts, documents, reviews/publish, approvals/review state, and projects now enqueue transactional search outbox events.
 - Audit any v1 or compatibility helpers that hide a `search.Provider` write and migrate or explicitly exempt each one.
 - Legacy direct-write code paths deleted (no flag-gating; v1 and v2 share the outbox when v1 mutation paths exist).
 

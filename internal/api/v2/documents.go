@@ -1039,8 +1039,8 @@ func DocumentHandler(srv server.Server) http.Handler {
 				}
 			}
 
-			// Update document in the database.
-			if err := model.Upsert(srv.DB); err != nil {
+			// Update document and enqueue search projection atomically.
+			if err := upsertDocumentWithSearchOutbox(srv.DB, &model, doc); err != nil {
 				srv.Logger.Error("error updating document",
 					"error", err,
 					"method", r.Method,
@@ -1059,59 +1059,41 @@ func DocumentHandler(srv server.Server) http.Handler {
 				"path", r.URL.Path,
 			)
 
-			// Log document access with Datadog ACCESS tag
-			operation, updatedAttrs := buildDocumentOperation(req)
-			srv.Logger.Info("ACCESS",
-				"user_email", userEmail,
-				"doc_id", docID,
-				"operation", operation,
-				"updated_attributes", updatedAttrs,
-				"mode", "published",
-			)
-
-			// Request post-processing.
-			go func() {
-				// Convert document to search object.
-				docObjMap, err := doc.ToAlgoliaObject(true)
-				if err != nil {
-					srv.Logger.Error("error converting document to search object",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-
-				// Convert map to search.Document via JSON round-trip
-				docObj, err := mapToSearchDocument(docObjMap)
-				if err != nil {
-					srv.Logger.Error("error converting document to search document",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID,
-					)
-					return
-				}
-
-				// Save new modified doc object in search index.
-				ctx := r.Context()
-				if err := srv.SearchProvider.DocumentIndex().Index(ctx, docObj); err != nil {
-					srv.Logger.Error("error saving patched document in search index",
-						"error", err,
-						"method", r.Method,
-						"path", r.URL.Path,
-						"doc_id", docID)
-					return
-				}
-			}()
-
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 	})
+}
+
+func upsertDocumentWithSearchOutbox(db *gorm.DB, model *models.Document, doc *document.Document) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := model.Upsert(tx); err != nil {
+			return err
+		}
+
+		payload, err := documentSearchPayload(doc)
+		if err != nil {
+			return err
+		}
+
+		return models.EnqueueSearchOutboxEventWithSequence(tx, &models.SearchOutboxEvent{
+			EventType:     models.SearchEventDocumentUpdated,
+			AggregateID:   doc.ObjectID,
+			AggregateType: models.SearchAggregateDocument,
+			IndexName:     models.SearchIndexDocuments,
+			Operation:     models.SearchOutboxOperationUpsert,
+			Payload:       payload,
+		})
+	})
+}
+
+func documentSearchPayload(doc *document.Document) (map[string]any, error) {
+	payload, err := doc.ToAlgoliaObject(true)
+	if err != nil {
+		return nil, fmt.Errorf("error converting document to search object: %w", err)
+	}
+	return payload, nil
 }
 
 // updateRecentlyViewedDocs updates the recently viewed docs for a user with the
