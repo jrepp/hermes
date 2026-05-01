@@ -24,6 +24,7 @@ type harnessConfig struct {
 	Duration            time.Duration
 	RestartInterval     time.Duration
 	ConvergenceDeadline time.Duration
+	MaxItems            int64
 }
 
 type result struct {
@@ -51,6 +52,7 @@ type inputs struct {
 	TargetRate                 string `json:"targetRate"`
 	RestartIntervalSeconds     int64  `json:"restartIntervalSeconds"`
 	ConvergenceDeadlineSeconds int64  `json:"convergenceDeadlineSeconds"`
+	MaxItems                   int64  `json:"maxItems,omitempty"`
 }
 
 type observations struct {
@@ -170,6 +172,9 @@ func intervalForRate(rate string) (time.Duration, error) {
 }
 
 func newResult(scenario string, cfg harnessConfig, startedAt time.Time, obs observations, passed bool) result {
+	if obs.Errors == nil {
+		obs.Errors = []string{}
+	}
 	return result{
 		Scenario:   scenario,
 		Profile:    cfg.Profile,
@@ -187,6 +192,7 @@ func newResult(scenario string, cfg harnessConfig, startedAt time.Time, obs obse
 			TargetRate:                 cfg.Rate,
 			RestartIntervalSeconds:     int64(cfg.RestartInterval.Seconds()),
 			ConvergenceDeadlineSeconds: int64(cfg.ConvergenceDeadline.Seconds()),
+			MaxItems:                   cfg.MaxItems,
 		},
 		Observations: obs,
 		Passed:       passed,
@@ -236,6 +242,7 @@ func renderSummary(res result) string {
 		"- Target rate: %s\n"+
 		"- Restart interval: %ds\n"+
 		"- Convergence deadline: %ds\n"+
+		"- Max items: %d\n"+
 		"- Items generated: %d\n"+
 		"- Items completed: %d\n"+
 		"- Worker restarts: %d\n"+
@@ -255,6 +262,7 @@ func renderSummary(res result) string {
 		res.Inputs.TargetRate,
 		res.Inputs.RestartIntervalSeconds,
 		res.Inputs.ConvergenceDeadlineSeconds,
+		res.Inputs.MaxItems,
 		res.Observations.ItemsGenerated,
 		res.Observations.ItemsCompleted,
 		res.Observations.WorkerRestarts,

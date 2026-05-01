@@ -24,6 +24,7 @@ func init() {
 	flag.StringVar(&cfg.Rate, "rate", "", "NFR target rate, e.g. 1000/min or 1000/hour")
 	flag.DurationVar(&cfg.RestartInterval, "restart-interval", 0, "NFR worker restart interval; 0 uses profile default")
 	flag.DurationVar(&cfg.ConvergenceDeadline, "convergence-deadline", 0, "NFR convergence deadline")
+	flag.Int64Var(&cfg.MaxItems, "max-items", 0, "Maximum generated items before stopping; 0 uses duration")
 	flag.StringVar(&cfg.Output, "output", "", "NFR output directory")
 	flag.StringVar(&cfg.Backend, "backend", "", "NFR backend: local, testcontainers, or external")
 }

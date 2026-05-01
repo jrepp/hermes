@@ -57,6 +57,7 @@ These memos used to be ADRs; the binding rules they once carried have been retir
 - **memo-006** — Human enablement patterns.
 - **memo-008** — AI agent session playbook.
 - **memo-016** — Development velocity analysis.
+- **memo-065** — Search outbox NFR trial.
 
 ### Feature reference (RFC supplements)
 

@@ -46,7 +46,7 @@ Out of scope:
 ## Phase 0 — Harness Design
 
 - Done: harness entry point is Go integration tests under `tests/integration/nfr/`, selected by `-tags=integration,nfr` and `-run TestNFR/<scenario>`. The harness must not require headed browser sessions or interactive prompts.
-- Done: scenario configuration is flag-driven with environment fallbacks: `-profile smoke|release`, `-duration`, `-rate`, `-restart-interval`, `-convergence-deadline`, `-output`, and `-backend local|testcontainers|external`.
+- Done: scenario configuration is flag-driven with environment fallbacks: `-profile smoke|release`, `-duration`, `-rate`, `-restart-interval`, `-convergence-deadline`, `-max-items`, `-output`, and `-backend local|testcontainers|external`.
 - Done: smoke profile is for local/PR confidence and release profile is for v1.0 evidence. Smoke profile may reduce duration/rate, but must exercise the same code path and emit the same result schema.
 - Done: result artifacts are JSON plus a memo-ready Markdown summary written under `tmp/nfr/<scenario>/<timestamp>/` by default, with `-output` override for CI artifacts.
 - Done: existing dependencies are the default runtime: PostgreSQL and Meilisearch via testcontainers where feasible. Redpanda is added only for indexer scenarios. External backends are opt-in with explicit URLs/credentials.
@@ -102,6 +102,7 @@ go test -tags=integration,nfr ./tests/integration/nfr \
 - `rate`: target input rate using `/min` or `/hour` suffix.
 - `restart-interval`: pause/resume or restart cadence for worker/relay scenarios; `0` disables restarts.
 - `convergence-deadline`: maximum allowed catch-up time after input stops or worker recovers.
+- `max-items`: optional cap for bounded trials; `0` means run until `duration` elapses.
 - `backend`: `testcontainers` by default for repeatability; `external` requires explicit endpoint environment variables.
 - `output`: directory for `result.json`, `summary.md`, logs, and any sampled health/lag time series.
 
@@ -126,7 +127,8 @@ Every scenario writes `result.json` with these top-level fields:
     "durationSeconds": 600,
     "targetRate": "1000/min",
     "restartIntervalSeconds": 60,
-    "convergenceDeadlineSeconds": 30
+    "convergenceDeadlineSeconds": 30,
+    "maxItems": 0
   },
   "observations": {
     "itemsGenerated": 10000,
@@ -167,6 +169,7 @@ The paired `summary.md` must be memo-ready and include:
 ## Phase 1 — Search-Outbox Stress/Restart Scenario
 
 - Done: smoke-capable search-outbox NFR scenario exists under `tests/integration/nfr/` and exercises event generation, relay pause/resume, convergence, Meilisearch verification, and artifact emission.
+- Done: bounded release-rate trial is recorded in [MEMO-065](../memo/memo-065-search-outbox-nfr-trial.md); full 10-minute release evidence remains open.
 - Generate at least 1,000 search-outbox-backed mutations/minute for 10 minutes against PostgreSQL + Meilisearch.
 - Restart or pause/resume the relay every 60 seconds during the run.
 - Verify final search contents converge to database truth within 30 seconds after relay recovery.
