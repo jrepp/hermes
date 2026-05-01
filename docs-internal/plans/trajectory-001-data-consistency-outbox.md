@@ -146,8 +146,8 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 ### Phase 2 — v1 handler migration & FIXME removal
 
 - Done for audited v2 handlers: drafts, documents, reviews/publish, approvals/review state, and projects now enqueue transactional search outbox events.
-- Audit any v1 or compatibility helpers that hide a `search.Provider` write and migrate or explicitly exempt each one.
-- Legacy direct-write code paths deleted (no flag-gating; v1 and v2 share the outbox when v1 mutation paths exist).
+- Done: v1/compatibility audit found no hidden `internal/api` direct mutation writes; remaining API search usage is read-only, and canary writes stay explicitly exempted operational probes.
+- Done: legacy direct-write code paths were deleted from audited API mutation paths (no flag-gating); v1-compatible surfaces now share the v2 outbox-backed mutation paths where they exist.
 
 **Exit when:**
 
@@ -173,7 +173,7 @@ Gates are exit-criteria only (per roadmap policy — no recurring cadence). Each
 ## Risks
 
 - **Outbox + relay coupling with RFC-014.** If T2 changes the relay contract, this trajectory must re-test. Mitigation: pin the relay interface in Phase 1 and own that interface jointly with T2.
-- **Long-tail v1 handlers.** v1 has more dual-write sites than v2; Phase 2 may surface scope creep. Mitigation: timebox the audit in Phase 0.
+- **Long-tail v1 handlers.** Phase 2 audit found no hidden `internal/api` direct search mutation writes, but future compatibility paths can regress. Mitigation: keep the CI guard scoped to API-layer mutation writes and require explicit exemptions for operational probes only.
 - **Same-aggregate DLQ blocking.** A poison event can block later updates for the same document or project. Mitigation: expose DLQ inspection, retry, and explicit skip with operator note; unrelated aggregates continue processing.
 - **Workspace + DB transaction gaps.** Workspace provider calls cannot participate in the DB transaction. Mitigation: database truth wins; enqueue the search projection event inside the DB transaction after the resulting DB state is known.
 

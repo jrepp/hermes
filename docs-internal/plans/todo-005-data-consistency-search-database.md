@@ -5,7 +5,7 @@ date: 2025-10-09
 type: TODO
 priority: critical
 status: in-progress
-progress: 95%
+progress: 96%
 tags: [data-consistency, search, database, fixme, bug]
 related:
   - RFC-008
@@ -99,6 +99,7 @@ tx.Commit()
 - [x] Expose health metrics for lag, failures, and DLQ count
 - [x] Add expanded testcontainers + Meilisearch relay convergence test for document, draft, review-state, and go-link projection events
 - [x] Add duplicate/reorder and poison-message relay tests for ordering and unrelated-aggregate progress
+- [x] Audit v1/compatibility API paths for hidden direct search mutation writes
 - [ ] Add alerting for lag, failures, and DLQ age
 - [x] Add CI guard for direct API-layer search writes
 
