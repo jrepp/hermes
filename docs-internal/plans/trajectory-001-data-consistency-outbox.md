@@ -139,8 +139,8 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 **Exit when:**
 
 - Done for relay-level multi-event convergence: `tests/integration/search/outbox_relay_test.go` uses testcontainers + Meilisearch to prove stopped-then-processed events converge document upsert, draft deletion, review-state document update, and go-link redirect projection through `search.Provider`.
-- Duplicate/reorder test inserts repeated events and verifies idempotent convergence.
-- Poison-message test proves one bad aggregate does not block unrelated aggregates and documents same-aggregate blocking.
+- Done: duplicate/reorder relay tests insert out-of-created-order same-aggregate sequence events and repeated final-state payloads, then verify the final projection converges in sequence order.
+- Done: poison-message relay tests prove one malformed aggregate blocks only later same-aggregate events while unrelated aggregates continue to completion.
 - Done: all audited v2 mutation handlers compile with no direct `SearchProvider.*Index().Index/Delete` references outside allowed packages (enforced by CI).
 
 ### Phase 2 — v1 handler migration & FIXME removal

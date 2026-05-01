@@ -248,6 +248,111 @@ func TestRelayBlocksLaterSameAggregateButProcessesUnrelated(t *testing.T) {
 	assert.Equal(t, []string{"doc-2"}, provider.documents.indexedIDs)
 }
 
+func TestRelayProcessesSameAggregateInSequenceOrder(t *testing.T) {
+	provider := newMockSearchProvider()
+	db, relay, now := setupRelayTest(t, provider)
+
+	sequenceTwo := &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-1",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Sequence:      2,
+		Payload: map[string]any{
+			"objectID": "doc-1",
+			"title":    "final",
+		},
+	}
+	sequenceOne := &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-1",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Sequence:      1,
+		Payload: map[string]any{
+			"objectID": "doc-1",
+			"title":    "initial",
+		},
+	}
+	repeatedFinal := &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-1",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Sequence:      3,
+		Payload: map[string]any{
+			"objectID": "doc-1",
+			"title":    "final",
+		},
+	}
+	require.NoError(t, models.EnqueueSearchOutboxEvent(db, sequenceTwo))
+	*now = now.Add(time.Millisecond)
+	require.NoError(t, models.EnqueueSearchOutboxEvent(db, sequenceOne))
+	*now = now.Add(time.Millisecond)
+	require.NoError(t, models.EnqueueSearchOutboxEvent(db, repeatedFinal))
+
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+	assert.Equal(t, []string{"initial"}, provider.documents.indexedTitles)
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloadSearchOutboxEvent(t, db, sequenceOne.ID).Status)
+	assert.Equal(t, models.SearchOutboxStatusPending, reloadSearchOutboxEvent(t, db, sequenceTwo.ID).Status)
+
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+
+	assert.Equal(t, []string{"doc-1", "doc-1", "doc-1"}, provider.documents.indexedIDs)
+	assert.Equal(t, "final", provider.documents.docsByID["doc-1"].Title)
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloadSearchOutboxEvent(t, db, sequenceTwo.ID).Status)
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloadSearchOutboxEvent(t, db, repeatedFinal.ID).Status)
+}
+
+func TestRelayPoisonEventBlocksOnlySameAggregate(t *testing.T) {
+	provider := newMockSearchProvider()
+	db, relay, _ := setupRelayTest(t, provider)
+
+	poison := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-1",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+	})
+	laterSameAggregate := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-1",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Payload: map[string]any{
+			"objectID": "doc-1",
+		},
+	})
+	unrelated := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventLinkCreated,
+		AggregateID:   "/rfc/poison-unrelated",
+		AggregateType: models.SearchAggregateLink,
+		IndexName:     models.SearchIndexLinks,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Payload: map[string]any{
+			"documentID": "doc-2",
+			"objectID":   "/rfc/poison-unrelated",
+		},
+	})
+
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+
+	poisonReloaded := reloadSearchOutboxEvent(t, db, poison.ID)
+	sameReloaded := reloadSearchOutboxEvent(t, db, laterSameAggregate.ID)
+	unrelatedReloaded := reloadSearchOutboxEvent(t, db, unrelated.ID)
+	assert.Equal(t, models.SearchOutboxStatusFailed, poisonReloaded.Status)
+	assert.Contains(t, poisonReloaded.ErrorMessage, "payload is required")
+	assert.Equal(t, models.SearchOutboxStatusPending, sameReloaded.Status)
+	assert.Equal(t, models.SearchOutboxStatusCompleted, unrelatedReloaded.Status)
+	assert.Equal(t, []string{"/rfc/poison-unrelated"}, provider.links.savedIDs)
+}
+
 type mockSearchProvider struct {
 	documents *mockDocumentIndex
 	drafts    *mockDocumentIndex
@@ -272,17 +377,25 @@ func (p *mockSearchProvider) Name() string                        { return "mock
 func (p *mockSearchProvider) Healthy(context.Context) error       { return nil }
 
 type mockDocumentIndex struct {
-	indexErr   error
-	deleteErr  error
-	indexedIDs []string
-	deletedIDs []string
+	indexErr      error
+	deleteErr     error
+	docsByID      map[string]*search.Document
+	indexedIDs    []string
+	indexedTitles []string
+	deletedIDs    []string
 }
 
 func (i *mockDocumentIndex) Index(_ context.Context, doc *search.Document) error {
 	if i.indexErr != nil {
 		return i.indexErr
 	}
+	if i.docsByID == nil {
+		i.docsByID = map[string]*search.Document{}
+	}
+	docCopy := *doc
+	i.docsByID[doc.ObjectID] = &docCopy
 	i.indexedIDs = append(i.indexedIDs, doc.ObjectID)
+	i.indexedTitles = append(i.indexedTitles, doc.Title)
 	return nil
 }
 
