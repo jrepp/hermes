@@ -19,7 +19,7 @@ related:
 
 # Trajectory T8 — Reliability & Performance NFR Harness
 
-> Owns Hermes non-functional reliability and performance validation so product trajectories do not each invent one-off stress tests. The first slice is the search-outbox stress/restart harness deferred from T1.
+> Owns Hermes non-functional reliability and performance validation so product trajectories do not each invent one-off stress tests. The first slice is the search-outbox stress/restart harness deferred from T1; the second planned slice is indexer throughput evidence deferred from T2.
 
 ## Stable-release criteria served
 
@@ -33,6 +33,7 @@ In scope:
 
 - A reusable stress harness for Hermes background workers and async projection paths.
 - Load, restart, and convergence scenarios for search outbox as the first implementation slice.
+- Indexer throughput and consumer-lag scenarios for the event-driven indexer cutover.
 - A standard result memo format under `docs-internal/memo/` for measured NFR runs.
 - Agent-friendly local and CI commands that avoid interactive/headed test modes per ADR-010.
 
@@ -69,7 +70,19 @@ Out of scope:
 - The result is recorded as a memo under `docs-internal/memo/`.
 - Any failure creates a follow-up plan or updates this trajectory with a blocked status and owner.
 
-## Phase 2 — Generalize NFR Coverage
+## Phase 2 — Event-Driven Indexer Throughput Scenario
+
+- Generate at least 1,000 documents/hour through the event-driven indexer pipeline.
+- Track Redpanda consumer lag and keep peak lag below 100 messages during the run.
+- Verify the `search_index` projection converges through `search.Provider` without worker database credentials.
+- Record environment, corpus shape, throughput, peak lag, convergence lag, failures, and rollback notes in a result memo.
+
+**Exit when:**
+
+- Scenario can be run by a documented command without interactive steps.
+- The result is linked from T2 Phase 2, or T2 records an explicit owner-approved deferral.
+
+## Phase 3 — Generalize NFR Coverage
 
 - Add additional scenarios only after the search-outbox scenario has stabilized.
 - Candidate scenarios: notification outbox delivery, indexer API submission, dashboard query latency, and local workspace filesystem churn.
@@ -93,6 +106,7 @@ This trajectory owns NFR evidence, not feature correctness. A feature trajectory
 ## References
 
 - [Trajectory T1 — Data Consistency & Outbox](trajectory-001-data-consistency-outbox.md)
+- [Trajectory T2 — Event-Driven Indexer Cutover](trajectory-002-indexer-cutover.md)
 - [RFC-008: Outbox Pattern for Document Synchronization](../rfc/rfc-008-outbox-pattern-document-sync.md)
 - [ADR-010: Playwright for Local Iteration](../adr/adr-010-playwright-for-local-iteration.md)
 - [ADR-017: API Refactoring and Testing Strategy](../adr/adr-017-api-refactoring-and-testing-strategy.md)

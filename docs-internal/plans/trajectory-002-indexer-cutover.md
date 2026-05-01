@@ -15,6 +15,7 @@ related:
   - ADR-020
   - RFC-014
   - RFC-022
+  - trajectory-008
   - MEMO-053
   - MEMO-054
   - MEMO-058
@@ -49,6 +50,7 @@ Out of scope:
 - LLM summaries and embeddings as v1.0 blockers; they are v1.x enrichment unless promoted by a separate release decision.
 - Additional pipeline rulesets beyond `search_index`, `llm_summary`, `embeddings` (deferred to v1.x).
 - Multi-tenant LLM key management beyond per-instance config (v1.x).
+- Sustained NFR stress harness ownership; T8 owns reusable load/restart scenarios, including indexer throughput evidence.
 
 ## Dependencies
 
@@ -94,7 +96,7 @@ Out of scope:
 **Exit when:**
 
 - 7-day window with zero unexplained parity differences over ≥10,000 sampled documents.
-- Load test: 1,000 docs/hour sustained; consumer lag < 100 messages at peak.
+- T8 NFR scenario records 1,000 docs/hour sustained with consumer lag < 100 messages at peak, or this phase links to an explicit owner-approved deferral.
 - Staging rollback drill restores the previous indexing binary/config from release artifacts and proves search catches up after rollback.
 
 ### Phase 3 — Cutover & legacy removal
@@ -141,3 +143,4 @@ Each phase exit-only. Update [Roadmap Implementation Tracker](roadmap-tracker.md
 - [RFC-022: Database Deltas and Stateless Indexer](../rfc/rfc-022-database-deltas-and-stateless-indexer.md)
 - [MEMO-053](../memo/memo-053-event-driven-indexer-summary.md), [MEMO-054](../memo/memo-054-event-driven-indexer-production-deployment.md), [MEMO-058](../memo/memo-058-event-driven-indexer-testing-status.md)
 - [Roadmap Implementation Tracker](roadmap-tracker.md)
+- [Trajectory T8 — Reliability & Performance NFR Harness](trajectory-008-nfr-reliability-performance.md)
