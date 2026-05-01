@@ -33,6 +33,7 @@ guides/
 ├── dev/                            # developer environment + workflow
 ├── indexer/                        # indexer architecture and operation
 ├── integrations/                   # third-party integrations (Jira, Ollama, …)
+├── models/                         # AI model cards and provenance notes
 ├── patterns/                       # reusable design patterns
 ├── search/                         # search backends (Algolia, Meilisearch)
 ├── setup/                          # installation and setup wizards
@@ -75,6 +76,11 @@ guides/
 
 - [Jira Integration](integrations/jira.md)
 - [Ollama (Local LLM)](integrations/ollama.md) — local Llama on macOS.
+
+### Models (`models/`)
+
+- [Model Cards](models/readme.md) — provenance and operational notes for AI models used by Hermes.
+- [EmbeddingGemma 300M](models/embeddinggemma-300m.md) — local embedding model candidate for Ollama-compatible pipelines.
 
 ### Patterns (`patterns/`)
 

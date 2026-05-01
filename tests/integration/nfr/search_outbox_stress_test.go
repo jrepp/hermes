@@ -68,9 +68,10 @@ func testSearchOutboxStress(t *testing.T) {
 	require.NoError(t, db.AutoMigrate(&models.SearchOutboxSequence{}, &models.SearchOutboxEvent{}))
 
 	relay, err := searchoutbox.New(searchoutbox.Config{
-		DB:       db,
-		Provider: provider,
-		Logger:   hclog.NewNullLogger(),
+		DB:        db,
+		Provider:  provider,
+		Logger:    hclog.NewNullLogger(),
+		BatchSize: config.RelayBatchSize,
 	})
 	require.NoError(t, err)
 

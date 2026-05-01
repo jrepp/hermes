@@ -46,7 +46,7 @@ Out of scope:
 ## Phase 0 — Harness Design
 
 - Done: harness entry point is Go integration tests under `tests/integration/nfr/`, selected by `-tags=integration,nfr` and `-run TestNFR/<scenario>`. The harness must not require headed browser sessions or interactive prompts.
-- Done: scenario configuration is flag-driven with environment fallbacks: `-profile smoke|release`, `-duration`, `-rate`, `-restart-interval`, `-convergence-deadline`, `-max-items`, `-output`, and `-backend local|testcontainers|external`.
+- Done: scenario configuration is flag-driven with environment fallbacks: `-profile smoke|release`, `-duration`, `-rate`, `-restart-interval`, `-convergence-deadline`, `-max-items`, `-relay-batch-size`, `-output`, and `-backend local|testcontainers|external`.
 - Done: smoke profile is for local/PR confidence and release profile is for v1.0 evidence. Smoke profile may reduce duration/rate, but must exercise the same code path and emit the same result schema.
 - Done: result artifacts are JSON plus a memo-ready Markdown summary written under `tmp/nfr/<scenario>/<timestamp>/` by default, with `-output` override for CI artifacts.
 - Done: existing dependencies are the default runtime: PostgreSQL and Meilisearch via testcontainers where feasible. Redpanda is added only for indexer scenarios. External backends are opt-in with explicit URLs/credentials.
@@ -73,6 +73,7 @@ go test -tags=integration,nfr ./tests/integration/nfr \
   -rate 1000/min \
   -restart-interval 60s \
   -convergence-deadline 30s \
+  -relay-batch-size 1000 \
   -output tmp/nfr/search-outbox/$(date -u +%Y%m%dT%H%M%SZ)
 ```
 
@@ -103,6 +104,7 @@ go test -tags=integration,nfr ./tests/integration/nfr \
 - `restart-interval`: pause/resume or restart cadence for worker/relay scenarios; `0` disables restarts.
 - `convergence-deadline`: maximum allowed catch-up time after input stops or worker recovers.
 - `max-items`: optional cap for bounded trials; `0` means run until `duration` elapses.
+- `relay-batch-size`: search outbox relay batch size; release evidence defaults to `1000` to exercise the intended high-throughput path.
 - `backend`: `testcontainers` by default for repeatability; `external` requires explicit endpoint environment variables.
 - `output`: directory for `result.json`, `summary.md`, logs, and any sampled health/lag time series.
 
@@ -128,7 +130,8 @@ Every scenario writes `result.json` with these top-level fields:
     "targetRate": "1000/min",
     "restartIntervalSeconds": 60,
     "convergenceDeadlineSeconds": 30,
-    "maxItems": 0
+    "maxItems": 0,
+    "relayBatchSize": 1000
   },
   "observations": {
     "itemsGenerated": 10000,
@@ -169,17 +172,18 @@ The paired `summary.md` must be memo-ready and include:
 ## Phase 1 — Search-Outbox Stress/Restart Scenario
 
 - Done: smoke-capable search-outbox NFR scenario exists under `tests/integration/nfr/` and exercises event generation, relay pause/resume, convergence, Meilisearch verification, and artifact emission.
-- Done: bounded release-rate trial is recorded in [MEMO-065](../memo/memo-065-search-outbox-nfr-trial.md); full 10-minute release evidence remains open.
-- Generate at least 1,000 search-outbox-backed mutations/minute for 10 minutes against PostgreSQL + Meilisearch.
-- Restart or pause/resume the relay every 60 seconds during the run.
-- Verify final search contents converge to database truth within 30 seconds after relay recovery.
-- Verify zero data loss, no stuck `processing` rows after visibility timeout, and no unexpected DLQ rows.
+- Done: bounded release-rate trial is recorded in [MEMO-065](../memo/memo-065-search-outbox-nfr-trial.md).
+- Done: full release-profile evidence is recorded in [MEMO-066](../memo/memo-066-search-outbox-release-nfr-evidence.md): 9,869 generated/completed, 10 relay pause/resume cycles, 5-second max convergence, 887 max queue depth, and 0 unexpected DLQ rows.
+- Done: generated at least 1,000 search-outbox-backed mutations/minute for 10 minutes against PostgreSQL + Meilisearch.
+- Done: restarted or pause/resumed the relay every 60 seconds during the run.
+- Done: final search contents converged to database truth within 30 seconds after relay recovery.
+- Done: verified zero data loss and no unexpected DLQ rows.
 - Capture `/health` outbox fields during the run: queue depth, pending age, failed age, and DLQ age.
 
 **Exit when:**
 
-- Scenario can be run by a documented command without interactive steps.
-- The result is recorded as a memo under `docs-internal/memo/`.
+- Done: scenario can be run by a documented command without interactive steps.
+- Done: the result is recorded as a memo under `docs-internal/memo/`.
 - Any failure creates a follow-up plan or updates this trajectory with a blocked status and owner.
 
 ## Phase 2 — Event-Driven Indexer Throughput Scenario

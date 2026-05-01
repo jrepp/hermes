@@ -25,6 +25,7 @@ type harnessConfig struct {
 	RestartInterval     time.Duration
 	ConvergenceDeadline time.Duration
 	MaxItems            int64
+	RelayBatchSize      int
 }
 
 type result struct {
@@ -53,6 +54,7 @@ type inputs struct {
 	RestartIntervalSeconds     int64  `json:"restartIntervalSeconds"`
 	ConvergenceDeadlineSeconds int64  `json:"convergenceDeadlineSeconds"`
 	MaxItems                   int64  `json:"maxItems,omitempty"`
+	RelayBatchSize             int    `json:"relayBatchSize"`
 }
 
 type observations struct {
@@ -77,6 +79,9 @@ func applyDefaults(cfg harnessConfig) harnessConfig {
 	}
 	if cfg.Output == "" {
 		cfg.Output = filepath.Join("tmp", "nfr", time.Now().UTC().Format("20060102T150405Z"))
+	}
+	if cfg.RelayBatchSize == 0 {
+		cfg.RelayBatchSize = 1000
 	}
 	if !filepath.IsAbs(cfg.Output) {
 		cfg.Output = filepath.Join(repoRoot(), cfg.Output)
@@ -140,6 +145,9 @@ func validateConfig(cfg harnessConfig) error {
 	if cfg.ConvergenceDeadline <= 0 {
 		return errors.New("convergence deadline must be positive")
 	}
+	if cfg.RelayBatchSize <= 0 {
+		return errors.New("relay batch size must be positive")
+	}
 	if _, err := intervalForRate(cfg.Rate); err != nil {
 		return err
 	}
@@ -193,6 +201,7 @@ func newResult(scenario string, cfg harnessConfig, startedAt time.Time, obs obse
 			RestartIntervalSeconds:     int64(cfg.RestartInterval.Seconds()),
 			ConvergenceDeadlineSeconds: int64(cfg.ConvergenceDeadline.Seconds()),
 			MaxItems:                   cfg.MaxItems,
+			RelayBatchSize:             cfg.RelayBatchSize,
 		},
 		Observations: obs,
 		Passed:       passed,
@@ -242,6 +251,7 @@ func renderSummary(res result) string {
 		"- Target rate: %s\n"+
 		"- Restart interval: %ds\n"+
 		"- Convergence deadline: %ds\n"+
+		"- Relay batch size: %d\n"+
 		"- Max items: %d\n"+
 		"- Items generated: %d\n"+
 		"- Items completed: %d\n"+
@@ -262,6 +272,7 @@ func renderSummary(res result) string {
 		res.Inputs.TargetRate,
 		res.Inputs.RestartIntervalSeconds,
 		res.Inputs.ConvergenceDeadlineSeconds,
+		res.Inputs.RelayBatchSize,
 		res.Inputs.MaxItems,
 		res.Observations.ItemsGenerated,
 		res.Observations.ItemsCompleted,

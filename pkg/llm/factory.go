@@ -117,10 +117,13 @@ func (f *ClientFactory) detectProvider(model string) string {
 		}
 	}
 
-	for _, prefix := range []string{"llama", "mistral", "codellama", "phi", "qwen", "gemma"} {
+	for _, prefix := range []string{"llama", "mistral", "codellama", "phi", "qwen", "gemma", "embeddinggemma", "nomic-embed", "mxbai-embed"} {
 		if strings.HasPrefix(modelLower, prefix) {
 			return providerOllama
 		}
+	}
+	if strings.Contains(modelLower, "embeddinggemma") {
+		return providerOllama
 	}
 
 	// Default to OpenAI for unknown models
@@ -160,6 +163,11 @@ func (f *ClientFactory) SupportedModels() map[string][]string {
 			"phi",
 			"qwen2",
 			"gemma2",
+			"nomic-embed-text",
+			"mxbai-embed-large",
+			"embeddinggemma-300m",
+			"unsloth/embeddinggemma-300m",
+			"hf.co/unsloth/embeddinggemma-300m-GGUF:Q4_0",
 		},
 	}
 }

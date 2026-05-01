@@ -101,6 +101,102 @@ func TestRelayProcessesDraftDelete(t *testing.T) {
 	assert.Equal(t, []string{"draft-1"}, provider.drafts.deletedIDs)
 }
 
+func TestRelayBatchesIndependentDocumentUpserts(t *testing.T) {
+	provider := newMockSearchProvider()
+	db, relay, _ := setupRelayTest(t, provider)
+
+	first := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-1",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Payload: map[string]any{
+			"objectID": "doc-1",
+			"title":    "Doc One",
+		},
+	})
+	second := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-2",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Payload: map[string]any{
+			"objectID": "doc-2",
+			"title":    "Doc Two",
+		},
+	})
+
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloadSearchOutboxEvent(t, db, first.ID).Status)
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloadSearchOutboxEvent(t, db, second.ID).Status)
+	assert.Equal(t, 1, provider.documents.indexBatchCalls)
+	assert.Equal(t, []int{2}, provider.documents.indexBatchSizes)
+	assert.Equal(t, []string{"doc-1", "doc-2"}, provider.documents.indexedIDs)
+}
+
+func TestRelayBatchesIndependentDraftDeletes(t *testing.T) {
+	provider := newMockSearchProvider()
+	db, relay, _ := setupRelayTest(t, provider)
+
+	first := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDraftDeleted,
+		AggregateID:   "draft-1",
+		AggregateType: models.SearchAggregateDraft,
+		IndexName:     models.SearchIndexDrafts,
+		Operation:     models.SearchOutboxOperationDelete,
+	})
+	second := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDraftDeleted,
+		AggregateID:   "draft-2",
+		AggregateType: models.SearchAggregateDraft,
+		IndexName:     models.SearchIndexDrafts,
+		Operation:     models.SearchOutboxOperationDelete,
+	})
+
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloadSearchOutboxEvent(t, db, first.ID).Status)
+	assert.Equal(t, models.SearchOutboxStatusCompleted, reloadSearchOutboxEvent(t, db, second.ID).Status)
+	assert.Equal(t, 1, provider.drafts.deleteBatchCalls)
+	assert.Equal(t, []int{2}, provider.drafts.deleteBatchSizes)
+	assert.Equal(t, []string{"draft-1", "draft-2"}, provider.drafts.deletedIDs)
+}
+
+func TestRelayBatchedPayloadFailureDoesNotCompleteMalformedEvent(t *testing.T) {
+	provider := newMockSearchProvider()
+	db, relay, _ := setupRelayTest(t, provider)
+
+	malformed := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-1",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+	})
+	valid := enqueueRelayTestEvent(t, db, &models.SearchOutboxEvent{
+		EventType:     models.SearchEventDocumentUpdated,
+		AggregateID:   "doc-2",
+		AggregateType: models.SearchAggregateDocument,
+		IndexName:     models.SearchIndexDocuments,
+		Operation:     models.SearchOutboxOperationUpsert,
+		Payload: map[string]any{
+			"objectID": "doc-2",
+		},
+	})
+
+	require.NoError(t, relay.ProcessBatch(context.Background()))
+
+	malformedReloaded := reloadSearchOutboxEvent(t, db, malformed.ID)
+	validReloaded := reloadSearchOutboxEvent(t, db, valid.ID)
+	assert.Equal(t, models.SearchOutboxStatusFailed, malformedReloaded.Status)
+	assert.Contains(t, malformedReloaded.ErrorMessage, "payload is required")
+	assert.Equal(t, models.SearchOutboxStatusCompleted, validReloaded.Status)
+	assert.Equal(t, []string{"doc-2"}, provider.documents.indexedIDs)
+}
+
 func TestRelayProcessesLinkUpsert(t *testing.T) {
 	provider := newMockSearchProvider()
 	db, relay, _ := setupRelayTest(t, provider)
@@ -377,12 +473,16 @@ func (p *mockSearchProvider) Name() string                        { return "mock
 func (p *mockSearchProvider) Healthy(context.Context) error       { return nil }
 
 type mockDocumentIndex struct {
-	indexErr      error
-	deleteErr     error
-	docsByID      map[string]*search.Document
-	indexedIDs    []string
-	indexedTitles []string
-	deletedIDs    []string
+	indexErr         error
+	deleteErr        error
+	docsByID         map[string]*search.Document
+	indexedIDs       []string
+	indexedTitles    []string
+	deletedIDs       []string
+	indexBatchCalls  int
+	indexBatchSizes  []int
+	deleteBatchCalls int
+	deleteBatchSizes []int
 }
 
 func (i *mockDocumentIndex) Index(_ context.Context, doc *search.Document) error {
@@ -400,6 +500,8 @@ func (i *mockDocumentIndex) Index(_ context.Context, doc *search.Document) error
 }
 
 func (i *mockDocumentIndex) IndexBatch(ctx context.Context, docs []*search.Document) error {
+	i.indexBatchCalls++
+	i.indexBatchSizes = append(i.indexBatchSizes, len(docs))
 	for _, doc := range docs {
 		if err := i.Index(ctx, doc); err != nil {
 			return err
@@ -417,6 +519,8 @@ func (i *mockDocumentIndex) Delete(_ context.Context, docID string) error {
 }
 
 func (i *mockDocumentIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
+	i.deleteBatchCalls++
+	i.deleteBatchSizes = append(i.deleteBatchSizes, len(docIDs))
 	for _, docID := range docIDs {
 		if err := i.Delete(ctx, docID); err != nil {
 			return err

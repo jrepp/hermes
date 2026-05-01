@@ -68,6 +68,23 @@ func (s *EmbeddingsStep) Name() string {
 	return "embeddings"
 }
 
+// IsRetryable determines if an embedding generation error should trigger a retry.
+func (s *EmbeddingsStep) IsRetryable(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errMsg := strings.ToLower(err.Error())
+	return strings.Contains(errMsg, "timeout") ||
+		strings.Contains(errMsg, "connection") ||
+		strings.Contains(errMsg, "temporary") ||
+		strings.Contains(errMsg, "rate limit") ||
+		strings.Contains(errMsg, "quota exceeded") ||
+		strings.Contains(errMsg, "too many requests") ||
+		strings.Contains(errMsg, "service unavailable") ||
+		strings.Contains(errMsg, "internal server error")
+}
+
 // Execute generates embeddings for the given revision.
 func (s *EmbeddingsStep) Execute(ctx context.Context, revision *models.DocumentRevision, config map[string]interface{}) error {
 	s.logger.Debug("executing embeddings step",

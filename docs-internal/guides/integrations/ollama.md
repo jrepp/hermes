@@ -21,7 +21,7 @@ The Ollama AI provider enables **fully local AI summarization and embeddings** u
 ## Features
 
 - ✅ **Document Summarization** using Llama 3.2 (3B) or other text generation models
-- ✅ **Vector Embeddings** using nomic-embed-text (768 dimensions) or mxbai-embed-large
+- ✅ **Vector Embeddings** using nomic-embed-text (768 dimensions), mxbai-embed-large, or EmbeddingGemma 300M
 - ✅ **Chunked Embeddings** with configurable chunk size and overlap
 - ✅ **Structured Output** parsing from Llama responses
 - ✅ **Configurable Models** for different use cases
@@ -69,6 +69,9 @@ ollama pull nomic-embed-text
 
 # Or mxbai-embed-large - 1024 dimensions, higher quality
 ollama pull mxbai-embed-large
+
+# Or EmbeddingGemma 300M GGUF from Hugging Face
+ollama pull hf.co/unsloth/embeddinggemma-300m-GGUF:Q4_0
 ```
 
 ### 4. Verify Installation
@@ -289,8 +292,9 @@ results, err := pipeline.Execute(ctx, baseCtx)
 
 | Model | Dimensions | Speed | Quality | Use Case |
 |-------|------------|-------|---------|----------|
-| `nomic-embed-text` | 768 | ⚡⚡⚡ Fast | ⭐⭐⭐ Good | Standard semantic search |
-| `mxbai-embed-large` | 1024 | ⚡⚡ Medium | ⭐⭐⭐⭐ Great | High-precision search |
+| `nomic-embed-text` | 768 | Fast | Good | Standard semantic search |
+| `mxbai-embed-large` | 1024 | Medium | Great | High-precision search |
+| `embeddinggemma-300m` / `unsloth/embeddinggemma-300m` | 768 | Local-runtime dependent | Candidate | See [EmbeddingGemma 300M model card](../models/embeddinggemma-300m.md). |
 | `all-minilm` | 384 | ⚡⚡⚡⚡ Very Fast | ⭐⭐ Decent | Low-resource environments |
 
 ## Performance Characteristics

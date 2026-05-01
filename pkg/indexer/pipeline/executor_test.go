@@ -3,17 +3,21 @@ package pipeline
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline/steps"
 	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
+	"github.com/hashicorp-forge/hermes/pkg/llm"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
@@ -289,6 +293,26 @@ func (c *ConfigCapturingStep) IsRetryable(_ error) bool {
 	return false
 }
 
+type executorEmbeddingsClient struct {
+	mock.Mock
+}
+
+func (m *executorEmbeddingsClient) GenerateEmbeddings(ctx context.Context, text, model string, dimensions int) ([]float64, error) {
+	args := m.Called(ctx, text, model, dimensions)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]float64), args.Error(1)
+}
+
+func (m *executorEmbeddingsClient) GenerateEmbeddingsBatch(ctx context.Context, texts []string, model string, dimensions int) ([][]float64, error) {
+	args := m.Called(ctx, texts, model, dimensions)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([][]float64), args.Error(1)
+}
+
 func TestExecutor_Execute_WithStepConfig(t *testing.T) {
 	db := setupTestDB(t)
 	revision := createTestRevision(t, db)
@@ -320,6 +344,130 @@ func TestExecutor_Execute_WithStepConfig(t *testing.T) {
 	require.NotNil(t, step1.receivedConfig)
 	assert.Equal(t, "gpt-4o-mini", step1.receivedConfig["model"])
 	assert.Equal(t, 500, step1.receivedConfig["max_tokens"])
+}
+
+func TestExecutor_Execute_EmbeddingsStep(t *testing.T) {
+	db := setupTestDB(t)
+	require.NoError(t, db.AutoMigrate(&models.DocumentEmbedding{}))
+	revision := createTestRevision(t, db)
+
+	embedding := make([]float64, 768)
+	for i := range embedding {
+		embedding[i] = float64(i) * 0.001
+	}
+
+	client := new(executorEmbeddingsClient)
+	client.On("GenerateEmbeddings",
+		mock.Anything,
+		"pipeline embedding content",
+		"nomic-embed-text",
+		768,
+	).Return(embedding, nil)
+
+	workspace := &steps.MockWorkspaceProvider{
+		Content: map[string]string{
+			revision.DocumentID: "pipeline embedding content",
+		},
+	}
+	embeddingsStep := steps.NewEmbeddingsStep(db, client, workspace, hclog.NewNullLogger())
+
+	executor, err := NewExecutor(ExecutorConfig{
+		DB:     db,
+		Steps:  []Step{embeddingsStep},
+		Logger: hclog.NewNullLogger(),
+	})
+	require.NoError(t, err)
+
+	rs := &ruleset.Ruleset{
+		Name:     "embedding-ruleset",
+		Pipeline: []string{"embeddings"},
+		Config: map[string]interface{}{
+			"embeddings": map[string]interface{}{
+				"provider":   "ollama",
+				"model":      "nomic-embed-text",
+				"dimensions": 768,
+			},
+		},
+	}
+
+	require.NoError(t, executor.Execute(context.Background(), revision, 1, rs))
+	client.AssertExpectations(t)
+
+	var stored models.DocumentEmbedding
+	require.NoError(t, db.Where("document_id = ?", revision.DocumentID).First(&stored).Error)
+	assert.Equal(t, revision.DocumentID, stored.DocumentID)
+	assert.Equal(t, "ollama", stored.Provider)
+	assert.Equal(t, "nomic-embed-text", stored.Model)
+	assert.Equal(t, 768, stored.Dimensions)
+	assert.Len(t, stored.Embedding, 768)
+
+	var execution models.DocumentRevisionPipelineExecution
+	require.NoError(t, db.Where("revision_id = ?", revision.ID).First(&execution).Error)
+	assert.Equal(t, "embedding-ruleset", execution.RulesetName)
+	assert.Equal(t, models.PipelineStatusCompleted, execution.Status)
+	require.Contains(t, execution.StepResults, "embeddings")
+	stepResult, ok := execution.StepResults["embeddings"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, models.StepStatusSuccess, stepResult["status"])
+}
+
+func TestExecutor_Execute_EmbeddingsStep_LiveOllama(t *testing.T) {
+	model := os.Getenv("HERMES_TEST_OLLAMA_EMBED_MODEL")
+	if model == "" {
+		t.Skip("set HERMES_TEST_OLLAMA_EMBED_MODEL to run live Ollama embedding pipeline test")
+	}
+
+	db := setupTestDB(t)
+	require.NoError(t, db.AutoMigrate(&models.DocumentEmbedding{}))
+	revision := createTestRevision(t, db)
+
+	client, err := llm.NewOllamaClient(llm.OllamaConfig{
+		BaseURL: os.Getenv("HERMES_TEST_OLLAMA_URL"),
+		Timeout: 30 * time.Second,
+		Logger:  hclog.NewNullLogger(),
+	})
+	require.NoError(t, err)
+
+	workspace := &steps.MockWorkspaceProvider{
+		Content: map[string]string{
+			revision.DocumentID: "title: Hermes | text: Hermes live pipeline embedding smoke test",
+		},
+	}
+	embeddingsStep := steps.NewEmbeddingsStep(db, client, workspace, hclog.NewNullLogger())
+
+	executor, err := NewExecutor(ExecutorConfig{
+		DB:     db,
+		Steps:  []Step{embeddingsStep},
+		Logger: hclog.NewNullLogger(),
+	})
+	require.NoError(t, err)
+
+	rs := &ruleset.Ruleset{
+		Name:     "live-ollama-embedding-ruleset",
+		Pipeline: []string{"embeddings"},
+		Config: map[string]interface{}{
+			"embeddings": map[string]interface{}{
+				"provider":   "ollama",
+				"model":      model,
+				"dimensions": 768,
+			},
+		},
+	}
+
+	require.NoError(t, executor.Execute(context.Background(), revision, 1, rs))
+
+	var stored models.DocumentEmbedding
+	require.NoError(t, db.Where("document_id = ?", revision.DocumentID).First(&stored).Error)
+	assert.Equal(t, "ollama", stored.Provider)
+	assert.Equal(t, model, stored.Model)
+	assert.Equal(t, 768, stored.Dimensions)
+	assert.Len(t, stored.Embedding, 768)
+	assert.NotZero(t, stored.Embedding[0])
+
+	var execution models.DocumentRevisionPipelineExecution
+	require.NoError(t, db.Where("revision_id = ?", revision.ID).First(&execution).Error)
+	assert.Equal(t, "live-ollama-embedding-ruleset", execution.RulesetName)
+	assert.Equal(t, models.PipelineStatusCompleted, execution.Status)
 }
 
 func TestExecutor_ExecuteMultiple_Success(t *testing.T) {

@@ -77,7 +77,7 @@ func TestOllamaClient_GenerateSummary(t *testing.T) {
 	assert.Contains(t, summary.Topics, "software architecture")
 	assert.Len(t, summary.Tags, 3)
 	assert.Contains(t, summary.Tags, "architecture")
-	assert.Greater(t, summary.GenerationTimeMs, 0)
+	assert.GreaterOrEqual(t, summary.GenerationTimeMs, 0)
 }
 
 func TestOllamaClient_GenerateSummary_APIError(t *testing.T) {

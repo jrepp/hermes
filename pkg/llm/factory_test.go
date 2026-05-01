@@ -46,6 +46,11 @@ func TestClientFactory_DetectProvider(t *testing.T) {
 		{"phi", "ollama"},
 		{"qwen2", "ollama"},
 		{"gemma2", "ollama"},
+		{"nomic-embed-text", "ollama"},
+		{"mxbai-embed-large", "ollama"},
+		{"embeddinggemma-300m", "ollama"},
+		{"unsloth/embeddinggemma-300m", "ollama"},
+		{"hf.co/unsloth/embeddinggemma-300m-GGUF:Q4_0", "ollama"},
 
 		// Unknown model (defaults to OpenAI)
 		{"unknown-model-xyz", "openai"},
@@ -230,6 +235,8 @@ func TestClientFactory_SupportedModels(t *testing.T) {
 	assert.Contains(t, models["openai"], "gpt-4o-mini")
 	assert.Contains(t, models["bedrock"], "us.anthropic.claude-3-7-sonnet-20250219-v1:0")
 	assert.Contains(t, models["ollama"], "llama3")
+	assert.Contains(t, models["ollama"], "unsloth/embeddinggemma-300m")
+	assert.Contains(t, models["ollama"], "hf.co/unsloth/embeddinggemma-300m-GGUF:Q4_0")
 }
 
 func TestClientFactory_GetClient(t *testing.T) {
@@ -302,6 +309,7 @@ func TestClientFactory_CaseInsensitiveDetection(t *testing.T) {
 		{"Gpt-4o-Mini", "openai"},
 		{"LLAMA3", "ollama"},
 		{"Mistral", "ollama"},
+		{"Unsloth/EmbeddingGemma-300M", "ollama"},
 		{"CLAUDE-3-OPUS", "bedrock"},
 	}
 

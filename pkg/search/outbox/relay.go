@@ -112,7 +112,15 @@ func (r *Relay) ProcessBatch(ctx context.Context) error {
 		return err
 	}
 
+	processed := make(map[uint]bool, len(events))
+	if err := r.applyDocumentBatches(ctx, events, processed); err != nil {
+		return err
+	}
+
 	for i := range events {
+		if processed[events[i].ID] {
+			continue
+		}
 		if err := r.applyEvent(ctx, &events[i]); err != nil {
 			if markErr := r.markFailed(&events[i], err); markErr != nil {
 				return markErr
@@ -123,6 +131,71 @@ func (r *Relay) ProcessBatch(ctx context.Context) error {
 		if err := r.markCompleted(&events[i]); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (r *Relay) applyDocumentBatches(ctx context.Context, events []models.SearchOutboxEvent, processed map[uint]bool) error {
+	types := []struct {
+		indexName string
+		idx       documentIndex
+	}{
+		{indexName: models.SearchIndexDocuments, idx: r.provider.DocumentIndex()},
+		{indexName: models.SearchIndexDrafts, idx: r.provider.DraftIndex()},
+	}
+
+	for _, typ := range types {
+		for _, operation := range []string{models.SearchOutboxOperationUpsert, models.SearchOutboxOperationDelete} {
+			if err := r.applyDocumentBatch(ctx, events, processed, typ.indexName, operation, typ.idx); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Relay) applyDocumentBatch(ctx context.Context, events []models.SearchOutboxEvent, processed map[uint]bool, indexName, operation string, idx documentIndex) error {
+	var batchEvents []*models.SearchOutboxEvent
+	var docs []*search.Document
+	var docIDs []string
+
+	for i := range events {
+		if events[i].IndexName != indexName || events[i].Operation != operation {
+			continue
+		}
+
+		processed[events[i].ID] = true
+		if operation == models.SearchOutboxOperationDelete {
+			batchEvents = append(batchEvents, &events[i])
+			docIDs = append(docIDs, events[i].AggregateID)
+			continue
+		}
+
+		doc, err := eventPayloadAsDocument(&events[i])
+		if err != nil {
+			if markErr := r.markFailed(&events[i], err); markErr != nil {
+				return markErr
+			}
+			continue
+		}
+
+		batchEvents = append(batchEvents, &events[i])
+		docs = append(docs, doc)
+	}
+
+	if len(docs) > 0 {
+		if err := idx.IndexBatch(ctx, docs); err != nil {
+			return r.markBatchFailed(batchEvents, err)
+		}
+		return r.markBatchCompleted(batchEvents)
+	}
+	if len(docIDs) > 0 {
+		if err := idx.DeleteBatch(ctx, docIDs); err != nil {
+			return r.markBatchFailed(batchEvents, err)
+		}
+		return r.markBatchCompleted(batchEvents)
 	}
 
 	return nil
@@ -142,6 +215,7 @@ func (r *Relay) recoverStaleProcessing() error {
 
 func (r *Relay) claimBatch() ([]models.SearchOutboxEvent, error) {
 	now := r.now()
+	lockedBy := fmt.Sprintf("search-outbox-relay-%d", now.UnixNano())
 	var claimed []models.SearchOutboxEvent
 
 	err := r.db.Transaction(func(tx *gorm.DB) error {
@@ -167,30 +241,36 @@ func (r *Relay) claimBatch() ([]models.SearchOutboxEvent, error) {
 				continue
 			}
 
-			res := tx.Model(&models.SearchOutboxEvent{}).
-				Where("id = ? AND status IN ?", candidates[i].ID, []string{models.SearchOutboxStatusPending, models.SearchOutboxStatusFailed}).
-				Updates(map[string]any{
-					"status":          models.SearchOutboxStatusProcessing,
-					"locked_at":       now,
-					"locked_by":       "search-outbox-relay",
-					"last_attempt_at": now,
-					"updated_at":      now,
-				})
-			if res.Error != nil {
-				return res.Error
-			}
-			if res.RowsAffected == 0 {
-				continue
-			}
-
-			candidates[i].Status = models.SearchOutboxStatusProcessing
-			candidates[i].LockedAt = &now
-			candidates[i].LockedBy = "search-outbox-relay"
-			candidates[i].LastAttemptAt = &now
 			claimed = append(claimed, candidates[i])
 		}
 
-		return nil
+		if len(claimed) == 0 {
+			return nil
+		}
+
+		ids := make([]uint, 0, len(claimed))
+		for i := range claimed {
+			ids = append(ids, claimed[i].ID)
+		}
+
+		res := tx.Model(&models.SearchOutboxEvent{}).
+			Where("id IN ? AND status IN ?", ids, []string{models.SearchOutboxStatusPending, models.SearchOutboxStatusFailed}).
+			Updates(map[string]any{
+				"status":          models.SearchOutboxStatusProcessing,
+				"locked_at":       now,
+				"locked_by":       lockedBy,
+				"last_attempt_at": now,
+				"updated_at":      now,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+
+		claimed = claimed[:0]
+		return tx.
+			Where("id IN ? AND status = ? AND locked_by = ?", ids, models.SearchOutboxStatusProcessing, lockedBy).
+			Order("created_at ASC, id ASC").
+			Find(&claimed).Error
 	})
 	if err != nil {
 		return nil, fmt.Errorf("claim search outbox batch: %w", err)
@@ -200,6 +280,10 @@ func (r *Relay) claimBatch() ([]models.SearchOutboxEvent, error) {
 }
 
 func hasEarlierBlockingEvent(tx *gorm.DB, event *models.SearchOutboxEvent) (bool, error) {
+	if event.Sequence <= 1 {
+		return false, nil
+	}
+
 	var count int64
 	err := tx.Model(&models.SearchOutboxEvent{}).
 		Where("aggregate_type = ? AND aggregate_id = ? AND sequence < ?", event.AggregateType, event.AggregateID, event.Sequence).
@@ -230,7 +314,9 @@ func (r *Relay) applyEvent(ctx context.Context, event *models.SearchOutboxEvent)
 
 type documentIndex interface {
 	Index(context.Context, *search.Document) error
+	IndexBatch(context.Context, []*search.Document) error
 	Delete(context.Context, string) error
+	DeleteBatch(context.Context, []string) error
 }
 
 func applyDocumentEvent(ctx context.Context, idx documentIndex, event *models.SearchOutboxEvent) error {
@@ -323,6 +409,37 @@ func (r *Relay) markCompleted(event *models.SearchOutboxEvent) error {
 			"locked_by":    "",
 			"updated_at":   now,
 		}).Error
+}
+
+func (r *Relay) markBatchCompleted(events []*models.SearchOutboxEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	ids := make([]uint, 0, len(events))
+	for _, event := range events {
+		ids = append(ids, event.ID)
+	}
+
+	now := r.now()
+	return r.db.Model(&models.SearchOutboxEvent{}).
+		Where("id IN ?", ids).
+		Updates(map[string]any{
+			"status":       models.SearchOutboxStatusCompleted,
+			"completed_at": now,
+			"locked_at":    nil,
+			"locked_by":    "",
+			"updated_at":   now,
+		}).Error
+}
+
+func (r *Relay) markBatchFailed(events []*models.SearchOutboxEvent, applyErr error) error {
+	for _, event := range events {
+		if err := r.markFailed(event, applyErr); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *Relay) markFailed(event *models.SearchOutboxEvent, applyErr error) error {

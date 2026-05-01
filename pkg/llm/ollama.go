@@ -150,6 +150,98 @@ func (c *OllamaClient) GenerateSummary(ctx context.Context, content string, opti
 	return summary, nil
 }
 
+// GenerateEmbeddings generates embeddings for the given text using Ollama's local API.
+func (c *OllamaClient) GenerateEmbeddings(ctx context.Context, text, model string, dimensions int) ([]float64, error) {
+	startTime := time.Now()
+	embedding, err := c.generateEmbedding(ctx, text, model)
+	if err != nil {
+		return nil, err
+	}
+	if dimensions > 0 && len(embedding) != dimensions {
+		return nil, fmt.Errorf("ollama embedding dimensions mismatch: got %d, want %d", len(embedding), dimensions)
+	}
+
+	c.logger.Info("generated embeddings via Ollama",
+		"model", model,
+		"dimensions", len(embedding),
+		"generation_time_ms", time.Since(startTime).Milliseconds(),
+	)
+
+	return embedding, nil
+}
+
+// GenerateEmbeddingsBatch generates embeddings for multiple texts using Ollama.
+func (c *OllamaClient) GenerateEmbeddingsBatch(ctx context.Context, texts []string, model string, dimensions int) ([][]float64, error) {
+	startTime := time.Now()
+	embeddings := make([][]float64, 0, len(texts))
+	for i, text := range texts {
+		embedding, err := c.GenerateEmbeddings(ctx, text, model, dimensions)
+		if err != nil {
+			return nil, fmt.Errorf("generate embedding %d: %w", i, err)
+		}
+		embeddings = append(embeddings, embedding)
+	}
+
+	c.logger.Info("generated batch embeddings via Ollama",
+		"model", model,
+		"num_embeddings", len(embeddings),
+		"dimensions", dimensions,
+		"generation_time_ms", time.Since(startTime).Milliseconds(),
+	)
+
+	return embeddings, nil
+}
+
+func (c *OllamaClient) generateEmbedding(ctx context.Context, text, model string) ([]float64, error) {
+	reqJSON, err := json.Marshal(OllamaEmbeddingsRequest{
+		Model:  model,
+		Prompt: text,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/api/embeddings", bytes.NewReader(reqJSON))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	c.logger.Debug("sending embeddings request to Ollama",
+		"model", model,
+		"text_length", len(text),
+	)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp OllamaErrorResponse
+		if err := json.Unmarshal(respBody, &errResp); err == nil && errResp.Error != "" {
+			return nil, fmt.Errorf("ollama API error (%d): %s", resp.StatusCode, errResp.Error)
+		}
+		return nil, fmt.Errorf("ollama API error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var embResp OllamaEmbeddingsResponse
+	if err := json.Unmarshal(respBody, &embResp); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+	if len(embResp.Embedding) == 0 {
+		return nil, fmt.Errorf("no embeddings in response")
+	}
+
+	return embResp.Embedding, nil
+}
+
 // buildPrompt builds the prompt for summary generation.
 func (c *OllamaClient) buildPrompt(content string, options steps.SummaryOptions) string {
 	return buildSummaryPrompt(content, options)
@@ -199,4 +291,15 @@ type OllamaChatResponse struct {
 // OllamaErrorResponse represents an Ollama error response.
 type OllamaErrorResponse struct {
 	Error string `json:"error"`
+}
+
+// OllamaEmbeddingsRequest represents an Ollama embeddings API request.
+type OllamaEmbeddingsRequest struct {
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
+}
+
+// OllamaEmbeddingsResponse represents an Ollama embeddings API response.
+type OllamaEmbeddingsResponse struct {
+	Embedding []float64 `json:"embedding"`
 }
