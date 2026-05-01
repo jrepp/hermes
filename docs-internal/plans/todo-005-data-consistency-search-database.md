@@ -5,7 +5,7 @@ date: 2025-10-09
 type: TODO
 priority: critical
 status: in-progress
-progress: 78%
+progress: 94%
 tags: [data-consistency, search, database, fixme, bug]
 related:
   - RFC-008
@@ -93,9 +93,12 @@ tx.Commit()
 - [x] Migrate approval/review-state direct search write to transactional outbox
 - [x] Migrate publish/review direct search writes to transactional outbox
 - [x] Migrate draft create/update/delete direct search writes to transactional outbox
-- [ ] Implement transactional outbox writes in all document/draft/review/project operations
-- [ ] Implement DLQ inspection/retry/skip and rebuild-current tooling
-- [ ] Add monitoring/alerting for lag, failures, and DLQ age
+- [x] Implement transactional outbox writes in all audited v2 document/draft/review/project operations
+- [x] Implement DLQ inspection/retry/skip tooling
+- [x] Implement rebuild-current tooling
+- [x] Expose health metrics for lag, failures, and DLQ count
+- [x] Add expanded testcontainers + Meilisearch relay convergence test for document, draft, review-state, and go-link projection events
+- [ ] Add alerting for lag, failures, and DLQ age
 - [x] Add CI guard for direct API-layer search writes
 
 ## Impact

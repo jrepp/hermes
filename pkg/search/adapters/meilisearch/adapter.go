@@ -2,6 +2,8 @@ package meilisearch
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -13,6 +15,7 @@ import (
 )
 
 const objectIDKey = "objectID"
+const linkIDKey = "linkID"
 
 // Adapter implements search.Provider for Meilisearch.
 type Adapter struct {
@@ -159,6 +162,17 @@ func (a *Adapter) initializeIndexes(ctx context.Context) error {
 	projectSortableAttrs := []string{"createdTime", "modifiedTime", "title"}
 	if _, err := projectsIdx.UpdateSortableAttributesWithContext(ctx, &projectSortableAttrs); err != nil {
 		return fmt.Errorf("failed to update projects sortable attributes: %w", err)
+	}
+
+	// Create links index if it doesn't exist. Links keep the public objectID
+	// path and use a Meilisearch-safe internal primary key for lookup/delete.
+	if _, err := a.client.CreateIndexWithContext(ctx, &meilisearch.IndexConfig{
+		Uid:        a.linksIndex,
+		PrimaryKey: linkIDKey,
+	}); err != nil {
+		if !strings.Contains(err.Error(), "already exists") {
+			return fmt.Errorf("failed to create links index: %w", err)
+		}
 	}
 
 	return nil
@@ -890,7 +904,8 @@ func (li *linksIndex) SaveLink(_ context.Context, link map[string]string) error 
 	for k, v := range link {
 		linkAny[k] = v
 	}
-	primaryKey := objectIDKey
+	linkAny[linkIDKey] = linkMeilisearchID(link[objectIDKey])
+	primaryKey := linkIDKey
 	_, err := idx.AddDocuments([]map[string]any{linkAny}, &primaryKey)
 	if err != nil {
 		return &hermessearch.Error{
@@ -904,7 +919,7 @@ func (li *linksIndex) SaveLink(_ context.Context, link map[string]string) error 
 
 func (li *linksIndex) DeleteLink(_ context.Context, objectID string) error {
 	idx := li.client.Index(li.index)
-	_, err := idx.DeleteDocument(objectID)
+	_, err := idx.DeleteDocument(linkMeilisearchID(objectID))
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "DeleteLink",
@@ -918,7 +933,7 @@ func (li *linksIndex) DeleteLink(_ context.Context, objectID string) error {
 func (li *linksIndex) GetLink(_ context.Context, objectID string) (map[string]string, error) {
 	idx := li.client.Index(li.index)
 	var linkAny map[string]any
-	err := idx.GetDocument(objectID, nil, &linkAny)
+	err := idx.GetDocument(linkMeilisearchID(objectID), nil, &linkAny)
 	if err != nil {
 		return nil, &hermessearch.Error{
 			Op:  "GetLink",
@@ -936,6 +951,11 @@ func (li *linksIndex) GetLink(_ context.Context, objectID string) (map[string]st
 	}
 
 	return link, nil
+}
+
+func linkMeilisearchID(objectID string) string {
+	sum := sha256.Sum256([]byte(objectID))
+	return hex.EncodeToString(sum[:])
 }
 
 func (li *linksIndex) Clear(_ context.Context) error {

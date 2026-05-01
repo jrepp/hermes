@@ -804,7 +804,7 @@ func (c *Command) Run(args []string) int {
 
 	// Define handlers for unauthenticated endpoints.
 	unauthenticatedEndpoints := []endpoint{
-		{healthHandler(), "/health"},
+		{healthHandler(db), "/health"},
 		{http.StripPrefix("/pub/", pub.Handler()), "/pub/"},
 		{apiv2.IndexerHandler(srv), "/api/v2/indexer/"},                                  // Indexer API (handles own token auth)
 		{apiv2.EdgeSyncAuthMiddleware(srv, apiv2.EdgeSyncHandler(srv)), "/api/v2/edge/"}, // Edge sync API (token auth)
@@ -1020,8 +1020,21 @@ func (c *Command) Run(args []string) int {
 }
 
 // healthHandler responds with the health of the service.
-func healthHandler() http.Handler {
+func healthHandler(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if db != nil {
+			stats, err := searchoutbox.GetStats(db, time.Now())
+			if err == nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"status":       "OK",
+					"searchOutbox": stats,
+				})
+				return
+			}
+		}
+
 		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte("OK")); err != nil {
 			// Error already logged by HTTP server

@@ -52,6 +52,11 @@ func initCommands(log hclog.Logger, ui cli.Ui) {
 				Command: b,
 			}, nil
 		},
+		"operator search-outbox": func() (cli.Command, error) {
+			return &operator.SearchOutboxCommand{
+				Command: b,
+			}, nil
+		},
 		"serve": func() (cli.Command, error) {
 			return &serve.Command{
 				Command: b,

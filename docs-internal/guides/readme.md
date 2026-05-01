@@ -55,6 +55,7 @@ guides/
 
 - [Algolia Setup](search/algolia.md) — production search backend.
 - [Meilisearch Setup](search/meilisearch.md) — local development search backend.
+- [Search Outbox Operations](search/outbox-operations.md) — inspect, retry, and skip failed search projection events.
 
 ### Developer Workflow (`dev/`)
 

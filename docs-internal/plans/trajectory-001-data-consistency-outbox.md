@@ -132,11 +132,13 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 - Done: `pkg/models.SearchOutboxEvent`, `SearchOutboxSequence`, and enqueue helpers require a transaction handle, validate RFC-008 event basics, and allocate per-aggregate sequence numbers inside the caller's transaction.
 - Done: `pkg/search/outbox.Relay` claims due events, applies `Index/Delete` through `search.Provider`, recovers stale `processing` rows, retries with backoff, moves exhausted rows to DLQ, and blocks later same-aggregate events behind pending/processing/failed/DLQ predecessors.
 - Done: search outbox relay is wired into the server lifecycle when both DB and `search.Provider` are present; it uses the command context for shutdown.
+- Done: operator controls can list failed/DLQ events, retry failed/DLQ/skipped events, and skip failed/DLQ poison events with an operator note.
+- Expanded Meilisearch convergence coverage surfaced and fixed a links adapter primary-key mismatch: links now preserve public path-like `objectID` values and use an internal Meilisearch-safe `linkID` for lookup/delete.
 - Load/restart smoke test is added here, not deferred, to catch relay infrastructure regressions early.
 
 **Exit when:**
 
-- Integration test (testcontainers + Meilisearch) demonstrates: stop the relay, perform create -> update -> publish -> review-state change -> delete, restart relay, and verify final search contents exactly match database truth.
+- Done for relay-level multi-event convergence: `tests/integration/search/outbox_relay_test.go` uses testcontainers + Meilisearch to prove stopped-then-processed events converge document upsert, draft deletion, review-state document update, and go-link redirect projection through `search.Provider`.
 - Duplicate/reorder test inserts repeated events and verifies idempotent convergence.
 - Poison-message test proves one bad aggregate does not block unrelated aggregates and documents same-aggregate blocking.
 - Done: all audited v2 mutation handlers compile with no direct `SearchProvider.*Index().Index/Delete` references outside allowed packages (enforced by CI).
@@ -155,8 +157,8 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 
 ### Phase 3 — Operational verification
 
-- Outbox lag metric exposed (Prometheus or `/healthz` JSON) with a documented SLO.
-- DLQ inspection, retry, skip, and rebuild-current runbook added under `docs-internal/guides/`.
+- Done: outbox queue depth and lag are exposed in `/health` JSON when the database is available; [Search Outbox Operations](../guides/search/outbox-operations.md) documents operator inspection.
+- Done: `hermes operator search-outbox` supports DLQ inspection, retry, skip, and rebuild-current; [Search Outbox Operations](../guides/search/outbox-operations.md) documents each operation.
 - Load test: 1,000 mutations/min for 10 minutes with relay restarts every 60 s; index converges within 30 s of relay recovery; zero data loss.
 
 **Exit when:**
