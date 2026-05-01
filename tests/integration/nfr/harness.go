@@ -70,23 +70,53 @@ func applyDefaults(cfg harnessConfig) harnessConfig {
 	if cfg.Backend == "" {
 		cfg.Backend = envOrDefault("HERMES_NFR_BACKEND", "testcontainers")
 	}
-	if cfg.Duration == 0 {
-		cfg.Duration = 2 * time.Minute
-	}
-	if cfg.Rate == "" {
-		cfg.Rate = "60/min"
-	}
-	if cfg.RestartInterval == 0 {
-		cfg.RestartInterval = time.Minute
-	}
-	if cfg.ConvergenceDeadline == 0 {
-		cfg.ConvergenceDeadline = 30 * time.Second
+	if cfg.Duration == 0 || cfg.Rate == "" || cfg.RestartInterval == 0 || cfg.ConvergenceDeadline == 0 {
+		cfg = applyProfileDefaults(cfg)
 	}
 	if cfg.Output == "" {
 		cfg.Output = filepath.Join("tmp", "nfr", time.Now().UTC().Format("20060102T150405Z"))
 	}
 	if !filepath.IsAbs(cfg.Output) {
 		cfg.Output = filepath.Join(repoRoot(), cfg.Output)
+	}
+	return cfg
+}
+
+func applyProfileDefaults(cfg harnessConfig) harnessConfig {
+	switch cfg.Profile {
+	case "release":
+		if cfg.Duration == 0 {
+			cfg.Duration = 10 * time.Minute
+		}
+		if cfg.Rate == "" {
+			cfg.Rate = "1000/min"
+		}
+		if cfg.RestartInterval == 0 {
+			cfg.RestartInterval = time.Minute
+		}
+	case "smoke":
+		if cfg.Duration == 0 {
+			cfg.Duration = 5 * time.Second
+		}
+		if cfg.Rate == "" {
+			cfg.Rate = "12/min"
+		}
+		if cfg.RestartInterval == 0 {
+			cfg.RestartInterval = time.Second
+		}
+	default:
+		if cfg.Duration == 0 {
+			cfg.Duration = 2 * time.Minute
+		}
+		if cfg.Rate == "" {
+			cfg.Rate = "60/min"
+		}
+		if cfg.RestartInterval == 0 {
+			cfg.RestartInterval = time.Minute
+		}
+	}
+	if cfg.ConvergenceDeadline == 0 {
+		cfg.ConvergenceDeadline = 30 * time.Second
 	}
 	return cfg
 }

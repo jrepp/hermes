@@ -6,12 +6,14 @@ package nfr
 import (
 	"context"
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
@@ -25,12 +27,6 @@ func testSearchOutboxStress(t *testing.T) {
 	requireFixture(t)
 
 	config := applyDefaults(cfg)
-	if config.Profile == "smoke" && cfg.Duration == 0 {
-		config.Duration = 5 * time.Second
-	}
-	if config.Profile == "smoke" && cfg.Rate == "" {
-		config.Rate = "12/min"
-	}
 	require.NoError(t, validateConfig(config))
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.Duration+config.ConvergenceDeadline+30*time.Second)
@@ -56,10 +52,19 @@ func testSearchOutboxStress(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(integration.GetPostgresURL()), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	sqlDB.SetMaxOpenConns(1)
+	schemaName := fmt.Sprintf("nfr_search_outbox_%d", suffix)
+	require.NoError(t, db.Exec(fmt.Sprintf("CREATE SCHEMA %s", schemaName)).Error)
+	t.Cleanup(func() {
+		_ = db.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schemaName)).Error
+	})
+	require.NoError(t, db.Exec(fmt.Sprintf("SET search_path TO %s,public", schemaName)).Error)
 	require.NoError(t, db.AutoMigrate(&models.SearchOutboxSequence{}, &models.SearchOutboxEvent{}))
 
 	relay, err := searchoutbox.New(searchoutbox.Config{
@@ -71,40 +76,11 @@ func testSearchOutboxStress(t *testing.T) {
 
 	interval, err := intervalForRate(config.Rate)
 	require.NoError(t, err)
-	endAt := time.Now().Add(config.Duration)
-	nextRestartAt := time.Now().Add(config.RestartInterval)
-	relayPaused := false
-
-	for time.Now().Before(endAt) {
-		docID := fmt.Sprintf("nfr-doc-%06d", obs.ItemsGenerated+1)
-		require.NoError(t, db.Transaction(func(tx *gorm.DB) error {
-			return models.EnqueueSearchOutboxEventWithSequence(tx, &models.SearchOutboxEvent{
-				EventType:     models.SearchEventDocumentUpdated,
-				AggregateID:   docID,
-				AggregateType: models.SearchAggregateDocument,
-				IndexName:     models.SearchIndexDocuments,
-				Operation:     models.SearchOutboxOperationUpsert,
-				Payload: map[string]any{
-					"objectID": docID,
-					"docID":    docID,
-					"status":   "Approved",
-					"title":    fmt.Sprintf("NFR Document %d", obs.ItemsGenerated+1),
-				},
-			})
-		}))
-		obs.ItemsGenerated++
-
-		if config.RestartInterval > 0 && time.Now().After(nextRestartAt) {
-			relayPaused = !relayPaused
-			obs.WorkerRestarts++
-			nextRestartAt = time.Now().Add(config.RestartInterval)
-		}
-		if !relayPaused {
-			require.NoError(t, relay.ProcessBatch(ctx))
-		}
-		updateSearchOutboxObservations(t, db, &obs)
-		time.Sleep(interval)
-	}
+	generated, relayRestarts, runErrs := runSearchOutboxLoad(ctx, db, relay, config, interval)
+	require.Empty(t, runErrs)
+	obs.ItemsGenerated = int(generated.Load())
+	obs.WorkerRestarts = int(relayRestarts.Load())
+	updateSearchOutboxObservations(t, db, &obs)
 
 	convergeStartedAt := time.Now()
 	require.Eventually(t, func() bool {
@@ -120,6 +96,89 @@ func testSearchOutboxStress(t *testing.T) {
 		require.NoError(t, err)
 	}
 	passed = true
+}
+
+func runSearchOutboxLoad(ctx context.Context, db *gorm.DB, relay *searchoutbox.Relay, config harnessConfig, interval time.Duration) (*atomic.Int64, *atomic.Int64, []error) {
+	runCtx, cancel := context.WithTimeout(ctx, config.Duration)
+	defer cancel()
+
+	var generated atomic.Int64
+	var relayRestarts atomic.Int64
+	var relayPaused atomic.Bool
+	errCh := make(chan error, 2)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-runCtx.Done():
+				return
+			case <-ticker.C:
+				next := generated.Add(1)
+				docID := fmt.Sprintf("nfr-doc-%06d", next)
+				if err := db.Transaction(func(tx *gorm.DB) error {
+					return models.EnqueueSearchOutboxEventWithSequence(tx, &models.SearchOutboxEvent{
+						EventType:     models.SearchEventDocumentUpdated,
+						AggregateID:   docID,
+						AggregateType: models.SearchAggregateDocument,
+						IndexName:     models.SearchIndexDocuments,
+						Operation:     models.SearchOutboxOperationUpsert,
+						Payload: map[string]any{
+							"objectID": docID,
+							"docID":    docID,
+							"status":   "Approved",
+							"title":    fmt.Sprintf("NFR Document %d", next),
+						},
+					})
+				}); err != nil {
+					errCh <- err
+					cancel()
+					return
+				}
+			}
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+		restartTicker := time.NewTicker(config.RestartInterval)
+		defer restartTicker.Stop()
+
+		for {
+			select {
+			case <-runCtx.Done():
+				return
+			case <-restartTicker.C:
+				relayPaused.Store(!relayPaused.Load())
+				relayRestarts.Add(1)
+			case <-ticker.C:
+				if relayPaused.Load() {
+					continue
+				}
+				if err := relay.ProcessBatch(ctx); err != nil {
+					errCh <- err
+					cancel()
+					return
+				}
+			}
+		}
+	}()
+
+	wg.Wait()
+	close(errCh)
+	errs := make([]error, 0, len(errCh))
+	for err := range errCh {
+		errs = append(errs, err)
+	}
+	return &generated, &relayRestarts, errs
 }
 
 func updateSearchOutboxObservations(t *testing.T, db *gorm.DB, obs *observations) {
