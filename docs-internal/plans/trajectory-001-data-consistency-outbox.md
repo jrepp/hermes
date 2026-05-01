@@ -16,6 +16,7 @@ related:
   - ADR-020
   - RFC-005
   - RFC-008
+  - trajectory-008
 ---
 
 # Trajectory T1 — Data Consistency & Outbox
@@ -53,6 +54,7 @@ In scope:
 
 Out of scope:
 
+- General Hermes NFR/stress harness work, including sustained load/restart evidence now owned by [Trajectory T8](trajectory-008-nfr-reliability-performance.md).
 - Multi-region replication.
 - LLM/embedding pipeline (covered by T2).
 - Notification delivery (covered by T3, but T3 depends on the outbox primitives this trajectory builds).
@@ -134,7 +136,7 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 - Done: search outbox relay is wired into the server lifecycle when both DB and `search.Provider` are present; it uses the command context for shutdown.
 - Done: operator controls can list failed/DLQ events, retry failed/DLQ/skipped events, and skip failed/DLQ poison events with an operator note.
 - Expanded Meilisearch convergence coverage surfaced and fixed a links adapter primary-key mismatch: links now preserve public path-like `objectID` values and use an internal Meilisearch-safe `linkID` for lookup/delete.
-- Load/restart smoke test is added here, not deferred, to catch relay infrastructure regressions early.
+- Sustained load/restart evidence is moved to [Trajectory T8](trajectory-008-nfr-reliability-performance.md); T1 keeps correctness and convergence coverage for the search outbox itself.
 
 **Exit when:**
 
@@ -159,12 +161,12 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 
 - Done: outbox queue depth, pending lag, failed age, and DLQ age are exposed in `/health` JSON when the database is available; [Search Outbox Operations](../guides/search/outbox-operations.md) documents operator inspection and health-based alert thresholds.
 - Done: `hermes operator search-outbox` supports DLQ inspection, retry, skip, and rebuild-current; [Search Outbox Operations](../guides/search/outbox-operations.md) documents each operation.
-- Load test: 1,000 mutations/min for 10 minutes with relay restarts every 60 s; index converges within 30 s of relay recovery; zero data loss.
+- Sustained load/restart test ownership moved to [Trajectory T8](trajectory-008-nfr-reliability-performance.md): 1,000 mutations/min for 10 minutes, relay restarts every 60 s, convergence within 30 s after relay recovery, and zero data loss.
 
 **Exit when:**
 
 - Runbook exists and links from this trajectory and from RFC-008.
-- Load test result is recorded as a memo under `docs-internal/memo/`.
+- T8 references this trajectory as the first NFR scenario and owns the load-test result memo.
 
 ## Reviews / gates
 
@@ -186,3 +188,4 @@ Gates are exit-criteria only (per roadmap policy — no recurring cadence). Each
 - [ADR-017: API Refactoring and Testing Strategy](../adr/adr-017-api-refactoring-and-testing-strategy.md)
 - [ADR-020: Core+Deltas Migrations and Stateless Indexer](../adr/adr-020-dual-database-support-stateless-indexer.md)
 - [Roadmap Implementation Tracker](roadmap-tracker.md)
+- [Trajectory T8 — Reliability & Performance NFR Harness](trajectory-008-nfr-reliability-performance.md)

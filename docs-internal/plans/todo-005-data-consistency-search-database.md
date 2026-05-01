@@ -5,7 +5,7 @@ date: 2025-10-09
 type: TODO
 priority: critical
 status: in-progress
-progress: 97%
+progress: 98%
 tags: [data-consistency, search, database, fixme, bug]
 related:
   - RFC-008
@@ -101,6 +101,7 @@ tx.Commit()
 - [x] Add duplicate/reorder and poison-message relay tests for ordering and unrelated-aggregate progress
 - [x] Audit v1/compatibility API paths for hidden direct search mutation writes
 - [x] Add health-based alert thresholds for lag, failures, and DLQ age
+- [x] Move sustained stress/restart harness ownership to T8 NFR plan
 - [x] Add CI guard for direct API-layer search writes
 
 ## Impact
@@ -120,6 +121,7 @@ tx.Commit()
 
 - **RFC-008**: Outbox Pattern for Document Synchronization (accepted design)
 - **Trajectory T1**: Data Consistency & Outbox (execution plan and audit matrix)
+- **Trajectory T8**: Reliability & Performance NFR Harness (stress/restart evidence)
 - **TODO-003**: Migrate handlers to SearchProvider (prerequisite)
 
 ## References

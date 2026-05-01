@@ -18,6 +18,7 @@ The detailed implementation tracker is [`roadmap-tracker.md`](roadmap-tracker.md
 | [T5](trajectory-005-local-mode.md) | Local Mode & Workspace Abstraction | yes | (RFC-009 driven) |
 | [T6](trajectory-006-e2e-and-tech-debt.md) | E2E Coverage & Tech Debt | yes | TODO-001, TODO-002, TODO-011/012/013, `database_migration_fix_session.md`, `indexer-refactor.md` |
 | [T7](trajectory-007-federation-and-admin.md) | Federation & Admin UI | **no — v1.x** | TODO-007, TODO-008, TODO-009 (deferred) |
+| [T8](trajectory-008-nfr-reliability-performance.md) | Reliability & Performance NFR Harness | supports v1.0 evidence | Search-outbox stress/restart harness; future NFR scenarios |
 
 ### Adversarial Reviews
 
