@@ -74,8 +74,8 @@ related:
 - Move email sending to background workers to avoid blocking HTTP responses
 
 ### TODO-005: Fix Data Consistency Between Search Index and Database
-- **Priority**: Critical | **Status**: Open
-- Implement outbox pattern to ensure consistency between search and database
+- **Priority**: Critical | **Status**: In Progress (98%)
+- Implemented search outbox consistency path; sustained stress/restart evidence moved to T8
 
 ### TODO-007: Improve TypeScript Type Safety Across Codebase
 - **Priority**: Medium | **Status**: Open

@@ -25,11 +25,11 @@ supersedes: MEMO-003
 
 ## Executive Summary
 
-This document is the **detailed implementation tracker** behind the v1.0 roadmap defined in [`/ROADMAP.md`](../../ROADMAP.md). The roadmap groups all open work into seven trajectories (T1–T7) with explicit phase exit criteria; this tracker is where per-RFC status, decision log, and risk live.
+This document is the **detailed implementation tracker** behind the v1.0 roadmap defined in [`/ROADMAP.md`](../../ROADMAP.md). The roadmap groups open work into feature trajectories (T1–T6), a post-v1.0 parking-lot trajectory (T7), and a cross-cutting NFR evidence trajectory (T8) with explicit phase exit criteria; this tracker is where per-RFC status, decision log, and risk live.
 
 **v1.0 trajectories (must close before v1.0):**
 
-- **T1 — Data Consistency & Outbox** (RFC-008 Accepted) — Phase 0 ready, *critical path*
+- **T1 — Data Consistency & Outbox** (RFC-008 Accepted) — Phase 3 operational verification, *critical path*
 - **T2 — Event-Driven Indexer Cutover** (RFC-014) — Phase 2, ~40 %
 - **T3 — Notifications Hardening** (RFC-013, TODO-004) — Phase 3, ~85 %
 - **T4 — Storage & Migration Surface** (RFC-015) — Phase 1 done, API surface pending
@@ -40,7 +40,11 @@ This document is the **detailed implementation tracker** behind the v1.0 roadmap
 
 - **T7 — Multi-Provider Federation & Admin UI** (RFC-001/010/011/012/016/017) — explicitly v1.x.
 
-**Recommended next focus:** execute T1 Phase 0 by converting the audit matrix into owned work, confirming transaction owners, and adding the CI direct-write guard design. T1 remains the only critical-priority item and gates removal of direct API-layer search writes.
+**Cross-cutting NFR evidence trajectory:**
+
+- **T8 — Reliability & Performance NFR Harness** — supports v1.0 confidence with reusable stress/restart scenarios; first slice is the search-outbox harness moved out of T1.
+
+**Recommended next focus:** close T1 operational verification and start T8 Phase 0 by defining the search-outbox stress harness command, thresholds, and result memo format. T1 remains the only critical-priority item; T8 owns NFR evidence rather than feature correctness.
 
 The per-RFC sections below remain authoritative for fine-grained status; the trajectory plans under [`docs-internal/plans/trajectory-*.md`](../plans/) are authoritative for phase order and exit criteria.
 
@@ -797,6 +801,7 @@ Start with Phase 1 (Migration Dashboard) after RFC-015 API endpoints are complet
 - [Trajectory T5 — Local Mode & Workspace Abstraction](../plans/trajectory-005-local-mode.md)
 - [Trajectory T6 — E2E Coverage & Tech Debt](../plans/trajectory-006-e2e-and-tech-debt.md)
 - [Trajectory T7 — Federation & Admin UI (post-1.0)](../plans/trajectory-007-federation-and-admin.md)
+- [Trajectory T8 — Reliability & Performance NFR Harness](../plans/trajectory-008-nfr-reliability-performance.md)
 - [RFC-014: Event-Driven Indexer](../rfc/rfc-014-event-driven-indexer.md)
 - [RFC-015: S3 Storage & Migrations](../rfc/rfc-015-s3-storage-backend-and-migrations.md)
 - [RFC-013: Notification Backend](../rfc/rfc-013-notification-backend.md)
@@ -815,6 +820,6 @@ Start with Phase 1 (Migration Dashboard) after RFC-015 API endpoints are complet
 
 ---
 
-**Last Updated**: 2026-04-27
-**Version**: 1.1
-**Status**: Active Tracking — re-anchored to v1.0 trajectories T1–T7
+**Last Updated**: 2026-04-30
+**Version**: 1.2
+**Status**: Active Tracking — re-anchored to v1.0 trajectories T1–T8

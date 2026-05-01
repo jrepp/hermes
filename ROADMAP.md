@@ -7,7 +7,7 @@ This file is intentionally short. It states **what v1.0 means**, **the trajector
 ## Status snapshot
 
 - **All 21 ADRs are Accepted.** No pending architectural decisions block v1.0.
-- **Critical gap blocking v1.0:** data consistency between database and search index (TODO-005, RFC-008).
+- **Critical gap blocking v1.0:** data consistency between database and search index (TODO-005, RFC-008) is now in implementation hardening, with sustained stress evidence owned by T8.
 - **Largest in-flight effort:** event-driven indexer cutover (RFC-014) and S3 storage / migration system (RFC-015).
 - **Largest greenfield effort planned for v1.x (post-1.0):** multi-provider federation (RFC-010 → RFC-011 → RFC-012) and admin interface (RFC-016).
 
@@ -29,17 +29,18 @@ Anything not on that list is **explicitly v1.x or later**: multi-provider federa
 
 ## Completion trajectories
 
-Each trajectory is a self-contained body of work with phases, exit criteria, and review gates. Status is summarised here; the source of truth is the linked plan.
+Each trajectory is a self-contained body of work with phases, exit criteria, and review gates. Status is summarised here; the source of truth is the linked plan. T8 is a cross-cutting NFR evidence trajectory: it supports v1.0 confidence but does not replace feature correctness gates in T1-T6.
 
 | ID | Trajectory | v1.0? | Status | Plan |
 |---|---|---|---|---|
-| **T1** | Data Consistency & Outbox | yes | Phase 0 (design locked, impl not started) | [`plans/trajectory-001-data-consistency-outbox.md`](docs-internal/plans/trajectory-001-data-consistency-outbox.md) |
+| **T1** | Data Consistency & Outbox | yes | Phase 3 (operational verification; stress evidence moved to T8) | [`plans/trajectory-001-data-consistency-outbox.md`](docs-internal/plans/trajectory-001-data-consistency-outbox.md) |
 | **T2** | Event-Driven Indexer Cutover | yes | Phase 2 (LLM + embeddings in flight, ~40%) | [`plans/trajectory-002-indexer-cutover.md`](docs-internal/plans/trajectory-002-indexer-cutover.md) |
 | **T3** | Notifications Hardening | yes (subset) | Phase 3 (production-ready, hardening pending) | [`plans/trajectory-003-notifications-hardening.md`](docs-internal/plans/trajectory-003-notifications-hardening.md) |
 | **T4** | Storage & Migration Surface | yes (Phase 1–2) | Phase 1 done, API surface pending | [`plans/trajectory-004-storage-migration.md`](docs-internal/plans/trajectory-004-storage-migration.md) |
 | **T5** | Local Mode & Workspace Abstraction | yes (Phase 1) | Phase 2 (in-browser editor pending) | [`plans/trajectory-005-local-mode.md`](docs-internal/plans/trajectory-005-local-mode.md) |
 | **T6** | E2E Coverage & Tech Debt | yes | Phase 0 (test scaffolding only) | [`plans/trajectory-006-e2e-and-tech-debt.md`](docs-internal/plans/trajectory-006-e2e-and-tech-debt.md) |
 | **T7** | Multi-Provider Federation & Admin UI | **no — v1.x** | Design only | [`plans/trajectory-007-federation-and-admin.md`](docs-internal/plans/trajectory-007-federation-and-admin.md) |
+| **T8** | Reliability & Performance NFR Harness | supports v1.0 evidence | Phase 0 (harness design) | [`plans/trajectory-008-nfr-reliability-performance.md`](docs-internal/plans/trajectory-008-nfr-reliability-performance.md) |
 
 ## How to contribute
 
