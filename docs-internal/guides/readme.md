@@ -31,6 +31,7 @@ guides/
 ├── readme.md                       # this file
 ├── auth/                           # authentication providers and flows
 ├── dev/                            # developer environment + workflow
+├── edge/                           # edge CLI and MCP client workflows
 ├── indexer/                        # indexer architecture and operation
 ├── integrations/                   # third-party integrations (Jira, Ollama, …)
 ├── models/                         # AI model cards and provenance notes
@@ -67,6 +68,11 @@ guides/
 - [Makefile Targets](dev/makefile-targets.md) — root `Makefile` quick-start commands.
 - [AI Prompt Templates](dev/ai-prompt-templates.md) — reusable prompt scaffolds.
 - [Playwright Agent Guide](dev/playwright-agent.md) — running E2E tests interactively and headless.
+
+### Edge (`edge/`)
+
+- [Edge CLI Guide](edge/cli.md) — local documentation discovery, validation, repair, sync status, and BM25 search.
+- [MCP Client Guide](edge/mcp.md) — configuring `hermes mcp` and using agent tools safely.
 
 ### Indexer (`indexer/`)
 

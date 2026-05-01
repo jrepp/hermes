@@ -3,6 +3,7 @@ package projectconfig
 
 import (
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -62,6 +63,22 @@ type Project struct {
 	Description  string      `hcl:"description,optional"`
 	Status       string      `hcl:"status"`
 	Providers    []*Provider `hcl:"provider,block"`
+	Lanes        []*Lane     `hcl:"lane,block"`
+}
+
+// Lane represents a local documentation discovery lane.
+type Lane struct {
+	Name                      string   `hcl:"name,label"`
+	Schema                    string   `hcl:"schema,optional"`
+	FilenamePattern           string   `hcl:"filename_pattern,optional"`
+	Roots                     []string `hcl:"roots,optional"`
+	Folders                   []string `hcl:"folders,optional"`
+	AllowedExtensions         []string `hcl:"allowed_extensions,optional"`
+	SkipTemplates             []string `hcl:"skip_templates,optional"`
+	EnforceFilenamePattern    bool     `hcl:"enforce_filename_pattern,optional"`
+	RequireFrontmatter        bool     `hcl:"require_frontmatter,optional"`
+	RequireFrontmatterSet     bool     `hcl:"-"`
+	EnforceFilenamePatternSet bool     `hcl:"-"`
 }
 
 // Provider represents a workspace provider configuration
@@ -127,6 +144,7 @@ func (c *Config) ListProjects() []string {
 	for name := range c.Projects {
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names
 }
 

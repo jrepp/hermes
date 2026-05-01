@@ -9,6 +9,9 @@ const (
 
 	// ProviderTypeMeilisearch represents the Meilisearch provider.
 	ProviderTypeMeilisearch ProviderType = "meilisearch"
+
+	// ProviderTypeQdrant represents the opt-in local Qdrant vector provider.
+	ProviderTypeQdrant ProviderType = "qdrant"
 )
 
 // Factory functions should be called from adapter packages directly to avoid import cycles.

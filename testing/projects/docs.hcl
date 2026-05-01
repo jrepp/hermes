@@ -32,7 +32,39 @@ project "docs" {
       public_read_access = true  # Public documentation
     }
   }
-  
+
+  lane "public" {
+    schema                   = "generic"
+    roots                    = ["docs"]
+    folders                  = ["."]
+    filename_pattern         = ".+\\.md$"
+    enforce_filename_pattern = false
+    require_frontmatter      = false
+    allowed_extensions       = ["md", "mdx"]
+  }
+
+  lane "adr" {
+    schema                    = "adr"
+    roots                     = ["docs-internal"]
+    folders                   = ["adr"]
+    filename_pattern          = "^adr-(\\d{3})-(.+)\\.md$"
+    enforce_filename_pattern  = true
+    require_frontmatter       = true
+    allowed_extensions        = ["md"]
+    skip_templates            = ["_template-*", "templates/**"]
+  }
+
+  lane "memo" {
+    schema                    = "memo"
+    roots                     = ["docs-internal"]
+    folders                   = ["memo", "plans"]
+    filename_pattern          = "^(memo|trajectory)-(\\d{3}|[0-9]+)-(.+)\\.md$"
+    enforce_filename_pattern  = false
+    require_frontmatter       = true
+    allowed_extensions        = ["md"]
+    skip_templates            = ["_template-*", "templates/**"]
+  }
+
   # Project metadata
   metadata {
     created_at = "2025-10-22T00:00:00Z"

@@ -7,8 +7,11 @@ import (
 
 	"github.com/hashicorp-forge/hermes/internal/cmd/base"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/canary"
+	"github.com/hashicorp-forge/hermes/internal/cmd/commands/docs"
+	"github.com/hashicorp-forge/hermes/internal/cmd/commands/edge"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/indexer"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/indexeragent"
+	"github.com/hashicorp-forge/hermes/internal/cmd/commands/mcp"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/operator"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/serve"
 	"github.com/hashicorp-forge/hermes/internal/cmd/commands/server"
@@ -27,6 +30,16 @@ func initCommands(log hclog.Logger, ui cli.Ui) {
 				Command: b,
 			}, nil
 		},
+		"docs": func() (cli.Command, error) {
+			return &docs.Command{
+				Command: b,
+			}, nil
+		},
+		"edge": func() (cli.Command, error) {
+			return &edge.Command{
+				Command: b,
+			}, nil
+		},
 		"indexer": func() (cli.Command, error) {
 			return &indexer.Command{
 				Command: b,
@@ -34,6 +47,11 @@ func initCommands(log hclog.Logger, ui cli.Ui) {
 		},
 		"indexer-agent": func() (cli.Command, error) {
 			return &indexeragent.Command{
+				Command: b,
+			}, nil
+		},
+		"mcp": func() (cli.Command, error) {
+			return &mcp.Command{
 				Command: b,
 			}, nil
 		},
