@@ -85,6 +85,9 @@ func applyDefaults(cfg harnessConfig) harnessConfig {
 	if cfg.Output == "" {
 		cfg.Output = filepath.Join("tmp", "nfr", time.Now().UTC().Format("20060102T150405Z"))
 	}
+	if !filepath.IsAbs(cfg.Output) {
+		cfg.Output = filepath.Join(repoRoot(), cfg.Output)
+	}
 	return cfg
 }
 
@@ -245,4 +248,12 @@ func envOrDefault(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func repoRoot() string {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return "."
+	}
+	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", "..", ".."))
 }

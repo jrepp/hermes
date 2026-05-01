@@ -8,6 +8,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -53,5 +54,13 @@ func TestNFR(t *testing.T) {
 		summaryBytes, err := os.ReadFile(filepath.Join(config.Output, "summary.md"))
 		require.NoError(t, err)
 		assert.Contains(t, string(summaryBytes), "# NFR Result: harness-contract")
+	})
+
+	t.Run("SearchOutboxStress", testSearchOutboxStress)
+
+	t.Run("OutputPath", func(t *testing.T) {
+		config := applyDefaults(harnessConfig{Output: filepath.Join("tmp", "nfr", "contract")})
+		assert.True(t, filepath.IsAbs(config.Output))
+		assert.True(t, strings.HasSuffix(config.Output, filepath.Join("tmp", "nfr", "contract")))
 	})
 }

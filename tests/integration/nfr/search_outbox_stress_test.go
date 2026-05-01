@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp-forge/hermes/tests/integration"
 )
 
-func TestNFRSearchOutboxStress(t *testing.T) {
+func testSearchOutboxStress(t *testing.T) {
 	config := applyDefaults(cfg)
 	if config.Profile == "smoke" && cfg.Duration == 0 {
 		config.Duration = 5 * time.Second
