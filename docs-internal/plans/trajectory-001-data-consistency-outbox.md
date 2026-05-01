@@ -25,7 +25,7 @@ related:
 
 ## Readiness status
 
-Phase 0 is complete. RFC-008 is accepted with the required event identity, transaction-boundary, ordering, replay, DLQ, and observability contracts; the audit matrix has owned checklist rows; and `scripts/check-search-direct-writes.sh` is wired into CI with a T1 baseline so new direct search writes fail while the audited legacy sites are migrated.
+Phase 0 through Phase 2 are complete. RFC-008 is accepted, audited API mutation paths enqueue `search_outbox_events`, and `scripts/check-search-direct-writes.sh` is wired into CI with zero approved API mutation baselines. Phase 3 is operational verification; sustained NFR stress evidence is owned by T8.
 
 ## Adversarial review disposition
 
@@ -65,7 +65,7 @@ Out of scope:
 - ADR-020 (core+deltas migrations, stateless indexer boundary) — binding for schema and indexer interaction.
 - RFC-014 outbox + relay implementation — done; reuse the table pattern and relay loop.
 - RFC-008 accepted search-outbox contract — done.
-- TODO-003 progress on `search.Provider` abstraction — remaining write handlers will be migrated as part of Phase 2 here.
+- TODO-003 `search.Provider` write-handler migration — audited v2 mutation paths are now migrated to the transactional search outbox.
 
 ## Phase 0 implementation checklist
 
@@ -91,10 +91,10 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 - Draft patch: `updateDraftWithSearchOutbox` wraps document update plus `draft.updated` enqueue in one transaction after workspace-side sharing/header/title changes succeed.
 - Draft delete: workspace delete remains outside the DB transaction; `deleteDraftWithSearchOutbox` wraps database delete plus `draft.deleted` enqueue in one transaction, with database truth defining the projection.
 - Publish / review creation: `reviews.go` now enqueues `document.published`, `draft.published`, and go-link `link.created` in the existing review transaction before commit; post-response direct indexing and search readback comparison are removed.
-- Document patch: the document update path currently performs DB mutation before post-response indexing; Phase 1 must wrap the DB update and `document.updated` enqueue in one transaction.
+- Document patch: `upsertDocumentWithSearchOutbox` wraps the DB update plus `document.updated` enqueue in one transaction.
 - Approval/review-state change: `updateReviewStateWithSearchOutbox` now wraps review-row changes, file-revision creation, optional group-approver DB updates, and `review_state.changed` enqueue in one transaction; `indexAndValidateDocument` is removed from the request path.
-- Project create: `models.Project.Create` currently owns the DB write; Phase 1 must wrap project create and `project.created` enqueue in one transaction.
-- Project patch: `models.Project.Update` currently owns the DB write; Phase 1 must wrap project update and `project.updated` enqueue in one transaction.
+- Project create: `createProjectWithSearchOutbox` wraps project create plus `project.created` enqueue in one transaction.
+- Project patch: `updateProjectWithSearchOutbox` wraps project update plus `project.updated` enqueue in one transaction.
 
 ### Migrated write paths
 
@@ -153,9 +153,9 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 
 **Exit when:**
 
-- `rg "FIXME: Data consistency" internal/` returns zero results and the CI direct-write guard passes.
+- Done: `rg "FIXME: Data consistency" internal/` returns zero results and the CI direct-write guard passes.
 - TODO-005 status = `completed`, archived under `docs-internal/archive/`.
-- The integration test suite from Phase 1 also runs against v1 endpoints.
+- Done: v1/compatibility audit found no hidden `internal/api` direct mutation writes; the Phase 1 integration suite covers the shared outbox relay path used by migrated API write flows.
 
 ### Phase 3 — Operational verification
 

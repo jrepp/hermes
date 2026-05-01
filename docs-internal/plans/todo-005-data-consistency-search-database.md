@@ -16,7 +16,7 @@ related:
 
 ## Description
 
-Direct API-layer writes to both PostgreSQL and the search index (Algolia/Meilisearch) can diverge. Earlier FIXME comments have been removed, but the direct-write consistency risk remains in current v2 mutation handlers. This can lead to:
+Direct API-layer writes to both PostgreSQL and the search index (Algolia/Meilisearch) can diverge. Earlier FIXME comments have been removed, and audited v2 mutation handlers now enqueue transactional `search_outbox_events`. This TODO remains open only for final operational closure and archiving. The original risk can lead to:
 - Stale search results showing outdated document data
 - Missing documents in search that exist in database
 - Search showing documents that were deleted from database
