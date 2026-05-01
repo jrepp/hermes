@@ -50,6 +50,7 @@ Out of scope:
 - Done: smoke profile is for local/PR confidence and release profile is for v1.0 evidence. Smoke profile may reduce duration/rate, but must exercise the same code path and emit the same result schema.
 - Done: result artifacts are JSON plus a memo-ready Markdown summary written under `tmp/nfr/<scenario>/<timestamp>/` by default, with `-output` override for CI artifacts.
 - Done: existing dependencies are the default runtime: PostgreSQL and Meilisearch via testcontainers where feasible. Redpanda is added only for indexer scenarios. External backends are opt-in with explicit URLs/credentials.
+- Done: initial harness contract scaffold exists under `tests/integration/nfr/` and verifies flag defaults plus `result.json` / `summary.md` artifact emission.
 
 ### Harness Command Shape
 
