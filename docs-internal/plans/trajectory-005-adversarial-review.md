@@ -1,7 +1,7 @@
 ---
 id: trajectory-005-adversarial-review
 title: "Adversarial Review — T5 Local Mode & Workspace Abstraction"
-status: Draft
+status: Final
 created: 2026-04-27
 date: 2026-04-27
 author: Hermes Team
@@ -24,6 +24,10 @@ related:
 ## Run-readiness verdict
 
 Phase 0 can start, but Phase 1 should not begin until the local provider compliance contract is explicit. A local provider that only works for the happy-path smoke test can undermine T6 Playwright coverage and hide provider-abstraction bugs.
+
+## Disposition
+
+Accepted. [Trajectory T5](trajectory-005-local-mode.md) now carries the required provider compliance contract, filesystem safety contract, first-run/demo-project policy, Dex-only v1.0 auth constraint, and stronger phase gates. The review remains as the rationale for those gates; implementation is still blocked until the source plan's Phase 0 and Phase 1 exit criteria are satisfied.
 
 ## Highest-risk failure modes
 
