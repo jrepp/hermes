@@ -63,7 +63,8 @@ func TestGetStats(t *testing.T) {
 	require.NoError(t, db.Model(&models.SearchOutboxEvent{}).Where("id = ?", pending.ID).Update("available_at", now.Add(-2*time.Minute)).Error)
 	failed := createAdminTestEvent(t, db, models.SearchOutboxStatusFailed)
 	require.NoError(t, db.Model(&models.SearchOutboxEvent{}).Where("id = ?", failed.ID).Update("available_at", now.Add(-time.Minute)).Error)
-	createAdminTestEvent(t, db, models.SearchOutboxStatusDLQ)
+	dlq := createAdminTestEvent(t, db, models.SearchOutboxStatusDLQ)
+	require.NoError(t, db.Model(&models.SearchOutboxEvent{}).Where("id = ?", dlq.ID).Update("available_at", now.Add(-3*time.Minute)).Error)
 	createAdminTestEvent(t, db, models.SearchOutboxStatusSkipped)
 
 	stats, err := GetStats(db, now)
@@ -73,6 +74,8 @@ func TestGetStats(t *testing.T) {
 	assert.Equal(t, int64(1), stats.DLQ)
 	assert.Equal(t, int64(1), stats.Skipped)
 	assert.Equal(t, int64(120), stats.OldestPendingAgeSeconds)
+	assert.Equal(t, int64(60), stats.OldestFailedAgeSeconds)
+	assert.Equal(t, int64(180), stats.OldestDLQAgeSeconds)
 }
 
 func TestRetryEvent(t *testing.T) {

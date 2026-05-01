@@ -157,7 +157,7 @@ Allowed search reads or read-path usage: `internal/api/v2/search.go`, `GetObject
 
 ### Phase 3 — Operational verification
 
-- Done: outbox queue depth and lag are exposed in `/health` JSON when the database is available; [Search Outbox Operations](../guides/search/outbox-operations.md) documents operator inspection.
+- Done: outbox queue depth, pending lag, failed age, and DLQ age are exposed in `/health` JSON when the database is available; [Search Outbox Operations](../guides/search/outbox-operations.md) documents operator inspection and health-based alert thresholds.
 - Done: `hermes operator search-outbox` supports DLQ inspection, retry, skip, and rebuild-current; [Search Outbox Operations](../guides/search/outbox-operations.md) documents each operation.
 - Load test: 1,000 mutations/min for 10 minutes with relay restarts every 60 s; index converges within 30 s of relay recovery; zero data loss.
 

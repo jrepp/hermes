@@ -16,6 +16,8 @@ import (
 // Stats reports search outbox queue depth and lag for health checks.
 type Stats struct {
 	OldestPendingAgeSeconds int64 `json:"oldestPendingAgeSeconds"`
+	OldestFailedAgeSeconds  int64 `json:"oldestFailedAgeSeconds"`
+	OldestDLQAgeSeconds     int64 `json:"oldestDlqAgeSeconds"`
 	Pending                 int64 `json:"pending"`
 	Processing              int64 `json:"processing"`
 	Failed                  int64 `json:"failed"`
@@ -48,20 +50,37 @@ func GetStats(db *gorm.DB, now time.Time) (Stats, error) {
 		}
 	}
 
-	var oldest models.SearchOutboxEvent
-	if err := db.Where("status IN ?", []string{
-		models.SearchOutboxStatusPending,
-		models.SearchOutboxStatusFailed,
-	}).
-		Order("available_at ASC, id ASC").
-		First(&oldest).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return Stats{}, fmt.Errorf("get oldest search outbox event: %w", err)
+	var err error
+	stats.OldestPendingAgeSeconds, err = oldestAgeSeconds(db, now, models.SearchOutboxStatusPending)
+	if err != nil {
+		return Stats{}, err
 	}
-	if oldest.ID != 0 && oldest.AvailableAt.Before(now) {
-		stats.OldestPendingAgeSeconds = int64(now.Sub(oldest.AvailableAt).Seconds())
+	stats.OldestFailedAgeSeconds, err = oldestAgeSeconds(db, now, models.SearchOutboxStatusFailed)
+	if err != nil {
+		return Stats{}, err
+	}
+	stats.OldestDLQAgeSeconds, err = oldestAgeSeconds(db, now, models.SearchOutboxStatusDLQ)
+	if err != nil {
+		return Stats{}, err
 	}
 
 	return stats, nil
+}
+
+func oldestAgeSeconds(db *gorm.DB, now time.Time, status string) (int64, error) {
+	var oldest models.SearchOutboxEvent
+	if err := db.Where("status = ?", status).
+		Order("available_at ASC, id ASC").
+		First(&oldest).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("get oldest %s search outbox event: %w", status, err)
+	}
+	if oldest.AvailableAt.After(now) {
+		return 0, nil
+	}
+	return int64(now.Sub(oldest.AvailableAt).Seconds()), nil
 }
 
 // ListFailedEvents returns failed and DLQ search outbox events for operator inspection.

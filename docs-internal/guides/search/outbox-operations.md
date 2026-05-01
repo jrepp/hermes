@@ -25,7 +25,16 @@ Check queue depth and lag from the server health endpoint:
 curl -s http://localhost:8000/health
 ```
 
-When the database is available, the response includes `searchOutbox.pending`, `searchOutbox.failed`, `searchOutbox.dlq`, and `searchOutbox.oldestPendingAgeSeconds`.
+When the database is available, the response includes `searchOutbox.pending`, `searchOutbox.failed`, `searchOutbox.dlq`, `searchOutbox.oldestPendingAgeSeconds`, `searchOutbox.oldestFailedAgeSeconds`, and `searchOutbox.oldestDlqAgeSeconds`.
+
+Recommended alert thresholds for polling `/health`:
+
+- Warning: `searchOutbox.oldestPendingAgeSeconds > 300` for 5 minutes.
+- Warning: `searchOutbox.failed > 0` or `searchOutbox.oldestFailedAgeSeconds > 300` for 5 minutes.
+- Critical: `searchOutbox.dlq > 0` or `searchOutbox.oldestDlqAgeSeconds > 0` for 5 minutes.
+- Critical: `searchOutbox.processing > 0` with no pending-age decrease for 10 minutes.
+
+These thresholds intentionally key off age as well as counts so short retry backoff windows do not page operators, while durable failed or DLQ rows do.
 
 List failed and DLQ events:
 
