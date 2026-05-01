@@ -45,16 +45,123 @@ Out of scope:
 
 ## Phase 0 — Harness Design
 
-- Define the NFR harness entry point and command shape.
-- Define scenario configuration: mutation rate, duration, relay restart cadence, convergence deadline, backend profile, and output path.
-- Define result memo schema: environment, command, dataset shape, observed throughput, restart count, convergence time, failures, and follow-up actions.
-- Confirm the harness can run with existing integration dependencies: PostgreSQL, Meilisearch, and testcontainers where feasible.
+- Done: harness entry point is Go integration tests under `tests/integration/nfr/`, selected by `-tags=integration,nfr` and `-run TestNFR/<scenario>`. The harness must not require headed browser sessions or interactive prompts.
+- Done: scenario configuration is flag-driven with environment fallbacks: `-profile smoke|release`, `-duration`, `-rate`, `-restart-interval`, `-convergence-deadline`, `-output`, and `-backend local|testcontainers|external`.
+- Done: smoke profile is for local/PR confidence and release profile is for v1.0 evidence. Smoke profile may reduce duration/rate, but must exercise the same code path and emit the same result schema.
+- Done: result artifacts are JSON plus a memo-ready Markdown summary written under `tmp/nfr/<scenario>/<timestamp>/` by default, with `-output` override for CI artifacts.
+- Done: existing dependencies are the default runtime: PostgreSQL and Meilisearch via testcontainers where feasible. Redpanda is added only for indexer scenarios. External backends are opt-in with explicit URLs/credentials.
+
+### Harness Command Shape
+
+Search-outbox smoke profile:
+
+```bash
+go test -tags=integration,nfr ./tests/integration/nfr \
+  -run 'TestNFR/SearchOutboxStress' \
+  -profile smoke \
+  -reporter=line
+```
+
+Search-outbox release-evidence profile:
+
+```bash
+go test -tags=integration,nfr ./tests/integration/nfr \
+  -run 'TestNFR/SearchOutboxStress' \
+  -profile release \
+  -duration 10m \
+  -rate 1000/min \
+  -restart-interval 60s \
+  -convergence-deadline 30s \
+  -output tmp/nfr/search-outbox/$(date -u +%Y%m%dT%H%M%SZ)
+```
+
+Indexer throughput release-evidence profile:
+
+```bash
+go test -tags=integration,nfr ./tests/integration/nfr \
+  -run 'TestNFR/IndexerThroughput' \
+  -profile release \
+  -duration 60m \
+  -rate 1000/hour \
+  -convergence-deadline 30s \
+  -output tmp/nfr/indexer/$(date -u +%Y%m%dT%H%M%SZ)
+```
+
+### Profiles
+
+| Profile | Purpose | Required in PR CI? | Default duration | Default rate | Notes |
+|---|---:|---:|---:|---:|---|
+| `smoke` | Fast local confidence | no | 2m | scenario-specific small rate | Must cover restart/recovery behavior when the scenario has a restart dimension. |
+| `release` | v1.0 evidence | no, manual or nightly until variance is known | scenario-specific | scenario-specific | Results must be recorded as a memo before a trajectory cites them as release evidence. |
+
+### Scenario Configuration Contract
+
+- `profile`: selects defaults; explicit flags override profile defaults.
+- `duration`: wall-clock mutation/input generation duration.
+- `rate`: target input rate using `/min` or `/hour` suffix.
+- `restart-interval`: pause/resume or restart cadence for worker/relay scenarios; `0` disables restarts.
+- `convergence-deadline`: maximum allowed catch-up time after input stops or worker recovers.
+- `backend`: `testcontainers` by default for repeatability; `external` requires explicit endpoint environment variables.
+- `output`: directory for `result.json`, `summary.md`, logs, and any sampled health/lag time series.
+
+### Result Schema
+
+Every scenario writes `result.json` with these top-level fields:
+
+```json
+{
+  "scenario": "search-outbox-stress",
+  "profile": "release",
+  "startedAt": "2026-04-30T00:00:00Z",
+  "finishedAt": "2026-04-30T00:10:45Z",
+  "command": "go test ...",
+  "environment": {
+    "gitCommit": "<sha>",
+    "goVersion": "<version>",
+    "os": "<goos/goarch>",
+    "backend": "testcontainers"
+  },
+  "inputs": {
+    "durationSeconds": 600,
+    "targetRate": "1000/min",
+    "restartIntervalSeconds": 60,
+    "convergenceDeadlineSeconds": 30
+  },
+  "observations": {
+    "itemsGenerated": 10000,
+    "itemsCompleted": 10000,
+    "workerRestarts": 10,
+    "maxConvergenceSeconds": 18,
+    "maxQueueDepth": 250,
+    "unexpectedDLQ": 0,
+    "errors": []
+  },
+  "passed": true,
+  "followUps": []
+}
+```
+
+The paired `summary.md` must be memo-ready and include:
+
+- command and git commit
+- environment and backend profile
+- scenario inputs and thresholds
+- observed throughput, lag, convergence, restarts, failures, and DLQ counts
+- pass/fail conclusion
+- follow-up links or explicit "none"
+
+### CI Policy
+
+- T8 NFR scenarios are not required PR checks during Phase 0 or Phase 1.
+- Smoke profiles may be added as optional CI checks once they are stable and under the normal integration-test budget.
+- Release profiles are manual or scheduled/nightly until at least three consecutive runs pass without unrelated infrastructure flakes.
+- A product trajectory may cite a release-profile T8 result only when the result memo is committed or linked from `docs-internal/memo/`.
 
 **Exit when:**
 
-- Harness design is documented in this trajectory or a linked guide.
-- Search-outbox scenario inputs and pass/fail thresholds are explicit.
-- CI policy is explicit: whether the stress harness is required, optional, nightly, or manual-only for v1.0.
+- Done: harness design is documented in this trajectory.
+- Done: search-outbox scenario inputs and pass/fail thresholds are explicit.
+- Done: CI policy is explicit: release profiles are manual/nightly until stability is proven; PR gating is not required in Phase 0.
 
 ## Phase 1 — Search-Outbox Stress/Restart Scenario
 
