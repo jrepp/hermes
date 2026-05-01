@@ -4,19 +4,30 @@
 package nfr
 
 import (
-	"fmt"
 	"os"
+	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/hashicorp-forge/hermes/tests/integration"
 )
 
-func TestMain(m *testing.M) {
-	if err := integration.SetupFixtureSuite(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to setup NFR fixture suite: %v\n", err)
-		os.Exit(1)
-	}
+var (
+	fixtureSetupOnce sync.Once
+	fixtureSetupErr  error
+)
 
+func requireFixture(t *testing.T) {
+	t.Helper()
+
+	fixtureSetupOnce.Do(func() {
+		fixtureSetupErr = integration.SetupFixtureSuite()
+	})
+	require.NoError(t, fixtureSetupErr)
+}
+
+func TestMain(m *testing.M) {
 	code := m.Run()
 	integration.TeardownFixtureSuite()
 	os.Exit(code)

@@ -22,6 +22,8 @@ import (
 )
 
 func testSearchOutboxStress(t *testing.T) {
+	requireFixture(t)
+
 	config := applyDefaults(cfg)
 	if config.Profile == "smoke" && cfg.Duration == 0 {
 		config.Duration = 5 * time.Second
