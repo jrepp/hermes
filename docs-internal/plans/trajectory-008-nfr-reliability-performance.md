@@ -166,6 +166,7 @@ The paired `summary.md` must be memo-ready and include:
 
 ## Phase 1 — Search-Outbox Stress/Restart Scenario
 
+- Done: smoke-capable search-outbox NFR scenario exists under `tests/integration/nfr/` and exercises event generation, relay pause/resume, convergence, Meilisearch verification, and artifact emission.
 - Generate at least 1,000 search-outbox-backed mutations/minute for 10 minutes against PostgreSQL + Meilisearch.
 - Restart or pause/resume the relay every 60 seconds during the run.
 - Verify final search contents converge to database truth within 30 seconds after relay recovery.

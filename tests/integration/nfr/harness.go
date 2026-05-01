@@ -7,9 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -103,10 +105,35 @@ func validateConfig(cfg harnessConfig) error {
 	if cfg.ConvergenceDeadline <= 0 {
 		return errors.New("convergence deadline must be positive")
 	}
-	if !strings.HasSuffix(cfg.Rate, "/min") && !strings.HasSuffix(cfg.Rate, "/hour") {
-		return fmt.Errorf("rate must use /min or /hour suffix, got %q", cfg.Rate)
+	if _, err := intervalForRate(cfg.Rate); err != nil {
+		return err
 	}
 	return nil
+}
+
+func intervalForRate(rate string) (time.Duration, error) {
+	var period time.Duration
+	var valueText string
+	switch {
+	case strings.HasSuffix(rate, "/min"):
+		period = time.Minute
+		valueText = strings.TrimSuffix(rate, "/min")
+	case strings.HasSuffix(rate, "/hour"):
+		period = time.Hour
+		valueText = strings.TrimSuffix(rate, "/hour")
+	default:
+		return 0, fmt.Errorf("rate must use /min or /hour suffix, got %q", rate)
+	}
+
+	value, err := strconv.ParseFloat(valueText, 64)
+	if err != nil || value <= 0 {
+		return 0, fmt.Errorf("rate must have a positive numeric value, got %q", rate)
+	}
+	interval := time.Duration(math.Round(float64(period) / value))
+	if interval <= 0 {
+		return 0, fmt.Errorf("rate %q is too high for duration precision", rate)
+	}
+	return interval, nil
 }
 
 func newResult(scenario string, cfg harnessConfig, startedAt time.Time, obs observations, passed bool) result {
