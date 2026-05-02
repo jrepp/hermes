@@ -144,7 +144,7 @@ BM25 query:
 }
 ```
 
-Hybrid query currently uses BM25 with score debug output. Vector search remains opt-in and is not enabled by default.
+Hybrid query combines BM25 and vector scores when Qdrant and embeddings are configured. If vector configuration is unavailable, hybrid returns BM25 results with a warning. Vector search is opt-in and is not enabled by default.
 
 ```json
 {
@@ -155,13 +155,28 @@ Hybrid query currently uses BM25 with score debug output. Vector search remains 
 }
 ```
 
-`similar` returns a not-enabled error until vector indexing is configured.
+`similar` builds a transient local vector index and searches Qdrant when Qdrant and an embedding provider are configured:
+
+```json
+{
+  "action": "similar",
+  "project": "docs",
+  "query": "search outbox",
+  "qdrant_url": "http://127.0.0.1:6333",
+  "qdrant_collection": "hermes_vectors",
+  "embedding_model": "nomic-embed-text",
+  "embedding_dimensions": 768,
+  "limit": 5
+}
+```
+
+The same values can come from `HERMES_QDRANT_URL`, `HERMES_QDRANT_COLLECTION`, `HERMES_EMBEDDING_MODEL`, and `HERMES_EMBEDDING_DIMENSIONS`.
 
 ## Troubleshooting
 
 Offline remote: use `sync.status` with `probe_remote: true` only when the remote Hermes server should be reachable. Offline remote state is reported as `unavailable` without blocking local reads.
 
-Qdrant unavailable: use `search.query` or `search.hybrid` for BM25-backed local search. Vector `similar` is disabled until Qdrant and embeddings are configured.
+Qdrant unavailable: use `search.query` or `search.hybrid` for BM25-backed local search. Vector `similar` requires Qdrant and embeddings.
 
 Embedding provider unavailable: local BM25 search and document tools do not require embeddings.
 

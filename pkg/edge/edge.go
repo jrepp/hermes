@@ -23,12 +23,21 @@ const remoteStateUnavailable = "unavailable"
 
 // Options configures edge discovery/status.
 type Options struct {
-	ConfigPath  string
-	RootDir     string
-	Project     string
-	ProbeRemote bool
-	Timeout     time.Duration
-	HTTPClient  *http.Client
+	ConfigPath          string
+	RootDir             string
+	Project             string
+	QdrantURL           string
+	QdrantAPIKey        string
+	QdrantCollection    string
+	EmbeddingModel      string
+	OllamaURL           string
+	OpenAIAPIKey        string
+	ProbeRemote         bool
+	Timeout             time.Duration
+	EmbeddingDimensions int
+	HTTPClient          *http.Client
+	VectorIndex         VectorIndex
+	EmbeddingsGenerator EmbeddingsGenerator
 }
 
 // Discovery describes effective edge projects, lanes, and providers.

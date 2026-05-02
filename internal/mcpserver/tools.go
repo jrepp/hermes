@@ -342,7 +342,7 @@ func (s *Server) handleSyncTool(ctx context.Context, request mcp.CallToolRequest
 	}
 }
 
-func (s *Server) handleSearchTool(_ context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *Server) handleSearchTool(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	action := request.GetString("action", "")
 	switch action {
 	case "query", searchActionHybrid:
@@ -350,12 +350,16 @@ func (s *Server) handleSearchTool(_ context.Context, request mcp.CallToolRequest
 		if query == "" {
 			return mcp.NewToolResultError("query is required"), nil
 		}
-		result, err := edgepkg.SearchLocal(edgepkg.Options{ConfigPath: s.projectsConfig, RootDir: s.rootDir, Project: request.GetString("project", "")}, query, request.GetInt("limit", 10), request.GetBool("debug", false) || action == searchActionHybrid)
+		opts := edgepkg.Options{ConfigPath: s.projectsConfig, RootDir: s.rootDir, Project: request.GetString("project", ""), QdrantURL: request.GetString("qdrant_url", ""), QdrantAPIKey: request.GetString("qdrant_api_key", ""), QdrantCollection: request.GetString("qdrant_collection", ""), EmbeddingModel: request.GetString("embedding_model", ""), OllamaURL: request.GetString("ollama_url", ""), EmbeddingDimensions: request.GetInt("embedding_dimensions", 0)}
+		var result edgepkg.SearchResult
+		var err error
+		if action == searchActionHybrid {
+			result, err = edgepkg.SearchHybrid(ctx, opts, query, request.GetInt("limit", 10), request.GetBool("debug", false))
+		} else {
+			result, err = edgepkg.SearchLocal(opts, query, request.GetInt("limit", 10), request.GetBool("debug", false))
+		}
 		if err != nil {
 			return nil, err
-		}
-		if action == searchActionHybrid {
-			result.Mode = searchActionHybrid
 		}
 		return structured(map[string]any{"action": action, "result": result})
 	case "index_status":
@@ -365,7 +369,25 @@ func (s *Server) handleSearchTool(_ context.Context, request mcp.CallToolRequest
 		}
 		return structured(map[string]any{"action": action, "index": indexResult})
 	case "similar":
-		return mcp.NewToolResultError("similar search requires vector indexing and is not enabled in this phase"), nil
+		query := request.GetString("query", "")
+		if query == "" {
+			return mcp.NewToolResultError("query is required"), nil
+		}
+		result, err := edgepkg.SearchVector(ctx, edgepkg.Options{
+			ConfigPath:          s.projectsConfig,
+			RootDir:             s.rootDir,
+			Project:             request.GetString("project", ""),
+			QdrantURL:           request.GetString("qdrant_url", ""),
+			QdrantAPIKey:        request.GetString("qdrant_api_key", ""),
+			QdrantCollection:    request.GetString("qdrant_collection", ""),
+			EmbeddingModel:      request.GetString("embedding_model", ""),
+			OllamaURL:           request.GetString("ollama_url", ""),
+			EmbeddingDimensions: request.GetInt("embedding_dimensions", 0),
+		}, query, request.GetInt("limit", 10))
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return structured(map[string]any{"action": action, "result": result})
 	default:
 		return mcp.NewToolResultError(fmt.Sprintf("unsupported search action %q", action)), nil
 	}

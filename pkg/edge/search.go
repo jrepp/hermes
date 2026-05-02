@@ -40,10 +40,11 @@ type IndexSkip struct {
 
 // SearchResult describes local edge search results.
 type SearchResult struct {
-	Query   string      `json:"query"`
-	Mode    string      `json:"mode"`
-	Hits    []SearchHit `json:"hits"`
-	Indexed int         `json:"indexed"`
+	Query    string      `json:"query"`
+	Mode     string      `json:"mode"`
+	Hits     []SearchHit `json:"hits"`
+	Indexed  int         `json:"indexed"`
+	Warnings []string    `json:"warnings,omitempty"`
 }
 
 // SearchHit is a local search hit.

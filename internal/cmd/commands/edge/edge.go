@@ -14,7 +14,10 @@ import (
 	edgepkg "github.com/hashicorp-forge/hermes/pkg/edge"
 )
 
-const searchModeHybrid = "hybrid"
+const (
+	searchModeHybrid = "hybrid"
+	searchModeVector = "vector"
+)
 
 // Command implements the edge CLI command group.
 type Command struct {
@@ -49,11 +52,17 @@ func (c *Command) Flags() *base.FlagSet {
 	fs.String("project", "", "Optional project name")
 	fs.String("format", "text", "Output format: text or json")
 	fs.String("query", "", "Search query for edge search")
-	fs.String("mode", "bm25", "Search mode: bm25 or hybrid")
+	fs.String("mode", "bm25", "Search mode: bm25, vector, or hybrid")
 	fs.Int("limit", 10, "Maximum search results")
 	fs.Bool("debug", false, "Include search score debug output")
 	fs.Bool("probe-remote", false, "Probe remote Hermes providers with a bounded health check")
 	fs.Duration("timeout", 2*time.Second, "Remote probe timeout")
+	fs.String("qdrant-url", "", "Qdrant URL for vector search")
+	fs.String("qdrant-api-key", "", "Qdrant API key for vector search")
+	fs.String("qdrant-collection", "", "Qdrant collection for vector search")
+	fs.String("embedding-model", "", "Embedding model for vector search")
+	fs.String("ollama-url", "", "Ollama URL for local embeddings")
+	fs.Int("embedding-dimensions", 0, "Embedding dimensions for vector search")
 
 	return base.NewFlagSet(fs)
 }
@@ -107,19 +116,32 @@ func (c *Command) runSearch(args []string) int {
 		return 1
 	}
 	mode := flags.Lookup("mode").Value.String()
-	if mode != "bm25" && mode != searchModeHybrid {
+	if mode != "bm25" && mode != searchModeHybrid && mode != searchModeVector {
 		c.UI.Error(fmt.Sprintf("unsupported search mode %q", mode))
 		return 1
 	}
 	limit := intFlag(flags, "limit")
 	debug := flags.Lookup("debug").Value.String() == "true"
+	if mode == searchModeVector {
+		result, err := edgepkg.SearchVector(context.Background(), edgeOptions(flags), query, limit)
+		if err != nil {
+			c.UI.Error(err.Error())
+			return 1
+		}
+		return c.render(flags.Lookup("format").Value.String(), result)
+	}
+	if mode == searchModeHybrid {
+		result, err := edgepkg.SearchHybrid(context.Background(), edgeOptions(flags), query, limit, debug)
+		if err != nil {
+			c.UI.Error(err.Error())
+			return 1
+		}
+		return c.render(flags.Lookup("format").Value.String(), result)
+	}
 	result, err := edgepkg.SearchLocal(edgeOptions(flags), query, limit, debug || mode == searchModeHybrid)
 	if err != nil {
 		c.UI.Error(err.Error())
 		return 1
-	}
-	if mode == searchModeHybrid {
-		result.Mode = searchModeHybrid
 	}
 	return c.render(flags.Lookup("format").Value.String(), result)
 }
@@ -257,11 +279,18 @@ func intFlag(flags *base.FlagSet, name string) int {
 
 func edgeOptions(flags *base.FlagSet) edgepkg.Options {
 	return edgepkg.Options{
-		ConfigPath:  flags.Lookup("config").Value.String(),
-		RootDir:     flags.Lookup("root").Value.String(),
-		Project:     flags.Lookup("project").Value.String(),
-		ProbeRemote: flags.Lookup("probe-remote").Value.String() == "true",
-		Timeout:     parseDuration(flags.Lookup("timeout").Value.String()),
+		ConfigPath:          flags.Lookup("config").Value.String(),
+		RootDir:             flags.Lookup("root").Value.String(),
+		Project:             flags.Lookup("project").Value.String(),
+		QdrantURL:           flags.Lookup("qdrant-url").Value.String(),
+		QdrantAPIKey:        flags.Lookup("qdrant-api-key").Value.String(),
+		QdrantCollection:    flags.Lookup("qdrant-collection").Value.String(),
+		EmbeddingModel:      flags.Lookup("embedding-model").Value.String(),
+		OllamaURL:           flags.Lookup("ollama-url").Value.String(),
+		ProbeRemote:         flags.Lookup("probe-remote").Value.String() == "true",
+		Timeout:             parseDuration(flags.Lookup("timeout").Value.String()),
+		EmbeddingDimensions: intFlag(flags, "embedding-dimensions"),
+		OpenAIAPIKey:        os.Getenv("OPENAI_API_KEY"),
 	}
 }
 

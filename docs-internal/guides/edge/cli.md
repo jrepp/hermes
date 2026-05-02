@@ -138,6 +138,22 @@ Search locally with BM25:
 hermes edge search -config ./testing/projects.hcl -root . -project docs "search outbox"
 ```
 
+Search with Qdrant-backed vectors when Qdrant and an embedding provider are configured:
+
+```bash
+hermes edge search -config ./testing/projects.hcl -root . -project docs \
+  -mode vector \
+  -qdrant-url http://127.0.0.1:6333 \
+  -qdrant-collection hermes_vectors \
+  -embedding-model nomic-embed-text \
+  -embedding-dimensions 768 \
+  "search outbox"
+```
+
+Vector mode builds a transient local vector index for discovered documents, generates a query embedding with the configured model, and searches Qdrant through Hermes' `search.VectorIndex` provider boundary. BM25 remains the default and does not require Qdrant or embeddings.
+
+Hybrid mode combines BM25 and vector scores when Qdrant and embeddings are configured. If vector configuration is missing or unavailable, hybrid mode returns BM25 results with a warning instead of failing the search.
+
 Return JSON output for automation:
 
 ```bash
@@ -160,9 +176,9 @@ hermes edge search -config ./testing/projects.hcl -root . -project docs -format 
 
 Offline remote: rerun with `-probe-remote` only when the remote Hermes server should be reachable. Without probing, remote providers are reported as unavailable by design.
 
-Qdrant unavailable: BM25 search works without Qdrant. Vector `similar` search is not enabled in this phase.
+Qdrant unavailable: BM25 search works without Qdrant. Vector mode requires `-qdrant-url` or `HERMES_QDRANT_URL` and an embedding model from `-embedding-model` or `HERMES_EMBEDDING_MODEL`.
 
-Embedding provider unavailable: local BM25 commands do not require embeddings. Hybrid mode currently returns BM25 results with debug information.
+Embedding provider unavailable: local BM25 commands do not require embeddings. For Ollama embeddings, set `-ollama-url`, `OLLAMA_URL`, or `HERMES_OLLAMA_URL` when Ollama is not on its default URL. Hybrid mode falls back to BM25 with a warning when embeddings are unavailable.
 
 Frontmatter migration conflicts: dry-run first, inspect the plan, then use `-apply` only when the changes are expected. Unknown frontmatter fields are preserved.
 
