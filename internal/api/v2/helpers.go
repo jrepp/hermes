@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
@@ -17,6 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/internal/email"
+	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/search"
@@ -797,6 +798,10 @@ func getCompatProvider(provider workspace.WorkspaceProvider) workspace.Provider 
 	}
 	// TODO: Add support for local provider if needed
 	return nil
+}
+
+func getEmailSender(provider workspace.WorkspaceProvider) email.Sender {
+	return provider
 }
 
 // getGoogleDocsUpdater extracts the old Provider interface from WorkspaceProvider if it's Google.

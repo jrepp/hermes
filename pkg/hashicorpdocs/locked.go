@@ -2,7 +2,6 @@ package hashicorpdocs
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/go-hclog"
 	"google.golang.org/api/docs/v1"
@@ -30,30 +29,12 @@ func IsLocked(
 	// Get document from database.
 	doc := models.Document{}
 
-	// Determine if it's a SharePoint or Google document based on ID format
-	if IsFileID(fileID) {
-		// For SharePoint documents, set the FileID
-		doc.FileID = fileID
-		if err := doc.Get(db); err != nil {
-			return false, fmt.Errorf("error getting document from database: %w", err)
-		}
-
-		// For SharePoint documents, we don't check for suggestions in the same way
-		// Return false (not locked) for SharePoint documents
-		log.Info("SharePoint document, skipping lock check",
-			"sharepoint_file_id", fileID,
-		)
-		return false, nil
-	}
-
-	// This is a Google document
 	doc.GoogleFileID = fileID
 	if err := doc.Get(db); err != nil {
 		return false, fmt.Errorf("error getting document from database: %w", err)
 	}
 
-	// Only call GetDoc if we have a Google service
-	if goog == nil {
+	if provider == nil {
 		log.Warn("Google Workspace service not available, skipping lock check",
 			"google_file_id", fileID,
 		)

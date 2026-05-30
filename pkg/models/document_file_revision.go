@@ -14,6 +14,7 @@ import (
 //nolint:govet // Keep ORM field grouping readable; alignment churn is low value here.
 type DocumentFileRevision struct {
 	GoogleDriveFileRevisionID string `gorm:"primaryKey"`
+	FileRevisionID            string `gorm:"-"`
 	Name                      string `gorm:"primaryKey"`
 	DocumentID                uint   `gorm:"primaryKey"`
 	CreatedAt                 time.Time

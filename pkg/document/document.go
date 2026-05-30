@@ -51,6 +51,7 @@ type Document struct {
 	Approvers            []string                      `json:"approvers,omitempty"`
 	CreatedTime          int64                         `json:"createdTime,omitempty"`
 	ModifiedTime         int64                         `json:"modifiedTime,omitempty"`
+	Archived             bool                          `json:"archived,omitempty"`
 	Locked               bool                          `json:"locked,omitempty"`
 	AppCreated           bool                          `json:"appCreated,omitempty"`
 }

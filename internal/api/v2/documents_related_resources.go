@@ -63,9 +63,7 @@ func documentsResourceRelatedResourcesHandler(
 ) {
 	switch r.Method {
 	case httpMethodGet:
-		d := models.Document{
-			GoogleFileID: docID,
-		}
+		d := models.NewDocumentByFileID(docID, useSharePoint)
 		if err := d.Get(db); err != nil {
 			l.Error("error getting document from database",
 				"error", err,
@@ -138,7 +136,7 @@ func documentsResourceRelatedResourcesHandler(
 			resp.HermesDocuments = append(
 				resp.HermesDocuments,
 				hermesDocumentRelatedResourceGetResponse{
-					GoogleFileID:   hdrrs[i].Document.GoogleFileID,
+					FileID:         hdrrs[i].Document.GetFileIdentifier(),
 					Title:          searchDoc.Title,
 					DocumentType:   searchDoc.DocType,
 					DocumentNumber: searchDoc.DocNumber,

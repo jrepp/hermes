@@ -146,7 +146,7 @@ func sendNewOwnerNotification(
 		},
 		[]string{doc.Owners[0]},
 		srv.Config.Email.FromAddress,
-		getCompatProvider(srv.WorkspaceProvider),
+		getEmailSender(srv.WorkspaceProvider),
 	); err != nil {
 		return fmt.Errorf("error sending new owner email: %w", err)
 	}

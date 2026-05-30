@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 
@@ -222,6 +221,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 					GoogleFileID: docID,
 				},
 				GoogleDriveFileRevisionID: latestRev.RevisionID,
+				FileRevisionID:            latestRev.RevisionID,
 				Name:                      revisionName,
 			}
 
@@ -431,6 +431,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 					GoogleFileID: docID,
 				},
 				GoogleDriveFileRevisionID: latestRev.RevisionID,
+				FileRevisionID:            latestRev.RevisionID,
 				Name:                      revisionName,
 			}
 
@@ -502,75 +503,61 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 
 			// Request post-processing.
 			go func() {
-				// Send email to document owner and approverGroup, if enabled.
-				if srv.Config.Email != nil && srv.Config.Email.Enabled &&
-					len(doc.Owners) > 0 {
-					// Get name of document approver.
-					approver := email.User{
-						EmailAddress: userEmail,
-					}
-					ppl, err := srv.WorkspaceProvider.SearchPeople(
-						r.Context(), userEmail)
-					if err != nil {
-						srv.Logger.Warn("error searching directory for approver",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-							"person", doc.Owners[0],
-						)
-					}
-					if len(ppl) == 1 {
-						approver.Name = ppl[0].DisplayName
-					}
-
-					// Get document URL.
-					docURL, err := getDocumentURL(srv.Config.BaseURL, docID)
-					if err != nil {
-						srv.Logger.Error("error getting document URL",
-							"error", err,
-							"doc_id", docID,
-							"method", r.Method,
-							"path", r.URL.Path,
-						)
-					} else {
-						// Build recipient set: owners + members of approver groups (deduplicated).
-						recipientSet := map[string]struct{}{}
-						for _, o := range doc.Owners {
-							if strings.TrimSpace(o) == "" {
-								continue
-							}
-							recipientSet[strings.ToLower(o)] = struct{}{}
-						}
-
-					// Send email.
-					if err := email.SendDocumentApprovedEmail(
-						email.DocumentApprovedEmailData{
-							BaseURL:          srv.Config.BaseURL,
-							DocumentOwner:    doc.Owners[0],
-							DocumentApprover: approver,
-							DocumentNonApproverCount: len(doc.Approvers) -
-								len(doc.ApprovedBy),
-							DocumentShortName: doc.DocNumber,
-							DocumentTitle:     doc.Title,
-							DocumentType:      doc.DocType,
-							DocumentStatus:    doc.Status,
-							DocumentURL:       docURL,
-							Product:           doc.Product,
-						},
-						[]string{doc.Owners[0]},
-						srv.Config.Email.FromAddress,
-						getCompatProvider(srv.WorkspaceProvider),
-					); err != nil {
-						srv.Logger.Error("error sending document approved email",
-							"error", err,
-							"method", r.Method,
-							"path", r.URL.Path,
-							"doc_id", docID,
-						)
-					}
+				if srv.Config.Email == nil || !srv.Config.Email.Enabled || len(doc.Owners) == 0 {
+					return
 				}
 
+				approver := email.User{EmailAddress: userEmail}
+				ppl, err := srv.WorkspaceProvider.SearchPeople(r.Context(), userEmail)
+				if err != nil {
+					srv.Logger.Warn("error searching directory for approver",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID,
+						"person", doc.Owners[0],
+					)
+				}
+				if len(ppl) == 1 {
+					approver.Name = ppl[0].DisplayName
+				}
+
+				docURL, err := getDocumentURL(srv.Config.BaseURL, docID)
+				if err != nil {
+					srv.Logger.Error("error getting document URL",
+						"error", err,
+						"doc_id", docID,
+						"method", r.Method,
+						"path", r.URL.Path,
+					)
+					return
+				}
+
+				if err := email.SendDocumentApprovedEmail(
+					email.DocumentApprovedEmailData{
+						BaseURL:          srv.Config.BaseURL,
+						DocumentOwner:    doc.Owners[0],
+						DocumentApprover: approver,
+						DocumentNonApproverCount: len(doc.Approvers) -
+							len(doc.ApprovedBy),
+						DocumentShortName: doc.DocNumber,
+						DocumentTitle:     doc.Title,
+						DocumentType:      doc.DocType,
+						DocumentStatus:    doc.Status,
+						DocumentURL:       docURL,
+						Product:           doc.Product,
+					},
+					[]string{doc.Owners[0]},
+					srv.Config.Email.FromAddress,
+					getEmailSender(srv.WorkspaceProvider),
+				); err != nil {
+					srv.Logger.Error("error sending document approved email",
+						"error", err,
+						"method", r.Method,
+						"path", r.URL.Path,
+						"doc_id", docID,
+					)
+				}
 			}()
 
 		default:
@@ -602,7 +589,7 @@ func updateReviewStateWithSearchOutbox(
 			}
 		}
 
-		if err := updateDocumentReviewsInDatabase(*doc, tx); err != nil {
+		if err := updateDocumentReviewsInDatabase(*doc, tx, false); err != nil {
 			return fmt.Errorf("error updating document reviews in the database: %w", err)
 		}
 

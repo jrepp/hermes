@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +13,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/internal/email"
+	"github.com/hashicorp-forge/hermes/internal/helpers"
 	"github.com/hashicorp-forge/hermes/internal/server"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	"github.com/hashicorp-forge/hermes/pkg/document"
@@ -128,6 +131,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 			if req.ProductAbbreviation == "" {
 				req.ProductAbbreviation = "TODO"
 			}
+			title := fmt.Sprintf("%s-%s", req.ProductAbbreviation, req.Title)
 
 			var (
 				err     error
@@ -363,9 +367,6 @@ func DraftsHandler(srv server.Server) http.Handler {
 					return
 				}
 
-				if err := createDraftDBAndShare(srv, r, w, doc, fileID, ct, req, userEmail); err != nil {
-					return
-				}
 			} // Write response.
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
@@ -709,11 +710,11 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 		switch reqType {
 		case relatedResourcesDocumentSubcollectionRequestType:
 			documentsResourceRelatedResourcesHandler(
-				w, r, docID, *doc, srv.Config, srv.Logger, srv.SearchProvider, srv.DB)
+				w, r, docID, *doc, srv.Config, srv.Logger, srv.SearchProvider, srv.DB, srv.IsSharePoint())
 			return
 		case shareableDocumentSubcollectionRequestType:
 			draftsShareableHandler(w, r, docID, *doc, *srv.Config, srv.Logger,
-				srv.SearchProvider, getCompatProvider(srv.WorkspaceProvider), srv.DB)
+				srv.SearchProvider, getCompatProvider(srv.WorkspaceProvider), srv.DB, srv.IsSharePoint())
 			return
 		}
 
@@ -754,7 +755,16 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			docObj["directEditURL"] = directEditURL // Add direct edit URL
+			directEditURL := ""
+			if docMeta.ExtendedMetadata != nil {
+				if webURL, ok := docMeta.ExtendedMetadata["web_url"].(string); ok {
+					directEditURL = webURL
+				}
+				if webURL, ok := docMeta.ExtendedMetadata["web_view_link"].(string); ok {
+					directEditURL = webURL
+				}
+			}
+			docObj["directEditURL"] = directEditURL
 
 			// Write response.
 			w.Header().Set("Content-Type", "application/json")
@@ -788,7 +798,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 				// document metadata.
 				if r.Header.Get("Add-To-Recently-Viewed") != "" {
 					if err := updateRecentlyViewedDocs(
-						userEmail, docID, srv.DB, now, srv.IsSharePoint(),
+						userEmail, docID, srv.DB, now,
 					); err != nil {
 						srv.Logger.Error("error updating recently viewed docs",
 							"error", err,
@@ -1656,69 +1666,6 @@ func removeSharing(provider workspace.Provider, docID, email string) error {
 			return provider.DeletePermission(docID, p.Id)
 		}
 	}
-
-	// Share the document with contributors.
-	contributorsToEmail := []string{}
-	for _, contributor := range req.Contributors {
-		if strings.EqualFold(contributor, userEmail) {
-			continue
-		}
-
-		var shareErr error
-		if srv.SharePoint != nil {
-			shareErr = srv.SharePoint.ShareFile(fileID, contributor, "writer")
-		} else {
-			shareErr = srv.GWService.ShareFile(fileID, contributor, "writer")
-		}
-		if shareErr != nil {
-			srv.Logger.Error("error sharing file with contributor",
-				"error", shareErr,
-				"method", r.Method,
-				"path", r.URL.Path,
-				"doc_id", fileID,
-				"contributor", contributor,
-			)
-			srv.Logger.Warn("continuing document creation despite sharing failure with contributor")
-		} else {
-			contributorsToEmail = append(contributorsToEmail, contributor)
-		}
-	}
-
-	if len(contributorsToEmail) > 0 {
-		docURL := fmt.Sprintf("%s/document/%s?draft=true", srv.Config.BaseURL, fileID)
-
-		srv.Logger.Info("contributor email queued",
-			"doc_id", fileID,
-			"contributor_count", len(contributorsToEmail),
-			"method", r.Method,
-			"path", r.URL.Path,
-		)
-
-		go helpers.SendEmailWithRetry(
-			&srv,
-			func() error {
-				return email.SendContributorAddedEmail(
-					email.ContributorAddedEmailData{
-						BaseURL:           srv.Config.BaseURL,
-						DocumentOwner:     userEmail,
-						DocumentShortName: fmt.Sprintf("%s-???", req.ProductAbbreviation),
-						DocumentTitle:     req.Title,
-						DocumentType:      req.DocType,
-						DocumentStatus:    "WIP",
-						DocumentURL:       docURL,
-						Product:           req.Product,
-					},
-					contributorsToEmail,
-					srv.Config.Email.FromAddress,
-					srv.GetEmailSender(),
-				)
-			},
-			fileID,
-			"contributor_added",
-			r,
-		)
-	}
-
 	return nil
 }
 

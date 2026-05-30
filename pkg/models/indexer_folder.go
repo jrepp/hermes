@@ -14,7 +14,8 @@ import (
 type IndexerFolder struct {
 	LastIndexedAt time.Time
 	gorm.Model
-	GoogleDriveID string `gorm:"default:null;not null;uniqueIndex"`
+	GoogleDriveID      string `gorm:"default:null;not null;uniqueIndex"`
+	SharePointFolderID string `gorm:"default:null;uniqueIndex"`
 }
 
 // Get gets the indexer folder and assigns it to the receiver.
@@ -42,13 +43,19 @@ func (f *IndexerFolder) Get(db *gorm.DB) error {
 // Upsert updates or inserts the receiver indexer folder into database db.
 func (f *IndexerFolder) Upsert(db *gorm.DB) error {
 	if err := validation.ValidateStruct(f,
-		validation.Field(&f.GoogleDriveID, validation.Required),
+		validation.Field(&f.GoogleDriveID, validation.When(f.SharePointFolderID == "", validation.Required)),
+		validation.Field(&f.SharePointFolderID, validation.When(f.GoogleDriveID == "", validation.Required)),
 	); err != nil {
 		return err
 	}
 
+	query := IndexerFolder{GoogleDriveID: f.GoogleDriveID}
+	if f.SharePointFolderID != "" {
+		query = IndexerFolder{SharePointFolderID: f.SharePointFolderID}
+	}
+
 	tx := db.
-		Where(IndexerFolder{GoogleDriveID: f.GoogleDriveID}).
+		Where(query).
 		Assign(*f).
 		FirstOrCreate(&f)
 	if err := tx.Error; err != nil {

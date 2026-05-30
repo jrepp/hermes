@@ -58,6 +58,7 @@ func TestUpdateReviewStateWithSearchOutbox(t *testing.T) {
 			GoogleFileID: "doc-review-1",
 		},
 		GoogleDriveFileRevisionID: "rev-1",
+		FileRevisionID:            "rev-1",
 		Name:                      "Approved by approver@example.com",
 	}
 

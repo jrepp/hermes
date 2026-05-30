@@ -28,6 +28,7 @@ type Document struct {
 	gorm.Model
 	Title            string
 	GoogleFileID     string `gorm:"index;not null;unique"`
+	FileID           string `gorm:"column:file_id;index"`
 	DocumentType     DocumentType
 	Product          Product
 	Contributors     []*User `gorm:"many2many:document_contributors;"`
@@ -41,6 +42,7 @@ type Document struct {
 	DocumentNumber   int  `gorm:"index:latest_product_number"`
 	DocumentTypeID   uint
 	ShareableAsDraft bool
+	Archived         bool
 	Locked           bool
 	Imported         bool
 }

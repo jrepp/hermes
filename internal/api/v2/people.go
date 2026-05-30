@@ -26,6 +26,7 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 		// Using POST method to avoid logging the query in browser history
 		// and server logs
 		case httpMethodPost:
+			req := &PeopleDataRequest{}
 			if err := decodeRequest(r, &req); err != nil {
 				srv.Logger.Error("error decoding people request", "error", err)
 				http.Error(w, fmt.Sprintf("Bad request: %q", err),

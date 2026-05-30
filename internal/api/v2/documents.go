@@ -90,12 +90,10 @@ func DocumentHandler(srv server.Server) http.Handler {
 			return
 		}
 
-		model := srv.NewDocumentByFileID(docID)
-
 		// Get document from database.
 		// Support both GoogleFileID and UUID formats.
 		// Try UUID first, fall back to GoogleFileID if not found or invalid UUID.
-		model := models.Document{}
+		model := srv.NewDocumentByFileID(docID)
 		if err := model.GetByGoogleFileIDOrUUID(srv.DB, docID); err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				srv.Logger.Warn("document record not found",
@@ -189,7 +187,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 		switch reqType {
 		case relatedResourcesDocumentSubcollectionRequestType:
 			documentsResourceRelatedResourcesHandler(
-				w, r, docID, *doc, srv.Config, srv.Logger, srv.SearchProvider, srv.DB)
+				w, r, docID, *doc, srv.Config, srv.Logger, srv.SearchProvider, srv.DB, srv.IsSharePoint())
 			return
 		case shareableDocumentSubcollectionRequestType:
 			srv.Logger.Warn("invalid shareable request for documents collection",
@@ -240,6 +238,15 @@ func DocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Set the directEditURL for direct link to the document
+			directEditURL := ""
+			if docMeta.ExtendedMetadata != nil {
+				if webURL, ok := docMeta.ExtendedMetadata["web_url"].(string); ok {
+					directEditURL = webURL
+				}
+				if webURL, ok := docMeta.ExtendedMetadata["web_view_link"].(string); ok {
+					directEditURL = webURL
+				}
+			}
 			docObj["directEditURL"] = directEditURL
 
 			// Get projects associated with the document.
@@ -354,8 +361,6 @@ func DocumentHandler(srv server.Server) http.Handler {
 					return
 				}
 			}
-
-			previousStatus := doc.Status
 
 			// Additional validation for contributor ownership acquisition
 			if isContributorAcquiringOwnership(userEmail, *doc, req) {
@@ -524,18 +529,15 @@ func DocumentHandler(srv server.Server) http.Handler {
 			}
 			// Contributors.
 			var newContributors []string
-			var contributorsToAddSharing []string
 			var contributorsToRemoveSharing []string
 			if req.Contributors != nil {
 				// Determine newly added contributors for email notifications
 				if len(doc.Contributors) == 0 && len(*req.Contributors) > 0 {
 					// No existing contributors => all are new
 					newContributors = append(newContributors, *req.Contributors...)
-					contributorsToAddSharing = *req.Contributors
 				} else if len(*req.Contributors) > 0 {
 					// Find contributors that exist in request but NOT in current doc
 					newContributors = compareSlices(doc.Contributors, *req.Contributors)
-					contributorsToAddSharing = compareSlices(doc.Contributors, *req.Contributors)
 				}
 
 				// Find out contributors to remove from sharing the document
@@ -656,9 +658,6 @@ func DocumentHandler(srv server.Server) http.Handler {
 			}
 			// Owner.
 			if req.Owners != nil {
-				// Check if this is a contributor acquiring ownership
-				isAcquireOwnership := isContributorAcquiringOwnership(userEmail, *doc, req)
-
 				// Give new owner edit access to the document.
 				providerID := fmt.Sprintf("google:%s", docID)
 				if err := srv.WorkspaceProvider.ShareDocument(
@@ -757,6 +756,11 @@ func DocumentHandler(srv server.Server) http.Handler {
 				}
 			}
 
+			approversToEmail := []string{}
+			if req.Approvers != nil {
+				approversToEmail = compareSlices(doc.Approvers, *req.Approvers)
+			}
+
 			// Give new document approvers edit access to the document.
 			providerID := fmt.Sprintf("google:%s", docID)
 			for _, a := range approversToEmail {
@@ -774,7 +778,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 				for _, g := range removedGroupApprovers {
 					// Only remove group if it doesn't match owner email(s).
 					if !contains(doc.Owners, g) {
-						if err := removeSharing(srv, docID, g, emailToPermissionIDsMap); err != nil {
+						if err := removeSharing(getCompatProvider(srv.WorkspaceProvider), docID, g); err != nil {
 							srv.Logger.Error("error removing approver group from file",
 								"error", err,
 								"method", r.Method,
@@ -801,7 +805,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 					// associated with the permission doesn't
 					// match owner email(s).
 					if !contains(doc.Owners, c) {
-						if err := removeSharing(srv, docID, c, emailToPermissionIDsMap); err != nil {
+						if err := removeSharing(getCompatProvider(srv.WorkspaceProvider), docID, c); err != nil {
 							srv.Logger.Error("error removing contributor from file",
 								"error", err,
 								"method", r.Method,
@@ -827,7 +831,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 			// are managed by the Hermes Add-In for Word).
 			if !srv.IsSharePoint() {
 				if err := doc.ReplaceHeader(
-					srv.Config.BaseURL, false, srv.GWService,
+					srv.Config.BaseURL, false, getCompatProvider(srv.WorkspaceProvider),
 				); err != nil {
 					srv.Logger.Error("error replacing document header",
 						"error", err, "doc_id", docID)
@@ -1001,41 +1005,42 @@ func DocumentHandler(srv server.Server) http.Handler {
 							}
 						}
 
-					// TODO: use an asynchronous method for sending emails because we
-					// can't currently recover gracefully on a failure here.
-					for _, approverEmail := range approversToEmail {
-						err := email.SendReviewRequestedEmail(
-							email.ReviewRequestedEmailData{
-								BaseURL:           srv.Config.BaseURL,
-								DocumentOwner:     doc.Owners[0],
-								DocumentShortName: doc.DocNumber,
-								DocumentTitle:     doc.Title,
-								DocumentURL:       docURL,
-								Product:           doc.Product,
-								DocumentType:      doc.DocType,
-								DocumentStatus:    doc.Status,
-							},
-							[]string{approverEmail},
-							srv.Config.Email.FromAddress,
-							getCompatProvider(srv.WorkspaceProvider),
-						)
-						if err != nil {
-							srv.Logger.Error("error sending approver email",
-								"error", err,
-								"doc_id", docID,
-								"method", r.Method,
-								"path", r.URL.Path,
+						// TODO: use an asynchronous method for sending emails because we
+						// can't currently recover gracefully on a failure here.
+						for _, approverEmail := range approversToEmail {
+							err := email.SendReviewRequestedEmail(
+								email.ReviewRequestedEmailData{
+									BaseURL:           srv.Config.BaseURL,
+									DocumentOwner:     doc.Owners[0],
+									DocumentShortName: doc.DocNumber,
+									DocumentTitle:     doc.Title,
+									DocumentURL:       docURL,
+									Product:           doc.Product,
+									DocumentType:      doc.DocType,
+									DocumentStatus:    doc.Status,
+								},
+								[]string{approverEmail},
+								srv.Config.Email.FromAddress,
+								getEmailSender(srv.WorkspaceProvider),
 							)
-							http.Error(w, "Error patching document",
-								http.StatusInternalServerError)
-							return
+							if err != nil {
+								srv.Logger.Error("error sending approver email",
+									"error", err,
+									"doc_id", docID,
+									"method", r.Method,
+									"path", r.URL.Path,
+								)
+								http.Error(w, "Error patching document",
+									http.StatusInternalServerError)
+								return
+							}
 						}
+						srv.Logger.Info("approver emails sent",
+							"doc_id", docID,
+							"method", r.Method,
+							"path", r.URL.Path,
+						)
 					}
-					srv.Logger.Info("approver emails sent",
-						"doc_id", docID,
-						"method", r.Method,
-						"path", r.URL.Path,
-					)
 				}
 			}
 
@@ -1111,7 +1116,7 @@ func updateRecentlyViewedDocs(
 	}
 
 	// Get viewed document in database.
-	doc := models.NewDocumentByFileID(docID, useSharePoint)
+	doc := models.Document{GoogleFileID: docID}
 	if err := doc.Get(db); err != nil {
 		return fmt.Errorf("error getting viewed document: %w", err)
 	}

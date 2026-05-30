@@ -212,12 +212,14 @@ func TestCompareAlgoliaAndDatabaseDocument(t *testing.T) {
 					2023, time.April, 5, 23, 0, 0, 0, time.UTC),
 				FileRevisions: []models.DocumentFileRevision{
 					{
-						FileRevisionID: "1",
-						Name:           "FileRevision1",
+						GoogleDriveFileRevisionID: "1",
+						FileRevisionID:            "1",
+						Name:                      "FileRevision1",
 					},
 					{
-						FileRevisionID: "2",
-						Name:           "FileRevision2",
+						GoogleDriveFileRevisionID: "2",
+						FileRevisionID:            "2",
+						Name:                      "FileRevision2",
 					},
 				},
 				Owner: &models.User{
@@ -395,12 +397,14 @@ func TestCompareAlgoliaAndDatabaseDocument(t *testing.T) {
 					2023, time.April, 5, 23, 0, 0, 0, time.UTC),
 				FileRevisions: []models.DocumentFileRevision{
 					{
-						FileRevisionID: "1",
-						Name:           "FileRevision1",
+						GoogleDriveFileRevisionID: "1",
+						FileRevisionID:            "1",
+						Name:                      "FileRevision1",
 					},
 					{
-						FileRevisionID: "2",
-						Name:           "FileRevision2",
+						GoogleDriveFileRevisionID: "2",
+						FileRevisionID:            "2",
+						Name:                      "FileRevision2",
 					},
 				},
 				Owner: &models.User{

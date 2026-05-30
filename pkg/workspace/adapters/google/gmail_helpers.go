@@ -32,8 +32,7 @@ type EmailSenderAdapter struct {
 
 // SendEmail sends an email, discarding the Gmail Message return value.
 func (a *EmailSenderAdapter) SendEmail(to []string, from, subject, body string) error {
-	_, err := a.Svc.SendEmail(to, from, subject, body)
-	return err
+	return a.Svc.SendEmail(to, from, subject, body)
 }
 
 // SendEmailWithBCC sends an email with BCC recipients via Gmail.

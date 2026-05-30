@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/internal/indexer"
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
+	sp "github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
 

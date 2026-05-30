@@ -49,6 +49,7 @@ These memos used to be ADRs; the binding rules they once carried have been retir
 - **memo-055** — Semantic search release notes.
 - **memo-056** — Semantic search performance benchmarks.
 - **memo-059** — S3 storage implementation summary.
+- **memo-067** — SharePoint provider porting progress.
 
 ### Analysis & metrics
 

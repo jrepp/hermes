@@ -202,13 +202,13 @@ func concatGroupSlicesAndRemoveDuplicates(
 	result := make([]*admin.Group, 0, len(uniqueMap))
 
 	for _, g := range slice1 {
-		if g.Mail != "" {
-			uniqueMap[g.Mail] = g
+		if g.Email != "" {
+			uniqueMap[g.Email] = g
 		}
 	}
 	for _, g := range slice2 {
-		if g.Mail != "" {
-			uniqueMap[g.Mail] = g
+		if g.Email != "" {
+			uniqueMap[g.Email] = g
 		}
 	}
 

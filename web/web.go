@@ -60,7 +60,7 @@ type ConfigResponse struct {
 	AlgoliaDraftsIndexName   string          `json:"algolia_drafts_index_name"`
 	AlgoliaInternalIndexName string          `json:"algolia_internal_index_name"`
 	AlgoliaProjectsIndexName string          `json:"algolia_projects_index_name"`
-	AuthProvider             string          `json:"auth_provider"` // "google", "okta", or "dex"
+	AuthProvider             string          `json:"auth_provider"` // "google", "okta", "dex", or "microsoft"
 	CreateDocsAsUser         bool            `json:"create_docs_as_user"`
 	DexIssuerURL             string          `json:"dex_issuer_url,omitempty"`
 	DexClientID              string          `json:"dex_client_id,omitempty"`
@@ -77,7 +77,7 @@ type ConfigResponse struct {
 	SupportLinkURL           string          `json:"support_link_url"`
 	ShortRevision            string          `json:"short_revision"`
 	Version                  string          `json:"version"`
-	WorkspaceProvider        string          `json:"workspace_provider"` // "google" or "local"
+	WorkspaceProvider        string          `json:"workspace_provider"` // "google", "local", or "sharepoint"
 }
 
 // ConfigHandler returns runtime configuration for the Hermes frontend.
@@ -131,14 +131,9 @@ func ConfigHandler(
 		} else if cfg.Okta != nil && !cfg.Okta.Disabled {
 			authProvider = "okta"
 			skipGoogleAuth = true
-		}
-
-		// Skip Microsoft auth when:
-		// - OIDC ALB handles auth (ALB not disabled), OR
-		// - SharePoint is not configured (Google mode — no Microsoft auth needed)
-		skipMicrosoftAuth := false
-		if (cfg.OidcAlb != nil && !cfg.OidcAlb.Disabled) || cfg.SharePoint == nil {
-			skipMicrosoftAuth = true
+		} else if cfg.SharePoint != nil {
+			authProvider = "microsoft"
+			skipGoogleAuth = true
 		}
 
 		// Set CreateDocsAsUser if enabled in the config.
@@ -181,7 +176,11 @@ func ConfigHandler(
 
 		// Determine which workspace provider is configured
 		workspaceProvider := "google" // Default to Google
-		if cfg.LocalWorkspace != nil {
+		if cfg.Providers != nil && cfg.Providers.Workspace != "" {
+			workspaceProvider = cfg.Providers.Workspace
+		} else if cfg.SharePoint != nil {
+			workspaceProvider = "sharepoint"
+		} else if cfg.LocalWorkspace != nil {
 			workspaceProvider = "local"
 		}
 
@@ -201,7 +200,6 @@ func ConfigHandler(
 			GoogleOAuth2HD:           googleOAuth2HD,
 			GroupApprovals:           groupApprovals,
 			JiraURL:                  jiraURL,
-			Microsoft:                microsoftConfig,
 			ShortLinkBaseURL:         shortLinkBaseURL,
 			SimplifiedMode:           cfg.SimplifiedMode,
 			SkipGoogleAuth:           skipGoogleAuth, // Legacy compatibility

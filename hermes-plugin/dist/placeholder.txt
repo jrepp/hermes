@@ -1,0 +1,1 @@
+This placeholder keeps the embedded add-in dist directory present in source checkouts.

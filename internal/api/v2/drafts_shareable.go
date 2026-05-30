@@ -147,6 +147,10 @@ func draftsShareableHandler(
 					isInherited = true
 				}
 			}
+			if !isInherited && p.Type == "domain" {
+				alreadySharedPermIDs = append(alreadySharedPermIDs, p.Id)
+			}
+		}
 
 		// Update file permissions, if necessary.
 		if *req.IsShareable {
@@ -211,7 +215,6 @@ func draftsShareableHandler(
 			"doc_id", docID,
 			"shareable_as_draft", doc.ShareableAsDraft,
 		)
-
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return

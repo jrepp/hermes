@@ -37,6 +37,7 @@ type Config struct {
 	FeatureFlags         *FeatureFlags          `hcl:"feature_flags,block"`
 	Server               *Server                `hcl:"server,block"`
 	GoogleWorkspace      *GoogleWorkspace       `hcl:"google_workspace,block"`
+	SharePoint           *SharePointConfig      `hcl:"sharepoint,block"`
 	Indexer              *Indexer               `hcl:"indexer,block"`
 	Jira                 *Jira                  `hcl:"jira,block"`
 	Providers            *Providers             `hcl:"providers,block"`
@@ -141,8 +142,16 @@ type DocumentTypeLink struct {
 
 // Email configures Hermes to send email notifications.
 type Email struct {
-	FromAddress string `hcl:"from_address,optional"`
-	Enabled     bool   `hcl:"enabled,optional"`
+	Retry       *EmailRetry `hcl:"retry,block"`
+	FromAddress string      `hcl:"from_address,optional"`
+	Enabled     bool        `hcl:"enabled,optional"`
+}
+
+// EmailRetry configures retry behavior for best-effort notification sends.
+type EmailRetry struct {
+	MaxAttempts         int `hcl:"max_attempts,optional"`
+	InitialDelayMinutes int `hcl:"initial_delay_minutes,optional"`
+	FinalDelayMinutes   int `hcl:"final_delay_minutes,optional"`
 }
 
 // Notifications configures the RFC-087 notification system.
@@ -228,6 +237,21 @@ type GoogleWorkspace struct {
 	CreateDocShortcuts    bool                              `hcl:"create_doc_shortcuts,optional"`
 }
 
+// SharePointConfig configures Microsoft SharePoint / Graph workspace access.
+type SharePointConfig struct {
+	GroupApprovals  *SharePointGroupApprovals `hcl:"group_approvals,block"`
+	ClientID        string                    `hcl:"client_id"`
+	ClientSecret    string                    `hcl:"client_secret"`
+	RedirectURI     string                    `hcl:"redirect_uri"`
+	TenantID        string                    `hcl:"tenant_id"`
+	SiteID          string                    `hcl:"site_id"`
+	DriveID         string                    `hcl:"drive_id"`
+	Domain          string                    `hcl:"domain"`
+	DocsFolder      string                    `hcl:"docs_folder"`
+	DraftsFolder    string                    `hcl:"drafts_folder"`
+	ShortcutsFolder string                    `hcl:"shortcuts_folder"`
+}
+
 // GoogleWorkspaceGroupApprovals is the configuration for using Google Groups as
 // document approvers.
 type GoogleWorkspaceGroupApprovals struct {
@@ -302,7 +326,7 @@ type Product struct {
 
 // Providers specifies which workspace and search providers to use.
 type Providers struct {
-	// Workspace is the workspace provider name (e.g., "google", "local").
+	// Workspace is the workspace provider name (e.g., "google", "local", "sharepoint").
 	Workspace string `hcl:"workspace,optional"`
 
 	// Search is the search provider name (e.g., "algolia", "meilisearch").
@@ -388,6 +412,11 @@ type Ollama struct {
 type Server struct {
 	// Addr is the address to bind to for listening.
 	Addr string `hcl:"addr,optional"`
+
+	TLSEnabled bool   `hcl:"tls_enabled,optional"`
+	TLSCert    string `hcl:"tls_cert,optional"`
+	TLSKey     string `hcl:"tls_key,optional"`
+}
 
 // NewConfig parses an HCL configuration file and returns the Hermes config.
 // If profile is non-empty, loads config from profile block with that name.

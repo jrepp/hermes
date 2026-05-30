@@ -14,12 +14,11 @@ import (
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/email"
-	"github.com/hashicorp-forge/hermes/internal/helpers"
 	"github.com/hashicorp-forge/hermes/internal/server"
-	"github.com/hashicorp-forge/hermes/internal/structs"
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
+	"github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
@@ -30,8 +29,6 @@ func ReviewsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
-			handleCreateReview(&srv, w, r)
-
 			// Validate request.
 			docID, err := parseResourceIDFromURL(r.URL.Path, "reviews")
 			if err != nil {
@@ -68,6 +65,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			}
 
 			// Begin database transaction.
+			var revertFuncs []func() error
 			tx := srv.DB.Begin()
 			revertFuncs = append(revertFuncs, func() error {
 				// Rollback database transaction.
@@ -338,6 +336,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 					GoogleFileID: docID,
 				},
 				GoogleDriveFileRevisionID: latestRev.RevisionID,
+				FileRevisionID:            latestRev.RevisionID,
 				Name:                      revisionName,
 			}
 			if err := fr.Create(tx); err != nil {
@@ -537,7 +536,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 							},
 							[]string{approverEmail},
 							srv.Config.Email.FromAddress,
-							getCompatProvider(srv.WorkspaceProvider),
+							getEmailSender(srv.WorkspaceProvider),
 						)
 						if err != nil {
 							srv.Logger.Error("error sending approver email",
@@ -649,7 +648,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 								},
 								[]string{p.UserSubscribers[i].EmailAddress},
 								srv.Config.Email.FromAddress,
-								getCompatProvider(srv.WorkspaceProvider),
+								getEmailSender(srv.WorkspaceProvider),
 							)
 							if err != nil {
 								srv.Logger.Error("error sending subscriber email",
@@ -839,289 +838,6 @@ func getDocumentURL(baseURL, docID string) (string, error) {
 	docURLString = strings.TrimRight(docURLString, "/")
 
 	return docURLString, nil
-}
-
-func notifyProductSubscribers(
-	srv *server.Server,
-	doc *document.Document,
-	docID, docURL string,
-	r *http.Request,
-) {
-	if srv == nil || srv.Config == nil {
-		return
-	}
-
-	emailCfg := srv.Config.Email
-	if emailCfg == nil || !emailCfg.Enabled {
-		return
-	}
-
-	from := strings.TrimSpace(emailCfg.FromAddress)
-	if from == "" {
-		srv.Logger.Warn("email notification skipped; from address not configured",
-			"doc_id", docID,
-			"method", r.Method,
-			"path", r.URL.Path,
-		)
-		return
-	}
-
-	if len(doc.Owners) == 0 || strings.TrimSpace(doc.Owners[0]) == "" {
-		srv.Logger.Warn("email notification skipped; document has no owner",
-			"doc_id", docID,
-			"method", r.Method,
-			"path", r.URL.Path,
-		)
-		return
-	}
-
-	owner := strings.TrimSpace(doc.Owners[0])
-	if owner == "" {
-		srv.Logger.Warn("email notification skipped; document owner is blank",
-			"doc_id", docID,
-			"method", r.Method,
-			"path", r.URL.Path,
-		)
-		return
-	}
-
-	productName := strings.TrimSpace(doc.Product)
-	if productName == "" {
-		srv.Logger.Warn("email notification skipped; document product missing",
-			"doc_id", docID,
-			"method", r.Method,
-			"path", r.URL.Path,
-		)
-		return
-	}
-
-	p, err := getProductWithSubscribers(srv.DB, productName)
-	if err != nil {
-		srv.Logger.Error("error getting product from database",
-			"error", err,
-			"doc_id", docID,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"product", productName,
-		)
-		return
-	}
-
-	recipientsSet := map[string]struct{}{}
-	recipients := []string{}
-	for _, subscriber := range p.UserSubscribers {
-		addr := strings.TrimSpace(subscriber.EmailAddress)
-		if addr == "" {
-			continue
-		}
-		if _, exists := recipientsSet[addr]; exists {
-			continue
-		}
-		recipientsSet[addr] = struct{}{}
-		recipients = append(recipients, addr)
-	}
-
-	if len(recipients) == 0 {
-		srv.Logger.Info("no product subscribers to notify",
-			"doc_id", docID,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"product", productName,
-		)
-		return
-	}
-
-	// Get BCC batch size from config, default to 500 (Outlook limit)
-	bccBatchSize := 500
-	if srv.Config.Email.BCCBatchSize > 0 {
-		bccBatchSize = srv.Config.Email.BCCBatchSize
-	}
-
-	// Split recipients into batches
-	batches := [][]string{}
-	for i := 0; i < len(recipients); i += bccBatchSize {
-		end := i + bccBatchSize
-		if end > len(recipients) {
-			end = len(recipients)
-		}
-		batches = append(batches, recipients[i:end])
-	}
-
-	srv.Logger.Info("sending subscriber notifications",
-		"doc_id", docID,
-		"method", r.Method,
-		"path", r.URL.Path,
-		"product", productName,
-		"subscriber_count", len(recipients),
-		"batch_count", len(batches),
-		"batch_size", bccBatchSize,
-	)
-
-	// Send email to subscribers in batches using BCC.
-	// This avoids hitting rate limits and recipient count limits.
-	// Retry configuration is read from srv.Config.Email.Retry.
-	for batchIdx, batch := range batches {
-		// Capture loop variables for goroutine
-		batchNum := batchIdx + 1
-		batchRecipients := batch
-
-		go helpers.SendEmailWithRetry(
-			srv,
-			func() error {
-				return email.SendSubscriberDocumentPublishedEmailWithBCC(
-					email.SubscriberDocumentPublishedEmailData{
-						BaseURL:           srv.Config.BaseURL,
-						DocumentOwner:     owner,
-						DocumentShortName: doc.DocNumber,
-						DocumentTitle:     doc.Title,
-						DocumentType:      doc.DocType,
-						DocumentURL:       docURL,
-						Product:           productName,
-					},
-					[]string{from},  // Add sender as TO recipient to avoid spam filters
-					batchRecipients, // Batch of subscribers in BCC
-					from,
-					srv.GetEmailSender(),
-				)
-			},
-			docID,
-			fmt.Sprintf("subscriber_notification_batch_%d", batchNum),
-			r,
-		)
-
-		srv.Logger.Info("subscriber email batch queued for sending",
-			"doc_id", docID,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"product", productName,
-			"batch_number", batchNum,
-			"batch_total", len(batches),
-			"batch_recipient_count", len(batchRecipients),
-		)
-	}
-}
-
-// handleReviewPostProcessing handles the asynchronous post-processing tasks after review creation
-func handleReviewPostProcessing(srv *server.Server, doc *document.Document, docID string, r *http.Request) {
-	// Convert document to Algolia object.
-	docObj, err := doc.ToAlgoliaObject(true)
-	if err != nil {
-		srv.Logger.Error("error converting document to Algolia object",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-
-	// Save document object in Algolia.
-	res, err := srv.AlgoWrite.Docs.SaveObject(docObj)
-	if err != nil {
-		srv.Logger.Error("error saving document in Algolia",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-	err = res.Wait()
-	if err != nil {
-		srv.Logger.Error("error saving document in Algolia",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-
-	// Delete document object from drafts Algolia index.
-	delRes, err := srv.AlgoWrite.Drafts.DeleteObject(docID)
-	if err != nil {
-		srv.Logger.Error("error deleting draft in Algolia",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-	err = delRes.Wait()
-	if err != nil {
-		srv.Logger.Error("error deleting draft in Algolia",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-
-	docURL, err := getDocumentURL(srv.Config.BaseURL, docID)
-	if err != nil {
-		srv.Logger.Error("error getting document URL",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-
-	notifyProductSubscribers(srv, doc, docID, docURL, r)
-
-	// Compare Algolia and database documents to find data inconsistencies.
-	// Get document object from Algolia.
-	var algoDoc map[string]any
-	err = srv.AlgoSearch.Docs.GetObject(docID, &algoDoc)
-	if err != nil {
-		srv.Logger.Error("error getting Algolia object for data comparison",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-	// Get document from database.
-	dbDoc := srv.NewDocumentByFileID(docID)
-	if err := dbDoc.Get(srv.DB); err != nil {
-		srv.Logger.Error(
-			"error getting document from database for data comparison",
-			"error", err,
-			"path", r.URL.Path,
-			"method", r.Method,
-			"doc_id", docID,
-		)
-		return
-	}
-	// Get all reviews for the document.
-	var reviews models.DocumentReviews
-	if err := reviews.Find(srv.DB, models.DocumentReview{
-		Document: srv.NewDocumentByFileID(docID),
-	}); err != nil {
-		srv.Logger.Error(
-			"error getting all reviews for document for data comparison",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-		return
-	}
-	if err := CompareAlgoliaAndDatabaseDocument(
-		algoDoc, dbDoc, reviews, srv.Config.DocumentTypes.DocumentType,
-	); err != nil {
-		srv.Logger.Warn(
-			"inconsistencies detected between Algolia and database docs",
-			"error", err,
-			"method", r.Method,
-			"path", r.URL.Path,
-			"doc_id", docID,
-		)
-	}
 }
 
 // revertReviewsPost attempts to revert the actions that occur when a review is

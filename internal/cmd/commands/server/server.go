@@ -47,16 +47,19 @@ import (
 	bleveadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/bleve"
 	meilisearchadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	searchoutbox "github.com/hashicorp-forge/hermes/pkg/search/outbox"
+	"github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 	localadapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/local"
+	sharepointadapter "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/sharepoint"
 	"github.com/hashicorp-forge/hermes/web"
 )
 
 const (
 	// Provider names
-	providerGoogle  = "google"
-	providerAlgolia = "algolia"
+	providerGoogle     = "google"
+	providerSharePoint = "sharepoint"
+	providerAlgolia    = "algolia"
 )
 
 // Command implements the server CLI command.
@@ -73,6 +76,9 @@ type Command struct {
 	flagOktaAuthServerURL string
 	flagOktaClientID      string
 	flagOktaDisabled      bool
+	flagTLSEnabled        bool
+	flagTLSCert           string
+	flagTLSKey            string
 }
 
 //nolint:govet // Keep route declaration order aligned with existing positional literals.
@@ -115,7 +121,7 @@ func (c *Command) Flags() *base.FlagSet {
 	)
 	f.StringVar(
 		&c.flagWorkspaceProvider, "workspace-provider", "",
-		"[HERMES_WORKSPACE_PROVIDER] Workspace provider to use (e.g., 'google', 'local'). "+
+		"[HERMES_WORKSPACE_PROVIDER] Workspace provider to use (e.g., 'google', 'local', 'sharepoint'). "+
 			"Overrides the provider specified in the config profile.",
 	)
 	f.StringVar(
@@ -134,12 +140,8 @@ func (c *Command) Flags() *base.FlagSet {
 		"[HERMES_SERVER_OKTA_AUTH_SERVER_URL] URL to the Okta authorization server.",
 	)
 	f.StringVar(
-		&c.flagOidcClientID, "oidc-client-id", "",
-		"[HERMES_SERVER_OIDC_CLIENT_ID] OIDC client ID.",
-	)
-	f.BoolVar(
-		&c.flagOidcDisabled, "oidc-disabled", false,
-		"[HERMES_SERVER_OIDC_DISABLED] Disable OIDC authorization.",
+		&c.flagOktaClientID, "okta-client-id", "",
+		"[HERMES_SERVER_OKTA_CLIENT_ID] Okta client ID.",
 	)
 	f.BoolVar(
 		&c.flagTLSEnabled, "tls-enabled", false,
@@ -207,28 +209,27 @@ func (c *Command) Run(args []string) int {
 	if c.flagBaseURL != f.Lookup("base-url").DefValue {
 		cfg.BaseURL = c.flagBaseURL
 	}
-	if val, ok := os.LookupEnv("HERMES_SERVER_OIDC_AUTH_SERVER_URL"); ok {
-		cfg.OidcAlb.AuthServerURL = val
-	}
-	if c.flagOidcAuthServerURL != f.Lookup("oidc-auth-server-url").DefValue {
-		cfg.OidcAlb.AuthServerURL = c.flagOidcAuthServerURL
-	}
-	if val, ok := os.LookupEnv("HERMES_SERVER_OIDC_CLIENT_ID"); ok {
-		cfg.OidcAlb.ClientID = val
-	}
-	if c.flagOidcClientID != f.Lookup("oidc-client-id").DefValue {
-		cfg.OidcAlb.ClientID = c.flagOidcClientID
-	}
-	if val, ok := os.LookupEnv("HERMES_SERVER_OKTA_DISABLED"); ok {
-		if val != "" && val != "false" {
-			cfg.Okta.Disabled = true
+	if cfg.Okta != nil {
+		if val, ok := os.LookupEnv("HERMES_SERVER_OKTA_AUTH_SERVER_URL"); ok {
+			cfg.Okta.AuthServerURL = val
+		}
+		if c.flagOktaAuthServerURL != f.Lookup("okta-auth-server-url").DefValue {
+			cfg.Okta.AuthServerURL = c.flagOktaAuthServerURL
+		}
+		if val, ok := os.LookupEnv("HERMES_SERVER_OKTA_CLIENT_ID"); ok {
+			cfg.Okta.ClientID = val
+		}
+		if c.flagOktaClientID != f.Lookup("okta-client-id").DefValue {
+			cfg.Okta.ClientID = c.flagOktaClientID
+		}
+		if val, ok := os.LookupEnv("HERMES_SERVER_OKTA_JWT_SIGNER"); ok {
+			cfg.Okta.JWTSigner = val
 		}
 	}
-	if val, ok := os.LookupEnv("HERMES_SERVER_OIDC_JWT_SIGNER"); ok {
-		cfg.OidcAlb.JWTSigner = val
-	}
-	if c.flagOidcDisabled {
-		cfg.OidcAlb.Disabled = true
+	if val, ok := os.LookupEnv("HERMES_SERVER_OKTA_DISABLED"); ok {
+		if cfg.Okta != nil && val != "" && val != "false" {
+			cfg.Okta.Disabled = true
+		}
 	}
 
 	// Handle TLS configuration
@@ -319,26 +320,22 @@ func (c *Command) Run(args []string) int {
 		return 1
 	}
 
-	// Log comprehensive configuration overview
-	logInstanceOverview(c.Log, cfg)
-
-	// Build configuration for OIDC ALB authentication.
-	if !cfg.OidcAlb.Disabled {
-		// Check for required OIDC ALB configuration.
-		if cfg.OidcAlb.AuthServerURL == "" {
-			c.UI.Error("error initializing server: OIDC ALB authorization server URL is required")
+	// Build configuration for Okta ALB authentication.
+	if cfg.Okta != nil && !cfg.Okta.Disabled {
+		if cfg.Okta.AuthServerURL == "" {
+			c.UI.Error("error initializing server: Okta authorization server URL is required")
 			return 1
 		}
-		if cfg.OidcAlb.AWSRegion == "" {
-			c.UI.Error("error initializing server: OIDC ALB AWS region is required")
+		if cfg.Okta.AWSRegion == "" {
+			c.UI.Error("error initializing server: Okta AWS region is required")
 			return 1
 		}
-		if cfg.OidcAlb.ClientID == "" {
-			c.UI.Error("error initializing server: OIDC ALB client ID is required")
+		if cfg.Okta.ClientID == "" {
+			c.UI.Error("error initializing server: Okta client ID is required")
 			return 1
 		}
-		if cfg.OidcAlb.JWTSigner == "" {
-			c.UI.Error("error initializing server: OIDC ALB JWT signer is required")
+		if cfg.Okta.JWTSigner == "" {
+			c.UI.Error("error initializing server: Okta JWT signer is required")
 			return 1
 		}
 	}
@@ -395,6 +392,7 @@ func (c *Command) Run(args []string) int {
 	// Initialize workspace provider (RFC-084) based on selection.
 	var workspaceProvider workspace.WorkspaceProvider
 	var goog *gw.Service // Keep for auth that still uses it directly
+	var sharepointSvc *sharepointhelper.Service
 
 	switch workspaceProviderName {
 	case providerGoogle:
@@ -449,6 +447,25 @@ func (c *Command) Run(args []string) int {
 
 		// Note: searchProvider not yet initialized at this point
 		// Document indexing will be triggered after search provider is initialized
+
+	case providerSharePoint:
+		if cfg.SharePoint == nil {
+			c.UI.Error("error initializing server: sharepoint configuration required when using SharePoint workspace provider")
+			return 1
+		}
+
+		if err := validateSharePointConfig(cfg.SharePoint); err != nil {
+			c.UI.Error(fmt.Sprintf("error initializing server: %v", err))
+			return 1
+		}
+
+		sharepointSvc = sharepointhelper.NewService(cfg.SharePoint, c.Log)
+		if _, err := sharepointSvc.GetToken(); err != nil {
+			c.UI.Error(fmt.Sprintf("error initializing SharePoint service: %v", err))
+			return 1
+		}
+		workspaceProvider = sharepointadapter.NewAdapter(sharepointSvc)
+		c.Log.Info("successfully initialized SharePoint workspace provider")
 
 	default:
 		c.UI.Error(fmt.Sprintf("error initializing server: unknown workspace provider %q", workspaceProviderName))
@@ -753,6 +770,8 @@ func (c *Command) Run(args []string) int {
 	srv := server.Server{
 		SearchProvider:    searchProvider,
 		WorkspaceProvider: workspaceProvider,
+		GWService:         goog,
+		SharePoint:        sharepointSvc,
 		Config:            cfg,
 		DB:                db,
 		Jira:              jiraSvc,
@@ -852,9 +871,6 @@ func (c *Command) Run(args []string) int {
 		// If both Okta and Dex are disabled, add the SPA handler as an unauthenticated endpoint.
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints, spaEndpoints...)
 	}
-	// Config and redirect endpoints are always unauthenticated.
-	unauthenticatedEndpoints = append(unauthenticatedEndpoints, webEndpoints2...)
-
 	// Register handlers.
 	for _, e := range authenticatedEndpoints {
 		// Note: auth.AuthenticateRequest supports Dex, Okta, or Google authentication.
@@ -881,6 +897,12 @@ func (c *Command) Run(args []string) int {
 	go func() {
 		if cfg.Server.TLSEnabled {
 			c.Log.Info("Starting server with TLS/HTTPS", "addr", cfg.Server.Addr, "tls_enabled", true)
+			if err := httpServer.ListenAndServeTLS(cfg.Server.TLSCert, cfg.Server.TLSKey); err != http.ErrServerClosed {
+				c.Log.Error(fmt.Sprintf("error starting TLS listener: %v", err))
+				os.Exit(1)
+			}
+			return
+		}
 
 		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
 			c.Log.Error(fmt.Sprintf("error starting listener: %v", err))
@@ -1041,6 +1063,25 @@ func healthHandler(db *gorm.DB) http.Handler {
 			return
 		}
 	})
+}
+
+func validateSharePointConfig(cfg *config.SharePointConfig) error {
+	if cfg.ClientID == "" {
+		return fmt.Errorf("SharePoint client ID is required")
+	}
+	if cfg.ClientSecret == "" {
+		return fmt.Errorf("SharePoint client secret is required")
+	}
+	if cfg.TenantID == "" {
+		return fmt.Errorf("SharePoint tenant ID is required")
+	}
+	if cfg.SiteID == "" {
+		return fmt.Errorf("SharePoint site ID is required")
+	}
+	if cfg.DriveID == "" {
+		return fmt.Errorf("SharePoint drive ID is required")
+	}
+	return nil
 }
 
 // ShutdownServer gracefully shuts down the HTTP server.

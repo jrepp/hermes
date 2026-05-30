@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -55,7 +56,8 @@ func handleGetUserProfileGoogle(srv server.Server, w http.ResponseWriter, r *htt
 			srv.Config.GoogleWorkspace.UserNotFoundEmail.Enabled &&
 			srv.Config.GoogleWorkspace.UserNotFoundEmail.Body != "" &&
 			srv.Config.GoogleWorkspace.UserNotFoundEmail.Subject != "" {
-			_, err = srv.GWService.SendEmail(
+			err = srv.WorkspaceProvider.SendEmail(
+				r.Context(),
 				[]string{userEmail},
 				srv.Config.Email.FromAddress,
 				srv.Config.GoogleWorkspace.UserNotFoundEmail.Subject,

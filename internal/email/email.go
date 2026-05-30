@@ -3,6 +3,7 @@ package email
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	"html/template"
@@ -10,18 +11,19 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-
-	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
 //go:embed templates/*
 var tmplFS embed.FS
 
 // emailSender defines the interface for sending emails.
-// This is satisfied by workspace.Provider.
+// This is satisfied by workspace.NotificationProvider.
 type emailSender interface {
-	SendEmail(to []string, from, subject, body string) error
+	SendEmail(ctx context.Context, to []string, from, subject, body string) error
 }
+
+// Sender adapts a workspace.NotificationProvider-style sender to legacy helpers.
+type Sender = emailSender
 
 // User represents an email user.
 type User struct {
@@ -86,12 +88,29 @@ type SubscriberDocumentPublishedEmailData struct {
 	CurrentYear       int
 }
 
+// ContributorAddedEmailData holds data for contributor-added notifications.
+type ContributorAddedEmailData struct {
+	BaseURL             string
+	DocumentOwner       string
+	DocumentShortName   string
+	DocumentTitle       string
+	DocumentType        string
+	DocumentStatus      string
+	DocumentStatusClass string
+	DocumentURL         string
+	Product             string
+	CurrentYear         int
+}
+
+// StakeholderAddedEmailData holds data for stakeholder-added notifications.
+type StakeholderAddedEmailData = ContributorAddedEmailData
+
 // SendDocumentApprovedEmail sends a document approval notification.
 func SendDocumentApprovedEmail(
 	data DocumentApprovedEmailData,
 	to []string,
 	from string,
-	provider workspace.Provider,
+	provider emailSender,
 ) error {
 	// Validate data.
 	if err := validation.ValidateStruct(&data,
@@ -141,6 +160,7 @@ func SendDocumentApprovedEmail(
 
 	// Send email.
 	err = provider.SendEmail(
+		context.Background(),
 		to,
 		from,
 		subject,
@@ -154,7 +174,7 @@ func SendNewOwnerEmail(
 	data NewOwnerEmailData,
 	to []string,
 	from string,
-	provider workspace.Provider,
+	provider emailSender,
 ) error {
 	// Validate data.
 	if err := validation.ValidateStruct(&data,
@@ -200,6 +220,7 @@ func SendNewOwnerEmail(
 
 	// Send email.
 	err = provider.SendEmail(
+		context.Background(),
 		to,
 		from,
 		fmt.Sprintf("%s transferred to you", data.DocumentShortName),
@@ -213,7 +234,7 @@ func SendReviewRequestedEmail(
 	d ReviewRequestedEmailData,
 	to []string,
 	from string,
-	provider workspace.Provider,
+	provider emailSender,
 ) error {
 	// Validate data.
 	if err := validation.ValidateStruct(&d,
@@ -245,6 +266,7 @@ func SendReviewRequestedEmail(
 	}
 
 	err = provider.SendEmail(
+		context.Background(),
 		to,
 		from,
 		fmt.Sprintf("Document review requested for %s", d.DocumentShortName),
@@ -286,6 +308,7 @@ func SendSubscriberDocumentPublishedEmail(
 	}
 
 	err = provider.SendEmail(
+		context.Background(),
 		to,
 		from,
 		fmt.Sprintf("New %s: [%s] %s",
@@ -302,7 +325,7 @@ func SendContributorAddedEmail(
 	data ContributorAddedEmailData,
 	to []string,
 	from string,
-	s EmailSender,
+	s emailSender,
 ) error {
 	if err := validation.ValidateStruct(&data,
 		validation.Field(&data.BaseURL, validation.Required),
@@ -331,6 +354,7 @@ func SendContributorAddedEmail(
 	}
 
 	err = s.SendEmail(
+		context.Background(),
 		to,
 		from,
 		fmt.Sprintf("You've been added as contributor to %s",
@@ -349,7 +373,7 @@ func SendStakeholderAddedEmail(
 	data StakeholderAddedEmailData,
 	to []string,
 	from string,
-	s EmailSender,
+	s emailSender,
 ) error {
 	if err := validation.ValidateStruct(&data,
 		validation.Field(&data.BaseURL, validation.Required),
@@ -382,6 +406,7 @@ func SendStakeholderAddedEmail(
 	)
 
 	if err := s.SendEmail(
+		context.Background(),
 		to,
 		from,
 		subject,

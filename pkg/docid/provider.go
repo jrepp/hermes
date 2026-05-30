@@ -18,6 +18,9 @@ const (
 
 	// ProviderTypeRemoteHermes identifies a remote Hermes instance.
 	ProviderTypeRemoteHermes ProviderType = "remote-hermes"
+
+	// ProviderTypeSharePoint identifies Microsoft SharePoint / OneDrive storage.
+	ProviderTypeSharePoint ProviderType = "sharepoint"
 )
 
 // ValidProviderTypes returns all valid provider types.
@@ -26,13 +29,14 @@ func ValidProviderTypes() []ProviderType {
 		ProviderTypeGoogle,
 		ProviderTypeLocal,
 		ProviderTypeRemoteHermes,
+		ProviderTypeSharePoint,
 	}
 }
 
 // IsValid returns true if this is a recognized provider type.
 func (pt ProviderType) IsValid() bool {
 	switch pt {
-	case ProviderTypeGoogle, ProviderTypeLocal, ProviderTypeRemoteHermes:
+	case ProviderTypeGoogle, ProviderTypeLocal, ProviderTypeRemoteHermes, ProviderTypeSharePoint:
 		return true
 	default:
 		return false

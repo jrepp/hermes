@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	"github.com/hashicorp-forge/hermes/pkg/links"
 	"github.com/hashicorp-forge/hermes/pkg/models"
+	sp "github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
 
@@ -40,6 +42,7 @@ type Indexer struct {
 	BaseURL                    string
 	DocumentsFolderID          string
 	DraftsFolderID             string
+	SharePointDriveID          string
 	DocumentTypes              []*config.DocumentType
 	MaxParallelDocuments       int
 	UpdateDocumentHeaders      bool
@@ -548,7 +551,9 @@ func (idx *Indexer) refreshSharePointFolder(folderID, folderType string) error {
 		)
 	}
 
-	processSharePointDocs(docs, folderType, idx)
+	if err := processSharePointDocs(docs, folderType, idx); err != nil {
+		return err
+	}
 
 	// Update the last indexed time for the folder.
 	fd.LastIndexedAt = currentTime
@@ -557,6 +562,51 @@ func (idx *Indexer) refreshSharePointFolder(folderID, folderType string) error {
 	}
 
 	log.Info("Done refreshing " + folderType + " document (SharePoint)")
+	return nil
+}
+
+func processSharePointDocs(docs []sp.Document, folderType string, idx *Indexer) error {
+	for _, spDoc := range docs {
+		content, err := idx.sharepointSvc.DownloadContent(spDoc.ID)
+		if err != nil {
+			return fmt.Errorf("error downloading SharePoint document %q: %w", spDoc.ID, err)
+		}
+		if len(content) > maxContentSize {
+			content = content[:maxContentSize]
+		}
+
+		modifiedTime, err := time.Parse(time.RFC3339, spDoc.LastModifiedTime)
+		if err != nil {
+			idx.Logger.Warn("error parsing SharePoint modified time",
+				"error", err,
+				"file_id", spDoc.ID,
+				"modified_time", spDoc.LastModifiedTime,
+			)
+			modifiedTime = time.Now().UTC()
+		}
+
+		doc := document.Document{
+			ObjectID:     spDoc.ID,
+			Title:        strings.TrimSuffix(spDoc.Name, ".docx"),
+			Content:      content,
+			ModifiedTime: modifiedTime.Unix(),
+			AppCreated:   true,
+		}
+		if folderType == "drafts" {
+			doc.Status = "WIP"
+		}
+
+		if err := saveDocInAlgolia(doc, idx.AlgoliaClient); err != nil {
+			return fmt.Errorf("error saving SharePoint document in Algolia: %w", err)
+		}
+
+		idx.Logger.Info("indexed SharePoint document",
+			"file_id", spDoc.ID,
+			"file_name", spDoc.Name,
+			"folder_type", folderType,
+		)
+	}
+
 	return nil
 }
 

@@ -7,10 +7,12 @@ import (
 
 	"github.com/hashicorp/go-hclog"
 
+	"github.com/hashicorp-forge/hermes/internal/auth/microsoft"
 	"github.com/hashicorp-forge/hermes/internal/config"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 	googleadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/google"
 	oktaadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/okta"
+	sp "github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
 
@@ -83,6 +85,9 @@ func AuthenticateRequest(
 			})
 		}
 		provider = adapter
+	case cfg.SharePoint != nil:
+		return microsoft.AuthenticateRequest(cfg.SharePoint, log, spSvc,
+			pkgauth.RequireUserEmail(log, next))
 	default:
 		// Use Google authentication.
 		provider = googleadapter.NewAdapter(gwSvc)
