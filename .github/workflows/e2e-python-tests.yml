@@ -43,6 +43,7 @@ jobs:
 
       - name: Start testing environment
         run: |
+          mkdir -p web/dist && echo "placeholder" > web/dist/index.html
           cd testing
           docker compose up -d postgres meilisearch dex migrate hermes-central hermes-indexer
           

@@ -17,6 +17,7 @@ func TestProviderType_IsValid(t *testing.T) {
 		{"google is valid", ProviderTypeGoogle, true},
 		{"local is valid", ProviderTypeLocal, true},
 		{"remote-hermes is valid", ProviderTypeRemoteHermes, true},
+		{"sharepoint is valid", ProviderTypeSharePoint, true},
 		{"empty is invalid", ProviderType(""), false},
 		{"unknown is invalid", ProviderType("unknown"), false},
 		{"s3 is invalid", ProviderType("s3"), false},
@@ -33,14 +34,16 @@ func TestProviderType_String(t *testing.T) {
 	assert.Equal(t, "google", ProviderTypeGoogle.String())
 	assert.Equal(t, "local", ProviderTypeLocal.String())
 	assert.Equal(t, "remote-hermes", ProviderTypeRemoteHermes.String())
+	assert.Equal(t, "sharepoint", ProviderTypeSharePoint.String())
 }
 
 func TestValidProviderTypes(t *testing.T) {
 	types := ValidProviderTypes()
-	assert.Len(t, types, 3)
+	assert.Len(t, types, 4)
 	assert.Contains(t, types, ProviderTypeGoogle)
 	assert.Contains(t, types, ProviderTypeLocal)
 	assert.Contains(t, types, ProviderTypeRemoteHermes)
+	assert.Contains(t, types, ProviderTypeSharePoint)
 }
 
 func TestNewProviderID(t *testing.T) {
@@ -96,13 +99,13 @@ func TestGoogleFileID(t *testing.T) {
 	t.Run("empty file ID", func(t *testing.T) {
 		_, err := GoogleFileID("")
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Google file ID cannot be empty")
+		assert.Contains(t, err.Error(), "google file ID cannot be empty")
 	})
 
 	t.Run("too short file ID", func(t *testing.T) {
 		_, err := GoogleFileID("short")
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Google file ID too short")
+		assert.Contains(t, err.Error(), "google file ID too short")
 	})
 
 	t.Run("minimum valid length", func(t *testing.T) {
