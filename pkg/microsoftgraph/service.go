@@ -199,7 +199,7 @@ func (s *Service) SearchPeople(query string, top int) ([]GooglePeoplePerson, err
 	searchURL := fmt.Sprintf("https://graph.microsoft.com/v1.0/users?$search=\"displayName:%s\" OR \"mail:%s\" OR \"userPrincipalName:%s\"&$top=%d&$select=id,displayName,givenName,surname,userPrincipalName,mail,jobTitle,officeLocation,businessPhones,mobilePhone",
 		url.QueryEscape(query), url.QueryEscape(query), url.QueryEscape(query), top)
 
-	req, err := http.NewRequest("GET", searchURL, nil)
+	req, err := http.NewRequest("GET", searchURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -244,7 +244,7 @@ func (s *Service) GetPersonByEmail(email string) (*GooglePeoplePerson, error) {
 			url.QueryEscape(email))
 	}
 
-	req, err := http.NewRequest("GET", getUserURL, nil)
+	req, err := http.NewRequest("GET", getUserURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}

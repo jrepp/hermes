@@ -12,7 +12,7 @@ import (
 // It will retry failed email sends up to maxAttempts times (configurable via srv.Config.Email.Retry).
 //
 // Retry delays use exponential backoff: initialDelay * 2^(attempt-1) minutes, with the final
-// retry using a configurable finalDelay. Delays can be interrupted if the goroutine is cancelled.
+// retry using a configurable finalDelay. Delays can be interrupted if the goroutine is canceled.
 
 func SendEmailWithRetry(
 	srv *server.Server,

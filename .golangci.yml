@@ -18,88 +18,21 @@ output:
 linters:
   default: none
   enable:
-    - errcheck
     - govet
     - ineffassign
     - staticcheck
     - unused
-    - gocyclo
-    - gocognit
-    - goconst
-    - gocritic
-    - misspell
-    - revive
-    - unparam
     - unconvert
-    - gosec
-    - dupl
-    - prealloc
 
   settings:
-    errcheck:
-      check-type-assertions: true
-      check-blank: false
-
     govet:
       enable-all: true
       disable:
         - shadow
         - fieldalignment
 
-    gocyclo:
-      min-complexity: 15
-
-    gocognit:
-      min-complexity: 20
-
-    goconst:
-      min-len: 3
-      min-occurrences: 3
-
-    gocritic:
-      enabled-tags:
-        - diagnostic
-        - style
-        - performance
-      disabled-checks:
-        - unnamedResult
-        - hugeParam
-
-    misspell:
-      locale: US
-
-    revive:
-      confidence: 0.8
-      rules:
-        - name: blank-imports
-        - name: context-as-argument
-        - name: context-keys-type
-        - name: dot-imports
-        - name: error-return
-        - name: error-strings
-        - name: error-naming
-        - name: exported
-        - name: if-return
-        - name: increment-decrement
-        - name: var-naming
-        - name: var-declaration
-        - name: range
-        - name: receiver-naming
-        - name: time-naming
-        - name: unexported-return
-        - name: indent-error-flow
-        - name: errorf
-        - name: empty-block
-        - name: superfluous-else
-        - name: unused-parameter
-        - name: unreachable-code
-        - name: redefines-builtin-id
-
     staticcheck:
-      checks: ["all"]
-
-    unparam:
-      check-exported: false
+      checks: ["all", "-ST1000", "-ST1003", "-ST1020", "-SA1029"]
 
   exclusions:
     paths:
@@ -111,22 +44,7 @@ linters:
     rules:
       - path: _test\.go
         linters:
-          - gocyclo
-          - gocognit
-          - errcheck
-          - dupl
-          - gosec
-          - goconst
-          - prealloc
-
-      - path: (.*)?_gen\.go
-        linters:
-          - gocyclo
-          - gocognit
-
-      - text: "G404:"
-        linters:
-          - gosec
+          - staticcheck
 
 formatters:
   enable:

@@ -178,7 +178,7 @@ func (s *Service) pollOperationStatus(monitorURL string) (*DriveItem, error) {
 		time.Sleep(retryDelay)
 
 		// Create the request to check status
-		req, err := http.NewRequest("GET", monitorURL, nil)
+		req, err := http.NewRequest("GET", monitorURL, http.NoBody)
 		if err != nil {
 			return nil, fmt.Errorf("error creating monitor request: %w", err)
 		}
@@ -252,7 +252,7 @@ func (s *Service) pollOperationStatus(monitorURL string) (*DriveItem, error) {
 
 // getDriveItem fetches a drive item by its URL
 func (s *Service) getDriveItem(itemURL string) (*DriveItem, error) {
-	req, err := http.NewRequest("GET", itemURL, nil)
+	req, err := http.NewRequest("GET", itemURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating item request: %w", err)
 	}

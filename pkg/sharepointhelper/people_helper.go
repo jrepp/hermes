@@ -284,7 +284,7 @@ func (s *Service) GetProfilePhoto(userEmail string) ([]byte, error) {
 
 	photoURL := fmt.Sprintf("https://graph.microsoft.com/v1.0/users/%s/photo/$value", url.QueryEscape(userEmail))
 
-	req, err := http.NewRequest("GET", photoURL, nil)
+	req, err := http.NewRequest("GET", photoURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}

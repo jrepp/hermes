@@ -103,60 +103,6 @@ func PeopleDataHandler(srv server.Server) http.Handler {
 	})
 }
 
-// handleSearchPeople handles POST requests for people search.
-func handleSearchPeople(srv server.Server, w http.ResponseWriter, r *http.Request) {
-	req := &PeopleDataRequest{}
-	if err := decodeRequest(r, &req); err != nil {
-		srv.Logger.Error("error decoding people request", "error", err)
-		http.Error(w, fmt.Sprintf("Bad request: %q", err),
-			http.StatusBadRequest)
-		return
-	}
-
-	if srv.SharePoint != nil {
-		// SharePoint path: use Microsoft Graph API
-		people, err := srv.SharePoint.SearchPeople(req.Query, 10)
-		if err != nil {
-			srv.Logger.Error("error searching people directory", "error", err)
-			http.Error(w, fmt.Sprintf("Error searching people directory: %q", err),
-				http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		enc := json.NewEncoder(w)
-		err = enc.Encode(people)
-		if err != nil {
-			srv.Logger.Error("error encoding people response", "error", err)
-			http.Error(w, "Error searching people directory",
-				http.StatusInternalServerError)
-			return
-		}
-	} else {
-		// Google path: use Google People API
-		users, err := srv.GWService.SearchPeople(
-			req.Query, "emailAddresses,names,photos")
-		if err != nil {
-			srv.Logger.Error("error searching people directory", "error", err)
-			http.Error(w, fmt.Sprintf("Error searching people directory: %q", err),
-				http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		enc := json.NewEncoder(w)
-		err = enc.Encode(users)
-		if err != nil {
-			srv.Logger.Error("error encoding people response", "error", err)
-			http.Error(w, "Error searching people directory",
-				http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
 // handleGetPhoto handles GET requests for profile photos (SharePoint only).
 func handleGetPhoto(srv server.Server, w http.ResponseWriter, userEmail string) {
 	srv.Logger.Info("Handling profile photo request", "userIdentifier", userEmail)
@@ -184,54 +130,6 @@ func handleGetPhoto(srv server.Server, w http.ResponseWriter, userEmail string) 
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 	w.WriteHeader(http.StatusOK)
 	w.Write(photoBytes)
-}
-
-// handleGetPeopleByEmails handles GET requests for people by email addresses.
-func handleGetPeopleByEmails(srv server.Server, w http.ResponseWriter, emails []string) {
-	if srv.SharePoint != nil {
-		// SharePoint path: use Microsoft Graph API
-		people, err := srv.SharePoint.GetPeopleByEmails(emails)
-		if err != nil {
-			srv.Logger.Error("error getting people by emails", "error", err)
-			http.Error(w, "Error getting people responses",
-				http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		enc := json.NewEncoder(w)
-		encodeErr := enc.Encode(people)
-		if encodeErr != nil {
-			srv.Logger.Error("error encoding people response", "error", encodeErr)
-			http.Error(w, "Error getting people responses",
-				http.StatusInternalServerError)
-			return
-		}
-	} else {
-		// Google path: use Google People API
-		var people []interface{}
-		for _, email := range emails {
-			result, err := srv.GWService.SearchPeople(
-				email, "emailAddresses,names,photos")
-			if err == nil && len(result) > 0 {
-				people = append(people, result[0])
-			} else {
-				srv.Logger.Warn("Email lookup miss", "error", err)
-			}
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		enc := json.NewEncoder(w)
-		err := enc.Encode(people)
-		if err != nil {
-			srv.Logger.Error("error encoding people response", "error", err)
-			http.Error(w, "Error getting people responses",
-				http.StatusInternalServerError)
-			return
-		}
-	}
 }
 
 // getPlaceholderImageSVG returns a personalized SVG placeholder image with user's initial

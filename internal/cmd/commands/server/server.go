@@ -78,7 +78,6 @@ type Command struct {
 	flagAuthProvider      string
 	flagOktaAuthServerURL string
 	flagOktaClientID      string
-	flagOktaDisabled      bool
 	flagTLSEnabled        bool
 	flagTLSCert           string
 	flagTLSKey            string

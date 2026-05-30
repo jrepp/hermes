@@ -218,28 +218,3 @@ func concatGroupSlicesAndRemoveDuplicates(
 
 	return result
 }
-
-// concatGoogleGroupSlicesAndRemoveDuplicates concatenates two Google group slices
-// and removes any duplicate elements from the result.
-func concatGoogleGroupSlicesAndRemoveDuplicates(
-	slice1, slice2 []*admin.Group) []*admin.Group {
-	uniqueMap := make(map[string]*admin.Group)
-	result := []*admin.Group{}
-
-	for _, g := range slice1 {
-		if g != nil {
-			uniqueMap[g.Email] = g
-		}
-	}
-	for _, g := range slice2 {
-		if g != nil {
-			uniqueMap[g.Email] = g
-		}
-	}
-
-	for _, v := range uniqueMap {
-		result = append(result, v)
-	}
-
-	return result
-}

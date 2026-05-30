@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp-forge/hermes/pkg/document"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 )
 
@@ -777,53 +776,6 @@ func createShortcut(
 	}
 
 	return
-}
-
-// createSharePointShortcut creates a shortcut (.url file) in the hierarchical folder structure
-// ("Shortcuts Folder/RFC/MyProduct/") under docsFolder in SharePoint.
-func createSharePointShortcut(
-	cfg *config.Config,
-	doc *document.Document, targetWebURL string,
-	s *sharepointhelper.Service,
-) (shortcutID string, retErr error) {
-	// Get or create folder for doc type under ShortcutsFolder
-	shortcutFolderID, err := s.ResolveFolderPath(cfg.SharePoint.ShortcutsFolder)
-	if err != nil {
-		return "", fmt.Errorf("error resolving shortcut folder path '%s': %w", cfg.SharePoint.ShortcutsFolder, err)
-	}
-	docTypeFolder, err := s.GetSubfolder(shortcutFolderID, doc.DocType)
-	if err != nil {
-		return "", fmt.Errorf("error getting doc type subfolder: %w", err)
-	}
-	if docTypeFolder == nil {
-		docTypeFolderID, err := s.CreateFolder(doc.DocType, shortcutFolderID)
-		if err != nil {
-			return "", fmt.Errorf("error creating doc type subfolder: %w", err)
-		}
-		docTypeFolder = &sharepointhelper.DriveItem{ID: docTypeFolderID, Name: doc.DocType}
-	}
-
-	// Get or create folder for doc type + product
-	productFolder, err := s.GetSubfolder(docTypeFolder.ID, doc.Product)
-	if err != nil {
-		return "", fmt.Errorf("error getting product subfolder: %w", err)
-	}
-	if productFolder == nil {
-		productFolderID, err := s.CreateFolder(doc.Product, docTypeFolder.ID)
-		if err != nil {
-			return "", fmt.Errorf("error creating product subfolder: %w", err)
-		}
-		productFolder = &sharepointhelper.DriveItem{ID: productFolderID, Name: doc.Product}
-	}
-
-	// TODO : Check if people can access the link. What type of permissions are available and how does it work with existing sharing settings of the documents?
-	// Create the .url shortcut file in the product folder
-	shortcutFileID, err := s.CreateShortcut(targetWebURL, doc.Title, productFolder.ID)
-	if err != nil {
-		return "", fmt.Errorf("error creating shortcut: %w", err)
-	}
-
-	return shortcutFileID, nil
 }
 
 // getDocumentURL returns a Hermes document URL.

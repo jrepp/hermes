@@ -189,7 +189,7 @@ func draftsShareableHandler(
 				}
 			}
 		}
-		// TODO: Enable SharePoint organisation-level sharing when isShareable is true.
+		// TODO: Enable SharePoint organization-level sharing when isShareable is true.
 
 		// Update ShareableAsDraft for document in the database.
 		if err := db.Model(&doc).

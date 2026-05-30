@@ -199,7 +199,7 @@ func (s *Service) monitorCopyOperation(monitorURL string) (string, error) {
 			time.Sleep(2 * time.Second)
 		}
 
-		req, err := http.NewRequest("GET", monitorURL, nil)
+		req, err := http.NewRequest("GET", monitorURL, http.NoBody)
 		if err != nil {
 			return "", fmt.Errorf("error creating monitor request: %w", err)
 		}

@@ -17,45 +17,11 @@ import (
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/email"
-	"github.com/hashicorp-forge/hermes/internal/server"
 	"github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/models"
-	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
 )
-
-// mapToSearchDocument converts a map[string]any to a search.Document via JSON round-trip.
-// This is used to convert Algolia-style document objects to the search provider interface.
-func mapToSearchDocument(m map[string]any) (*search.Document, error) {
-	data, err := json.Marshal(m)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal map: %w", err)
-	}
-
-	var doc search.Document
-	if err := json.Unmarshal(data, &doc); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to search.Document: %w", err)
-	}
-
-	return &doc, nil
-}
-
-// searchDocumentToMap converts a search.Document to a map[string]any via JSON round-trip.
-// This is used to convert search provider documents back to map format for compatibility.
-func searchDocumentToMap(doc *search.Document) (map[string]any, error) {
-	data, err := json.Marshal(doc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal search.Document: %w", err)
-	}
-
-	var m map[string]any
-	if err := json.Unmarshal(data, &m); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to map: %w", err)
-	}
-
-	return m, nil
-}
 
 // contains returns true if a string is present in a slice of strings.
 func contains(values []string, s string) bool {
@@ -87,96 +53,6 @@ func compareSlices(a, b []string) []string {
 	}
 
 	return diffElems
-}
-
-// expandStakeholderGroups expands any groups in the stakeholders list to their individual members recursively.
-// It handles nested groups (group within group within group) by using the backend service's
-// group member expansion methods.
-// Individual email addresses are added directly without making unnecessary API calls.
-func expandStakeholderGroups(stakeholders []string, srv server.Server) ([]string, error) {
-	if len(stakeholders) == 0 {
-		return []string{}, nil
-	}
-
-	// Use a map to deduplicate emails (case-insensitive)
-	uniqueEmails := make(map[string]string) // lowercase key -> original email
-
-	for _, stakeholder := range stakeholders {
-		stakeholder = strings.TrimSpace(stakeholder)
-		if stakeholder == "" {
-			continue
-		}
-
-		if srv.SharePoint != nil {
-			// SharePoint path: try to expand as a group using Microsoft Graph
-			members, err := srv.SharePoint.GetGroupMemberEmails(stakeholder)
-			if err != nil {
-				// Not a group or error expanding - treat as individual email
-				srv.Logger.Debug("treating stakeholder as individual email",
-					"stakeholder", stakeholder,
-					"reason", "not a group or expansion failed")
-
-				key := strings.ToLower(stakeholder)
-				if _, exists := uniqueEmails[key]; !exists {
-					uniqueEmails[key] = stakeholder
-				}
-			} else {
-				// Successfully expanded group
-				srv.Logger.Debug("expanded stakeholder group",
-					"group", stakeholder,
-					"member_count", len(members))
-
-				for _, member := range members {
-					member = strings.TrimSpace(member)
-					if member == "" {
-						continue
-					}
-					key := strings.ToLower(member)
-					if _, exists := uniqueEmails[key]; !exists {
-						uniqueEmails[key] = member
-					}
-				}
-			}
-		} else {
-			// Google path: try to expand as a Google Group using Admin Directory
-			groupMembers, err := srv.GWService.AdminDirectory.Members.List(stakeholder).Do()
-			if err != nil {
-				// Not a group or error expanding - treat as individual email
-				srv.Logger.Debug("treating stakeholder as individual email",
-					"stakeholder", stakeholder,
-					"reason", "not a group or expansion failed")
-
-				key := strings.ToLower(stakeholder)
-				if _, exists := uniqueEmails[key]; !exists {
-					uniqueEmails[key] = stakeholder
-				}
-			} else {
-				// Successfully expanded group
-				srv.Logger.Debug("expanded stakeholder group",
-					"group", stakeholder,
-					"member_count", len(groupMembers.Members))
-
-				for _, member := range groupMembers.Members {
-					email := member.Email
-					if email == "" {
-						continue
-					}
-					key := strings.ToLower(email)
-					if _, exists := uniqueEmails[key]; !exists {
-						uniqueEmails[key] = email
-					}
-				}
-			}
-		}
-	}
-
-	// Convert map to slice
-	result := make([]string, 0, len(uniqueEmails))
-	for _, email := range uniqueEmails {
-		result = append(result, email)
-	}
-
-	return result, nil
 }
 
 // decodeRequest decodes the JSON contents of a HTTP request body to a request

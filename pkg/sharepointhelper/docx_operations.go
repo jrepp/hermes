@@ -501,7 +501,7 @@ func generateTableRow(leftKey, leftValue, rightKey, rightValue string, leftIsSta
           <w:t>`)
 
 	// Add left column key and colon (with proper spacing)
-	rowXML.WriteString(fmt.Sprintf("%s: ", leftKey))
+	fmt.Fprintf(&rowXML, "%s: ", leftKey)
 	rowXML.WriteString(`</w:t>
         </w:r>`)
 
@@ -531,7 +531,7 @@ func generateTableRow(leftKey, leftValue, rightKey, rightValue string, leftIsSta
           <w:t xml:space="preserve"> </w:t>
         </w:r>`)
 
-		rowXML.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&rowXML, `
         <w:r>
           <w:rPr>
             <w:sz w:val="20"/>
@@ -539,7 +539,7 @@ func generateTableRow(leftKey, leftValue, rightKey, rightValue string, leftIsSta
             <w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/>
           </w:rPr>
           <w:t>%s</w:t>
-        </w:r>`, leftValue))
+        </w:r>`, leftValue)
 	}
 
 	rowXML.WriteString(`
@@ -550,7 +550,7 @@ func generateTableRow(leftKey, leftValue, rightKey, rightValue string, leftIsSta
 
 	// Only add right column content if there is a right key
 	if rightKey != "" {
-		rowXML.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&rowXML, `
         <w:r>
           <w:rPr>
             <w:b/>
@@ -559,7 +559,7 @@ func generateTableRow(leftKey, leftValue, rightKey, rightValue string, leftIsSta
             <w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/>
           </w:rPr>
           <w:t>%s: </w:t>
-        </w:r>`, rightKey))
+        </w:r>`, rightKey)
 
 		if rightIsStatus {
 			// Add explicit space before the status values
@@ -587,7 +587,7 @@ func generateTableRow(leftKey, leftValue, rightKey, rightValue string, leftIsSta
           <w:t xml:space="preserve"> </w:t>
         </w:r>`)
 
-			rowXML.WriteString(fmt.Sprintf(`
+			fmt.Fprintf(&rowXML, `
         <w:r>
           <w:rPr>
             <w:sz w:val="20"/>
@@ -595,7 +595,7 @@ func generateTableRow(leftKey, leftValue, rightKey, rightValue string, leftIsSta
             <w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/>
           </w:rPr>
           <w:t>%s</w:t>
-        </w:r>`, rightValue))
+        </w:r>`, rightValue)
 		}
 	} else {
 		// Empty right column

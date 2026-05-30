@@ -13,8 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp/go-hclog"
+
+	"github.com/hashicorp-forge/hermes/internal/config"
 )
 
 // TokenCache represents an in-memory token cache
@@ -141,7 +142,7 @@ func (s *Service) ValidateToken(token string) (string, error) {
 
 	// Call the Microsoft Graph API to validate the token
 	url := "https://graph.microsoft.com/v1.0/me"
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, http.NoBody)
 	if err != nil {
 		return "", err
 	}

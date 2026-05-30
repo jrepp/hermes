@@ -528,18 +528,8 @@ func DocumentHandler(srv server.Server) http.Handler {
 				doc.ApproverGroups = *req.ApproverGroups
 			}
 			// Contributors.
-			var newContributors []string
 			var contributorsToRemoveSharing []string
 			if req.Contributors != nil {
-				// Determine newly added contributors for email notifications
-				if len(doc.Contributors) == 0 && len(*req.Contributors) > 0 {
-					// No existing contributors => all are new
-					newContributors = append(newContributors, *req.Contributors...)
-				} else if len(*req.Contributors) > 0 {
-					// Find contributors that exist in request but NOT in current doc
-					newContributors = compareSlices(doc.Contributors, *req.Contributors)
-				}
-
 				// Find out contributors to remove from sharing the document
 				if len(doc.Contributors) != 0 {
 					if len(*req.Contributors) == 0 {
@@ -973,38 +963,6 @@ func DocumentHandler(srv server.Server) http.Handler {
 						)
 						// Log error but don't fail the request.
 					} else {
-						// Get name of new document owner.
-						newOwner := email.User{
-							EmailAddress: doc.Owners[0],
-						}
-						if srv.SharePoint != nil {
-							person, err := srv.SharePoint.GetPersonByEmail(doc.Owners[0])
-							if err != nil {
-								srv.Logger.Warn("error getting person details for new owner",
-									"error", err,
-									"method", r.Method,
-									"path", r.URL.Path,
-									"doc_id", docID,
-									"person", doc.Owners[0],
-								)
-							} else if person != nil && person.DisplayName != "" {
-								newOwner.Name = person.DisplayName
-							}
-						} else {
-							ppl, err := srv.GWService.SearchPeople(doc.Owners[0], "emailAddresses,names")
-							if err != nil {
-								srv.Logger.Warn("error getting person details for new owner",
-									"error", err,
-									"method", r.Method,
-									"path", r.URL.Path,
-									"doc_id", docID,
-									"person", doc.Owners[0],
-								)
-							} else if len(ppl) > 0 && len(ppl[0].Names) > 0 {
-								newOwner.Name = ppl[0].Names[0].DisplayName
-							}
-						}
-
 						// TODO: use an asynchronous method for sending emails because we
 						// can't currently recover gracefully on a failure here.
 						for _, approverEmail := range approversToEmail {
@@ -1358,77 +1316,4 @@ func authorizeDocumentPatchRequest(
 	}
 
 	return errors.New("only owners, approvers, or contributors can patch a document")
-}
-
-// buildDocumentOperation determines the primary operation and builds a list of updated attributes
-// from a DocumentPatchRequest for logging purposes.
-func buildDocumentOperation(req DocumentPatchRequest) (string, string) {
-	var attrs []string
-	var operation string
-
-	// Determine primary operation based on what's being changed
-	if req.Owners != nil {
-		operation = "ownership_transferred"
-		attrs = append(attrs, "owners")
-	}
-	if req.Status != nil {
-		if operation == "" {
-			operation = "status_changed"
-		}
-		attrs = append(attrs, "status")
-	}
-	if req.Approvers != nil {
-		if operation == "" {
-			operation = "approvers_updated"
-		}
-		attrs = append(attrs, "approvers")
-	}
-	if req.ApproverGroups != nil {
-		if operation == "" {
-			operation = "approver_groups_updated"
-		}
-		attrs = append(attrs, "approverGroups")
-	}
-	if req.Contributors != nil {
-		if operation == "" {
-			operation = "contributors_updated"
-		}
-		attrs = append(attrs, "contributors")
-	}
-	if req.CustomFields != nil {
-		if operation == "" {
-			operation = "custom_fields_updated"
-		}
-		attrs = append(attrs, "customFields")
-	}
-	if req.Summary != nil {
-		if operation == "" {
-			operation = "summary_updated"
-		}
-		attrs = append(attrs, "summary")
-	}
-	if req.Title != nil {
-		if operation == "" {
-			operation = "title_updated"
-		}
-		attrs = append(attrs, "title")
-	}
-
-	if operation == "" {
-		operation = "document_updated"
-	}
-
-	// If multiple fields updated, mark as bulk update
-	if len(attrs) > 1 {
-		operation = "document_bulk_update"
-	}
-
-	var attrsList string
-	if len(attrs) == 0 {
-		attrsList = "none"
-	} else {
-		attrsList = fmt.Sprintf("[%s]", strings.Join(attrs, ", "))
-	}
-
-	return operation, attrsList
 }

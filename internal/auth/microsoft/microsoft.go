@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp-forge/hermes/internal/config"
-	"github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	"github.com/hashicorp/go-hclog"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/microsoft"
+
+	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 )
 
 // MicrosoftAuthenticator handles Microsoft authentication

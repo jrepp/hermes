@@ -4,8 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	sp "github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 	"github.com/hashicorp/go-hclog"
+
+	sp "github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
 )
 
 // AuthenticateRequest authenticates an HTTP request using SharePoint.
@@ -18,7 +19,7 @@ func AuthenticateRequest(
 			"path", r.URL.Path)
 
 		// Validate SharePoint token or session
-		//userEmail, err := spSvc.ValidateToken(r.Header.Get("Authorization"))
+		// userEmail, err := spSvc.ValidateToken(r.Header.Get("Authorization"))
 		accessToken, _ := spSvc.GetToken()
 		userEmail, err := spSvc.ValidateToken(accessToken)
 		if err != nil {
