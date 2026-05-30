@@ -49,7 +49,9 @@ build-binaries: ## Build all binaries
 	@echo "✓ Binaries built in build/bin/"
 
 .PHONY: build/linux
-build/linux: web/build ## Build web assets and Linux binaries for Docker image builds
+build/linux: ## Build Linux binaries for Docker image builds
+	@mkdir -p web/dist
+	@if [ ! -f web/dist/index.html ]; then printf '%s\n' '<!doctype html><title>Hermes</title><div id="ember-basic-dropdown-wormhole"></div>' > web/dist/index.html; fi
 	@echo "Building Linux binaries..."
 	@mkdir -p build/bin
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/bin/hermes ./cmd/hermes

@@ -470,7 +470,7 @@ jobs:
       - name: Start testing environment
         run: |
           cd testing
-          docker compose up -d
+          docker compose up -d postgres meilisearch dex migrate hermes-central hermes-indexer
 
       - name: Wait for services
         run: |
