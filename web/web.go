@@ -2,11 +2,11 @@ package web
 
 import (
 	"embed"
-	"encoding/json"
 	"io/fs"
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
@@ -19,8 +19,20 @@ import (
 //go:embed dist
 var content embed.FS
 
+// Handler serves the Ember single-page application.
+//
+// @Summary Serve web application
+// @Description Serves the Hermes Ember single-page application and static assets.
+// @Tags web
+// @Produce html
+// @Success 200 {string} string "HTML or static asset content"
+// @Failure 405 {string} string "method not allowed"
+// @Router / [get]
+// @x-rbac {"resource":"web.app","action":"read","authenticated":"deployment-dependent"}
 func Handler() http.Handler {
-	return webHandler(http.FileServer(httpFileSystem()))
+	r := gin.New()
+	r.Any("/*path", ginWebHandler(http.FileServer(httpFileSystem())))
+	return r
 }
 
 func httpFileSystem() http.FileSystem {
@@ -36,23 +48,22 @@ func fileSystem() fs.FS {
 	return f
 }
 
-// webHandler is middleware for serving our single-page application.
-func webHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Only allow GET requests.
-		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+// ginWebHandler serves our single-page application from Gin.
+func ginWebHandler(next http.Handler) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method != http.MethodGet {
+			c.Status(http.StatusMethodNotAllowed)
 			return
 		}
 
 		// Serve `/index.html` if there isn't an extension in the URL path.
 		// Without this, browser refreshes on SPA routes will 404.
-		if ext := strings.LastIndex(r.URL.Path, "."); ext == -1 {
-			r.URL.Path = "/"
+		if ext := strings.LastIndex(c.Request.URL.Path, "."); ext == -1 {
+			c.Request.URL.Path = "/"
 		}
 
-		next.ServeHTTP(w, r)
-	})
+		next.ServeHTTP(c.Writer, c.Request)
+	}
 }
 
 type ConfigResponse struct {
@@ -81,21 +92,40 @@ type ConfigResponse struct {
 }
 
 // ConfigHandler returns runtime configuration for the Hermes frontend.
+//
+// @Summary Get web runtime configuration
+// @Description Returns frontend runtime configuration, feature flags, auth provider selection, and workspace provider selection.
+// @Tags web
+// @Produce json
+// @Success 200 {object} ConfigResponse
+// @Failure 405 {string} string "method not allowed"
+// @Failure 500 {string} string "Error encoding web config response"
+// @Router /api/v2/web/config [get]
+// @x-rbac {"resource":"web.config","action":"read","authenticated":false}
 func ConfigHandler(
 	cfg *config.Config,
 	a *algolia.Client,
 	log hclog.Logger,
 ) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Only allow GET requests.
-		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+	r := gin.New()
+	r.Any("/*path", ginConfigHandler(cfg, a, log))
+	return r
+}
+
+func ginConfigHandler(
+	cfg *config.Config,
+	a *algolia.Client,
+	log hclog.Logger,
+) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method != http.MethodGet {
+			c.Status(http.StatusMethodNotAllowed)
 			return
 		}
 
 		// Get user email from auth middleware if available (may be empty if not authenticated)
 		userEmail := ""
-		if email, ok := r.Context().Value(pkgauth.UserEmailKey).(string); ok {
+		if email, ok := c.Request.Context().Value(pkgauth.UserEmailKey).(string); ok {
 			userEmail = email
 		}
 
@@ -106,7 +136,7 @@ func ConfigHandler(
 			a,
 			// Use the "x-amzn-oidc-identity" header if set
 			// as id to be hashed and toggle flags.
-			r.Header.Get("x-amzn-oidc-identity"),
+			c.GetHeader("x-amzn-oidc-identity"),
 			// Get user email from value set by auth middleware (may be empty)
 			userEmail,
 			log,
@@ -209,16 +239,6 @@ func ConfigHandler(
 			WorkspaceProvider:        workspaceProvider,
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
-		enc := json.NewEncoder(w)
-		err := enc.Encode(response)
-		if err != nil {
-			log.Error("error encoding web config response", "error", err)
-			http.Error(w, "Error encoding web config response",
-				http.StatusInternalServerError)
-			return
-		}
-	})
+		c.JSON(http.StatusOK, response)
+	}
 }

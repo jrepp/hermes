@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-hclog"
 	_ "github.com/lib/pq" // PostgreSQL driver for migrations
 	httptrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
@@ -29,6 +30,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/instance"
 	"github.com/hashicorp-forge/hermes/internal/jira"
 	"github.com/hashicorp-forge/hermes/internal/migrate"
+	"github.com/hashicorp-forge/hermes/internal/openapi"
 	"github.com/hashicorp-forge/hermes/internal/pkg/doctypes"
 	"github.com/hashicorp-forge/hermes/internal/projects"
 	"github.com/hashicorp-forge/hermes/internal/pub"
@@ -824,6 +826,7 @@ func (c *Command) Run(args []string) int {
 	// Define handlers for unauthenticated endpoints.
 	unauthenticatedEndpoints := []endpoint{
 		{healthHandler(db), "/health"},
+		{openapi.Handler(), "/openapi.json"},
 		{http.StripPrefix("/pub/", pub.Handler()), "/pub/"},
 		{apiv2.IndexerHandler(srv), "/api/v2/indexer/"},                                  // Indexer API (handles own token auth)
 		{apiv2.EdgeSyncAuthMiddleware(srv, apiv2.EdgeSyncHandler(srv)), "/api/v2/edge/"}, // Edge sync API (token auth)
@@ -889,9 +892,12 @@ func (c *Command) Run(args []string) int {
 		mux.Handle(e.pattern, e.handler)
 	}
 
+	ginRouter := gin.New()
+	ginRouter.NoRoute(gin.WrapH(mux))
+
 	httpServer := &http.Server{
 		Addr:              cfg.Server.Addr,
-		Handler:           mux,
+		Handler:           ginRouter,
 		ReadHeaderTimeout: 30 * time.Second, // Prevent Slowloris attacks
 	}
 	go func() {

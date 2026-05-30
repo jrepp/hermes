@@ -1,8 +1,9 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/hashicorp-forge/hermes/internal/server"
 )
@@ -19,20 +20,36 @@ type AnalyticsResponse struct {
 }
 
 // AnalyticsHandler returns an HTTP handler for analytics events.
+//
+// @Summary Record web analytics event
+// @Description Records frontend analytics events such as document views.
+// @Tags web
+// @Accept json
+// @Produce json
+// @Param request body AnalyticsRequest true "Analytics event"
+// @Success 200 {object} AnalyticsResponse
+// @Failure 400 {string} string "Error decoding analytics request"
+// @Failure 405 {string} string "method not allowed"
+// @Router /api/v2/web/analytics [post]
+// @Security UserAuth
+// @x-rbac {"resource":"web.analytics","action":"create","authenticated":true}
 func AnalyticsHandler(srv server.Server) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Only allow POST requests.
-		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+	r := gin.New()
+	r.Any("/*path", ginAnalyticsHandler(srv))
+	return r
+}
+
+func ginAnalyticsHandler(srv server.Server) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method != http.MethodPost {
+			c.Status(http.StatusMethodNotAllowed)
 			return
 		}
 
-		decoder := json.NewDecoder(r.Body)
 		var req AnalyticsRequest
-		if err := decoder.Decode(&req); err != nil {
+		if err := c.ShouldBindJSON(&req); err != nil {
 			srv.Logger.Error("error decoding analytics request", "error", err)
-			http.Error(w, "Error decoding analytics request",
-				http.StatusBadRequest)
+			c.String(http.StatusBadRequest, "Error decoding analytics request")
 			return
 		}
 
@@ -44,24 +61,14 @@ func AnalyticsHandler(srv server.Server) http.Handler {
 		if req.DocumentID != "" {
 			srv.Logger.Info(
 				"document view event",
-				"method", r.Method,
-				"path", r.URL.Path,
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
 				"document_id", req.DocumentID,
 				"product_name", req.ProductName,
 			)
 			response.Recorded = true
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-
-		enc := json.NewEncoder(w)
-		err := enc.Encode(response)
-		if err != nil {
-			srv.Logger.Error("error encoding analytics response", "error", err)
-			http.Error(w, "Error encoding analytics response",
-				http.StatusInternalServerError)
-			return
-		}
-	})
+		c.JSON(http.StatusOK, response)
+	}
 }
