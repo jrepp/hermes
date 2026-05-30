@@ -48,6 +48,31 @@ build-binaries: ## Build all binaries
 	@go build -o build/bin/hermes-indexer ./cmd/hermes-indexer
 	@echo "✓ Binaries built in build/bin/"
 
+.PHONY: build/linux
+build/linux: web/build ## Build web assets and Linux binaries for Docker image builds
+	@echo "Building Linux binaries..."
+	@mkdir -p build/bin
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/bin/hermes ./cmd/hermes
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/bin/hermes-migrate ./cmd/hermes-migrate
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/bin/hermes-notify ./cmd/hermes-notify
+	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/bin/hermes-indexer ./cmd/hermes-indexer
+	@echo "✓ Linux binaries built in build/bin/"
+
+.PHONY: web/set-yarn-version
+web/set-yarn-version: ## Enable Corepack and activate the web package's pinned Yarn version
+	@corepack enable
+	@cd web && corepack prepare yarn@$$(node -p "require('./package.json').packageManager.split('@')[1]") --activate
+
+.PHONY: web/build
+web/build: web/set-yarn-version ## Install web dependencies and build production assets
+	@cd web && yarn install --immutable
+	@cd web && yarn build
+
+.PHONY: web/test
+web/test: web/set-yarn-version ## Install web dependencies and run frontend tests
+	@cd web && yarn install --immutable
+	@cd web && yarn test
+
 .PHONY: build-indexer
 build-indexer: ## Build hermes-indexer binary
 	@echo "Building hermes-indexer..."

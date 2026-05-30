@@ -142,7 +142,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: go.mod
           cache: false
 
       - name: Download Go modules
@@ -221,7 +221,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: go.mod
           cache: false
 
 
@@ -240,7 +240,7 @@ jobs:
 
   # Job 4: Test Go packages in parallel
   test-go:
-    name: Test Go (${{ matrix.package }})
+    name: Test Go (${{ matrix.package.path }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: detect-changes
@@ -250,15 +250,24 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - internal/api
-          - internal/auth
-          - internal/config
-          - internal/db
-          - internal/indexer
-          - internal/notifier
-          - internal/server
-          - pkg
-          - cmd
+          - path: internal/api
+            coverage-name: internal-api
+          - path: internal/auth
+            coverage-name: internal-auth
+          - path: internal/config
+            coverage-name: internal-config
+          - path: internal/db
+            coverage-name: internal-db
+          - path: internal/indexer
+            coverage-name: internal-indexer
+          - path: internal/notifier
+            coverage-name: internal-notifier
+          - path: internal/server
+            coverage-name: internal-server
+          - path: pkg
+            coverage-name: pkg
+          - path: cmd
+            coverage-name: cmd
 
     steps:
       - name: Checkout
@@ -267,7 +276,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: go.mod
           cache: false
 
 
@@ -276,8 +285,8 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          if [ -d "${{ matrix.package }}" ]; then
-            cd ${{ matrix.package }}
+          if [ -d "${{ matrix.package.path }}" ]; then
+            cd ${{ matrix.package.path }}
             go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
             if [ -f coverage.out ]; then
               go tool cover -func=coverage.out | grep total | awk '{print "Coverage: " $3}'
@@ -290,8 +299,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.package }}-${{ github.run_id }}
-          path: ${{ matrix.package }}/coverage.out
+          name: coverage-${{ matrix.package.coverage-name }}-${{ github.run_id }}
+          path: ${{ matrix.package.path }}/coverage.out
           retention-days: 7
           if-no-files-found: ignore
 
@@ -330,7 +339,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: web/build/
+          path: web/dist/
           retention-days: 7
 
   # Job 6: Test Python client
@@ -406,7 +415,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: go.mod
           cache: false
 
 
@@ -454,6 +463,7 @@ jobs:
       - name: Install E2E dependencies
         run: |
           cd testing/python
+          pip install -e ../../python-client
           pip install -e .
           pip install httpx pydantic-settings eval-type-backport
 
@@ -465,7 +475,7 @@ jobs:
       - name: Wait for services
         run: |
           echo "Waiting for Hermes backend..."
-          timeout 120 bash -c 'until curl -sf http://localhost:8001/health; do sleep 2; done'
+          timeout 120 bash -c 'until curl -sf http://localhost:8000/health; do sleep 2; done'
           echo "✅ Services ready"
 
       - name: Run E2E tests
