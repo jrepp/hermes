@@ -31,6 +31,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/jira"
 	"github.com/hashicorp-forge/hermes/internal/migrate"
 	"github.com/hashicorp-forge/hermes/internal/openapi"
+	"github.com/hashicorp-forge/hermes/internal/otel"
 	"github.com/hashicorp-forge/hermes/internal/pkg/doctypes"
 	"github.com/hashicorp-forge/hermes/internal/projects"
 	"github.com/hashicorp-forge/hermes/internal/pub"
@@ -915,6 +916,24 @@ func (c *Command) Run(args []string) int {
 			os.Exit(1)
 		}
 	}()
+
+	if cfg.OpenTelemetry != nil && cfg.OpenTelemetry.Enabled {
+		otelHandler := otel.Handler(cfg.OpenTelemetry, c.Log.Named("otel"))
+		otelServer := &http.Server{
+			Addr:              otel.ListenerAddr(cfg.OpenTelemetry),
+			Handler:           otelHandler,
+			ReadHeaderTimeout: 30 * time.Second,
+		}
+		go func() {
+			c.Log.Info("Starting OpenTelemetry listener",
+				"addr", otelServer.Addr,
+				"prometheus_url", cfg.OpenTelemetry.PrometheusURL)
+			if err := otelServer.ListenAndServe(); err != http.ErrServerClosed {
+				c.Log.Error(fmt.Sprintf("error starting OpenTelemetry listener: %v", err))
+				os.Exit(1)
+			}
+		}()
+	}
 
 	if db != nil && searchProvider != nil {
 		ctx, cancel := context.WithCancel(c.Context)

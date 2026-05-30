@@ -40,6 +40,11 @@ type Route struct {
 func Routes() []Route {
 	return []Route{
 		public("GET", "/openapi.json", "Get OpenAPI document", "openapi", "openapi", "read"),
+		public("GET", "/api/v2/otel/health", "OpenTelemetry listener health check", "otel", "otel.health", "read"),
+		public("GET", "/api/v2/otel/promql/query", "Run PromQL instant query", "otel", "otel.promql", "read"),
+		public("POST", "/api/v2/otel/promql/query", "Run PromQL instant query", "otel", "otel.promql", "read"),
+		public("GET", "/api/v2/otel/promql/query_range", "Run PromQL range query", "otel", "otel.promql", "read"),
+		public("POST", "/api/v2/otel/promql/query_range", "Run PromQL range query", "otel", "otel.promql", "read"),
 		public("GET", "/health", "Health check", "system", "health", "read"),
 		public("GET", "/pub/{path}", "Public document access", "public", "public-documents", "read"),
 		public("GET", "/auth/login", "Start login", "auth", "auth.login", "create"),

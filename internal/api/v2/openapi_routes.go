@@ -249,3 +249,23 @@ func openAPISetupConfigureRoute() {}
 // @x-rbac {"resource":"setup.ollama","action":"read","authenticated":false}
 // @Router /api/v2/setup/validate-ollama [post]
 func openAPIOllamaValidateRoute() {}
+
+// @Summary OpenTelemetry listener health check
+// @Tags otel
+// @x-rbac {"resource":"otel.health","action":"read","authenticated":false}
+// @Router /api/v2/otel/health [get]
+func openAPIOtelHealthRoute() {}
+
+// @Summary Run PromQL instant query
+// @Tags otel
+// @x-rbac {"resource":"otel.promql","action":"read","authenticated":false}
+// @Router /api/v2/otel/promql/query [get]
+// @Router /api/v2/otel/promql/query [post]
+func openAPIOtelPromQLQueryRoute() {}
+
+// @Summary Run PromQL range query
+// @Tags otel
+// @x-rbac {"resource":"otel.promql","action":"read","authenticated":false}
+// @Router /api/v2/otel/promql/query_range [get]
+// @Router /api/v2/otel/promql/query_range [post]
+func openAPIOtelPromQLRangeQueryRoute() {}

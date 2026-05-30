@@ -46,6 +46,7 @@ type Config struct {
 	Migration            *Migration             `hcl:"migration,block"`
 	Bleve                *Bleve                 `hcl:"bleve,block"`
 	Ollama               *Ollama                `hcl:"ollama,block"`
+	OpenTelemetry        *OpenTelemetry         `hcl:"opentelemetry,block"`
 	Okta                 *oktaadapter.Config    `hcl:"okta,block"`
 	LocalWorkspace       *LocalWorkspace        `hcl:"local_workspace,block"`
 	ShortenerBaseURL     string                 `hcl:"shortener_base_url,optional"`
@@ -406,6 +407,20 @@ type Ollama struct {
 
 	// EmbeddingModel is the model for vector embeddings (e.g., "nomic-embed-text").
 	EmbeddingModel string `hcl:"embedding_model,optional"`
+}
+
+// OpenTelemetry configures the auxiliary observability HTTP listener.
+type OpenTelemetry struct {
+	// Addr is the listener address for OTEL/PromQL routes. It is intentionally
+	// separate from server.addr so observability traffic can be exposed on a
+	// different port or interface.
+	Addr string `hcl:"addr,optional"`
+
+	// PrometheusURL is the base URL for a Prometheus-compatible PromQL backend.
+	PrometheusURL string `hcl:"prometheus_url,optional"`
+
+	// Enabled starts the auxiliary OTEL listener when true.
+	Enabled bool `hcl:"enabled,optional"`
 }
 
 // Server contains the configuration for the Hermes server.
