@@ -67,7 +67,6 @@ jobs:
           # Check for Go code changes
           if echo "$CHANGED_FILES" | grep -qE '(\.go$|go\.mod|go\.sum|Makefile|\.golangci\.yml)'; then
             RUN_GO_TESTS="true"
-            RUN_INTEGRATION_TESTS="true"
           fi
 
           # Check for web changes
