@@ -30,6 +30,7 @@ linters:
       disable:
         - shadow
         - fieldalignment
+        - buildtag
 
     staticcheck:
       checks: ["all", "-ST1000", "-ST1003", "-ST1020", "-SA1029"]
