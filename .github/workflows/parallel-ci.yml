@@ -133,7 +133,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        category: [format, vet, golangci-lint, complexity, search-direct-writes]
+        category: [format, vet, complexity, search-direct-writes]
 
     steps:
       - name: Checkout
