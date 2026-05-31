@@ -12,21 +12,21 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "18"
+          node-version: "24"
 
       - name: Enable Corepack
         run: |
           corepack enable
           cd web
-          corepack prepare yarn@$(node -p "require('./package.json').packageManager.split('@')[1]") --activate
+          corepack prepare "yarn@$(node -p "require('./package.json').packageManager.split('@')[1]")" --activate
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
@@ -41,7 +41,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true

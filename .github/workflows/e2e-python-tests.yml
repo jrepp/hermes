@@ -1,5 +1,5 @@
 # GitHub Actions Workflow for E2E Python Testing
-# 
+#
 # This workflow demonstrates automated testing with the Python testing framework.
 # It starts the testing environment, runs scenarios, and collects results.
 
@@ -26,10 +26,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -52,10 +52,10 @@ jobs:
         run: |
           echo "Waiting for Hermes backend..."
           timeout 120 bash -c 'until curl -sf http://localhost:8000/health; do sleep 2; done'
-          
+
           echo "Waiting for Dex..."
           timeout 60 bash -c 'until curl -sf http://localhost:5558/dex/.well-known/openid-configuration; do sleep 2; done'
-          
+
           echo "✅ All services ready"
         continue-on-error: true
 
@@ -88,10 +88,10 @@ jobs:
           cd testing
           echo "Documents in testing workspace:"
           find workspaces/testing -type f -name "*.md" | head -10
-          
+
           FILE_COUNT=$(find workspaces/testing -type f -name "*.md" | wc -l)
           echo "Total markdown files: $FILE_COUNT"
-          
+
           if [ "$FILE_COUNT" -gt 0 ]; then
             echo "✅ Documents generated successfully"
           else
@@ -105,10 +105,10 @@ jobs:
           cd testing
           echo "=== Hermes Backend Logs ==="
           docker compose logs hermes-central --tail=50
-          
+
           echo "=== Dex Logs ==="
           docker compose logs dex --tail=50
-          
+
           echo "=== Indexer Logs ==="
           docker compose logs hermes-indexer --tail=50
 
@@ -121,17 +121,17 @@ jobs:
 # Authentication Note:
 # This workflow demonstrates testing without authentication (seeding only).
 # For full API testing, you would need to:
-# 
+#
 # 1. Configure GitHub Secrets:
 #    - HERMES_TEST_TOKEN: Pre-generated auth token
 #    - Or: GOOGLE_SERVICE_ACCOUNT_JSON (for Google Workspace)
-# 
+#
 # 2. Set environment variables before running scenarios:
 #    export HERMES_AUTH_TOKEN="${{ secrets.HERMES_TEST_TOKEN }}"
-# 
+#
 # 3. For Dex, you could:
 #    - Use device flow (requires user interaction - not suitable for CI)
 #    - Generate tokens manually and rotate via secrets
 #    - Configure skip_auth for testing environment only
-# 
+#
 # See testing/python/OAUTH_AUTOMATION_GUIDE.md for details.

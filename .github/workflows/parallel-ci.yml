@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -136,10 +136,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -153,7 +153,7 @@ jobs:
       - name: Cache golangci-lint binary
         if: matrix.category == 'golangci-lint'
         id: cache-golangci-lint
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/go/bin/golangci-lint
           key: ${{ runner.os }}-golangci-lint-v2
@@ -162,7 +162,7 @@ jobs:
         if: matrix.category == 'golangci-lint' && steps.cache-golangci-lint.outputs.cache-hit != 'true'
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-            | sh -s -- -b $(go env GOPATH)/bin v2.6.2
+            | sh -s -- -b "$(go env GOPATH)/bin" v2.6.2
 
       - name: Install complexity tools
         if: matrix.category == 'complexity'
@@ -215,10 +215,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -234,7 +234,7 @@ jobs:
         run: make build-binaries
 
       - name: Upload Go binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: go-binaries
           path: build/bin/*
@@ -273,10 +273,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -302,7 +302,7 @@ jobs:
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-${{ matrix.package.coverage-name }}-${{ github.run_id }}
           path: ${{ matrix.package.path }}/coverage.out
@@ -319,12 +319,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '16'
+          node-version: '24'
           cache: 'yarn'
           cache-dependency-path: web/yarn.lock
 
@@ -341,7 +341,7 @@ jobs:
         run: make web/test
 
       - name: Upload web build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-build
           path: web/dist/
@@ -357,10 +357,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -377,7 +377,7 @@ jobs:
           pytest tests/ --cov=. --cov-report=xml
 
       - name: Upload Python coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-python
           path: python-client/coverage.xml
@@ -415,10 +415,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -428,7 +428,7 @@ jobs:
         run: go mod download
 
       - name: Download Go binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: go-binaries
           path: build/bin/
@@ -458,10 +458,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
 
@@ -506,7 +506,7 @@ jobs:
 
     steps:
       - name: Download all coverage reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: coverage-*
           path: coverage-reports/
