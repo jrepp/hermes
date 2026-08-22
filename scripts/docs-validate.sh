@@ -7,7 +7,6 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
@@ -31,30 +30,50 @@ check_uv() {
     fi
 }
 
+# docuchango needs Python 3.10 or newer (it imports typing.TypeGuard). Without
+# a pin, `uv run` resolves whatever interpreter it finds first, which on macOS
+# is often the 3.9 shipped inside Xcode -- and the failure surfaces as an
+# ImportError from deep inside a dependency rather than as a version problem.
+DOCS_PYTHON="${DOCS_PYTHON:-3.12}"
+
+# docuchango only recognises documents under a root it understands. Given the
+# repository root it scans zero files and reports success, which is worse than
+# failing -- it looks like validation passed. Pointed at docs-internal it finds
+# the ADR/RFC/memo tree. Coverage is still partial: it picks up 21 of the 187
+# markdown files there, and nothing under docs/. Override to look elsewhere.
+DOCS_ROOT="${DOCS_ROOT:-docs-internal}"
+
 run_docuchango() {
     local docuchango_cmd="${DOCUCHANGO_CMD:-docuchango}"
     local cmd="$1"
     shift
 
+    # --with installs docuchango into an ephemeral environment on the pinned
+    # interpreter. Without it, `uv run docuchango` finds whatever console
+    # script is already on PATH and runs it under that script's own shebang,
+    # so --python has no effect -- which is how a 3.9 install kept being used
+    # no matter what was requested.
+    local -a uv_run=(uv run --python "${DOCS_PYTHON}" --with "${DOCUCHANGO_PKG:-docuchango}")
+
     case "${cmd}" in
         validate)
             info "Validating documentation in ${PROJECT_ROOT}"
-            uv run "${docuchango_cmd}" validate --repo-root . "$@"
+            "${uv_run[@]}" "${docuchango_cmd}" validate --repo-root "${DOCS_ROOT}" "$@"
             ;;
         migrate)
             info "Migrating documentation metadata in ${PROJECT_ROOT}"
-            uv run "${docuchango_cmd}" migrate --repo-root . "$@"
+            "${uv_run[@]}" "${docuchango_cmd}" migrate --repo-root "${DOCS_ROOT}" "$@"
             ;;
         fix)
             info "Running documentation validation fixes"
-            uv run "${docuchango_cmd}" validate --repo-root . fix "$@"
+            "${uv_run[@]}" "${docuchango_cmd}" validate --repo-root "${DOCS_ROOT}" fix "$@"
             ;;
         bootstrap)
             info "Running docuchango bootstrap flow"
-            uv run "${docuchango_cmd}" bootstrap "$@"
+            "${uv_run[@]}" "${docuchango_cmd}" bootstrap "$@"
             ;;
         *)
-            uv run "${docuchango_cmd}" "${cmd}" --repo-root . "$@"
+            "${uv_run[@]}" "${docuchango_cmd}" "${cmd}" --repo-root "${DOCS_ROOT}" "$@"
             ;;
     esac
 }
@@ -75,6 +94,12 @@ Commands:
 
 Environment:
   DOCUCHANGO_CMD (optional): set a custom docuchango executable path
+  DOCS_PYTHON    (optional): Python version for uv to use (default 3.12;
+                             docuchango requires 3.10+)
+  DOCUCHANGO_PKG (optional): package uv installs (default docuchango); set to
+                             a path or VCS URL to test an unreleased version
+  DOCS_ROOT      (optional): root docuchango scans (default docs-internal; the
+                             repository root matches nothing and scans 0 files)
 EOF
 }
 
