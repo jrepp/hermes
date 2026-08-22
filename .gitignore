@@ -20,9 +20,25 @@
 !/build/**/.gitkeep
 !/build/**/README.md
 
+# Local configuration area (RFC: multi-domain hosting).
+# Everything under local/ is developer- or deployment-specific and may hold
+# secrets. Only the committed examples and readme are tracked.
+/local/*
+!/local/readme.md
+!/local/config.example.hcl
+!/local/sites
+/local/sites/*
+!/local/sites/*.example.hcl
+
+# Root config.hcl is a local artifact created from config-example.hcl.
+/config.hcl
+
 # Google OAuth 2.0
 /credentials.json
 /token.json
+
+# Setup scratch dir (embedded Bleve indexes, bbolt stores)
+/.hermes-setup-tmp/
 
 # macOS & local
 .DS_Store
@@ -44,7 +60,10 @@ node_modules
 /web/.pnp.*
 /web/.yarn/*
 /web/.eslintcache
-/web/dist
+# Frontend build output. `.gitkeep` is committed so the `//go:embed all:dist`
+# in web/web.go resolves on a clean checkout (see `make web/stub`).
+/web/dist/*
+!/web/dist/.gitkeep
 
 # Test artifacts
 *.test

@@ -1,3 +1,5 @@
+//go:build integration
+
 package consumer
 
 import (
@@ -16,6 +18,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/hashicorp-forge/hermes/internal/test"
 	"github.com/hashicorp-forge/hermes/pkg/indexer/pipeline"
 	"github.com/hashicorp-forge/hermes/pkg/indexer/ruleset"
 	"github.com/hashicorp-forge/hermes/pkg/models"
@@ -109,6 +112,8 @@ func publishTestEvent(ctx context.Context, t *testing.T, brokers string, event D
 
 // TestConsumer_ConsumeFromRedpanda tests the consumer consuming from a real Redpanda instance
 func TestConsumer_ConsumeFromRedpanda(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -246,6 +251,8 @@ func TestConsumer_ConsumeFromRedpanda(t *testing.T) {
 
 // TestConsumer_RulesetMatching tests that the consumer correctly matches rulesets
 func TestConsumer_RulesetMatching(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -371,6 +378,8 @@ func TestConsumer_RulesetMatching(t *testing.T) {
 
 // TestConsumer_NoMatchingRuleset tests that no pipeline executes when no ruleset matches
 func TestConsumer_NoMatchingRuleset(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -495,6 +504,8 @@ func TestConsumer_NoMatchingRuleset(t *testing.T) {
 
 // TestConsumer_Idempotency tests that the consumer doesn't reprocess already processed events
 func TestConsumer_Idempotency(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}

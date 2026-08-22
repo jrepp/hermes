@@ -1,3 +1,5 @@
+//go:build integration
+
 package notifications_test
 
 import (
@@ -13,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kgo"
 
+	"github.com/hashicorp-forge/hermes/internal/test"
 	"github.com/hashicorp-forge/hermes/pkg/notifications"
 	"github.com/hashicorp-forge/hermes/pkg/notifications/backends"
 )
@@ -33,13 +36,11 @@ func getRedpandaBroker() string {
 
 func TestPublishAndConsume(t *testing.T) {
 	broker := getRedpandaBroker()
+	test.RequireTCP(t, broker, "Redpanda")
 
-	// Skip test if Redpanda is not available
 	ctx := context.Background()
 	testClient, err := kgo.NewClient(kgo.SeedBrokers(broker))
-	if err != nil {
-		t.Skipf("Redpanda not available: %v", err)
-	}
+	require.NoError(t, err)
 	defer testClient.Close()
 
 	// Create topic (idempotent)
@@ -264,6 +265,12 @@ func TestMailBackendIntegration(t *testing.T) {
 }
 
 func TestNtfyBackendIntegration(t *testing.T) {
+	// This test posts to the public ntfy.sh service. Keep it opt-in so neither
+	// CI nor a local `make test-integration` sends traffic to a third party.
+	if os.Getenv("HERMES_TEST_NTFY") == "" {
+		t.Skip("skipping: set HERMES_TEST_NTFY=1 to post to the public ntfy.sh service")
+	}
+
 	// Create ntfy backend configured for test topic
 	backend := backends.NewNtfyBackend(backends.NtfyBackendConfig{
 		ServerURL: "https://ntfy.sh",

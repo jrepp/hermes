@@ -1,3 +1,5 @@
+//go:build integration
+
 package relay
 
 import (
@@ -14,6 +16,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
+	"github.com/hashicorp-forge/hermes/internal/test"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
@@ -44,6 +47,8 @@ func createKafkaTopic(ctx context.Context, t *testing.T, brokers string) {
 
 // TestRelay_PublishToRedpanda tests the relay publishing to a real Redpanda instance.
 func TestRelay_PublishToRedpanda(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -173,6 +178,8 @@ func TestRelay_PublishToRedpanda(t *testing.T) {
 
 // TestRelay_MultipleBatches tests processing multiple batches of outbox entries.
 func TestRelay_MultipleBatches(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -259,6 +266,8 @@ func TestRelay_MultipleBatches(t *testing.T) {
 
 // TestRelay_FailureHandling tests error handling when Kafka is unavailable.
 func TestRelay_FailureHandling(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -329,6 +338,8 @@ func TestRelay_FailureHandling(t *testing.T) {
 
 // TestRelay_RetryFailed tests retrying failed outbox entries.
 func TestRelay_RetryFailed(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -409,6 +420,8 @@ func TestRelay_RetryFailed(t *testing.T) {
 
 // TestRelay_CleanupOldEntries_WithRedpanda tests cleanup of old published entries with Redpanda.
 func TestRelay_CleanupOldEntries_WithRedpanda(t *testing.T) {
+	test.RequireDocker(t)
+
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}

@@ -1,5 +1,10 @@
 # Makefile for Hermes Go development tasks
 
+# Keep in step with .github/workflows/parallel-ci.yml. .golangci.yml declares
+# `version: "2"`, so a v1 binary cannot read it.
+GOLANGCI_LINT_VERSION ?= v2.6.2
+export GOLANGCI_LINT_VERSION
+
 .PHONY: help
 help: ## Show this help message
 	@echo "Hermes Development Commands:"
@@ -13,11 +18,11 @@ fmt: ## Format all Go code
 	@echo "✓ Code formatted"
 
 .PHONY: lint
-lint: ## Run full repo lint (golangci-lint, go vet, syntax check)
+lint: web/stub ## Run full repo lint (golangci-lint, go vet, syntax check)
 	@echo "Running full repo lint..."
 	@./scripts/validate-go-syntax.sh
 	@go vet ./...
-	@command -v golangci-lint > /dev/null 2>&1 || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@./scripts/ensure-golangci-lint.sh
 	@golangci-lint run --timeout=5m ./...
 	@echo "✓ Lint complete"
 
@@ -33,7 +38,7 @@ complexity-install: ## Install complexity analysis tools
 	@echo "✓ Tools installed"
 
 .PHONY: build
-build: ## Build all packages
+build: web/stub ## Build all packages
 	@echo "Building all packages..."
 	@go build ./...
 	@echo "✓ Build complete"
@@ -59,6 +64,11 @@ build/linux: ## Build Linux binaries for Docker image builds
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/bin/hermes-notify ./cmd/hermes-notify
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/bin/hermes-indexer ./cmd/hermes-indexer
 	@echo "✓ Linux binaries built in build/bin/"
+
+.PHONY: web/stub
+web/stub: ## Ensure web/dist exists so the go:embed in web/web.go resolves
+	@mkdir -p web/dist
+	@test -e web/dist/.gitkeep || touch web/dist/.gitkeep
 
 .PHONY: web/set-yarn-version
 web/set-yarn-version: ## Enable Corepack and activate the web package's pinned Yarn version
@@ -90,12 +100,12 @@ build-notify: ## Build hermes-notify binary
 	@echo "✓ hermes-notify built: build/bin/hermes-notify"
 
 .PHONY: test
-test: ## Run all tests
+test: web/stub ## Run all tests (hermetic: no Docker or network required)
 	@echo "Running tests..."
 	@go test ./...
 
 .PHONY: test-integration
-test-integration: ## Run integration tests only
+test-integration: web/stub ## Run integration tests (requires docker compose services)
 	@echo "Running integration tests..."
 	@go test -tags=integration ./...
 
@@ -132,7 +142,7 @@ test-migration-phase: ## Run specific migration test phase (use PHASE=Phase7_Wor
 	@go test -tags=integration -v -timeout=5m ./tests/integration/migration/ -run TestMigrationE2E/$(PHASE)
 
 .PHONY: test-coverage
-test-coverage: ## Run tests with coverage
+test-coverage: web/stub ## Run tests with coverage
 	@echo "Running tests with coverage..."
 	@mkdir -p build/coverage
 	@go test -coverprofile=build/coverage/coverage.out ./...
@@ -170,7 +180,7 @@ db-migrate-test: ## Run database migrations for test environment
 	@echo "✓ Test database migrations complete"
 
 .PHONY: vet
-vet: ## Run go vet
+vet: web/stub ## Run go vet
 	@echo "Running go vet..."
 	@go vet ./...
 	@echo "✓ Vet complete"
@@ -184,6 +194,22 @@ tidy: ## Tidy go.mod and go.sum
 .PHONY: pre-commit
 pre-commit: fmt vet build ## Run pre-commit checks
 	@echo "✓ Pre-commit checks complete"
+
+.PHONY: verify
+verify: web/stub ## Hermetic gate: fmt, vet, build, unit tests. No Docker, no network.
+	@echo "==> gofmt"
+	@unformatted=$$(gofmt -l . | grep -v '^web/node_modules/' || true); \
+	if [ -n "$$unformatted" ]; then \
+		echo "not formatted:"; echo "$$unformatted"; \
+		echo "run: make fmt"; exit 1; \
+	fi
+	@echo "==> go vet"
+	@go vet ./...
+	@echo "==> go build"
+	@go build ./...
+	@echo "==> go test (hermetic)"
+	@go test -timeout=5m ./...
+	@echo "✓ verify passed"
 
 .PHONY: validate
 validate: lint complexity ## Run full validation (lint + complexity)
@@ -233,8 +259,8 @@ ci: ## Run full CI checks locally (matches GitHub Actions)
 .PHONY: ci-install-tools
 ci-install-tools: ## Install tools needed for local CI
 	@echo "Installing CI tools..."
-	@echo "Installing golangci-lint..."
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.55.2
+	@echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
 	@$(MAKE) complexity-install
 	@echo "✓ CI tools installed"
 

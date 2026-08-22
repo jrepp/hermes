@@ -16,7 +16,11 @@ import (
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
 )
 
-//go:embed dist
+// The `all:` prefix includes dotfiles, so `dist/.gitkeep` alone satisfies the
+// pattern. Without it, `go build ./...` fails on a clean checkout with
+// "pattern dist: no matching files found" until the frontend is built.
+//
+//go:embed all:dist
 var content embed.FS
 
 // Handler serves the Ember single-page application.

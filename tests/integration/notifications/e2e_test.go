@@ -1,3 +1,5 @@
+//go:build integration
+
 package notifications_test
 
 import (
@@ -11,14 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hashicorp-forge/hermes/internal/notifications"
+	"github.com/hashicorp-forge/hermes/internal/test"
 	pkgnotifications "github.com/hashicorp-forge/hermes/pkg/notifications"
 )
 
 // TestNotificationE2E tests the complete notification flow:
 // Server (template resolution) → Publisher → Redpanda → Notifier → Audit Backend
 func TestNotificationE2E(t *testing.T) {
-	// Skip if Redpanda not available
 	broker := getRedpandaBroker()
+	test.RequireDocker(t)
+	test.RequireTCP(t, broker, "Redpanda")
 
 	// Create notification provider (server-side component)
 	// Use production topic for E2E test (hermes.notifications, not test topic)
@@ -114,8 +118,9 @@ func getNotifierLogs() (string, error) {
 
 // TestNotificationE2EWithMultipleBackends tests notification routing to multiple backends
 func TestNotificationE2EWithMultipleBackends(t *testing.T) {
-	// Skip if Redpanda not available
 	broker := getRedpandaBroker()
+	test.RequireDocker(t)
+	test.RequireTCP(t, broker, "Redpanda")
 
 	provider, err := notifications.NewProvider(pkgnotifications.PublisherConfig{
 		Brokers: []string{broker},
@@ -161,6 +166,7 @@ func TestNotificationE2EWithMultipleBackends(t *testing.T) {
 
 // TestNotificationTemplateResolution tests that templates are resolved server-side
 func TestNotificationTemplateResolution(t *testing.T) {
+
 	// This test verifies template resolution without requiring the full E2E infrastructure
 	resolver, err := notifications.NewTemplateResolver()
 	require.NoError(t, err)
@@ -231,6 +237,7 @@ func TestNotificationTemplateResolution(t *testing.T) {
 
 // TestTemplateValidationMissingVariable tests that template resolution fails when context variables are missing
 func TestTemplateValidationMissingVariable(t *testing.T) {
+
 	resolver, err := notifications.NewTemplateResolver()
 	require.NoError(t, err)
 
@@ -251,6 +258,7 @@ func TestTemplateValidationMissingVariable(t *testing.T) {
 
 // TestTemplateValidationEmptyContext tests that template resolution fails with completely empty context
 func TestTemplateValidationEmptyContext(t *testing.T) {
+
 	resolver, err := notifications.NewTemplateResolver()
 	require.NoError(t, err)
 
