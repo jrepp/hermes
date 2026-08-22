@@ -156,12 +156,18 @@ func ginConfigHandler(
 			baseURL = site.BaseURL
 		}
 
-		// Trim last "/"
+		// An explicit shortener_base_url is the operator saying they run their
+		// own; it is advertised whatever else is true.
 		shortLinkBaseURL := strings.TrimSuffix(cfg.ShortenerBaseURL, "/")
-		// Check if shortener base URL was set, if not
-		// use application base URL to create
-		// short link base URL.
-		if shortLinkBaseURL == "" {
+
+		// Otherwise the base URL is only derived when the /l/ redirect handler
+		// is actually registered, which today means the Algolia path -- the
+		// handler resolves short links by querying Algolia directly. Elsewhere
+		// the derived URL pointed at a route that does not exist, so a share
+		// link loaded the single-page app instead of the document. The
+		// frontend treats an empty value as "no shortener" and falls back to
+		// the canonical URL, which is the honest answer.
+		if shortLinkBaseURL == "" && a != nil {
 			shortLinkBaseURL = strings.TrimSuffix(baseURL, "/") + "/l"
 		}
 

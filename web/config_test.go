@@ -106,8 +106,10 @@ func TestConfigHandlerIsSiteScoped(t *testing.T) {
 			t.Fatalf("%s: decoding response: %v", tc.host, err)
 		}
 
-		if got, want := body["short_link_base_url"], tc.wantBase+"/l"; got != want {
-			t.Errorf("%s: short_link_base_url = %v, want %v", tc.host, got, want)
+		// No Algolia client, so no /l/ handler and no short links.
+		if got := body["short_link_base_url"]; got != "" {
+			t.Errorf("%s: short_link_base_url = %v, want empty without a "+
+				"redirect handler", tc.host, got)
 		}
 		if got, want := body["dex_redirect_url"], tc.wantBase+"/auth/callback"; got != want {
 			t.Errorf("%s: dex_redirect_url = %v, want %v", tc.host, got, want)
@@ -125,7 +127,41 @@ func TestConfigHandlerWithoutSitesKeepsGlobalBaseURL(t *testing.T) {
 
 	_, body := getConfig(t, cfg, "hermes.example.com")
 
-	if got, want := body["short_link_base_url"], "https://hermes.example.com/l"; got != want {
+	if got := body["short_link_base_url"]; got != "" {
+		t.Errorf("short_link_base_url = %v, want empty", got)
+	}
+}
+
+// TestConfigHandlerOmitsShortLinksWithoutARedirectHandler is the point: the /l/
+// route is only registered on the Algolia path, so advertising a base URL
+// elsewhere hands the frontend a link that loads the single-page app instead
+// of the document. The frontend reads an empty value as "no shortener" and
+// falls back to the canonical URL.
+func TestConfigHandlerOmitsShortLinksWithoutARedirectHandler(t *testing.T) {
+	cfg := &config.Config{
+		BaseURL:   "https://docs.jrepp.com",
+		Providers: &config.Providers{Workspace: "local", Search: "meilisearch"},
+	}
+
+	_, body := getConfig(t, cfg, "docs.jrepp.com")
+
+	if got := body["short_link_base_url"]; got != "" {
+		t.Errorf("short_link_base_url = %v; there is no /l/ handler to serve it", got)
+	}
+}
+
+// TestConfigHandlerKeepsAnExplicitShortener covers the operator who runs their
+// own: an explicit setting is advertised whatever the search provider is.
+func TestConfigHandlerKeepsAnExplicitShortener(t *testing.T) {
+	cfg := &config.Config{
+		BaseURL:          "https://docs.jrepp.com",
+		ShortenerBaseURL: "https://jrepp.link/",
+		Providers:        &config.Providers{Workspace: "local", Search: "meilisearch"},
+	}
+
+	_, body := getConfig(t, cfg, "docs.jrepp.com")
+
+	if got, want := body["short_link_base_url"], "https://jrepp.link"; got != want {
 		t.Errorf("short_link_base_url = %v, want %v", got, want)
 	}
 }
