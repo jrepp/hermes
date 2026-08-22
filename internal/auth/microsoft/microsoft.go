@@ -116,41 +116,42 @@ func AuthenticateRequest(cfg *config.SharePointConfig, log hclog.Logger, spServi
 	})
 }
 
-// extractTokenFromRequest extracts the token from the request
+// tokenCookieNames are the cookies that may carry a Microsoft access token,
+// in preference order.
+var tokenCookieNames = []string{"microsoft_token", "token", "auth_token"}
+
+// extractTokenFromRequest returns the Microsoft access token presented by the
+// request, or "" if there is none.
+//
+// It looks only at the Authorization header and at cookies known to carry a
+// token. It used to have a further fallback: if a user_email cookie was
+// present, it walked every cookie on the request and returned the first value
+// longer than 100 characters, on the reasoning that "a token should be fairly
+// long".
+//
+// That is a credential-disclosure bug, because the value it picks is sent
+// onward to Microsoft Graph as a bearer token. Any long cookie on the domain
+// qualifies -- an analytics identifier, another application's session, or
+// Hermes' own signed hermes_session cookie, which is comfortably over 100
+// characters. Which one it chose depended on the order the browser happened to
+// send them in.
+//
+// Removing the fallback means a request without a recognised token cookie
+// fails authentication instead of guessing. Failing is the correct outcome;
+// guessing a credential and forwarding it to a third party is not.
 func extractTokenFromRequest(r *http.Request) string {
-	// Check Authorization header
 	authHeader := r.Header.Get("Authorization")
-	if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
-		return strings.TrimPrefix(authHeader, "Bearer ")
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token != "" {
+			return token
+		}
 	}
 
-	// Check Cookie - check both microsoft_token and the standard token cookie name
-	cookie, err := r.Cookie("microsoft_token")
-	if err == nil && cookie != nil && cookie.Value != "" {
-		return cookie.Value
-	}
-
-	// Check for alternative cookie names
-	cookie, err = r.Cookie("token")
-	if err == nil && cookie != nil && cookie.Value != "" {
-		return cookie.Value
-	}
-
-	// Check for auth_token cookie
-	cookie, err = r.Cookie("auth_token")
-	if err == nil && cookie != nil && cookie.Value != "" {
-		return cookie.Value
-	}
-
-	// If we have a user_email cookie, that indicates a successful login happened
-	// and we should check for any available cookies
-	cookie, err = r.Cookie("user_email")
-	if err == nil && cookie != nil && cookie.Value != "" {
-		// Loop through all cookies to find any that might be the token
-		for _, c := range r.Cookies() {
-			if len(c.Value) > 100 { // Token should be fairly long
-				return c.Value
-			}
+	for _, name := range tokenCookieNames {
+		cookie, err := r.Cookie(name)
+		if err == nil && cookie.Value != "" {
+			return cookie.Value
 		}
 	}
 
