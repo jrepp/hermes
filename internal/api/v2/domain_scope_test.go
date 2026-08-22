@@ -141,3 +141,136 @@ func isSelector(expr ast.Expr, pkg, name string) bool {
 
 	return ok && ident.Name == pkg && sel.Sel.Name == name
 }
+
+// TestDatabaseHelpersAreReachedOnlyFromScopedHandlers closes the gap the
+// constructor check leaves open.
+//
+// Only a handler constructor is required to call ForRequest, but the database
+// access itself often lives in a helper -- handleIndexerRegister,
+// projectsResourceRelatedResourcesHandler, and so on -- which receives an
+// already-scoped Server from its caller. That works, and nothing checks it: a
+// helper wired to a new unscoped caller would read the wrong tenant's data
+// with no test failing.
+//
+// So every function that takes a server.Server and touches srv.DB is traced
+// back to its callers. Each root must be a constructor that scopes. A helper
+// with no callers at all is reported too: nothing establishes how a future
+// caller will reach it, and the first one to appear will not be checked.
+func TestDatabaseHelpersAreReachedOnlyFromScopedHandlers(t *testing.T) {
+	t.Parallel()
+
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, ".", func(fi fs.FileInfo) bool {
+		return !strings.HasSuffix(fi.Name(), "_test.go")
+	}, 0)
+	if err != nil {
+		t.Fatalf("parsing package: %v", err)
+	}
+
+	scoped := map[string]bool{}   // functions that call ForRequest/ForDomain
+	usesDB := map[string]bool{}   // functions that read srv.DB
+	takesSrv := map[string]bool{} // functions with a server.Server parameter
+	calls := map[string][]string{}
+	callers := map[string][]string{}
+
+	for _, pkg := range pkgs {
+		for _, file := range pkg.Files {
+			for _, decl := range file.Decls {
+				fn, ok := decl.(*ast.FuncDecl)
+				if !ok || fn.Body == nil {
+					continue
+				}
+				name := fn.Name.Name
+				takesSrv[name] = hasServerParam(fn)
+
+				ast.Inspect(fn.Body, func(n ast.Node) bool {
+					switch node := n.(type) {
+					case *ast.SelectorExpr:
+						if ident, ok := node.X.(*ast.Ident); ok && ident.Name == "srv" {
+							switch node.Sel.Name {
+							case "DB":
+								usesDB[name] = true
+							case "ForRequest", "ForDomain":
+								scoped[name] = true
+							}
+						}
+					case *ast.CallExpr:
+						if ident, ok := node.Fun.(*ast.Ident); ok {
+							calls[name] = append(calls[name], ident.Name)
+							callers[ident.Name] = append(callers[ident.Name], name)
+						}
+					}
+
+					return true
+				})
+			}
+		}
+	}
+
+	for name := range usesDB {
+		if scoped[name] || !takesSrv[name] {
+			continue
+		}
+
+		if len(callers[name]) == 0 {
+			t.Errorf("%s takes a server.Server and reads srv.DB, but nothing "+
+				"calls it.\n"+
+				"Nothing establishes which site it would run against, so the "+
+				"first caller to appear will not be checked. Either take a "+
+				"context and scope inside, or remove it.", name)
+			continue
+		}
+
+		for _, root := range unscopedRoots(name, callers, scoped, map[string]bool{}) {
+			t.Errorf("%s reads srv.DB, and is reachable from %s, which never "+
+				"scopes to a site.\n"+
+				"Add to that handler:\n"+
+				"\tsrv, ok := srv.ForRequest(w, r)\n\tif !ok {\n\t\treturn\n\t}",
+				name, root)
+		}
+	}
+}
+
+// unscopedRoots walks callers upward and returns any that neither scope nor
+// have callers of their own.
+func unscopedRoots(
+	name string, callers map[string][]string, scoped, seen map[string]bool,
+) []string {
+	if seen[name] {
+		return nil
+	}
+	seen[name] = true
+
+	var roots []string
+	for _, caller := range callers[name] {
+		switch {
+		case scoped[caller]:
+			// Reaching a function that scopes ends this path.
+		case len(callers[caller]) == 0:
+			roots = append(roots, caller)
+		default:
+			roots = append(roots, unscopedRoots(caller, callers, scoped, seen)...)
+		}
+	}
+
+	return roots
+}
+
+// hasServerParam reports whether fn takes a server.Server named srv.
+func hasServerParam(fn *ast.FuncDecl) bool {
+	if fn.Type.Params == nil {
+		return false
+	}
+	for _, p := range fn.Type.Params.List {
+		if !isSelector(p.Type, "server", "Server") {
+			continue
+		}
+		for _, n := range p.Names {
+			if n.Name == "srv" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
