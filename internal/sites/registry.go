@@ -87,11 +87,107 @@ func NewRegistry(cfg *config.Config) (*Registry, error) {
 		r.ordered = append(r.ordered, site)
 	}
 
+	if err := r.rejectSharedStorage(); err != nil {
+		return nil, err
+	}
+
 	if err := r.resolveDefault(cfg); err != nil {
 		return nil, err
 	}
 
 	return r, nil
+}
+
+// rejectSharedStorage refuses a configuration where two sites would write to
+// the same place.
+//
+// Distinct hostnames are checked above, but hostnames are not what isolate
+// tenants -- storage is. schema_name and workspace_path are both overridable,
+// and pointing two sites at one schema or one directory merges them, silently
+// and permanently. Nothing downstream would report it: each site connects
+// successfully, serves its own hostname, and reads the other's rows.
+//
+// The schema check compares the whole connection, not the schema name alone.
+// Two sites may legitimately share a schema name when they live in different
+// databases -- that is the normal shape of a per-site-database deployment,
+// where every site is "site_x" in a database of its own.
+func (r *Registry) rejectSharedStorage() error {
+	type storageKey struct {
+		host, dbname, schema string
+		port                 int
+	}
+
+	seenStorage := make(map[storageKey]*Site, len(r.ordered))
+	for _, site := range r.ordered {
+		key := storageKey{
+			host:   site.Postgres.Host,
+			port:   site.Postgres.Port,
+			dbname: site.Postgres.DBName,
+			schema: site.SchemaName,
+		}
+		if existing, taken := seenStorage[key]; taken {
+			return fmt.Errorf(
+				"sites: %q and %q both resolve to schema %q of %s/%s.\n"+
+					"Two sites sharing a schema share their data. Give one a "+
+					"different schema_name, or put it in another database",
+				existing.Domain, site.Domain, site.SchemaName,
+				site.Postgres.Host, site.Postgres.DBName)
+		}
+		seenStorage[key] = site
+	}
+
+	for i, a := range r.ordered {
+		for _, b := range r.ordered[i+1:] {
+			if err := checkWorkspaceOverlap(a, b); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// checkWorkspaceOverlap rejects two sites whose document directories are the
+// same, or where one contains the other.
+//
+// Nesting matters as much as equality: a site rooted at <base>/docs and
+// another at <base>/docs/notes means the first site's tree contains the
+// second's, so listing documents for the first walks into the second.
+func checkWorkspaceOverlap(a, b *Site) error {
+	pathA := filepath.Clean(a.WorkspacePath)
+	pathB := filepath.Clean(b.WorkspacePath)
+
+	switch {
+	case pathA == pathB:
+		return fmt.Errorf(
+			"sites: %q and %q both store documents in %q.\n"+
+				"Two sites sharing a directory share their documents. Give one a "+
+				"different workspace_path",
+			a.Domain, b.Domain, pathA)
+	case isAncestor(pathA, pathB):
+		return fmt.Errorf(
+			"sites: %q stores documents in %q, which contains %q used by %q.\n"+
+				"The outer site would list the inner site's documents as its own",
+			a.Domain, pathA, pathB, b.Domain)
+	case isAncestor(pathB, pathA):
+		return fmt.Errorf(
+			"sites: %q stores documents in %q, which contains %q used by %q.\n"+
+				"The outer site would list the inner site's documents as its own",
+			b.Domain, pathB, pathA, a.Domain)
+	}
+
+	return nil
+}
+
+// isAncestor reports whether parent contains child, comparing whole path
+// elements so that "/data/docs" does not appear to contain "/data/docs-notes".
+func isAncestor(parent, child string) bool {
+	rel, err := filepath.Rel(parent, child)
+	if err != nil {
+		return false
+	}
+
+	return rel != "." && !strings.HasPrefix(rel, "..")
 }
 
 // buildSite derives a Site from one config block, filling in every value the
