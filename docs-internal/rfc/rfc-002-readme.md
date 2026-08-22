@@ -17,7 +17,7 @@ Architecture proposals, design documents, and implementation specifications for 
 
 ## Quick Stats
 
-- **Total RFCs**: 18
+- **Total RFCs**: 19
 - **Scope**: architecture proposals, design documents, feature specifications
 
 ## Index by Category
@@ -40,6 +40,7 @@ Architecture proposals, design documents, and implementation specifications for 
 | [089](rfc-015-s3-storage-backend-and-migrations.md) | S3 Storage Backend & Migrations | Accepted | S3 storage backend and narrowed v1.0 migration API/router contract |
 | [091](rfc-017-document-revisions-and-migration.md) | Document Revisions & Migration | Design Phase | Provider-project-document-revision model |
 | [092](rfc-018-instance-identity.md) | Instance Identity | Approved | Composite instance + project identity in distributed system |
+| [023](rfc-023-multi-domain-hosting-and-signed-sessions.md) | Multi-Domain Hosting & Signed Sessions | In Progress | One listener serving many subdomains as isolated tenants, with HMAC-signed domain-bound sessions |
 
 ### Indexing
 

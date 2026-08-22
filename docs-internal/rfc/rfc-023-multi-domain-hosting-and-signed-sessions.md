@@ -1,0 +1,221 @@
+---
+id: rfc-023
+title: "Multi-Domain Hosting and Signed Sessions"
+status: In Progress
+created: 2026-08-21
+author: Hermes Team
+project_id: hermes
+doc_uuid: 86b78af5-e125-46c6-b89a-773cd0f47bc7
+type: RFC
+subtype: Architecture
+tags: [multi-tenancy, sessions, auth, domains, deployment]
+related:
+  - ADR-012
+  - ADR-014
+  - ADR-007
+  - ADR-009
+---
+
+# RFC-023: Multi-Domain Hosting and Signed Sessions
+
+One Hermes process should be able to serve several subdomains of one apex domain — `docs.jrepp.com`, `notes.jrepp.com` — as isolated tenants, behind a single nginx front end. This RFC introduces a canonical domain type, a hostname-to-tenant registry, per-domain storage scoping, and the signed session cookie that multi-tenancy makes mandatory. The binding rules on OIDC session handling live in [ADR-012](../adr/adr-012-multi-provider-auth-architecture.md) and [ADR-014](../adr/adr-014-dex-authentication-implementation.md); this RFC does not revisit them, it makes the implementation match them.
+
+## Motivation
+
+Hermes today is single-tenant by construction. `base_url` is global, the workspace adapter writes to one set of directories, and the database has one schema. Serving a second hostname means running a second process with a second config, second database, and second workspace — which is defensible at organizational scale and absurd for a handful of personal subdomains on one small host.
+
+Two things forced this work rather than merely motivating it.
+
+**The session cookie was not a session.** `internal/auth/auth.go` read the `hermes_session` cookie and returned its value as the authenticated user's email address. `internal/api/auth.go` set that cookie to the plaintext email after a successful Dex exchange. There was no signature, no MAC, and no server-side session store. Anyone could send:
+
+```
+Cookie: hermes_session=someone@example.com
+```
+
+and be that person. On `localhost` behind no network this is invisible. Exposed to the internet it is a complete authentication bypass with no exploit required beyond a browser devtools console. ADR-012 and ADR-014 both describe the OIDC path as issuing a session cookie; the implementation shipped the identity itself in the cookie instead. This RFC treats that as a defect against those ADRs, not a decision to revisit.
+
+**Hostnames were not canonical.** Nothing in the codebase agreed on what a hostname *is*. `Host` headers arrive with ports, with trailing dots, in mixed case, and in Unicode. Any storage keyed on the raw string will split one tenant across several namespaces — or, worse, merge two.
+
+## Goals
+
+- One listener serves many hostnames, each an isolated tenant with its own storage namespace.
+- A canonical domain type that cannot be constructed incorrectly, threaded from the HTTP edge to the storage engine.
+- A session cookie that is unforgeable and cannot be replayed against another tenant.
+- A gitignored `local/` configuration area suitable for a real deployment, with a committed, tested example.
+- Existing single-site deployments continue to work with no configuration change.
+
+## Non-Goals
+
+- TLS termination in Hermes. nginx terminates TLS and proxies to a loopback listener; Hermes speaks plain HTTP.
+- Cross-tenant features — shared search, shared users, or a tenant-spanning admin view.
+- Tenant provisioning at runtime. Sites are configuration; adding one is a config change and a restart.
+- Replacing the identity provider. Dex, Okta, Google, and SharePoint keep their existing roles.
+
+## Proposal
+
+### Overview
+
+A request's hostname is resolved to a `Site` before anything else touches it. The `Site` carries every per-tenant resource derived from that hostname: PostgreSQL schema, workspace directory, base URL, and session scope. Downstream code reads the domain from the request context rather than from global configuration.
+
+```text
+                    ┌──────────────────────────────────────────────┐
+   HTTPS            │ nginx                                        │
+  ───────────────►  │  TLS + certbot, proxy_set_header Host $host  │
+                    └───────────────────┬──────────────────────────┘
+                                        │ plain HTTP, loopback
+                                        ▼
+             ┌───────────────────────────────────────────────────┐
+             │ middleware.DomainResolver                         │
+             │  Host ─► domain.Parse ─► sites.Registry.Lookup    │
+             │  unknown host ─► 421   unparseable ─► 400         │
+             └───────────────────┬───────────────────────────────┘
+                                 │ ctx: domain.Name + *sites.Site
+                                 ▼
+             ┌───────────────────────────────────────────────────┐
+             │ auth.AuthenticateRequest                          │
+             │  verify HMAC, require token.Domain == ctx.Domain  │
+             └───────────────────┬───────────────────────────────┘
+                                 ▼
+                        handlers, storage, search
+```
+
+### Detailed Design
+
+#### `pkg/domain` — the canonical type
+
+```go
+// Name is a canonical DNS hostname identifying a Hermes site.
+type Name struct {
+    name string // unexported: cannot be produced by conversion
+}
+
+func Parse(raw string) (Name, error)
+func (n Name) SchemaName() string
+func (n Name) PathSegment() string
+```
+
+The unexported field is the design. `domain.Name("Docs.JRepp.com:8000")` does not compile, so every value in the program came through `Parse` and is already canonical. There is exactly one place normalization happens, and no function taking a `Name` has to defend itself.
+
+`Parse` trims space, strips a numeric port, strips a trailing root dot, rejects invalid UTF-8, applies `idna.Lookup.ToASCII`, lowercases, validates label and total lengths, and then re-canonicalizes to confirm a fixed point.
+
+Two bugs found while building it are worth recording, because both are the kind that would have surfaced as data corruption rather than as an error:
+
+- `Parse("https://docs.jrepp.com")` returned `https`. The port stripper split on the first colon and the remainder was a valid single-label hostname. Ports are now required to be numeric, and anything else is an error.
+- `Parse("\xff")` returned `xn--zn7c`, which does not itself re-parse. `idna.Lookup` maps undecodable bytes to U+FFFD and punycodes the result. A canonicalization that is not idempotent means the same tenant can land in two namespaces depending on which layer normalized first. Found by `FuzzParse` in 0.02 seconds; fixed with a UTF-8 check plus an explicit fixed-point assertion; the crasher is committed as a seed corpus entry.
+
+`SchemaName` encodes `.` as `_` and `-` as `__`. The doubling is not cosmetic: a plain substitution maps both `a.b.com` and `a-b.com` to `site_a_b_com` and silently merges two tenants into one schema.
+
+#### `internal/sites` — the registry
+
+```hcl
+site "docs.jrepp.com" {
+  aliases  = ["www.jrepp.com"]
+  base_url = "https://docs.jrepp.com"
+}
+```
+
+`NewRegistry` builds the hostname-to-`Site` map at startup and derives defaults: `base_url` from the hostname, `schema_name` from `SchemaName()`, `workspace_path` from `<local_workspace.base_path>/<hostname>`.
+
+It **refuses to start** on ambiguity: a hostname claimed by two sites, a site aliasing itself, a `default_site` naming a site that does not exist, or a site with no resolvable workspace path. A hostname claimed twice would otherwise route to whichever tenant a map iteration happened to yield — a non-deterministic cross-tenant read that no test would reliably catch.
+
+Aliases fold onto the canonical domain rather than becoming separate keys, so `www.jrepp.com` and `docs.jrepp.com` share one storage namespace instead of quietly opening two.
+
+#### `internal/middleware` — host routing
+
+`DomainResolver` prefers `r.Host` and consults `X-Forwarded-Host` only when the peer address falls inside a configured `trusted_proxies` CIDR — otherwise the header is attacker-controlled and believing it lets any client pick which tenant to read. It stores the **site's canonical** domain in the context, not the spelling the client used, which is what makes alias folding work end to end.
+
+Unknown hostnames get `421 Misdirected Request`; unparseable ones get `400`. The resolver is only installed when at least one `site` block is configured, so single-site deployments are untouched.
+
+#### `internal/session` — signed cookies
+
+```
+hs1.<base64url(payload)>.<base64url(HMAC-SHA256(key, "hs1." + payload))>
+```
+
+The payload carries email, site, issue time, expiry, and a 16-byte random nonce. Design points:
+
+- **The MAC covers the exact received bytes**, and is checked before the payload is decoded. No attacker-controlled structure is ever interpreted. This also means the JSON encoding does not need to be canonical.
+- **The version prefix is inside the MAC**, so a future format cannot be confused for this one.
+- **The token names its site**, and `Verify` requires that name to match the request's site. This is *not* redundant with the host-only cookie, and the reason is the core of the threat model — see below.
+- **The stored domain is re-parsed, not trusted.** A token minted by an older build must not resolve to something `Parse` would reject today.
+- **All verification failures are indistinguishable to the client.** Expiry, bad signature, and wrong site all render as a generic 401; the distinction is logged, not returned.
+
+The key is derived by hashing the configured secret rather than decoding it. Accepting base64 would make the encoding ambiguous — a 44-character secret is both valid base64 and 44 perfectly good bytes — and an operator who guessed wrong would get a silently weaker key.
+
+#### Storage scoping
+
+`local.Config` gained a `Domain` field. When set, every default path roots at `<base_path>/<domain>/`, and `Validate` rejects an explicitly configured path that escapes that root. Isolation is enforced by construction rather than by convention, because a stray absolute path in one site's block is exactly how one tenant's documents become readable by another.
+
+`local_workspace`'s `docs_path`, `drafts_path`, `folders_path`, `users_path`, and `tokens_path` became optional. A multi-domain deployment must leave them unset: one shared `docs_path` would put every tenant's documents in the same directory.
+
+### API / Schema Changes
+
+No HTTP API surface changes. Configuration gains:
+
+| Block / field | Meaning |
+|---|---|
+| `site "<hostname>" { … }` | One tenant. Repeatable. |
+| `site.aliases` | Additional hostnames for the same tenant. |
+| `site.base_url`, `site.schema_name`, `site.workspace_path` | Overrides for the derived defaults. |
+| `site.disabled` | Skip without deleting. |
+| `default_site` | Where unmatched hostnames go; default is to reject with 421. |
+| `trusted_proxies` | CIDRs (or bare IPs) whose `X-Forwarded-Host` is believed. |
+| `session { key, ttl }` | Session signing secret and lifetime. |
+| `HERMES_SESSION_KEY` | Environment override for `session.key`. |
+
+Database: each site gets its own PostgreSQL schema, named `site_<encoded hostname>`. The schema layout within a site is unchanged.
+
+### Migration Plan
+
+| Phase | Content | State |
+|---|---|---|
+| 0 | Guardrails: clean-checkout build, hermetic test suite, working lint, `make verify` | Done |
+| 1 | `local/` configuration area with committed, tested example | Done |
+| 2 | `pkg/domain` canonical type | Done |
+| 3 | `internal/sites` registry and `internal/middleware` host routing | Done |
+| 4a | Per-domain local workspace scoping | Done |
+| 4b | Per-domain PostgreSQL schema and search namespace; `srv.ForDomain(ctx)` | Not started |
+| 5 | Signed sessions | Done |
+| 6 | jrepp.com deployment: nginx, certbot, systemd, deploy script | Not started |
+
+Backward compatibility is total for phases 0–5: with no `site` blocks configured, the registry is empty, the resolver is not installed, and sessions are issued with no site scope. Existing deployments need no configuration change.
+
+The one behavioural change for existing deployments is that session cookies issued before this change stop working, because they are not signed. Users log in again once. There is no compatibility window for the old format, deliberately: accepting an unsigned cookie is the vulnerability, so a grace period would be a grace period on the bypass.
+
+Rollback is per-phase and independent. Removing `site` blocks disables multi-tenancy without touching sessions; reverting `internal/session` restores single-tenant behaviour without touching routing.
+
+### Security / Privacy Considerations
+
+The threat model that drives the domain binding in the token is worth stating explicitly, because the obvious objection — "the cookie is host-only, so it never reaches the other subdomain" — is wrong.
+
+Cookies do not obey the same-origin policy. Any host under `jrepp.com` may set a cookie scoped to `Domain=jrepp.com`, and the browser will then send it to every sibling subdomain. That host does not have to be one Hermes serves; it does not have to be one the operator controls. Without the site name inside the signed payload, a token minted for `docs.jrepp.com` would authenticate its bearer on `notes.jrepp.com`. The host-only attribute and the embedded domain defend against different attacks, and both are needed.
+
+Two further items:
+
+- **`Secure` cannot be derived from the connection.** In the target topology nginx terminates TLS and proxies to loopback, so `r.TLS` is nil on every request even though the browser is on HTTPS. Deriving the flag from the connection would ship every production session cookie without `Secure`, exposing it to anyone who can force one plaintext request. It is derived from the site's configured `base_url` scheme instead, falling back to the connection only when no site is configured.
+- **An unset signing key generates an ephemeral one and warns.** This fails closed — sessions end at restart — where a fixed default would be a signing secret published in this repository. Placeholder values such as the `change-me` in the shipped example are rejected for the same reason, and a test asserts it.
+
+Not addressed here: `internal/auth/microsoft` sets a `user_email` cookie and its `extractTokenFromRequest` will accept any cookie longer than 100 characters as a bearer token. That path does validate the token against Microsoft Graph, so it is not the same trivial bypass, but it deserves its own review.
+
+## Alternatives Considered
+
+- **Separate process per subdomain** — the status quo generalized. Rejected: N processes, N configs, N database instances, and N TLS setups for what is one small deployment. It also does not make hostnames canonical, so the same normalization bugs remain, just distributed.
+- **Row-level tenancy (a `domain` column on every table)** — one schema, one connection pool, filtering by tenant. Rejected in favour of schema-per-domain: every query becomes a place where a forgotten `WHERE domain = ?` is a silent cross-tenant read, and there is no way to make the compiler or the database enforce it. Schema separation makes isolation the default and leakage the thing that requires effort.
+- **Opaque session IDs backed by a server-side store** — a standard design with a real advantage: instant revocation. Rejected for now because it requires a session table or cache on the request path, and the deployment does not yet need per-session revocation. Rotating `HERMES_SESSION_KEY` provides global revocation. The nonce in the payload is the handle a future revocation list would key on.
+- **JWTs via a library** — same shape, more surface. `alg=none` and algorithm-confusion bugs are the two most common JWT vulnerabilities, and both come from the format's flexibility about which algorithm to use. A fixed-version, fixed-algorithm token has neither.
+- **Deriving `Secure` from `X-Forwarded-Proto`** — workable, but it makes cookie security depend on a header, and therefore on the trusted-proxy list being right. The site's own `base_url` is operator-configured, not request-derived, so it cannot be influenced by a client at all.
+
+## Open Questions
+
+- Should `hermes-migrate` grow an all-sites mode that iterates the registry, or should each site be migrated by an explicit `-schema` invocation? Leaning toward both: `-schema` as the primitive, all-sites as the loop over it.
+- Per-domain search namespacing is settled for Meilisearch and Bleve (index prefix) but not for Algolia, where index count is a billing dimension.
+- Does the indexer need domain awareness, or is it sufficient for it to be pointed at one site at a time? It submits via API only (ADR-020), so the API's domain scope may be enough.
+
+## References
+
+- [ADR-012: Multi-Provider Auth Architecture](../adr/adr-012-multi-provider-auth-architecture.md) — binding rule on OIDC session cookies.
+- [ADR-014: Dex Authentication Implementation](../adr/adr-014-dex-authentication-implementation.md) — binding rule on the Dex session path.
+- [ADR-007: Local File Workspace System](../adr/adr-007-local-file-workspace-system.md) — the workspace layout being scoped per domain.
+- [ADR-009: Provider Abstraction Architecture](../adr/adr-009-provider-abstraction-architecture.md) — provider model the session signer plugs into.
+- Code: `pkg/domain/`, `internal/sites/`, `internal/middleware/domain.go`, `internal/session/`, `pkg/workspace/adapters/local/config.go`.
+- Configuration: `local/config.example.hcl`, `local/readme.md`.
