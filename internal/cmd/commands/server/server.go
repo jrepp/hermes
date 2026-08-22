@@ -29,6 +29,7 @@ import (
 	dbpkg "github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/internal/instance"
 	"github.com/hashicorp-forge/hermes/internal/jira"
+	"github.com/hashicorp-forge/hermes/internal/middleware"
 	"github.com/hashicorp-forge/hermes/internal/migrate"
 	"github.com/hashicorp-forge/hermes/internal/openapi"
 	"github.com/hashicorp-forge/hermes/internal/otel"
@@ -36,6 +37,8 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/projects"
 	"github.com/hashicorp-forge/hermes/internal/pub"
 	"github.com/hashicorp-forge/hermes/internal/server"
+	"github.com/hashicorp-forge/hermes/internal/session"
+	"github.com/hashicorp-forge/hermes/internal/sites"
 	"github.com/hashicorp-forge/hermes/internal/structs"
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
@@ -758,6 +761,46 @@ func (c *Command) Run(args []string) int {
 		}
 	}
 
+	// Resolve the site registry before anything that depends on per-site
+	// resources. NewRegistry rejects ambiguous hostname configuration, and it
+	// is better to refuse to start than to route requests to whichever tenant
+	// a map iteration happened to yield.
+	siteRegistry, err := sites.NewRegistry(cfg)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("error building site registry: %v", err))
+		return 1
+	}
+	for _, site := range siteRegistry.Sites() {
+		c.Log.Info("serving site",
+			"domain", site.Domain.String(),
+			"aliases", len(site.Aliases),
+			"schema", site.SchemaName,
+			"workspace", site.WorkspacePath)
+	}
+
+	// Build the session signer.
+	var sessionKey, sessionTTL string
+	if cfg.Session != nil {
+		sessionKey, sessionTTL = cfg.Session.Key, cfg.Session.TTL
+	}
+	sessionOpts, err := session.Resolve(sessionKey, sessionTTL)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("error configuring sessions: %v", err))
+		return 1
+	}
+	if sessionOpts.Ephemeral {
+		c.UI.Warn(fmt.Sprintf(
+			"warning: no session signing key configured; generated an ephemeral one. "+
+				"All users will be logged out when this process restarts, and sessions "+
+				"will not work across multiple instances. Set %s to fix this.",
+			session.KeyEnvVar))
+	}
+	sessionSigner, err := session.NewSignerFromOptions(sessionOpts)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("error configuring sessions: %v", err))
+		return 1
+	}
+
 	type serveMux interface {
 		Handle(pattern string, handler http.Handler)
 		ServeHTTP(http.ResponseWriter, *http.Request)
@@ -836,7 +879,7 @@ func (c *Command) Run(args []string) int {
 	if cfg.Dex != nil && !cfg.Dex.Disabled {
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
 			endpoint{api.LoginHandler(*cfg, c.Log), "/auth/login"},
-			endpoint{api.CallbackHandler(*cfg, c.Log), "/auth/callback"},
+			endpoint{api.CallbackHandler(*cfg, sessionSigner, c.Log), "/auth/callback"},
 			endpoint{api.LogoutHandler(c.Log), "/auth/logout"},
 		)
 	}
@@ -885,15 +928,32 @@ func (c *Command) Run(args []string) int {
 		}
 		mux.Handle(
 			e.pattern,
-			auth.AuthenticateRequest(*cfg, goog, sharepointSvc, c.Log, e.handler),
+			auth.AuthenticateRequest(
+				*cfg, goog, sharepointSvc, sessionSigner, c.Log, e.handler),
 		)
 	}
 	for _, e := range unauthenticatedEndpoints {
 		mux.Handle(e.pattern, e.handler)
 	}
 
+	// Resolve the request's site before anything else sees it, so that auth,
+	// storage, and redirects all read the same domain from the context. The
+	// resolver wraps the whole mux -- unauthenticated endpoints included --
+	// because /auth/callback has to know which site it is minting a session
+	// for.
+	var rootHandler http.Handler = mux
+	if siteRegistry.Len() > 0 {
+		resolver, err := middleware.NewDomainResolver(
+			siteRegistry, cfg.TrustedProxies, c.Log)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("error building domain resolver: %v", err))
+			return 1
+		}
+		rootHandler = resolver.Middleware(mux)
+	}
+
 	ginRouter := gin.New()
-	ginRouter.NoRoute(gin.WrapH(mux))
+	ginRouter.NoRoute(gin.WrapH(rootHandler))
 
 	httpServer := &http.Server{
 		Addr:              cfg.Server.Addr,

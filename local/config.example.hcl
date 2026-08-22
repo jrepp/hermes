@@ -59,6 +59,30 @@ site "notes.jrepp.com" {
 
 trusted_proxies = ["127.0.0.1/32", "::1/128"]
 
+// ---------------------------------------------------------------------------
+// Sessions
+//
+// The session cookie is an HMAC-signed token naming the user, the site it was
+// issued for, and an expiry. It is host-only, HttpOnly, SameSite=Lax, and
+// marked Secure whenever the site's base_url is https — which is why base_url
+// matters even behind nginx: r.TLS is nil on a loopback connection, so the
+// scheme configured here is the only thing that knows the browser is on HTTPS.
+//
+// Leave `key` as-is and set HERMES_SESSION_KEY in local/secrets.env instead.
+// Placeholder values are refused; Hermes generates an ephemeral key and warns,
+// which logs everyone out on restart rather than signing with a secret that is
+// published in this repository. Generate a real one with:
+//
+//   openssl rand -base64 32
+//
+// The same key must be used by every instance serving these sites, or a
+// session issued by one will not verify at another.
+// ---------------------------------------------------------------------------
+
+session {
+  key = "change-me"
+  ttl = "168h"
+}
 
 server {
   // Bind to loopback only. nginx is the sole public listener.

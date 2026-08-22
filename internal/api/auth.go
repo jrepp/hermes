@@ -13,16 +13,15 @@ import (
 	"github.com/hashicorp/go-hclog"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/internal/session"
+	"github.com/hashicorp-forge/hermes/internal/sites"
 	"github.com/hashicorp-forge/hermes/pkg/auth/adapters/dex"
+	"github.com/hashicorp-forge/hermes/pkg/domain"
 )
 
 const (
-	// Session cookie name for storing user email
-	sessionCookieName = "hermes_session"
 	// State cookie name for CSRF protection
 	stateCookieName = "hermes_oauth_state"
-	// Cookie max age (7 days)
-	cookieMaxAge = 7 * 24 * time.Hour
 )
 
 // LoginHandler redirects the user to the Dex OIDC authorization endpoint.
@@ -58,7 +57,7 @@ func LoginHandler(cfg config.Config, log hclog.Logger) http.Handler {
 			Path:     "/",
 			MaxAge:   int(5 * time.Minute / time.Second), // State expires in 5 minutes
 			HttpOnly: true,
-			Secure:   r.TLS != nil,
+			Secure:   sites.SecureCookiesForRequest(r),
 			SameSite: http.SameSiteLaxMode,
 		})
 
@@ -74,7 +73,7 @@ func LoginHandler(cfg config.Config, log hclog.Logger) http.Handler {
 // and establishes a session for the authenticated user.
 //
 //nolint:gocognit // Callback flow is linear but includes several explicit auth failure branches.
-func CallbackHandler(cfg config.Config, log hclog.Logger) http.Handler {
+func CallbackHandler(cfg config.Config, signer *session.Signer, log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Only support Dex authentication
 		if cfg.Dex == nil || cfg.Dex.Disabled {
@@ -139,16 +138,26 @@ func CallbackHandler(cfg config.Config, log hclog.Logger) http.Handler {
 
 		log.Info("user authenticated successfully", "email", email)
 
-		// Set session cookie with user email
-		http.SetCookie(w, &http.Cookie{
-			Name:     sessionCookieName,
-			Value:    email,
-			Path:     "/",
-			MaxAge:   int(cookieMaxAge / time.Second),
-			HttpOnly: true,
-			Secure:   r.TLS != nil,
-			SameSite: http.SameSiteLaxMode,
-		})
+		if signer == nil {
+			log.Error("no session signer configured; refusing to issue a session")
+			http.Error(w, "Authentication configuration error", http.StatusInternalServerError)
+			return
+		}
+
+		// Bind the session to the site that served the callback. A token
+		// minted here will not verify against any other site, so a cookie that
+		// reaches a sibling subdomain -- which any host under the parent
+		// domain can arrange -- authenticates nobody there.
+		reqDomain, _ := domain.FromContext(r.Context())
+
+		token, err := signer.Issue(email, reqDomain)
+		if err != nil {
+			log.Error("failed to issue session", "error", err)
+			http.Error(w, "Failed to complete authentication", http.StatusInternalServerError)
+			return
+		}
+
+		http.SetCookie(w, signer.Cookie(token, sites.SecureCookiesForRequest(r)))
 
 		// Build redirect URL - use BaseURL from config if available
 		// This ensures we redirect to the frontend URL (e.g., http://localhost:4201)
@@ -163,12 +172,20 @@ func CallbackHandler(cfg config.Config, log hclog.Logger) http.Handler {
 			}
 		}
 
-		// Construct absolute URL if BaseURL is configured
+		// Construct absolute URL if a base URL is known. The site's own origin
+		// wins over the global one: sending a docs.jrepp.com login back to
+		// whatever base_url happens to be set at the top level would drop the
+		// user on another tenant.
+		configuredBase := cfg.BaseURL
+		if site, ok := sites.FromContext(r.Context()); ok && site.BaseURL != "" {
+			configuredBase = site.BaseURL
+		}
+
 		var redirectURL string
-		if cfg.BaseURL != "" {
-			baseURL, err := url.Parse(cfg.BaseURL)
+		if configuredBase != "" {
+			baseURL, err := url.Parse(configuredBase)
 			if err != nil {
-				log.Error("invalid base_url in configuration", "base_url", cfg.BaseURL, "error", err)
+				log.Error("invalid base_url in configuration", "base_url", configuredBase, "error", err)
 				redirectURL = redirectPath // Fallback to relative path
 			} else {
 				baseURL.Path = redirectPath
@@ -179,7 +196,8 @@ func CallbackHandler(cfg config.Config, log hclog.Logger) http.Handler {
 			redirectURL = redirectPath
 		}
 
-		log.Info("redirecting after authentication", "url", redirectURL, "base_url", cfg.BaseURL, "email", email)
+		log.Info("redirecting after authentication",
+			"url", redirectURL, "base_url", configuredBase, "email", email)
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	})
 }
@@ -187,14 +205,9 @@ func CallbackHandler(cfg config.Config, log hclog.Logger) http.Handler {
 // LogoutHandler clears the session cookie and redirects to the home page.
 func LogoutHandler(log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Clear session cookie
-		http.SetCookie(w, &http.Cookie{
-			Name:     sessionCookieName,
-			Value:    "",
-			Path:     "/",
-			MaxAge:   -1,
-			HttpOnly: true,
-		})
+		// Clear the session cookie. The attributes must match those used at
+		// issue time or the browser keeps the original alongside this one.
+		http.SetCookie(w, session.ClearCookie(sites.SecureCookiesForRequest(r)))
 
 		log.Debug("user logged out")
 

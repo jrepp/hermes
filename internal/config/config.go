@@ -51,6 +51,7 @@ type Config struct {
 	Okta                 *oktaadapter.Config    `hcl:"okta,block"`
 	LocalWorkspace       *LocalWorkspace        `hcl:"local_workspace,block"`
 	Sites                []*Site                `hcl:"site,block"`
+	Session              *Session               `hcl:"session,block"`
 	TrustedProxies       []string               `hcl:"trusted_proxies,optional"`
 	DefaultSite          string                 `hcl:"default_site,optional"`
 	ShortenerBaseURL     string                 `hcl:"shortener_base_url,optional"`
@@ -61,6 +62,22 @@ type Config struct {
 	DatabaseType         string
 	DBPath               string
 	SimplifiedMode       bool
+}
+
+// Session configures the signed session cookie.
+//
+// The key is a secret. Prefer supplying it through HERMES_SESSION_KEY, which
+// overrides whatever is written here, and leave the HCL value unset or as a
+// placeholder. When neither is set the server generates a key on startup and
+// warns: sessions then end at every restart and are not shared between
+// instances, which is safe but not what a deployment wants.
+type Session struct {
+	// Key is the signing secret. At least 32 characters.
+	Key string `hcl:"key,optional"`
+
+	// TTL is how long a session stays valid, as a Go duration ("168h").
+	// Defaults to 7 days.
+	TTL string `hcl:"ttl,optional"`
 }
 
 // Datadog configures Hermes to send metrics to Datadog.

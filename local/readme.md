@@ -36,6 +36,7 @@ override the parsed config. Keep them in `local/secrets.env`:
 
 ```bash
 export HERMES_SERVER_POSTGRES_PASSWORD=...
+export HERMES_SESSION_KEY="$(openssl rand -base64 32)"
 ```
 
 and source it before starting the server:
@@ -49,6 +50,46 @@ The full set of overrides lives in `internal/cmd/commands/server/server.go`;
 the common ones are `HERMES_SERVER_ADDR`, `HERMES_BASE_URL`,
 `HERMES_SERVER_POSTGRES_PASSWORD`, `HERMES_AUTH_PROVIDER`,
 `HERMES_WORKSPACE_PROVIDER`, and `HERMES_SEARCH_PROVIDER`.
+
+### Session signing key
+
+`HERMES_SESSION_KEY` is the one secret you cannot skip. The session cookie is
+an HMAC-signed token, and this is the key that signs it.
+
+Generate 32 or more characters (`openssl rand -base64 32`) and keep the value
+stable: it is what lets a session survive a restart, and every instance serving
+the same sites must use the same key or a session issued by one will be
+rejected by another.
+
+If it is unset — or still holds a placeholder such as the `change-me` in
+`config.example.hcl` — Hermes generates a random key at startup and warns. That
+is safe but not what you want in a deployment: everyone is logged out on every
+restart. It is deliberately not a hard failure, so a fresh checkout runs, and
+deliberately not a fixed default, because a default would be a signing secret
+published in this repository.
+
+Rotating the key invalidates every live session, which is the intended way to
+force a global logout.
+
+## Sessions across subdomains
+
+A session issued on `docs.jrepp.com` does not work on `notes.jrepp.com`, by
+two independent mechanisms:
+
+- The cookie is **host-only** — no `Domain` attribute — so the browser does not
+  send it to a sibling subdomain at all.
+- The token itself names the site it was issued for, and verification requires
+  that name to match the site handling the request.
+
+The second is not redundant. Cookies do not follow the same-origin policy: any
+host under `jrepp.com`, including one Hermes does not serve, can set a cookie
+scoped to `Domain=jrepp.com`, and the browser will then send it everywhere
+under that domain. Without the embedded site name, such a cookie would be a
+cross-tenant takeover.
+
+Aliases are the deliberate exception. `www.jrepp.com` is an alias of
+`docs.jrepp.com`, so requests to it resolve to the canonical site and its
+sessions work — an alias is one tenant with two names, not two tenants.
 
 ## Serving several subdomains
 
