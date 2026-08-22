@@ -14,6 +14,7 @@ import (
 
 	dexadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/dex"
 	oktaadapter "github.com/hashicorp-forge/hermes/pkg/auth/adapters/okta"
+	"github.com/hashicorp-forge/hermes/pkg/domain"
 	algoliaadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/algolia"
 	meilisearchadapter "github.com/hashicorp-forge/hermes/pkg/search/adapters/meilisearch"
 	gw "github.com/hashicorp-forge/hermes/pkg/workspace/adapters/google"
@@ -49,6 +50,9 @@ type Config struct {
 	OpenTelemetry        *OpenTelemetry         `hcl:"opentelemetry,block"`
 	Okta                 *oktaadapter.Config    `hcl:"okta,block"`
 	LocalWorkspace       *LocalWorkspace        `hcl:"local_workspace,block"`
+	Sites                []*Site                `hcl:"site,block"`
+	TrustedProxies       []string               `hcl:"trusted_proxies,optional"`
+	DefaultSite          string                 `hcl:"default_site,optional"`
 	ShortenerBaseURL     string                 `hcl:"shortener_base_url,optional"`
 	BaseURL              string                 `hcl:"base_url,optional"`
 	GoogleAnalyticsTagID string                 `hcl:"google_analytics_tag_id,optional"`
@@ -341,14 +345,23 @@ type Providers struct {
 
 // LocalWorkspace configures local filesystem workspace storage.
 type LocalWorkspace struct {
-	SMTP        *LocalWorkspaceSMTP `hcl:"smtp,block"`
-	BasePath    string              `hcl:"base_path"`
-	DocsPath    string              `hcl:"docs_path"`
-	DraftsPath  string              `hcl:"drafts_path"`
-	FoldersPath string              `hcl:"folders_path"`
-	UsersPath   string              `hcl:"users_path"`
-	TokensPath  string              `hcl:"tokens_path"`
-	Domain      string              `hcl:"domain"`
+	SMTP     *LocalWorkspaceSMTP `hcl:"smtp,block"`
+	BasePath string              `hcl:"base_path"`
+
+	// The sub-paths are optional. Left unset, the local adapter derives them
+	// from base_path — and, when the process serves several sites, from each
+	// site's own subdirectory beneath it. A multi-domain deployment must leave
+	// them unset, since one shared docs_path would put every tenant's
+	// documents in the same directory.
+	DocsPath    string `hcl:"docs_path,optional"`
+	DraftsPath  string `hcl:"drafts_path,optional"`
+	FoldersPath string `hcl:"folders_path,optional"`
+	UsersPath   string `hcl:"users_path,optional"`
+	TokensPath  string `hcl:"tokens_path,optional"`
+
+	// Domain is the email domain used for generated addresses. It is unrelated
+	// to the site hostnames in the `site` blocks.
+	Domain string `hcl:"domain,optional"`
 }
 
 // LocalWorkspaceSMTP configures SMTP for the local workspace adapter.
@@ -421,6 +434,39 @@ type OpenTelemetry struct {
 
 	// Enabled starts the auxiliary OTEL listener when true.
 	Enabled bool `hcl:"enabled,optional"`
+}
+
+// Site is one hostname served by this Hermes process.
+//
+// A single listener serves many subdomains. Each site is an isolated tenant:
+// its own PostgreSQL schema, its own workspace directory, its own search index
+// namespace, and its own session scope. The block label is the canonical
+// hostname; see pkg/domain for what "canonical" means here.
+type Site struct {
+	// Domain is the block label, e.g. site "docs.jrepp.com".
+	Domain string `hcl:"domain,label"`
+
+	// Aliases are additional hostnames routed to this same site. An alias
+	// shares the site's storage entirely; it is a second name for one tenant,
+	// not a second tenant.
+	Aliases []string `hcl:"aliases,optional"`
+
+	// BaseURL is the externally reachable origin for this site, used to build
+	// absolute links and OAuth redirects. Defaults to https://<domain>.
+	BaseURL string `hcl:"base_url,optional"`
+
+	// WorkspacePath overrides where this site's documents live on disk.
+	// Defaults to <local_workspace.base_path>/<domain>.
+	WorkspacePath string `hcl:"workspace_path,optional"`
+
+	// SchemaName overrides the PostgreSQL schema for this site. Defaults to
+	// the value derived by domain.Name.SchemaName. Set this only when
+	// adopting an existing schema.
+	SchemaName string `hcl:"schema_name,optional"`
+
+	// Disabled takes the site out of service without deleting its
+	// configuration or data.
+	Disabled bool `hcl:"disabled,optional"`
 }
 
 // Server contains the configuration for the Hermes server.
@@ -542,9 +588,37 @@ func NewConfig(filename, profile string) (*Config, error) {
 }
 
 // ToLocalAdapterConfig converts LocalWorkspace config to local adapter config.
+//
+// The result is not domain-scoped; use ToLocalAdapterConfigForDomain when the
+// process serves more than one site.
 func (lw *LocalWorkspace) ToLocalAdapterConfig() *localadapter.Config {
+	return lw.toLocalAdapterConfig(domain.Name{})
+}
+
+// ToLocalAdapterConfigForDomain converts LocalWorkspace config to a local
+// adapter config scoped to one site.
+//
+// The per-site paths are left empty so the adapter derives them from the
+// domain root itself. Copying the globally configured docs_path and friends
+// here would point every site at the same directories, which is precisely the
+// cross-tenant leak the domain scoping exists to prevent.
+func (lw *LocalWorkspace) ToLocalAdapterConfigForDomain(d domain.Name) *localadapter.Config {
+	return lw.toLocalAdapterConfig(d)
+}
+
+func (lw *LocalWorkspace) toLocalAdapterConfig(d domain.Name) *localadapter.Config {
 	if lw == nil {
 		return nil
+	}
+
+	if !d.IsZero() {
+		cfg := &localadapter.Config{
+			BasePath: lw.BasePath,
+			Domain:   d,
+		}
+		cfg.SMTPConfig = lw.smtpAdapterConfig()
+
+		return cfg
 	}
 
 	cfg := &localadapter.Config{
@@ -556,17 +630,24 @@ func (lw *LocalWorkspace) ToLocalAdapterConfig() *localadapter.Config {
 		TokensPath:  lw.TokensPath,
 	}
 
-	if lw.SMTP != nil && lw.SMTP.Enabled {
-		cfg.SMTPConfig = &localadapter.SMTPConfig{
-			Host:     lw.SMTP.Host,
-			Port:     lw.SMTP.Port,
-			Username: lw.SMTP.Username,
-			Password: lw.SMTP.Password,
-			From:     "hermes@" + lw.Domain,
-		}
-	}
+	cfg.SMTPConfig = lw.smtpAdapterConfig()
 
 	return cfg
+}
+
+// smtpAdapterConfig returns the adapter SMTP settings, or nil when disabled.
+func (lw *LocalWorkspace) smtpAdapterConfig() *localadapter.SMTPConfig {
+	if lw.SMTP == nil || !lw.SMTP.Enabled {
+		return nil
+	}
+
+	return &localadapter.SMTPConfig{
+		Host:     lw.SMTP.Host,
+		Port:     lw.SMTP.Port,
+		Username: lw.SMTP.Username,
+		Password: lw.SMTP.Password,
+		From:     "hermes@" + lw.Domain,
+	}
 }
 
 // ToMeilisearchAdapterConfig converts Meilisearch config to meilisearch adapter config.
