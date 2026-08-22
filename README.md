@@ -49,8 +49,8 @@ yarn start:proxy  # Auto-detects backend on port 8000
 
 **Next Steps**:
 - 📖 [Testing Environment Guide](testing/readme.md) - Detailed setup and troubleshooting
-- 🔧 [Configuration Guide](docs-internal/CONFIG_HCL_DOCUMENTATION.md) - Customize your setup
-- 🧪 [Makefile Targets](docs-internal/MAKEFILE_ROOT_TARGETS.md) - Common development commands
+- 🔧 [Configuration Guide](local/config.example.hcl) - Customize your setup
+- 🧪 [Makefile Targets](docs-internal/guides/dev/makefile-targets.md) - Common development commands
 
 ## 🏗️ Architecture
 
@@ -132,21 +132,21 @@ providers {
 ### Provider Guides
 
 **Authentication Providers**:
-- 🔐 [Dex (Local)](docs-internal/memo/README-dex.md) - Recommended for development
-- 🔐 [Google OAuth](docs-internal/memo/README-google-workspace.md) - Production with Workspace
-- 🔐 [Okta](docs-internal/memo/README-auth-providers.md) - Enterprise SSO
+- 🔐 [Dex (Local)](docs-internal/guides/auth/dex.md) - Recommended for development
+- 🔐 [Google OAuth](docs-internal/guides/auth/google-workspace.md) - Production with Workspace
+- 🔐 [Okta](docs-internal/guides/auth/providers.md) - Enterprise SSO
 
 **Workspace Providers** (document storage):
-- 📁 [Local Workspace](docs-internal/memo/README-local-workspace.md) - Filesystem-based, for development
-- 📁 [Google Workspace](docs-internal/memo/README-google-workspace.md) - Google Docs integration
+- 📁 [Local Workspace](docs-internal/guides/workspace/local.md) - Filesystem-based, for development
+- 📁 [Google Workspace](docs-internal/guides/auth/google-workspace.md) - Google Docs integration
 
 **Search Providers**:
-- 🔍 [Meilisearch](docs-internal/memo/README-meilisearch.md) - Self-hosted, open-source
-- 🔍 [Algolia](docs-internal/memo/README-algolia.md) - Managed, cloud-hosted
+- 🔍 [Meilisearch](docs-internal/guides/search/meilisearch.md) - Self-hosted, open-source
+- 🔍 [Algolia](docs-internal/guides/search/algolia.md) - Managed, cloud-hosted
 
 **Infrastructure**:
-- 🗄️ [PostgreSQL](docs-internal/memo/README-postgresql.md) - Primary database
-- 🎫 [Jira Integration](docs-internal/memo/README-jira.md) - Optional project linking
+- 🗄️ [PostgreSQL](docs-internal/guides/storage/postgresql.md) - Primary database
+- 🎫 [Jira Integration](docs-internal/guides/integrations/jira.md) - Optional project linking
 
 ## 🛠️ Development
 
@@ -198,7 +198,7 @@ cd testing && docker compose up -d
 # Access at http://localhost:4201
 ```
 
-See [Makefile Targets Guide](docs-internal/MAKEFILE_ROOT_TARGETS.md) for all available commands.
+See [Makefile Targets Guide](docs-internal/guides/dev/makefile-targets.md) for all available commands.
 
 ### Configuration
 
@@ -213,7 +213,7 @@ nano config.hcl
 ./hermes server -config=config.hcl
 ```
 
-See [Configuration Documentation](docs-internal/CONFIG_HCL_DOCUMENTATION.md) for details.
+See [Configuration Documentation](local/config.example.hcl) for details.
 
 ## 🧪 Testing
 
@@ -228,7 +228,7 @@ cd tests/e2e-playwright
 npx playwright test --reporter=line
 ```
 
-See [Playwright Guide](docs-internal/PLAYWRIGHT_E2E_AGENT_GUIDE.md) for comprehensive testing instructions.
+See [Playwright Guide](docs-internal/guides/dev/playwright-agent.md) for comprehensive testing instructions.
 
 ### Unit Tests
 
@@ -244,23 +244,23 @@ cd web && yarn test:types
 
 ### Getting Started
 - [Testing Environment](testing/readme.md) - Complete local setup
-- [Configuration Guide](docs-internal/CONFIG_HCL_DOCUMENTATION.md) - All config options
-- [Makefile Targets](docs-internal/MAKEFILE_ROOT_TARGETS.md) - Development workflows
+- [Configuration Guide](local/config.example.hcl) - All config options
+- [Makefile Targets](docs-internal/guides/dev/makefile-targets.md) - Development workflows
 
 ### Provider Setup
-- [Dex Authentication](docs-internal/memo/README-dex.md) - Local auth for development
-- [Google Workspace](docs-internal/memo/README-google-workspace.md) - Production document storage
-- [Local Workspace](docs-internal/memo/README-local-workspace.md) - Filesystem-based storage
-- [Meilisearch](docs-internal/memo/README-meilisearch.md) - Self-hosted search
-- [Algolia](docs-internal/memo/README-algolia.md) - Managed search
-- [PostgreSQL](docs-internal/memo/README-postgresql.md) - Database setup
-- [Jira Integration](docs-internal/memo/README-jira.md) - Project management integration
+- [Dex Authentication](docs-internal/guides/auth/dex.md) - Local auth for development
+- [Google Workspace](docs-internal/guides/auth/google-workspace.md) - Production document storage
+- [Local Workspace](docs-internal/guides/workspace/local.md) - Filesystem-based storage
+- [Meilisearch](docs-internal/guides/search/meilisearch.md) - Self-hosted search
+- [Algolia](docs-internal/guides/search/algolia.md) - Managed search
+- [PostgreSQL](docs-internal/guides/storage/postgresql.md) - Database setup
+- [Jira Integration](docs-internal/guides/integrations/jira.md) - Project management integration
 
 ### Architecture & Development
-- [Auth Providers Overview](docs-internal/memo/README-auth-providers.md) - All authentication options
-- [Architecture Diagrams](docs-internal/AUTH_ARCHITECTURE_DIAGRAMS.md) - System design
-- [ADRs](docs-internal/adr/readme.md) - Architecture decisions
-- [RFCs](docs-internal/rfc/readme.md) - Technical proposals
+- [Auth Providers Overview](docs-internal/guides/auth/providers.md) - All authentication options
+- [Architecture Diagrams](docs-internal/guides/auth/providers.md) - System design
+- [ADRs](docs-internal/adr/adr-002-readme.md) - Architecture decisions
+- [RFCs](docs-internal/rfc/rfc-002-readme.md) - Technical proposals
 - [Agent Instructions](.github/copilot-instructions.md) - AI-assisted development
 
 ## 🚢 Production Deployment
@@ -280,17 +280,38 @@ providers {
 # Enable structured logging
 ```
 
+### Serving several subdomains
+
+One process can serve many hostnames as isolated tenants — each with its own
+PostgreSQL schema, workspace directory, and session scope:
+
+```hcl
+site "docs.example.com" {
+  aliases  = ["www.example.com"]
+  base_url = "https://docs.example.com"
+}
+
+site "notes.example.com" {
+  base_url = "https://notes.example.com"
+}
+```
+
+Full procedure — PostgreSQL extensions, per-site migrations, systemd, nginx,
+TLS, adding and removing sites —
+[Multi-Domain Deployment](docs-internal/guides/deploy/multi-domain.md).
+
 ### Production Checklist
 
-- [ ] Configure authentication provider (Google/Okta)
-- [ ] Set up Google Workspace with service account
+- [ ] Configure authentication provider (Google/Okta/Dex)
+- [ ] Register every site's `/auth/callback` on the OIDC client
 - [ ] Configure search provider (Algolia or Meilisearch)
-- [ ] Deploy managed PostgreSQL with backups
+- [ ] Deploy managed PostgreSQL with backups, and the `vector`, `citext`, and `uuid-ossp` extensions
+- [ ] Set `HERMES_SESSION_KEY` to a stable 32+ character secret — without it, every restart logs everyone out
 - [ ] Set `log_format = "json"` in config.hcl
-- [ ] Use environment variables for secrets
-- [ ] Configure `base_url` to your public URL
+- [ ] Use environment variables for secrets (see [env vars](docs-internal/guides/dev/env-vars.md))
+- [ ] Configure `base_url` to your public URL, with the `https://` scheme — it is what marks session cookies `Secure` behind a TLS-terminating proxy
 - [ ] Set up SSL/TLS certificates
-- [ ] Enable monitoring and alerting
+- [ ] Enable monitoring and alerting against `/health`
 - [ ] Run indexer as background service
 
 ## 📊 Project Status

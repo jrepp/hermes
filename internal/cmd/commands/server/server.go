@@ -993,7 +993,12 @@ func (c *Command) Run(args []string) int {
 			c.UI.Error(fmt.Sprintf("error building domain resolver: %v", err))
 			return 1
 		}
-		rootHandler = resolver.Middleware(mux)
+		// The liveness probe answers before hostname routing. A monitor
+		// hitting the loopback listener directly sends Host: 127.0.0.1, which
+		// is no site, so behind the resolver it would get 421 and the service
+		// would look down while being perfectly healthy.
+		rootHandler = middleware.Exempt(
+			"/health", healthHandler(db), resolver.Middleware(mux))
 	}
 
 	ginRouter := gin.New()
@@ -1227,7 +1232,22 @@ func (c *Command) ShutdownServer(s *http.Server) func() {
 // registerDocumentTypes registers all products configured in the application
 // config in the database.
 func registerDocumentTypes(cfg config.Config, db *gorm.DB) error {
+	// `template` is a Google file ID, so it is required only when Google
+	// Workspace is the workspace provider. It used to be mandatory in the
+	// schema, which meant a local deployment had to invent one before the
+	// config would even parse -- and the shipped example, which sensibly left
+	// it out, could not be loaded at all. Checking it here puts the
+	// requirement where it is actually true.
+	usingGoogle := cfg.Providers == nil || cfg.Providers.Workspace == "" ||
+		cfg.Providers.Workspace == "google"
+
 	for _, d := range cfg.DocumentTypes.DocumentType {
+		if usingGoogle && d.Template == "" {
+			return fmt.Errorf(
+				"document type %q has no template; the Google Workspace provider "+
+					"needs a Google Docs file ID there", d.Name)
+		}
+
 		// Marshal Checks to JSON.
 		checksJSON, err := json.Marshal(d.Checks)
 		if err != nil {

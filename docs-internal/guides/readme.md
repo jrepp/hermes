@@ -30,6 +30,7 @@ tags: [guides, reference, hub]
 guides/
 ├── readme.md                       # this file
 ├── auth/                           # authentication providers and flows
+├── deploy/                         # installing and operating a deployment
 ├── dev/                            # developer environment + workflow
 ├── edge/                           # edge CLI and MCP client workflows
 ├── indexer/                        # indexer architecture and operation
@@ -52,6 +53,10 @@ guides/
 - [Dex Local OIDC](auth/dex.md) — running Dex with the static-password connector for development.
 - [Dex Quick Start](auth/dex-quickstart.md) — minimal commands to bring Dex up locally.
 - [Google Workspace Setup](auth/google-workspace.md) — credentials, scopes, OAuth client.
+
+### Deployment (`deploy/`)
+
+- [Multi-Domain Deployment](deploy/multi-domain.md) — one process serving several subdomains as isolated tenants, behind nginx: PostgreSQL setup, per-site schemas, systemd, TLS, adding and removing sites.
 
 ### Search (`search/`)
 

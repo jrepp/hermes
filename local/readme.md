@@ -1,5 +1,10 @@
 # `local/` — deployment-specific configuration
 
+This is the **configuration reference**. For installing and operating a
+multi-subdomain deployment end to end — PostgreSQL, migrations, systemd, nginx,
+TLS, adding a site — see
+[Multi-Domain Deployment](../docs-internal/guides/deploy/multi-domain.md).
+
 Everything in this directory is gitignored except this file,
 `config.example.hcl`, and `sites/*.example.hcl`. It is where real hostnames,
 credentials, and workspace data live so they never reach the repository.
@@ -21,12 +26,26 @@ local/
 ```bash
 cp local/config.example.hcl local/config.hcl
 $EDITOR local/config.hcl
+
 make build-binaries
+
+# Create a schema per site. Optional -- the server migrates on startup too --
+# but running it separately means migration failures are visible before a
+# restart.
+./build/bin/hermes-migrate \
+  -dsn="host=localhost user=hermes password=... dbname=hermes port=5432 sslmode=disable" \
+  -config=local/config.hcl
+
 ./build/bin/hermes server -config=local/config.hcl
 ```
 
 `config.example.hcl` is exercised by `TestExampleConfigIsUsable`, so it is
 always loadable against the current schema.
+
+PostgreSQL needs the `vector`, `citext`, and `uuid-ossp` extensions available.
+Hermes installs them into `public` on first run, which requires a role that may
+create extensions; otherwise create them yourself once. See the deployment
+guide for details.
 
 ## Secrets
 
@@ -114,9 +133,19 @@ From the hostname alone, Hermes derives:
 | PostgreSQL      | schema `site_docs_jrepp_com`        |
 | Workspace       | `<base_path>/docs.jrepp.com/`       |
 | Base URL        | `https://docs.jrepp.com`            |
+| OIDC callback   | `https://docs.jrepp.com/auth/callback` |
 
 Override `schema_name` or `workspace_path` only to adopt storage that already
 exists.
+
+Each site's callback URL must be registered on the OIDC client — Dex takes a
+list of `redirectURIs`. OIDC compares `redirect_uri` exactly, so a missing
+entry fails at the provider rather than in Hermes.
+
+**Search is not yet isolated.** Every site shares one search index, so a search
+on one site can return another's documents. Database and workspace storage are
+isolated. Until this lands, run separate processes if your sites must not see
+each other's results.
 
 ### How hostnames are matched
 
@@ -168,3 +197,13 @@ server {
   addr = "127.0.0.1:8000"
 }
 ```
+
+## Adding a site later
+
+1. Point DNS at the server.
+2. Add a `site` block.
+3. Re-run `hermes-migrate -config=...`. Existing sites are already at their
+   current version and are left alone; the new one migrates from zero, since
+   each schema carries its own migration history.
+4. Add the nginx server block, the certificate, and the OIDC callback URL.
+5. Restart. Sites are read at startup.

@@ -115,7 +115,13 @@ type DocumentType struct {
 
 	// Template is the Google file ID for the document template used for this
 	// document type.
-	Template string `hcl:"template"`
+	//
+	// Optional, because it is meaningful only to the Google Workspace
+	// provider: a local or SharePoint deployment uses MarkdownTemplate or
+	// MSTemplate instead and has no Google file ID to give. Requiring it here
+	// meant the shipped example could not be loaded at all without inventing
+	// one. registerDocumentTypes enforces it where it actually matters.
+	Template string `hcl:"template,optional"`
 
 	// MSTemplate is the Microsoft file path or ID for the document template used for this
 	// document type.

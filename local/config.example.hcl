@@ -120,6 +120,11 @@ providers {
   search    = "meilisearch"
 }
 
+// KNOWN LIMITATION: the search index is not yet scoped per site. Every site
+// shares these indexes, so a search on one site can return another site's
+// documents. Database and workspace storage are isolated; search is not.
+// Until that lands, run separate processes if your sites must not see each
+// other's search results.
 meilisearch {
   host                = "http://127.0.0.1:7700"
   api_key             = "change-me"
@@ -133,12 +138,23 @@ meilisearch {
 // Authentication
 // ---------------------------------------------------------------------------
 
+// Each site sends users back to its own callback, derived from that site's
+// base_url. The value below is only the fallback for a deployment with no site
+// blocks. Register every site's callback on the Dex client:
+//
+//   staticClients:
+//     - id: hermes
+//       redirectURIs:
+//         - https://docs.jrepp.com/auth/callback
+//         - https://notes.jrepp.com/auth/callback
+//
+// OIDC requires the redirect_uri to match exactly, so a missing entry shows up
+// as an "invalid redirect URI" error from Dex, not from Hermes.
 dex {
   disabled      = false
   issuer_url    = "https://auth.jrepp.com/dex"
   client_id     = "hermes"
   client_secret = "change-me"
-  // Always the backend; it redirects onward to the site's base_url (ADR-004).
   redirect_url  = "https://docs.jrepp.com/auth/callback"
 }
 

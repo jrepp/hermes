@@ -22,6 +22,7 @@ docs-internal/
 - **New contributors** → [`guides/dev/env-setup.md`](guides/dev/env-setup.md)
 - **Development quick reference** → [`guides/dev/quickref.md`](guides/dev/quickref.md)
 - **All setup & how-to guides** → [`guides/readme.md`](guides/readme.md)
+- **Deploying to a server** → [`guides/deploy/multi-domain.md`](guides/deploy/multi-domain.md)
 - **RFC index** → [`rfc/rfc-002-readme.md`](rfc/rfc-002-readme.md)
 - **Current planning status** → [`plans/roadmap-tracker.md`](plans/roadmap-tracker.md)
 

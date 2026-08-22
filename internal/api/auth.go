@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
@@ -24,6 +25,30 @@ const (
 	stateCookieName = "hermes_oauth_state"
 )
 
+// dexConfigForRequest returns the Dex configuration to use for this request,
+// with the OIDC redirect URI pointed at the site being served.
+//
+// OIDC requires the redirect_uri sent at authorization and at token exchange
+// to be identical, and the browser has to come back to the host it left. A
+// single configured redirect_url would send every site's login to one host, so
+// a user signing in at notes.jrepp.com would land on docs.jrepp.com holding a
+// session that is valid only there.
+//
+// Each site's callback URL must be registered on the Dex client. Dex accepts a
+// list, so this is a configuration change on the identity provider, not a
+// limitation here.
+func dexConfigForRequest(cfg config.Config, r *http.Request) dex.Config {
+	dexCfg := *cfg.Dex
+
+	site, ok := sites.FromContext(r.Context())
+	if !ok || site.BaseURL == "" {
+		return dexCfg
+	}
+	dexCfg.RedirectURL = strings.TrimSuffix(site.BaseURL, "/") + "/auth/callback"
+
+	return dexCfg
+}
+
 // LoginHandler redirects the user to the Dex OIDC authorization endpoint.
 // It generates a random state parameter for CSRF protection and stores it in a cookie.
 func LoginHandler(cfg config.Config, log hclog.Logger) http.Handler {
@@ -35,7 +60,7 @@ func LoginHandler(cfg config.Config, log hclog.Logger) http.Handler {
 		}
 
 		// Create Dex adapter
-		adapter, err := dex.NewAdapter(*cfg.Dex, log)
+		adapter, err := dex.NewAdapter(dexConfigForRequest(cfg, r), log)
 		if err != nil {
 			log.Error("failed to create Dex adapter", "error", err)
 			http.Error(w, "Authentication configuration error", http.StatusInternalServerError)
@@ -82,7 +107,7 @@ func CallbackHandler(cfg config.Config, signer *session.Signer, log hclog.Logger
 		}
 
 		// Create Dex adapter
-		adapter, err := dex.NewAdapter(*cfg.Dex, log)
+		adapter, err := dex.NewAdapter(dexConfigForRequest(cfg, r), log)
 		if err != nil {
 			log.Error("failed to create Dex adapter", "error", err)
 			http.Error(w, "Authentication configuration error", http.StatusInternalServerError)
