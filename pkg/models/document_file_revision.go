@@ -23,6 +23,20 @@ type DocumentFileRevision struct {
 	Document                  Document
 }
 
+// RevisionKey returns the provider-agnostic identifier for the revision.
+//
+// GoogleDriveFileRevisionID is the persisted primary key column, so it is
+// authoritative for records loaded from the database. FileRevisionID is
+// `gorm:"-"` and only set in memory by provider-agnostic callers (e.g. the
+// SharePoint paths and the Algolia migration), so it is the fallback.
+func (fr *DocumentFileRevision) RevisionKey() string {
+	if fr.GoogleDriveFileRevisionID != "" {
+		return fr.GoogleDriveFileRevisionID
+	}
+
+	return fr.FileRevisionID
+}
+
 // DocumentFileRevisions is a slice of document file revisions.
 type DocumentFileRevisions []DocumentFileRevision
 

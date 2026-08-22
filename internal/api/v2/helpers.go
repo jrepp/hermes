@@ -417,7 +417,7 @@ func CompareAlgoliaAndDatabaseDocument(
 	} else {
 		dbFileRevisions := make(map[string]string)
 		for i := range dbDoc.FileRevisions {
-			dbFileRevisions[dbDoc.FileRevisions[i].GoogleDriveFileRevisionID] = dbDoc.FileRevisions[i].Name
+			dbFileRevisions[dbDoc.FileRevisions[i].RevisionKey()] = dbDoc.FileRevisions[i].Name
 		}
 		if !reflect.DeepEqual(algoFileRevisions, dbFileRevisions) {
 			result = multierror.Append(result,

@@ -141,7 +141,7 @@ func compareAlgoliaAndDatabaseDocument(
 		result = multierror.Append(
 			result, fmt.Errorf("error getting docNumber value: %w", err))
 	} else {
-		// Replace "-xxx.docx" (how draft doc numbers are defined in Algolia) with a
+		// Replace "-???" (how draft doc numbers are defined in Algolia) with a
 		// zero.
 		re := regexp.MustCompile(`-\?{3}$`)
 		algoDocNumber = re.ReplaceAllString(algoDocNumber, "-000")
@@ -298,7 +298,7 @@ func compareAlgoliaAndDatabaseDocument(
 		dbFileRevisions := make(map[string]string)
 		for i := range dbDoc.FileRevisions {
 			fr := &dbDoc.FileRevisions[i]
-			dbFileRevisions[fr.GoogleDriveFileRevisionID] = fr.Name
+			dbFileRevisions[fr.RevisionKey()] = fr.Name
 		}
 		if !reflect.DeepEqual(algoFileRevisions, dbFileRevisions) {
 			result = multierror.Append(result,

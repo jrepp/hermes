@@ -392,7 +392,7 @@ func (c *DocumentConsistencyChecker) compareDocuments(
 		dbFileRevisions := make(map[string]string)
 		for i := range dbDoc.FileRevisions {
 			fr := &dbDoc.FileRevisions[i]
-			dbFileRevisions[fr.GoogleDriveFileRevisionID] = fr.Name
+			dbFileRevisions[fr.RevisionKey()] = fr.Name
 		}
 		if !reflect.DeepEqual(searchFileRevisions, dbFileRevisions) {
 			result = multierror.Append(result,

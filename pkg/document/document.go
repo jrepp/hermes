@@ -294,7 +294,7 @@ func NewFromDatabaseModel(
 	fileRevisions := make(map[string]string)
 	for i := range model.FileRevisions {
 		fr := &model.FileRevisions[i]
-		fileRevisions[fr.GoogleDriveFileRevisionID] = fr.Name
+		fileRevisions[fr.RevisionKey()] = fr.Name
 	}
 	doc.FileRevisions = fileRevisions
 
