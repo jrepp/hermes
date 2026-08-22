@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/pkg/database"
 	"github.com/hashicorp-forge/hermes/pkg/domain"
 )
 
@@ -32,6 +33,11 @@ type Site struct {
 
 	// SchemaName is the PostgreSQL schema holding this site's tables.
 	SchemaName string
+
+	// Postgres is the resolved connection for this site: the global block with
+	// any per-site override applied, plus SchemaName. Two sites may point at
+	// different servers or different databases entirely.
+	Postgres config.Postgres
 
 	// WorkspacePath is the directory holding this site's documents.
 	WorkspacePath string
@@ -123,6 +129,11 @@ func buildSite(cfg *config.Config, sc *config.Site) (*Site, error) {
 	if site.SchemaName == "" {
 		site.SchemaName = name.SchemaName()
 	}
+	if err := database.ValidateSchemaName(site.SchemaName); err != nil {
+		return nil, fmt.Errorf("sites: site %q: %w", sc.Domain, err)
+	}
+
+	site.Postgres = cfg.PostgresForSite(name, sc.Database, site.SchemaName)
 
 	site.WorkspacePath = sc.WorkspacePath
 	if site.WorkspacePath == "" {

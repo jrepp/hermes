@@ -358,6 +358,28 @@ func TestSingleTenantMigrationIsUnchanged(t *testing.T) {
 	if err := migrate.RunMigrations(sqlDB, "postgres"); err != nil {
 		t.Fatalf("second single-tenant migration: %v", err)
 	}
+
+	// The tenancy stamp is a multi-site construct. A deployment with no sites
+	// must not acquire a domain column or an identity table it never asked
+	// for -- the schema it had before this work is the schema it keeps.
+	var extras int
+	if err := sqlDB.QueryRow(`
+		SELECT count(*) FROM information_schema.columns
+		WHERE table_schema = 'public' AND column_name = 'domain'`).Scan(&extras); err != nil {
+		t.Fatalf("querying columns: %v", err)
+	}
+	if extras != 0 {
+		t.Errorf("single-tenant schema gained %d tenant column(s)", extras)
+	}
+
+	if err := sqlDB.QueryRow(`
+		SELECT count(*) FROM information_schema.tables
+		WHERE table_schema = 'public' AND table_name = 'site_identity'`).Scan(&extras); err != nil {
+		t.Fatalf("querying tables: %v", err)
+	}
+	if extras != 0 {
+		t.Error("single-tenant schema gained a site_identity table")
+	}
 }
 
 // TestSitesCoexistWithAPopulatedPublicSchema covers the upgrade path: a

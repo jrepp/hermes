@@ -400,6 +400,14 @@ func (c *Command) Run(args []string) int {
 	var goog *gw.Service // Keep for auth that still uses it directly
 	var sharepointSvc *sharepointhelper.Service
 
+	// The database password override has to happen before the registry is
+	// built: the registry resolves each site's connection from cfg.Postgres,
+	// so applying it afterwards would leave every site holding whatever
+	// password the config file contained -- usually the placeholder.
+	if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok && cfg.Postgres != nil {
+		cfg.Postgres.Password = val
+	}
+
 	// Resolve the site registry before anything that depends on per-site
 	// resources. NewRegistry rejects ambiguous hostname configuration, and it
 	// is better to refuse to start than to route requests to whichever tenant
@@ -617,11 +625,6 @@ func (c *Command) Run(args []string) int {
 		// Use hermes-migrate binary for SQLite databases.
 		c.UI.Error("SQLite mode not supported in server binary. Use hermes-migrate for migrations. See docs-internal/memo/SQLITE_DRIVER_CONFLICT.md")
 		return 1
-	}
-
-	// Traditional mode: use PostgreSQL
-	if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
-		cfg.Postgres.Password = val
 	}
 
 	// Migrate. A multi-site deployment keeps no Hermes tables in the public

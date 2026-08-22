@@ -38,6 +38,21 @@ site "docs.jrepp.com" {
 
 site "notes.jrepp.com" {
   base_url = "https://notes.jrepp.com"
+
+  // Optional. Without it the site lives in its own schema inside the global
+  // postgres block below, which is what most deployments want. Set host or
+  // dbname to put a site on a different server or database entirely -- so one
+  // tenant's data need not share a backup, a failover, or a blast radius with
+  // another's. Unset fields inherit from the global block.
+  //
+  // The password is better supplied as
+  // HERMES_SITE_NOTES_JREPP_COM_POSTGRES_PASSWORD than written here.
+  //
+  // database {
+  //   host    = "notes-db.internal"
+  //   dbname  = "hermes_notes"
+  //   sslmode = "require"
+  // }
 }
 
 // Hostnames matching no site above are rejected with 421 Misdirected Request.
@@ -113,6 +128,9 @@ postgres {
   port     = 5432
   dbname   = "hermes"
   user     = "hermes"
+  // "disable" is the default and is only appropriate over loopback. Anything
+  // crossing a network wants at least "require".
+  sslmode  = "disable"
   // Overridden by HERMES_SERVER_POSTGRES_PASSWORD. Keep the real value in
   // local/secrets.env rather than here; see local/readme.md.
   password = "change-me"

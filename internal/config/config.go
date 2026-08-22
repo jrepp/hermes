@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
@@ -334,7 +335,43 @@ type Postgres struct {
 	Host     string `hcl:"host"`
 	Password string `hcl:"password"`
 	User     string `hcl:"user"`
-	Port     int    `hcl:"port"`
+
+	// SSLMode is the libpq sslmode. Defaults to "disable", which is only
+	// appropriate for a loopback connection; anything crossing a network
+	// wants at least "require".
+	SSLMode string `hcl:"sslmode,optional"`
+
+	Port int `hcl:"port"`
+
+	// SchemaName scopes the connection to one PostgreSQL schema. It is set per
+	// site rather than parsed from HCL; the global block has no schema of its
+	// own, which is the single-tenant default.
+	SchemaName string
+}
+
+// EffectiveSSLMode returns the sslmode to connect with.
+func (p Postgres) EffectiveSSLMode() string {
+	if p.SSLMode == "" {
+		return "disable"
+	}
+
+	return p.SSLMode
+}
+
+// SiteDatabase overrides the database a single site is stored in.
+//
+// Every field is optional and falls back to the global postgres block, so a
+// deployment that only wants schema separation writes nothing here. Setting
+// host or dbname puts the site on a different server or database entirely,
+// which is what you want when one tenant's data must not share a backup, a
+// failover, or a blast radius with another's.
+type SiteDatabase struct {
+	Host     string `hcl:"host,optional"`
+	DBName   string `hcl:"dbname,optional"`
+	User     string `hcl:"user,optional"`
+	Password string `hcl:"password,optional"`
+	SSLMode  string `hcl:"sslmode,optional"`
+	Port     int    `hcl:"port,optional"`
 }
 
 // Products contain available products.
@@ -487,9 +524,63 @@ type Site struct {
 	// adopting an existing schema.
 	SchemaName string `hcl:"schema_name,optional"`
 
+	// Database overrides where this site is stored. Unset, the site lives in
+	// its own schema inside the globally configured database.
+	Database *SiteDatabase `hcl:"database,block"`
+
 	// Disabled takes the site out of service without deleting its
 	// configuration or data.
 	Disabled bool `hcl:"disabled,optional"`
+}
+
+// PostgresForSite resolves the database connection for one site: the global
+// postgres block, with any per-site override applied on top, plus the site's
+// schema.
+//
+// The password can also come from the environment, as
+// HERMES_SITE_<SLUG>_POSTGRES_PASSWORD where <SLUG> is the site's
+// identifier-safe name uppercased -- HERMES_SITE_DOCS_JREPP_COM_POSTGRES_PASSWORD
+// for docs.jrepp.com. Without that, a deployment whose sites are on different
+// servers would have to write their passwords into the config file.
+func (c *Config) PostgresForSite(name domain.Name, override *SiteDatabase, schema string) Postgres {
+	var pg Postgres
+	if c.Postgres != nil {
+		pg = *c.Postgres
+	}
+	pg.SchemaName = schema
+
+	if override != nil {
+		if override.Host != "" {
+			pg.Host = override.Host
+		}
+		if override.Port != 0 {
+			pg.Port = override.Port
+		}
+		if override.DBName != "" {
+			pg.DBName = override.DBName
+		}
+		if override.User != "" {
+			pg.User = override.User
+		}
+		if override.Password != "" {
+			pg.Password = override.Password
+		}
+		if override.SSLMode != "" {
+			pg.SSLMode = override.SSLMode
+		}
+	}
+
+	if v, ok := os.LookupEnv(SitePasswordEnvVar(name)); ok {
+		pg.Password = v
+	}
+
+	return pg
+}
+
+// SitePasswordEnvVar returns the environment variable that overrides one
+// site's database password.
+func SitePasswordEnvVar(name domain.Name) string {
+	return "HERMES_SITE_" + strings.ToUpper(name.Slug()) + "_POSTGRES_PASSWORD"
 }
 
 // Server contains the configuration for the Hermes server.

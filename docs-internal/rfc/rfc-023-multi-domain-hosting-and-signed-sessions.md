@@ -215,6 +215,9 @@ No HTTP API surface changes. Configuration gains:
 | `site "<hostname>" { … }` | One tenant. Repeatable. |
 | `site.aliases` | Additional hostnames for the same tenant. |
 | `site.base_url`, `site.schema_name`, `site.workspace_path` | Overrides for the derived defaults. |
+| `site.database { … }` | Puts the site on a different server or database. Unset fields inherit from the global `postgres` block. |
+| `postgres.sslmode` | libpq sslmode; defaults to `disable`, which suits loopback only. |
+| `HERMES_SITE_<SLUG>_POSTGRES_PASSWORD` | Per-site database password. |
 | `site.disabled` | Skip without deleting. |
 | `default_site` | Where unmatched hostnames go; default is to reject with 421. |
 | `trusted_proxies` | CIDRs (or bare IPs) whose `X-Forwarded-Host` is believed. |
@@ -222,6 +225,49 @@ No HTTP API surface changes. Configuration gains:
 | `HERMES_SESSION_KEY` | Environment override for `session.key`. |
 
 Database: each site gets its own PostgreSQL schema, named `site_<encoded hostname>`. The schema layout within a site is unchanged.
+
+#### Two levels of tenancy, not one
+
+Schema separation is how isolation is *enforced*. It is not, by itself, how
+isolation stays *checkable*, and the two are worth keeping apart.
+
+A schema is only a namespace. Restore a dump into the wrong one, point
+`schema_name` at a schema already in use, or recover a backup into the wrong
+environment, and nothing in the data objects — the rows are equally at home
+anywhere. So each site schema now also carries:
+
+- a `site_identity` table naming its owner, which makes a bare dump traceable;
+- a `domain` column on every top-level object table, with a per-schema
+  `DEFAULT` and a `CHECK` constraint fixing it to that owner.
+
+The column is deliberately invisible to the application. The models do not
+declare it and GORM never names it, so it is populated entirely by the default
+and there is no code path that can write the wrong value — which is the
+difference between a stamp that means something and one that drifts. A `CHECK`
+turns a mis-restore into an error at the moment it happens.
+
+This is not the row-level tenancy rejected under Alternatives. That proposal
+made the `WHERE` clause responsible for isolation, so a forgotten predicate was
+a cross-tenant read. Here the schema still does the isolating; the column only
+records what the schema already implies, and enforces that the record and the
+schema agree.
+
+Deployments with no `site` blocks get neither the column nor the identity
+table.
+
+#### Sites may live in different databases
+
+`site.database` overrides the connection per site, inheriting anything it does
+not set from the global `postgres` block, so the common case — schema
+separation inside one database — still needs no configuration at all. Setting
+`host` or `dbname` moves a site onto its own server or database, so one
+tenant's data need not share a backup, a failover, or a blast radius with
+another's.
+
+Two consequences worth stating: every database a site uses needs the shared
+extensions installed, not just the first; and `hermes-migrate -config` now
+takes its connections from the config rather than a single `-dsn`, running the
+same code path the server runs so the two cannot produce different schemas.
 
 ### Migration Plan
 
@@ -234,6 +280,7 @@ Database: each site gets its own PostgreSQL schema, named `site_<encoded hostnam
 | 4a | Per-domain local workspace scoping | Done |
 | 4b | Per-domain PostgreSQL schema; `srv.ForDomain(ctx)` | Done |
 | 4c | Per-domain search namespace, workspace, and outbox relays | Done |
+| 4d | Per-site database backends and row-level tenancy stamping | Done |
 | 5 | Signed sessions | Done |
 | 6 | Deployment artifacts: systemd unit, nginx vhost, deploy script | Done |
 | 7 | Run it on jrepp.com | Not started |
@@ -260,7 +307,7 @@ Not addressed here: `internal/auth/microsoft` sets a `user_email` cookie and its
 ## Alternatives Considered
 
 - **Separate process per subdomain** — the status quo generalized. Rejected: N processes, N configs, N database instances, and N TLS setups for what is one small deployment. It also does not make hostnames canonical, so the same normalization bugs remain, just distributed.
-- **Row-level tenancy (a `domain` column on every table)** — one schema, one connection pool, filtering by tenant. Rejected in favour of schema-per-domain: every query becomes a place where a forgotten `WHERE domain = ?` is a silent cross-tenant read, and there is no way to make the compiler or the database enforce it. Schema separation makes isolation the default and leakage the thing that requires effort.
+- **Row-level tenancy as the isolation mechanism (a `domain` column plus a `WHERE` clause on every query)** — one schema, one connection pool, filtering by tenant. Rejected in favour of schema-per-domain: every query becomes a place where a forgotten `WHERE domain = ?` is a silent cross-tenant read, and there is no way to make the compiler or the database enforce it. Schema separation makes isolation the default and leakage the thing that requires effort. Note that the `domain` column described above is *not* this: it records ownership and is enforced by a constraint, but nothing reads it to decide what a query returns.
 - **Opaque session IDs backed by a server-side store** — a standard design with a real advantage: instant revocation. Rejected for now because it requires a session table or cache on the request path, and the deployment does not yet need per-session revocation. Rotating `HERMES_SESSION_KEY` provides global revocation. The nonce in the payload is the handle a future revocation list would key on.
 - **JWTs via a library** — same shape, more surface. `alg=none` and algorithm-confusion bugs are the two most common JWT vulnerabilities, and both come from the format's flexibility about which algorithm to use. A fixed-version, fixed-algorithm token has neither.
 - **Deriving `Secure` from `X-Forwarded-Proto`** — workable, but it makes cookie security depend on a header, and therefore on the trusted-proxy list being right. The site's own `base_url` is operator-configured, not request-derived, so it cannot be influenced by a client at all.

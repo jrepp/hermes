@@ -13,6 +13,7 @@ import (
 	_ "github.com/lib/pq" // PostgreSQL driver
 
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/internal/migrate"
 	"github.com/hashicorp-forge/hermes/internal/sites"
 )
@@ -45,8 +46,8 @@ func run() int {
 		fmt.Fprintf(os.Stderr, "    %s -driver=sqlite -dsn=\".hermes/hermes.db\"\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  One site schema:\n")
 		fmt.Fprintf(os.Stderr, "    %s -dsn=\"...\" -schema=site_docs_jrepp_com\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  Every site in a config file:\n")
-		fmt.Fprintf(os.Stderr, "    %s -dsn=\"...\" -config=local/config.hcl\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  Every site in a config file (connections come from the config):\n")
+		fmt.Fprintf(os.Stderr, "    %s -config=local/config.hcl\n\n", os.Args[0])
 	}
 
 	flag.Parse()
@@ -56,8 +57,8 @@ func run() int {
 		return 0
 	}
 
-	// Validate required flags
-	if *dsn == "" {
+	// Validate required flags. -config carries its own connections.
+	if *dsn == "" && *configFile == "" {
 		log.Fatal("Error: -dsn flag is required\n\nRun with -help for usage information.")
 	}
 
@@ -70,22 +71,23 @@ func run() int {
 			"-config migrates every site into its own schema; -schema names a single one.")
 	}
 
-	// Resolve the schemas to migrate. Empty means the connection's own schema,
-	// which is the single-tenant behaviour.
-	schemas := []string{*schema}
+	// -config takes over completely: each site carries its own connection, its
+	// own schema, and its own extensions to install, so there is nothing left
+	// for a single -dsn to say. Running the same code the server runs is the
+	// point -- a migration tool that does less than the server leaves the
+	// database in a state the server then has to fix or refuse.
 	if *configFile != "" {
-		resolved, err := siteSchemas(*configFile)
-		if err != nil {
+		if err := migrateSitesFromConfig(*configFile); err != nil {
 			log.Printf("Error: %v\n", err)
 			return 1
 		}
-		if len(resolved) == 0 {
-			log.Printf("Error: %s declares no sites; drop -config to migrate the default schema\n",
-				*configFile)
-			return 1
-		}
-		schemas = resolved
+		log.Printf("✅ All migrations completed successfully!\n")
+
+		return 0
 	}
+
+	// Single-tenant, or one named schema of one database.
+	schemas := []string{*schema}
 
 	// Connect to database
 	log.Printf("Connecting to %s database...\n", *driver)
@@ -122,29 +124,45 @@ func run() int {
 	return 0
 }
 
-// siteSchemas reads a Hermes config file and returns one schema name per
-// configured site, in the order they are declared.
+// migrateSitesFromConfig migrates every site a config file declares, each into
+// its own schema of its own database.
 //
-// It goes through the same registry the server uses, so a config the server
-// would refuse to start on -- two sites claiming one hostname, say -- is also
-// one this tool refuses to migrate, rather than quietly creating schemas for
-// a layout that will never serve traffic.
-func siteSchemas(configFile string) ([]string, error) {
+// It goes through the same registry and the same migration path the server
+// uses, so a config the server would refuse to start on is refused here too
+// rather than half-applied, and the resulting schema is exactly what the
+// server expects -- extensions installed, tenant columns stamped, and all.
+func migrateSitesFromConfig(configFile string) error {
 	cfg, err := config.NewConfig(configFile, "")
 	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", configFile, err)
+		return fmt.Errorf("reading %s: %w", configFile, err)
+	}
+
+	// Same override the server applies, and for the same reason: the registry
+	// resolves each site's connection from this, so it has to be right before
+	// the registry is built.
+	if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok && cfg.Postgres != nil {
+		cfg.Postgres.Password = val
 	}
 
 	registry, err := sites.NewRegistry(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("reading sites from %s: %w", configFile, err)
+		return fmt.Errorf("reading sites from %s: %w", configFile, err)
+	}
+	if registry.Len() == 0 {
+		return fmt.Errorf(
+			"%s declares no sites; drop -config and pass -dsn to migrate a single database",
+			configFile)
 	}
 
-	schemas := make([]string, 0, registry.Len())
 	for _, site := range registry.Sites() {
-		log.Printf("  site %s -> schema %s\n", site.Domain.String(), site.SchemaName)
-		schemas = append(schemas, site.SchemaName)
+		log.Printf("  site %s -> %s/%s schema %s\n",
+			site.Domain.String(), site.Postgres.Host, site.Postgres.DBName, site.SchemaName)
 	}
 
-	return schemas, nil
+	var pg config.Postgres
+	if cfg.Postgres != nil {
+		pg = *cfg.Postgres
+	}
+
+	return db.MigrateSites(pg, registry, nil)
 }

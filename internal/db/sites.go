@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/lib/pq"
@@ -63,7 +64,7 @@ func NewSiteDBs(
 	}
 
 	for _, site := range registry.Sites() {
-		db, err := NewDBForSchema(cfg, site.SchemaName, log)
+		db, err := NewDBForSite(site.Postgres, log)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"opening database for site %q: %w", site.Domain.String(), err)
@@ -154,19 +155,14 @@ func (s *SiteDBs) Close() error {
 	return firstErr
 }
 
-// NewDBForSchema opens a connection pool scoped to one PostgreSQL schema.
-func NewDBForSchema(
-	cfg config.Postgres, schema string, log hclog.Logger,
-) (*gorm.DB, error) {
-	db, err := database.Connect(database.Config{
-		Host:       cfg.Host,
-		Port:       cfg.Port,
-		User:       cfg.User,
-		Password:   cfg.Password,
-		DBName:     cfg.DBName,
-		SSLMode:    "disable",
-		SchemaName: schema,
-	}, log)
+// NewDBForSite opens a connection pool for one site.
+//
+// The configuration carries the site's schema and, when the site overrides it,
+// its own host, database, and credentials -- so two sites may live in
+// different schemas of one database, in different databases, or on entirely
+// different servers, and the caller does not have to care which.
+func NewDBForSite(cfg config.Postgres, log hclog.Logger) (*gorm.DB, error) {
+	db, err := database.Connect(databaseConfig(cfg), log)
 	if err != nil {
 		return nil, err
 	}
@@ -178,53 +174,96 @@ func NewDBForSchema(
 	return db, nil
 }
 
-// MigrateSites runs migrations for every site schema.
+// NewDBForSchema opens a connection pool scoped to one PostgreSQL schema of
+// the given database.
+//
+// Deprecated: use NewDBForSite, which also carries any per-site connection
+// override. Retained for callers that only vary the schema.
+func NewDBForSchema(
+	cfg config.Postgres, schema string, log hclog.Logger,
+) (*gorm.DB, error) {
+	cfg.SchemaName = schema
+
+	return NewDBForSite(cfg, log)
+}
+
+func databaseConfig(cfg config.Postgres) database.Config {
+	return database.Config{
+		Host:       cfg.Host,
+		Port:       cfg.Port,
+		User:       cfg.User,
+		Password:   cfg.Password,
+		DBName:     cfg.DBName,
+		SSLMode:    cfg.EffectiveSSLMode(),
+		SchemaName: cfg.SchemaName,
+	}
+}
+
+// MigrateSites runs migrations for every site.
 //
 // Each site gets its own schema *and its own golang-migrate version table
 // inside it*, so the runs are genuinely independent: a new site added to an
 // existing deployment migrates from zero rather than inheriting another site's
 // version and coming up empty.
-func MigrateSites(cfg config.Postgres, registry *sites.Registry, log hclog.Logger) error {
+//
+// Sites may live in different databases, so this connects once per site rather
+// than once overall. That is a handful of short-lived connections at startup,
+// which is not worth optimising into a per-backend cache.
+func MigrateSites(_ config.Postgres, registry *sites.Registry, log hclog.Logger) error {
 	if registry == nil || registry.Len() == 0 {
 		return nil
 	}
 
-	dsn, err := database.Config{
-		Host:     cfg.Host,
-		Port:     cfg.Port,
-		User:     cfg.User,
-		Password: cfg.Password,
-		DBName:   cfg.DBName,
-		SSLMode:  "disable",
-	}.DSN()
+	for _, site := range registry.Sites() {
+		if err := migrateSite(site, log); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func migrateSite(site *sites.Site, log hclog.Logger) error {
+	// Connect without a schema: the schema does not exist yet, and the
+	// extension install below is database-wide.
+	connCfg := site.Postgres
+	connCfg.SchemaName = ""
+
+	dsn, err := databaseConfig(connCfg).DSN()
 	if err != nil {
-		return err
+		return fmt.Errorf("site %q: %w", site.Domain.String(), err)
 	}
 
 	sqlDB, err := sql.Open("postgres", dsn)
 	if err != nil {
-		return fmt.Errorf("connecting for site migrations: %w", err)
+		return fmt.Errorf("site %q: connecting for migrations: %w", site.Domain.String(), err)
 	}
 	defer func() { _ = sqlDB.Close() }()
 
 	if err := sqlDB.Ping(); err != nil {
-		return fmt.Errorf("pinging for site migrations: %w", err)
+		return fmt.Errorf("site %q: pinging for migrations: %w", site.Domain.String(), err)
 	}
 
 	if err := ensureSharedExtensions(sqlDB); err != nil {
-		return err
+		return fmt.Errorf("site %q: %w", site.Domain.String(), err)
 	}
 
-	for _, site := range registry.Sites() {
-		if log != nil {
-			log.Info("migrating site schema",
-				"domain", site.Domain.String(), "schema", site.SchemaName)
-		}
-		if err := migrate.RunMigrationsInSchema(sqlDB, "postgres", site.SchemaName); err != nil {
-			return fmt.Errorf(
-				"migrating site %q (schema %q): %w",
-				site.Domain.String(), site.SchemaName, err)
-		}
+	if log != nil {
+		log.Info("migrating site schema",
+			"domain", site.Domain.String(),
+			"schema", site.SchemaName,
+			"host", site.Postgres.Host,
+			"dbname", site.Postgres.DBName)
+	}
+
+	if err := migrate.RunMigrationsInSchema(sqlDB, "postgres", site.SchemaName); err != nil {
+		return fmt.Errorf(
+			"migrating site %q (schema %q): %w",
+			site.Domain.String(), site.SchemaName, err)
+	}
+
+	if err := applySiteIdentity(sqlDB, site); err != nil {
+		return fmt.Errorf("site %q: %w", site.Domain.String(), err)
 	}
 
 	return nil
@@ -286,6 +325,146 @@ func ensureSharedExtensions(sqlDB *sql.DB) error {
 					"Move it with: ALTER EXTENSION %s SET SCHEMA public",
 				ext, schema, schema, ext)
 		}
+	}
+
+	return nil
+}
+
+// tenantTables are the top-level object tables a site owns.
+//
+// Child and join tables are deliberately absent: they reach their tenant
+// through a foreign key, and stamping every one of them would add write cost
+// and a second place for the two to disagree.
+var tenantTables = []string{
+	"documents",
+	"projects",
+	"products",
+	"users",
+	"groups",
+	"document_types",
+	"workspace_projects",
+}
+
+// TenantColumn is the column naming the site that owns a row.
+const TenantColumn = "domain"
+
+// applySiteIdentity records which site a schema belongs to, and stamps that
+// site onto every top-level object table.
+//
+// The schema alone already isolates tenants, so this is not how isolation is
+// enforced -- it is how it stays checkable. A schema is just a namespace: dump
+// one and restore it into another, point `schema_name` at the wrong place, or
+// recover a backup into the wrong environment, and nothing in the data itself
+// would object. With the site stamped on each row, the rows are
+// self-describing, and the CHECK constraint turns a mis-restore into an error
+// instead of a silent tenant merge.
+//
+// The column carries a per-schema DEFAULT, so the application never sets it
+// and cannot forget to. GORM does not know the column exists, which is the
+// point: there is no code path that can write the wrong value.
+func applySiteIdentity(sqlDB *sql.DB, site *sites.Site) error {
+	schema := database.QuoteSchemaName(site.SchemaName)
+	name := site.Domain.String()
+	literal := pq.QuoteLiteral(name)
+
+	if _, err := sqlDB.Exec(`
+		CREATE TABLE IF NOT EXISTS ` + schema + `.site_identity (
+			domain      TEXT PRIMARY KEY,
+			schema_name TEXT NOT NULL,
+			created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+		)`); err != nil {
+		return fmt.Errorf("creating site_identity: %w", err)
+	}
+
+	// A schema belongs to exactly one site, for its whole life. Finding
+	// another name here means two sites resolved to one schema -- almost
+	// always a `schema_name` override pointing somewhere already in use, which
+	// would otherwise merge two tenants silently.
+	var existing string
+	err := sqlDB.QueryRow(
+		`SELECT domain FROM ` + schema + `.site_identity LIMIT 1`).Scan(&existing)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		if _, err := sqlDB.Exec(
+			`INSERT INTO `+schema+`.site_identity (domain, schema_name) VALUES ($1, $2)`,
+			name, site.SchemaName); err != nil {
+			return fmt.Errorf("recording site identity: %w", err)
+		}
+	case err != nil:
+		return fmt.Errorf("reading site identity: %w", err)
+	case existing != name:
+		return fmt.Errorf(
+			"schema %q already belongs to site %q, but %q is configured to use it.\n"+
+				"Two sites sharing a schema share their data. Give one of them a "+
+				"different schema_name, or drop the schema if it is disused",
+			site.SchemaName, existing, name)
+	}
+
+	for _, table := range tenantTables {
+		if err := stampTenantColumn(sqlDB, site.SchemaName, table, literal); err != nil {
+			return fmt.Errorf("stamping %s.%s: %w", site.SchemaName, table, err)
+		}
+	}
+
+	return nil
+}
+
+// stampTenantColumn adds the tenant column to one table, backfills it, and
+// constrains it to this site.
+//
+// Every step is idempotent: migrations run on every startup, and a site added
+// to an existing deployment must not be treated differently from one that has
+// been there for months.
+func stampTenantColumn(sqlDB *sql.DB, schemaName, table, literal string) error {
+	qualified := database.QuoteSchemaName(schemaName) + "." + pq.QuoteIdentifier(table)
+
+	// A table listed here may not exist in every schema version.
+	var present sql.NullString
+	if err := sqlDB.QueryRow(
+		"SELECT to_regclass($1)::text", schemaName+"."+table).Scan(&present); err != nil {
+		return fmt.Errorf("checking for the table: %w", err)
+	}
+	if !present.Valid {
+		return nil
+	}
+
+	column := pq.QuoteIdentifier(TenantColumn)
+	constraint := pq.QuoteIdentifier("chk_" + table + "_" + TenantColumn)
+
+	statements := []string{
+		// Added nullable first so an existing table with rows can take it.
+		`ALTER TABLE ` + qualified + ` ADD COLUMN IF NOT EXISTS ` + column + ` TEXT`,
+		// The default is what makes the application's ignorance of this column
+		// safe: an INSERT that never mentions it still gets the right value.
+		`ALTER TABLE ` + qualified + ` ALTER COLUMN ` + column + ` SET DEFAULT ` + literal,
+		`UPDATE ` + qualified + ` SET ` + column + ` = ` + literal + ` WHERE ` + column + ` IS NULL`,
+		`ALTER TABLE ` + qualified + ` ALTER COLUMN ` + column + ` SET NOT NULL`,
+	}
+	for _, stmt := range statements {
+		if _, err := sqlDB.Exec(stmt); err != nil {
+			return fmt.Errorf("%s: %w", stmt, err)
+		}
+	}
+
+	// CHECK constraints have no IF NOT EXISTS, so add it only when absent.
+	if _, err := sqlDB.Exec(`
+		DO $$
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1
+				FROM pg_constraint c
+				JOIN pg_class t ON t.oid = c.conrelid
+				JOIN pg_namespace n ON n.oid = t.relnamespace
+				WHERE n.nspname = ` + pq.QuoteLiteral(schemaName) + `
+				  AND t.relname = ` + pq.QuoteLiteral(table) + `
+				  AND c.conname = ` + pq.QuoteLiteral("chk_"+table+"_"+TenantColumn) + `
+			) THEN
+				EXECUTE 'ALTER TABLE ` + qualified + ` ADD CONSTRAINT ' ||
+					` + pq.QuoteLiteral(constraint) + ` ||
+					' CHECK (` + column + ` = ` + strings.ReplaceAll(literal, "'", "''") + `)';
+			END IF;
+		END $$`); err != nil {
+		return fmt.Errorf("adding the tenant check constraint: %w", err)
 	}
 
 	return nil

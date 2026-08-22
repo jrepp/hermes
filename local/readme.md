@@ -134,6 +134,7 @@ From the hostname alone, Hermes derives:
 | Workspace       | `<base_path>/docs.jrepp.com/`       |
 | Base URL        | `https://docs.jrepp.com`            |
 | Search indexes  | prefix `docs_jrepp_com_`            |
+| Row ownership   | `domain = 'docs.jrepp.com'` on top-level tables |
 | OIDC callback   | `https://docs.jrepp.com/auth/callback` |
 
 Override `schema_name` or `workspace_path` only to adopt storage that already
@@ -202,6 +203,51 @@ server {
   addr = "127.0.0.1:8000"
 }
 ```
+
+## Where a site is stored
+
+By default every site is a schema inside the one database named by the
+`postgres` block. A site can instead name its own:
+
+```hcl
+site "notes.jrepp.com" {
+  database {
+    host    = "notes-db.internal"
+    dbname  = "hermes_notes"
+    sslmode = "require"
+  }
+}
+```
+
+Unset fields inherit from the global block, so overriding only `host` moves the
+site to another server with the same credentials. Supply each site's password
+as `HERMES_SITE_<SLUG>_POSTGRES_PASSWORD` — `HERMES_SITE_NOTES_JREPP_COM_POSTGRES_PASSWORD`
+here — rather than writing it into the file.
+
+`hermes-migrate -config=local/config.hcl` reads those connections from the
+config and migrates each site where it actually lives, so `-dsn` is not needed
+in that mode.
+
+## Rows know which site they belong to
+
+Every top-level object table — documents, projects, products, users, groups,
+document types, workspace projects — carries a `domain` column fixed to the
+site that owns the schema, and each schema has a `site_identity` table naming
+its owner.
+
+This is not how isolation is enforced; the schema already does that. It is what
+keeps isolation **checkable**. A schema is only a namespace: restore a dump into
+the wrong one, or point `schema_name` at a schema already in use, and nothing in
+the data itself would object. With the stamp, a `CHECK` constraint turns that
+into an error instead of a silent tenant merge, and a bare dump can be traced
+back to its owner.
+
+The application never writes the column — it is populated by a per-schema
+`DEFAULT`, and the models do not know it exists — so no code path can set it
+wrong.
+
+A deployment with no `site` blocks gets neither the column nor the identity
+table; its schema is unchanged.
 
 ## Adding a site later
 

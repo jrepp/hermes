@@ -26,7 +26,8 @@ Substitute your own hostnames throughout.
 
 | Resource | Isolated? | How |
 |---|---|---|
-| Database | Yes | One PostgreSQL schema per site, one connection pool each |
+| Database | Yes | One PostgreSQL schema per site, one connection pool each — or a separate server per site |
+| Row ownership | Yes | `domain` column on every top-level object table, constrained per schema |
 | Documents | Yes | One directory per site under `local_workspace.base_path` |
 | Search index | Yes | Index names prefixed per site (`docs_jrepp_com_docs`) |
 | Sessions | Yes | Host-only cookie, and the signed token names its site |
@@ -87,6 +88,46 @@ CREATE DATABASE hermes OWNER hermes;
 
 One database holds every site. Sites are separated by schema, which Hermes
 creates on demand — you do not create them by hand.
+
+### Putting a site on its own database
+
+The default is one database, one schema per site. A site can name its own
+server instead:
+
+```hcl
+site "notes.jrepp.com" {
+  database {
+    host    = "notes-db.internal"
+    dbname  = "hermes_notes"
+    sslmode = "require"
+  }
+}
+```
+
+Unset fields inherit from the global `postgres` block, so overriding only
+`host` moves the site to another server with the same credentials. Supply each
+site's password as `HERMES_SITE_<SLUG>_POSTGRES_PASSWORD` — for
+`notes.jrepp.com` that is `HERMES_SITE_NOTES_JREPP_COM_POSTGRES_PASSWORD` —
+rather than writing it into the config.
+
+Every database a site uses needs the three extensions from the prerequisites,
+not just the first one.
+
+### How a row knows which site owns it
+
+Each site's schema has a `site_identity` table naming its owner, and every
+top-level object table carries a `domain` column fixed to that owner by a
+`CHECK` constraint.
+
+The schema already isolates tenants; this is what keeps the isolation
+*checkable*. A schema is only a namespace — restore a dump into the wrong one,
+or point `schema_name` at a schema already in use, and nothing in the data
+would object. With the stamp, that becomes an error rather than a silent merge,
+and a bare dump can be traced to its owner.
+
+The application never writes the column: it has a per-schema `DEFAULT` and the
+models do not know it exists, so no code path can set it wrong. Deployments
+with no `site` blocks get neither the column nor the table.
 
 ## 2. Build
 
@@ -184,15 +225,18 @@ OIDC compares `redirect_uri` exactly, so a missing entry surfaces as an
 ## 4. Migrate
 
 ```bash
-/opt/hermes/bin/hermes-migrate \
-  -dsn="host=localhost user=hermes password=... dbname=hermes port=5432 sslmode=disable" \
-  -config=/etc/hermes/config.hcl
+/opt/hermes/bin/hermes-migrate -config=/etc/hermes/config.hcl
 ```
 
-`-config` migrates every site the file declares, each into its own schema, and
-prints the mapping. It reads the file through the same registry the server uses,
-so a config the server would refuse to start on is refused here too rather than
-half-applied.
+`-config` migrates every site the file declares, each into its own schema of its
+own database, and prints the mapping. It reads the file through the same
+registry and runs the same migration path the server does, so a config the
+server would refuse to start on is refused here too rather than half-applied,
+and the result is exactly what the server expects: extensions installed, tenant
+columns stamped, and all.
+
+Connections come from the config in this mode, so `-dsn` is not needed. Site
+passwords are read from the environment as described above.
 
 To migrate one site — after adding a single site, say — use `-schema` instead:
 
@@ -432,6 +476,8 @@ happened on.
 | Startup: `multi-site hosting does not support the Algolia search provider` | `search = "algolia"` with sites configured | Switch to meilisearch or bleve, or run one process per site |
 | Startup: `multi-site hosting supports only the local workspace provider` | `workspace = "google"` or `"sharepoint"` with sites configured | Same |
 | Startup: `site "x" has no search provider` | Wiring drift; should not happen | File a bug — the check exists to stop this reaching requests |
+| Startup: `schema "x" already belongs to site "y"` | Two sites resolved to one schema, usually a `schema_name` override | Give one a different schema, or drop the disused schema |
+| `violates check constraint "chk_..._domain"` | A row claiming a site other than the schema's owner — normally a dump restored into the wrong schema | Restore into the right schema; the constraint is what stopped a silent tenant merge |
 | Searches return nothing on a new site | Documents predate the site, or the outbox has not drained | Check the per-site outbox relay in the logs |
 | Health check returns 421 | Probing a path other than `/health` without a Host header | Only `/health` bypasses routing; probe that, or send `Host:` |
 
