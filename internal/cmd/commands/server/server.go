@@ -1114,6 +1114,23 @@ func (c *Command) Run(args []string) int {
 	}
 
 	ginRouter := gin.New()
+
+	// Turn a handler panic into a 500 and a log line rather than a dropped
+	// connection. net/http already keeps a panic from killing the process, but
+	// it closes the connection without a response, so the client sees a
+	// transport error and the cause appears only in a stack trace on stderr.
+	//
+	// This is a backstop, not a licence: a panic is still a bug, and the tests
+	// that exercise the config endpoint exist because two of them shipped.
+	ginRouter.Use(gin.CustomRecoveryWithWriter(nil, func(gc *gin.Context, recovered any) {
+		c.Log.Error("panic serving request",
+			"error", recovered,
+			"method", gc.Request.Method,
+			"host", gc.Request.Host,
+			"path", gc.Request.URL.Path)
+		gc.AbortWithStatus(http.StatusInternalServerError)
+	}))
+
 	ginRouter.NoRoute(gin.WrapH(rootHandler))
 
 	httpServer := &http.Server{
