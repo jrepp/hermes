@@ -148,6 +148,36 @@ The key is derived by hashing the configured secret rather than decoding it. Acc
 
 `local_workspace`'s `docs_path`, `drafts_path`, `folders_path`, `users_path`, and `tokens_path` became optional. A multi-domain deployment must leave them unset: one shared `docs_path` would put every tenant's documents in the same directory.
 
+#### What per-schema migration exposed
+
+Migrating a schema per site surfaced four defects, three of them pre-existing
+and latent under the per-test-schema pattern the API tests already used:
+
+- **Extensions are database-scoped objects that live in one schema.** The
+  migrations create `vector`, `citext`, and `uuid-ossp` unqualified, so under
+  per-site migration they land in whichever site migrated first. Every later
+  site finds them already present, skips creation, and fails on the type. They
+  are now installed in `public` up front — which is the reason `public` stays
+  on each site's `search_path`.
+- **Migration 000004** tested a column type with a scalar subquery over
+  `information_schema` with no `table_schema` filter. With more than one schema
+  holding `workspace_projects` that is an outright *"more than one row returned
+  by a subquery"* error.
+- **Migration 000009** looked up indexes in `pg_indexes` with no `schemaname`
+  filter, so an index of the same name in another site's schema satisfied the
+  check and the rename was skipped.
+- **golang-migrate's `SchemaName` only decides where its version table lives.**
+  It does not scope the migration SQL. The database-specific extras were worse:
+  they ran straight on the pool with no schema at all. Both now run on one
+  pinned connection with `search_path` set on it.
+
+One question resolved along the way: `CREATE TABLE IF NOT EXISTS` resolves
+against the *creation* schema, not against everything visible on the
+`search_path`. So site tables do land correctly even when `public` already
+holds a single-tenant install. That is verified rather than assumed, because
+the cost of it being wrong is every site sharing one set of rows with no error
+anywhere.
+
 ### API / Schema Changes
 
 No HTTP API surface changes. Configuration gains:
@@ -174,7 +204,8 @@ Database: each site gets its own PostgreSQL schema, named `site_<encoded hostnam
 | 2 | `pkg/domain` canonical type | Done |
 | 3 | `internal/sites` registry and `internal/middleware` host routing | Done |
 | 4a | Per-domain local workspace scoping | Done |
-| 4b | Per-domain PostgreSQL schema and search namespace; `srv.ForDomain(ctx)` | Not started |
+| 4b | Per-domain PostgreSQL schema; `srv.ForDomain(ctx)` | Done |
+| 4c | Per-domain search namespace | Not started |
 | 5 | Signed sessions | Done |
 | 6 | jrepp.com deployment: nginx, certbot, systemd, deploy script | Not started |
 
@@ -207,8 +238,8 @@ Not addressed here: `internal/auth/microsoft` sets a `user_email` cookie and its
 
 ## Open Questions
 
-- Should `hermes-migrate` grow an all-sites mode that iterates the registry, or should each site be migrated by an explicit `-schema` invocation? Leaning toward both: `-schema` as the primitive, all-sites as the loop over it.
-- Per-domain search namespacing is settled for Meilisearch and Bleve (index prefix) but not for Algolia, where index count is a billing dimension.
+- Per-domain search namespacing is settled for Meilisearch and Bleve (index prefix) but not for Algolia, where index count is a billing dimension. Until it lands, every site shares one index and a search on one site can return another's documents.
+- Project configuration and indexer registration tokens remain process-level rather than per-site.
 - Does the indexer need domain awareness, or is it sufficient for it to be pointed at one site at a time? It submits via API only (ADR-020), so the API's domain scope may be enough.
 
 ## References
