@@ -7,14 +7,15 @@ import (
 	"log"
 	"os"
 
-	// Import database drivers as needed
-	// Note: We only import lib/pq for postgres. SQLite driver is imported
-	// by golang-migrate/migrate/v4/database/sqlite internally via modernc.org/sqlite
 	_ "github.com/lib/pq" // PostgreSQL driver
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/internal/migrate"
+
+	// SQLite support is opt-in: it links modernc.org/sqlite, which ADR-019
+	// keeps out of the server binary. This is the binary that needs it.
+	_ "github.com/hashicorp-forge/hermes/internal/migrate/sqlitedriver"
 	"github.com/hashicorp-forge/hermes/internal/sites"
 )
 

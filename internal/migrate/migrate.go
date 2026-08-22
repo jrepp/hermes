@@ -7,11 +7,12 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 
@@ -23,6 +24,36 @@ const (
 	driverPostgres = "postgres"
 	driverSQLite   = "sqlite"
 )
+
+// driverFactories maps a driver name to its golang-migrate constructor.
+//
+// It is a registry rather than a switch so the SQLite driver can live in its
+// own package. ADR-019 keeps SQLite out of the server binary -- it drags in
+// modernc.org/sqlite, a pure-Go SQLite implementation that is tens of
+// megabytes -- and an unconditional import here would pull it into cmd/hermes
+// through internal/db. Blank-import internal/migrate/sqlitedriver from a
+// binary that needs SQLite; cmd/hermes-migrate does.
+var driverFactories = map[string]func(*sql.DB) (migratedb.Driver, error){
+	driverPostgres: func(db *sql.DB) (migratedb.Driver, error) {
+		return postgres.WithInstance(db, &postgres.Config{})
+	},
+}
+
+// RegisterDriver adds a migration driver. Called from a driver package's init.
+func RegisterDriver(name string, factory func(*sql.DB) (migratedb.Driver, error)) {
+	driverFactories[name] = factory
+}
+
+// SupportedDrivers returns the registered driver names, for error messages.
+func SupportedDrivers() []string {
+	names := make([]string, 0, len(driverFactories))
+	for name := range driverFactories {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	return names
+}
 
 //go:embed migrations/*.sql migrations/db-specific/*.sql
 var migrationsFS embed.FS
@@ -48,8 +79,8 @@ func RunMigrations(db *sql.DB, driver string) error {
 // behaviour. SQLite has no schemas, so a non-empty schema is an error there.
 func RunMigrationsInSchema(db *sql.DB, driver, schema string) error {
 	// Validate driver
-	if driver != driverPostgres && driver != driverSQLite {
-		return fmt.Errorf("unsupported database driver: %s (supported: postgres, sqlite)", driver)
+	if _, ok := driverFactories[driver]; !ok {
+		return unsupportedDriver(driver)
 	}
 	if schema != "" && driver != driverPostgres {
 		return fmt.Errorf("schema-scoped migrations require postgres, not %s", driver)
@@ -114,24 +145,33 @@ func RunMigrationsInSchema(db *sql.DB, driver, schema string) error {
 // unscopedDriver builds the migration driver for the connection's own schema,
 // which is the single-tenant path.
 func unscopedDriver(db *sql.DB, driver string) (migratedb.Driver, error) {
-	switch driver {
-	case driverPostgres:
-		d, err := postgres.WithInstance(db, &postgres.Config{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create postgres driver: %w", err)
-		}
-
-		return d, nil
-	case driverSQLite:
-		d, err := sqlite.WithInstance(db, &sqlite.Config{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to create sqlite driver: %w", err)
-		}
-
-		return d, nil
+	factory, ok := driverFactories[driver]
+	if !ok {
+		return nil, unsupportedDriver(driver)
 	}
 
-	return nil, fmt.Errorf("unsupported database driver: %s", driver)
+	d, err := factory(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create %s driver: %w", driver, err)
+	}
+
+	return d, nil
+}
+
+// unsupportedDriver explains both possibilities: a name that is not a driver
+// at all, and a real driver whose package this binary does not import.
+func unsupportedDriver(driver string) error {
+	if driver == driverSQLite {
+		return fmt.Errorf(
+			"the sqlite migration driver is not linked into this binary "+
+				"(supported here: %s).\n"+
+				"The server binary deliberately excludes it; use hermes-migrate "+
+				"for SQLite databases",
+			strings.Join(SupportedDrivers(), ", "))
+	}
+
+	return fmt.Errorf("unsupported database driver: %s (supported: %s)",
+		driver, strings.Join(SupportedDrivers(), ", "))
 }
 
 // runAll applies the core migrations and then the database-specific extras.
@@ -262,17 +302,9 @@ func GetMigrationVersion(db *sql.DB, driver string) (version uint, dirty bool, e
 		return 0, false, fmt.Errorf("failed to load migration source: %w", err)
 	}
 
-	var databaseDriver migratedb.Driver
-	switch driver {
-	case driverPostgres:
-		databaseDriver, err = postgres.WithInstance(db, &postgres.Config{})
-	case driverSQLite:
-		databaseDriver, err = sqlite.WithInstance(db, &sqlite.Config{})
-	default:
-		return 0, false, fmt.Errorf("unsupported database driver: %s", driver)
-	}
+	databaseDriver, err := unscopedDriver(db, driver)
 	if err != nil {
-		return 0, false, fmt.Errorf("failed to create database driver: %w", err)
+		return 0, false, err
 	}
 
 	m, err := migrate.NewWithInstance(
