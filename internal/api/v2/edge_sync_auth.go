@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -116,7 +117,21 @@ func EdgeSyncAuthMiddleware(srv server.Server, next http.Handler) http.Handler {
 //   - Stored as SHA-256 hash
 //
 // Returns the plaintext token (only time it's available) and error.
-func CreateEdgeSyncToken(srv server.Server, edgeInstance string) (string, error) {
+//
+// The context selects the site the token belongs to. A token is stored in one
+// site's schema and is rejected by every other, so writing it to whichever
+// database happened to be on the Server would produce a token that
+// authenticates against a site the caller did not mean -- or, more likely, a
+// token the edge instance is then told is invalid. Taking the context makes
+// that choice explicit rather than incidental.
+func CreateEdgeSyncToken(
+	ctx context.Context, srv server.Server, edgeInstance string,
+) (string, error) {
+	srv, err := srv.ForDomain(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	plaintext, err := models.GenerateToken("edge")
 	if err != nil {
 		return "", err
