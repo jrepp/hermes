@@ -695,12 +695,35 @@ func (c *Command) Run(args []string) int {
 	go instance.StartHeartbeat(ctx, db, 1*time.Minute, instanceLogger)
 
 	// Generate indexer registration token if configured
+	// An indexer registers against one site, and its token is stored in that
+	// site's schema. A single token written from the primary site would be
+	// rejected everywhere else -- so each site gets its own, in its own file
+	// named after the site.
 	indexerTokenPath := os.Getenv("HERMES_INDEXER_TOKEN_PATH")
 	if indexerTokenPath != "" {
-		if err := generateIndexerToken(db, indexerTokenPath, c.Log); err != nil {
-			c.UI.Warn(fmt.Sprintf("error generating indexer token: %v", err))
+		writeToken := func(siteName domain.Name, siteDB *gorm.DB) error {
+			path := indexerTokenPath
+			if !siteName.IsZero() {
+				path = indexerTokenPath + "." + siteName.Slug()
+			}
+
+			if err := generateIndexerToken(siteDB, path, c.Log); err != nil {
+				return err
+			}
+			c.UI.Info(fmt.Sprintf("Indexer registration token written to: %s", path))
+
+			return nil
+		}
+
+		var tokenErr error
+		if siteRegistry.Len() > 0 {
+			tokenErr = siteDBs.Each(writeToken)
 		} else {
-			c.UI.Info(fmt.Sprintf("Indexer registration token written to: %s", indexerTokenPath))
+			tokenErr = writeToken(domain.Name{}, db)
+		}
+		if tokenErr != nil {
+			// Not fatal: the server runs without an indexer.
+			c.UI.Warn(fmt.Sprintf("error generating indexer token: %v", tokenErr))
 		}
 	}
 
