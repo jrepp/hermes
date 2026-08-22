@@ -447,15 +447,22 @@ happened on.
 
 ## Known limitations
 
-- **Project configuration and indexer registration tokens** are process-level,
-  not per site.
-- **Adding a site requires a restart.**
+- **Adding a site requires a restart.** Sites are structural configuration, not
+  runtime state.
+- **Semantic and hybrid search do not work at all.** `/api/v2/search/semantic`
+  and `/api/v2/search/hybrid` always return 503: nothing in the server
+  constructs the embeddings backend they need (RFC-088 is unfinished). This is
+  not a multi-site limitation — it is the same on a single-site deployment.
+- **Project configuration is process-level.** It is loaded once and, in
+  practice, read by nothing: `Server.ProjectConfig` is populated at startup and
+  no handler consults it.
 - **Site-less work runs against the primary site.** The instance heartbeat, the
   health probe, and the search outbox statistics use the site named by
   `default_site`, or the first one declared. The startup log says which.
-- **The indexer publishes to a per-site topic**, `<topic>.<site-slug>`. A
-  consumer configured for the base topic sees nothing; point it at the per-site
-  topics.
+- **The indexer is per site.** Events publish to `<topic>.<site-slug>`, and
+  `HERMES_INDEXER_TOKEN_PATH` yields one registration token per site, written
+  to `<path>.<site-slug>`. A consumer configured for the base topic or the bare
+  token path sees nothing; point each indexer at its site's pair.
 
 ## Troubleshooting
 

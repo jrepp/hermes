@@ -304,6 +304,32 @@ Two further items:
 
 Not addressed here: `internal/auth/microsoft` sets a `user_email` cookie and its `extractTokenFromRequest` will accept any cookie longer than 100 characters as a bearer token. That path does validate the token against Microsoft Graph, so it is not the same trivial bypass, but it deserves its own review.
 
+#### Findings outside the multi-domain work
+
+Auditing for tenancy leaks turned up three problems that had nothing to do with
+multi-domain hosting and are fixed here anyway:
+
+- **`internal/auth/microsoft` forwarded arbitrary cookies to Microsoft Graph.**
+  If a `user_email` cookie was present, `extractTokenFromRequest` walked every
+  cookie on the request and returned the first value over 100 characters, on
+  the reasoning that "a token should be fairly long". Whatever it returned was
+  sent onward as a bearer token — so an analytics identifier, another
+  application's session, or Hermes' own signed `hermes_session` cookie (which
+  is comfortably over 100 characters) could be disclosed to a third party, and
+  which one depended on the order the browser sent them in. The fallback is
+  gone; a request without a recognised token cookie now fails authentication
+  rather than guessing.
+- **The server binary linked SQLite**, contrary to ADR-019. `internal/migrate`
+  imported the SQLite driver unconditionally and is reachable from `cmd/hermes`
+  through `internal/db`, so `modernc.org/sqlite` came with it — 4.6 MB the
+  server can never use, since it refuses SQLite outright. The driver now lives
+  in `internal/migrate/sqlitedriver` and is blank-imported by
+  `cmd/hermes-migrate` alone, with a test that fails if it creeps back.
+- **Semantic and hybrid search are unreachable.** Nothing constructs
+  `SemanticSearch` or `HybridSearch`, so both endpoints always return 503. The
+  message now says so, rather than "not configured", which sends an operator
+  looking for a setting that does not exist.
+
 ## Alternatives Considered
 
 - **Separate process per subdomain** — the status quo generalized. Rejected: N processes, N configs, N database instances, and N TLS setups for what is one small deployment. It also does not make hostnames canonical, so the same normalization bugs remain, just distributed.
@@ -315,7 +341,7 @@ Not addressed here: `internal/auth/microsoft` sets a `user_email` cookie and its
 ## Open Questions
 
 - Algolia remains unsupported for multi-site: index count is a billing dimension, and more importantly the frontend queries it through a proxy handler that is not site-aware. Startup refuses the combination rather than serving one tenant's index to another. Google Workspace and SharePoint are refused for the same class of reason on the workspace side.
-- Project configuration and indexer registration tokens remain process-level rather than per-site.
+- Indexer registration tokens are now per site, written to `<path>.<site-slug>`, because a token lives in the schema of the site it was minted for and would be rejected everywhere else. Project configuration remains process-level, which costs nothing today: `Server.ProjectConfig` is populated at startup and no handler reads it.
 - The indexer now consumes per-site topics (`<topic>.<site-slug>`); whether it should instead carry the site in the event payload is open.
 - Does the indexer need domain awareness, or is it sufficient for it to be pointed at one site at a time? It submits via API only (ADR-020), so the API's domain scope may be enough.
 
