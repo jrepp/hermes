@@ -70,6 +70,13 @@ const (
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; large patch/get flows are kept together to avoid behavior drift.
 func DocumentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Check if this is a document content request (/content suffix)
 		// and delegate to DocumentContentHandler
 		if strings.HasSuffix(r.URL.Path, "/content") {

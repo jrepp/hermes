@@ -37,6 +37,13 @@ type DocumentContentResponse struct {
 // SupportsContentEditing() to enable this functionality.
 func DocumentContentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Check if workspace provider supports content editing
 		if caps, ok := srv.WorkspaceProvider.(workspace.ProviderCapabilities); !ok || !caps.SupportsContentEditing() {
 			srv.Logger.Warn("document content API not supported by workspace provider",

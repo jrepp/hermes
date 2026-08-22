@@ -14,6 +14,13 @@ import (
 // ProductsHandler returns the product mappings to the Hermes frontend.
 func ProductsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Only allow GET requests.
 		if r.Method != http.MethodGet {
 			w.WriteHeader(http.StatusMethodNotAllowed)

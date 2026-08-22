@@ -19,6 +19,13 @@ type WorkspaceProjectsGetResponse struct {
 // Endpoint: GET /api/v2/workspace-projects
 func WorkspaceProjectsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		logArgs := []any{
 			"path", r.URL.Path,
 			"method", r.Method,
@@ -77,6 +84,13 @@ func WorkspaceProjectsHandler(srv server.Server) http.Handler {
 // Endpoint: GET /api/v2/workspace-projects/{name}
 func WorkspaceProjectHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		logArgs := []any{
 			"path", r.URL.Path,
 			"method", r.Method,

@@ -59,9 +59,19 @@ type SyncStatusResponse struct {
 //
 //nolint:gocognit,gocyclo // Handler coordinates several edge-sync branches in one place.
 func EdgeSyncHandler(srv server.Server) http.Handler {
-	syncService := services.NewDocumentSyncService(srv.DB)
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
+		// Built per request rather than once at construction: the service
+		// wraps a *gorm.DB, and which pool that is depends on the site being
+		// served.
+		syncService := services.NewDocumentSyncService(srv.DB)
+
 		// Parse the path to determine which endpoint was called
 		path := strings.TrimPrefix(r.URL.Path, "/api/v2/edge/")
 

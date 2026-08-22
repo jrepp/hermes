@@ -46,6 +46,13 @@ const (
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; splitting further is high-churn and behavior-sensitive.
 func ApprovalsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Validate request.
 		docID, err := parseResourceIDFromURL(r.URL.Path, "approvals")
 		if err != nil {

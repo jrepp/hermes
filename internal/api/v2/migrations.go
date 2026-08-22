@@ -33,6 +33,13 @@ func getSQLDB(srv server.Server) (*sql.DB, error) {
 //nolint:gocognit,gocyclo // Route-style handler intentionally keeps path dispatch in one place.
 func MigrationsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Extract path after /api/v2/migrations/
 		path := strings.TrimPrefix(r.URL.Path, "/api/v2/migrations/")
 

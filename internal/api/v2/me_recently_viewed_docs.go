@@ -23,6 +23,13 @@ type recentlyViewedDoc struct {
 //nolint:gocognit,gocyclo // Handler combines auth, lookup, and response shaping in one endpoint.
 func MeRecentlyViewedDocsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		errResp := func(
 			httpCode int, userErrMsg, logErrMsg string, err error,
 			extraArgs ...interface{}) {

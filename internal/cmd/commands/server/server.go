@@ -41,6 +41,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/sites"
 	"github.com/hashicorp-forge/hermes/internal/structs"
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
+	"github.com/hashicorp-forge/hermes/pkg/domain"
 	hcd "github.com/hashicorp-forge/hermes/pkg/hashicorpdocs"
 	"github.com/hashicorp-forge/hermes/pkg/indexer/relay"
 	"github.com/hashicorp-forge/hermes/pkg/kafka"
@@ -624,21 +625,69 @@ func (c *Command) Run(args []string) int {
 		cfg.Postgres.Password = val
 	}
 
-	// Auto-migrate PostgreSQL database
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
-		cfg.Postgres.Host, cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.DBName, cfg.Postgres.Port)
-	c.Log.Info("running database migrations (PostgreSQL)", "host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
-	if err := runMigrations("postgres", dsn); err != nil {
-		c.UI.Error(fmt.Sprintf("error running PostgreSQL migrations: %v", err))
+	// Resolve the site registry before anything that depends on per-site
+	// resources. NewRegistry rejects ambiguous hostname configuration, and it
+	// is better to refuse to start than to route requests to whichever tenant
+	// a map iteration happened to yield.
+	siteRegistry, err := sites.NewRegistry(cfg)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("error building site registry: %v", err))
 		return 1
+	}
+	for _, site := range siteRegistry.Sites() {
+		c.Log.Info("serving site",
+			"domain", site.Domain.String(),
+			"aliases", len(site.Aliases),
+			"schema", site.SchemaName,
+			"workspace", site.WorkspacePath)
 	}
 
-	db, err = dbpkg.NewDB(*cfg.Postgres)
+	// Migrate. A multi-site deployment keeps no Hermes tables in the public
+	// schema at all: every site's search_path ends in public so that extension
+	// types resolve, and `CREATE TABLE IF NOT EXISTS` checks the whole path, so
+	// tables in public would make every site's migration a silent no-op and
+	// leave all of them sharing one set of tables.
+	var siteDBs *dbpkg.SiteDBs
+	if siteRegistry.Len() > 0 {
+		if err := dbpkg.MigrateSites(*cfg.Postgres, siteRegistry, c.Log); err != nil {
+			c.UI.Error(fmt.Sprintf("error migrating site schemas: %v", err))
+			return 1
+		}
+	} else {
+		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
+			cfg.Postgres.Host, cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.DBName, cfg.Postgres.Port)
+		c.Log.Info("running database migrations (PostgreSQL)",
+			"host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
+		if err := runMigrations("postgres", dsn); err != nil {
+			c.UI.Error(fmt.Sprintf("error running PostgreSQL migrations: %v", err))
+			return 1
+		}
+
+		db, err = dbpkg.NewDB(*cfg.Postgres)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("error initializing database: %v", err))
+			return 1
+		}
+	}
+
+	siteDBs, err = dbpkg.NewSiteDBs(*cfg.Postgres, siteRegistry, db, c.Log)
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("error initializing database: %v", err))
+		c.UI.Error(fmt.Sprintf("error opening site databases: %v", err))
 		return 1
 	}
-	c.Log.Info("using PostgreSQL database", "host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName)
+	defer func() {
+		if err := siteDBs.Close(); err != nil {
+			c.Log.Warn("error closing site databases", "error", err)
+		}
+	}()
+
+	// Process-level work that carries no site -- the heartbeat, the health
+	// probe, the search outbox -- runs against the primary site.
+	db = siteDBs.Fallback()
+
+	c.Log.Info("using PostgreSQL database",
+		"host", cfg.Postgres.Host, "dbname", cfg.Postgres.DBName,
+		"sites", siteRegistry.Len())
 
 	// Initialize instance identity.
 	ctx := context.Background()
@@ -646,7 +695,12 @@ func (c *Command) Run(args []string) int {
 		Name:  "instance",
 		Level: hclog.Info,
 	})
-	if err := instance.Initialize(ctx, db, cfg, instanceLogger); err != nil {
+	// Instance identity is per site: each site is an independent logical
+	// Hermes with its own schema, so it needs its own row rather than
+	// inheriting whichever site happened to initialize first.
+	if err := forEachDatabase(siteDBs, siteRegistry, db, func(siteDB *gorm.DB) error {
+		return instance.Initialize(ctx, siteDB, cfg, instanceLogger)
+	}); err != nil {
 		c.UI.Error(fmt.Sprintf("error initializing instance identity: %v", err))
 		return 1
 	}
@@ -671,13 +725,19 @@ func (c *Command) Run(args []string) int {
 	// 		return 1
 	// 	}
 	// }
-	if err := registerDocumentTypes(*cfg, db); err != nil {
+	// Document types and products are content configuration, so every site
+	// gets its own copy in its own schema.
+	if err := forEachDatabase(siteDBs, siteRegistry, db, func(siteDB *gorm.DB) error {
+		return registerDocumentTypes(*cfg, siteDB)
+	}); err != nil {
 		c.UI.Error(fmt.Sprintf("error registering document types: %v", err))
 		return 1
 	}
 
 	// Register products.
-	if err := registerProducts(cfg, algoWrite, db); err != nil {
+	if err := forEachDatabase(siteDBs, siteRegistry, db, func(siteDB *gorm.DB) error {
+		return registerProducts(cfg, algoWrite, siteDB)
+	}); err != nil {
 		c.UI.Error(fmt.Sprintf("error registering products: %v", err))
 		return 1
 	}
@@ -761,23 +821,6 @@ func (c *Command) Run(args []string) int {
 		}
 	}
 
-	// Resolve the site registry before anything that depends on per-site
-	// resources. NewRegistry rejects ambiguous hostname configuration, and it
-	// is better to refuse to start than to route requests to whichever tenant
-	// a map iteration happened to yield.
-	siteRegistry, err := sites.NewRegistry(cfg)
-	if err != nil {
-		c.UI.Error(fmt.Sprintf("error building site registry: %v", err))
-		return 1
-	}
-	for _, site := range siteRegistry.Sites() {
-		c.Log.Info("serving site",
-			"domain", site.Domain.String(),
-			"aliases", len(site.Aliases),
-			"schema", site.SchemaName,
-			"workspace", site.WorkspacePath)
-	}
-
 	// Build the session signer.
 	var sessionKey, sessionTTL string
 	if cfg.Session != nil {
@@ -813,6 +856,7 @@ func (c *Command) Run(args []string) int {
 	}
 
 	srv := server.Server{
+		SiteDBs:           siteDBs,
 		SearchProvider:    searchProvider,
 		WorkspaceProvider: workspaceProvider,
 		GWService:         goog,
@@ -1342,4 +1386,23 @@ func runMigrations(driver, dsn string) error {
 	}
 
 	return nil
+}
+
+// forEachDatabase runs fn against every site's database, or against the single
+// process-wide one when no sites are configured.
+//
+// Startup work that writes content configuration has to reach every schema; a
+// site whose document types were never registered looks empty rather than
+// broken, which is the harder failure to notice.
+func forEachDatabase(
+	siteDBs *dbpkg.SiteDBs, registry *sites.Registry, fallback *gorm.DB,
+	fn func(*gorm.DB) error,
+) error {
+	if registry != nil && registry.Len() > 0 {
+		return siteDBs.Each(func(_ domain.Name, siteDB *gorm.DB) error {
+			return fn(siteDB)
+		})
+	}
+
+	return fn(fallback)
 }

@@ -21,6 +21,13 @@ import (
 //	handler := EdgeSyncAuthMiddleware(srv, EdgeSyncHandler(srv))
 func EdgeSyncAuthMiddleware(srv server.Server, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Extract Bearer token from Authorization header
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {

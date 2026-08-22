@@ -49,6 +49,13 @@ type IndexerHeartbeatResponse struct {
 // IndexerHandler handles indexer-related API endpoints.
 func IndexerHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Route based on method and path
 		path := strings.TrimPrefix(r.URL.Path, "/api/v2/indexer")
 

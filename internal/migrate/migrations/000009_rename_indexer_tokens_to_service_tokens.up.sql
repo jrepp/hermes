@@ -19,17 +19,23 @@ ALTER INDEX indexer_tokens_pkey RENAME TO service_tokens_pkey;
 ALTER INDEX indexer_tokens_token_hash_key RENAME TO service_tokens_token_hash_key;
 
 -- Rename existing indexes if they exist
+-- schemaname is required: pg_indexes spans the whole database, so under
+-- per-site schemas an index of the same name in another site's schema
+-- would satisfy these checks and the rename here would be skipped.
 DO $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_indexer_tokens_hash') THEN
+    IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = current_schema()
+                                      AND indexname = 'idx_indexer_tokens_hash') THEN
         ALTER INDEX idx_indexer_tokens_hash RENAME TO idx_service_tokens_hash;
     END IF;
 
-    IF EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_indexer_tokens_type') THEN
+    IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = current_schema()
+                                      AND indexname = 'idx_indexer_tokens_type') THEN
         ALTER INDEX idx_indexer_tokens_type RENAME TO idx_service_tokens_type;
     END IF;
 
-    IF EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_indexer_tokens_expires') THEN
+    IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = current_schema()
+                                      AND indexname = 'idx_indexer_tokens_expires') THEN
         ALTER INDEX idx_service_tokens_expires RENAME TO idx_service_tokens_expires;
     END IF;
 END $$;

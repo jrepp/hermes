@@ -26,6 +26,13 @@ import (
 //nolint:gocognit,gocyclo // Legacy review workflow handler with many coordinated side effects.
 func ReviewsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		switch r.Method {
 		case "POST":
 			// Validate request.

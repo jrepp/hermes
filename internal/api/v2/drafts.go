@@ -59,6 +59,13 @@ type DraftsResponse struct {
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; request handling is intentionally centralized.
 func DraftsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		errResp := func(httpCode int, userErrMsg, logErrMsg string, err error) {
 			srv.Logger.Error(logErrMsg,
 				"method", r.Method,
@@ -593,6 +600,13 @@ func getWorkspaceProviderID(cfg *config.Config, docID string) string {
 //nolint:gocognit,gocyclo // Legacy HTTP entrypoint; large draft flows are kept together to minimize behavior churn.
 func DraftsDocumentHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Parse document ID and request type from the URL path.
 		docID, reqType, err := parseDocumentsURLPath(
 			r.URL.Path, "drafts")

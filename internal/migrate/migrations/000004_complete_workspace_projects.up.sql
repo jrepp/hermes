@@ -17,9 +17,14 @@ ALTER TABLE workspace_projects
 -- This uses a CASE to handle existing UUIDs or generate new ones for non-UUID values
 DO $$
 BEGIN
-  -- First check if column is already UUID type
-  IF (SELECT data_type FROM information_schema.columns 
-      WHERE table_name = 'workspace_projects' AND column_name = 'project_uuid') = 'text' THEN
+  -- First check if column is already UUID type.
+  -- table_schema is required: without it this scalar subquery returns one row
+  -- per schema holding a workspace_projects table, which under per-site
+  -- schemas is an outright "more than one row returned by a subquery" error.
+  IF (SELECT data_type FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND table_name = 'workspace_projects'
+        AND column_name = 'project_uuid') = 'text' THEN
     ALTER TABLE workspace_projects 
       ALTER COLUMN project_uuid TYPE UUID USING COALESCE(
         CASE 

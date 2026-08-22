@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/hashicorp-forge/hermes/internal/config"
+	"github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/internal/jira"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
@@ -37,7 +38,15 @@ type Server struct {
 	Config *config.Config
 
 	// DB is the database for the server.
+	//
+	// In a multi-site deployment this is the process-wide default and belongs
+	// to no tenant. Handlers must go through ForRequest to get the pool for
+	// the site being served.
 	DB *gorm.DB
+
+	// SiteDBs holds one connection pool per site, or nil in a single-tenant
+	// deployment. ForDomain reads it.
+	SiteDBs *db.SiteDBs
 
 	// Jira is the Jira service for the server.
 	Jira *jira.Service

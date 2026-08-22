@@ -14,11 +14,24 @@ import (
 
 // Config holds configuration for database connection.
 type Config struct {
-	Host            string
-	User            string
-	Password        string
-	DBName          string
-	SSLMode         string
+	Host     string
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
+
+	// SchemaName scopes this connection to one PostgreSQL schema.
+	//
+	// It is applied through the connection string rather than by issuing
+	// `SET search_path` after connecting. That distinction is load-bearing:
+	// a pooled connection that is reset, recycled, or newly opened would not
+	// carry a runtime SET, so some fraction of queries would silently run
+	// against the default schema. Passing it as a startup option means every
+	// connection the pool ever opens has it.
+	//
+	// Empty means the server default, which is the single-tenant behaviour.
+	SchemaName string
+
 	Port            int
 	MaxIdleConns    int
 	MaxOpenConns    int
@@ -26,9 +39,12 @@ type Config struct {
 	ConnMaxIdleTime time.Duration
 }
 
-// Connect establishes a database connection using the provided configuration.
-// This is the shared database connection logic used by all binaries.
-func Connect(cfg Config, log hclog.Logger) (*gorm.DB, error) {
+// DSN renders the libpq connection string for this configuration.
+//
+// Returns an error rather than a best-effort string when SchemaName is
+// invalid, since an unvalidated identifier here would reach the server inside
+// a connection option.
+func (cfg Config) DSN() (string, error) {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Host,
 		cfg.Port,
@@ -37,6 +53,33 @@ func Connect(cfg Config, log hclog.Logger) (*gorm.DB, error) {
 		cfg.DBName,
 		cfg.SSLMode,
 	)
+
+	if cfg.SchemaName == "" {
+		return dsn, nil
+	}
+	if err := ValidateSchemaName(cfg.SchemaName); err != nil {
+		return "", err
+	}
+
+	// public stays on the path because extension-provided types and functions
+	// -- pgvector's `vector`, in particular -- are installed there, and a
+	// search_path without it breaks any DDL or query that names them
+	// unqualified.
+	//
+	// It is second, so a site's own table always wins. The residual risk is a
+	// table that exists in public but not yet in the site schema, which would
+	// silently fall through; migrations run to completion before the server
+	// accepts traffic specifically so that window does not exist at runtime.
+	return dsn + " search_path=" + cfg.SchemaName + ",public", nil
+}
+
+// Connect establishes a database connection using the provided configuration.
+// This is the shared database connection logic used by all binaries.
+func Connect(cfg Config, log hclog.Logger) (*gorm.DB, error) {
+	dsn, err := cfg.DSN()
+	if err != nil {
+		return nil, err
+	}
 
 	// Create GORM config with optional logger
 	gormConfig := &gorm.Config{}
@@ -86,6 +129,7 @@ func Connect(cfg Config, log hclog.Logger) (*gorm.DB, error) {
 		log.Info("connected to database with connection pooling",
 			"host", cfg.Host,
 			"database", cfg.DBName,
+			"schema", cfg.SchemaName,
 			"max_idle_conns", maxIdleConns,
 			"max_open_conns", maxOpenConns,
 			"conn_max_lifetime", connMaxLifetime,

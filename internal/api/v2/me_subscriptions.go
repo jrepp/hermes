@@ -19,6 +19,13 @@ type MeSubscriptionsPostRequest struct {
 //nolint:gocognit,gocyclo // Small subscription endpoint with centralized branching.
 func MeSubscriptionsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching the
+		// database; srv as constructed holds the process-wide default.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		errResp := func(httpCode int, userErrMsg, logErrMsg string, err error) {
 			srv.Logger.Error(logErrMsg,
 				"method", r.Method,
