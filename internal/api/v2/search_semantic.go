@@ -73,7 +73,21 @@ type HybridSearchResult struct {
 //
 // Uses OpenAI embeddings and pgvector to find semantically similar documents.
 //
+// Messages for the RFC-088 search routes when their services are absent.
+//
+// They say "not built" rather than "not configured" because nothing in the
+// server constructs SemanticSearch or HybridSearch today: they need an
+// embeddings generator, and no wiring for one exists. An operator reading
+// "not configured" would go looking for a setting that is not there.
+//
 //nolint:gocognit,gocyclo // Search handler keeps validation and provider orchestration inline.
+const (
+	semanticUnavailable = "Semantic search is not available: this server has no " +
+		"embeddings backend wired up (RFC-088 is incomplete)."
+	hybridUnavailable = "Hybrid search is not available: it needs semantic search, " +
+		"which this server has no embeddings backend for (RFC-088 is incomplete)."
+)
+
 func SemanticSearchHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -94,11 +108,11 @@ func SemanticSearchHandler(srv server.Server) http.Handler {
 
 		// Check if semantic search is configured
 		if srv.SemanticSearch == nil {
-			srv.Logger.Error("semantic search not configured",
+			srv.Logger.Warn("semantic search not configured",
 				"method", r.Method,
 				"path", r.URL.Path,
 			)
-			http.Error(w, "Semantic search not available", http.StatusServiceUnavailable)
+			http.Error(w, semanticUnavailable, http.StatusServiceUnavailable)
 			return
 		}
 
@@ -226,11 +240,11 @@ func HybridSearchHandler(srv server.Server) http.Handler {
 
 		// Check if hybrid search is configured
 		if srv.HybridSearch == nil {
-			srv.Logger.Error("hybrid search not configured",
+			srv.Logger.Warn("hybrid search not configured",
 				"method", r.Method,
 				"path", r.URL.Path,
 			)
-			http.Error(w, "Hybrid search not available", http.StatusServiceUnavailable)
+			http.Error(w, hybridUnavailable, http.StatusServiceUnavailable)
 			return
 		}
 
@@ -358,11 +372,11 @@ func SimilarDocumentsHandler(srv server.Server) http.Handler {
 
 		// Check if semantic search is configured
 		if srv.SemanticSearch == nil {
-			srv.Logger.Error("semantic search not configured",
+			srv.Logger.Warn("semantic search not configured",
 				"method", r.Method,
 				"path", r.URL.Path,
 			)
-			http.Error(w, "Semantic search not available", http.StatusServiceUnavailable)
+			http.Error(w, semanticUnavailable, http.StatusServiceUnavailable)
 			return
 		}
 
