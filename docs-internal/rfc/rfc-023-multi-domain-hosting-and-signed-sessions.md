@@ -178,6 +178,34 @@ holds a single-tenant install. That is verified rather than assumed, because
 the cost of it being wrong is every site sharing one set of rows with no error
 anywhere.
 
+#### What booting the whole thing exposed
+
+The unit and integration tests covered each piece; starting the real server
+against the shipped example config found five more, three of which predate this
+work:
+
+- **`/api/v2/documents/` was registered twice**, by `DocumentHandler` and by
+  `SimilarDocumentsHandler`. `http.ServeMux` panics on a duplicate pattern, so
+  this was not a shadowed handler — it crashed the server at startup, in every
+  configuration. `TestEndpointPatternsAreUnique` reads the patterns out of the
+  source with `go/ast` and registers them, so the check cannot drift from the
+  list it checks.
+- **`/api/v2/web/config` panicked** on any config with no `feature_flags` block
+  and again on any without an `algolia` block. `gin.New()` installs no recovery
+  middleware, and this is the one endpoint the frontend must reach before it can
+  do anything else.
+- **`registerProducts` panicked** on a config with no `products` block.
+- **Instance identity keyed on the global `base_url`**, so every site
+  registered itself under the first site's hostname — two rows, one identity.
+- **Startup document indexing** walked the process-wide workspace and wrote to
+  the unprefixed indexes, so each site's search was built from the wrong files.
+
+The last one generalises: constructing a provider has side effects (a directory
+is created, indexes are created), so an unscoped provider in a multi-site
+deployment leaves an empty workspace and a set of unprefixed indexes that look
+like a tenant nobody serves. The process-wide providers are now built for the
+primary site instead, matching how the fallback database pool is chosen.
+
 ### API / Schema Changes
 
 No HTTP API surface changes. Configuration gains:
@@ -205,7 +233,7 @@ Database: each site gets its own PostgreSQL schema, named `site_<encoded hostnam
 | 3 | `internal/sites` registry and `internal/middleware` host routing | Done |
 | 4a | Per-domain local workspace scoping | Done |
 | 4b | Per-domain PostgreSQL schema; `srv.ForDomain(ctx)` | Done |
-| 4c | Per-domain search namespace | Not started |
+| 4c | Per-domain search namespace, workspace, and outbox relays | Done |
 | 5 | Signed sessions | Done |
 | 6 | jrepp.com deployment: nginx, certbot, systemd, deploy script | Not started |
 
@@ -238,8 +266,9 @@ Not addressed here: `internal/auth/microsoft` sets a `user_email` cookie and its
 
 ## Open Questions
 
-- Per-domain search namespacing is settled for Meilisearch and Bleve (index prefix) but not for Algolia, where index count is a billing dimension. Until it lands, every site shares one index and a search on one site can return another's documents.
+- Algolia remains unsupported for multi-site: index count is a billing dimension, and more importantly the frontend queries it through a proxy handler that is not site-aware. Startup refuses the combination rather than serving one tenant's index to another. Google Workspace and SharePoint are refused for the same class of reason on the workspace side.
 - Project configuration and indexer registration tokens remain process-level rather than per-site.
+- The indexer now consumes per-site topics (`<topic>.<site-slug>`); whether it should instead carry the site in the event payload is open.
 - Does the indexer need domain awareness, or is it sufficient for it to be pointed at one site at a time? It submits via API only (ADR-020), so the API's domain scope may be enough.
 
 ## References

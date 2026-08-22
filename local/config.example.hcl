@@ -93,6 +93,9 @@ server {
 // Storage
 // ---------------------------------------------------------------------------
 
+// Multi-site hosting requires the local workspace provider. Google Workspace
+// and SharePoint address one tenant's storage, so every site would share it;
+// Hermes refuses to start rather than let that happen silently.
 local_workspace {
   // Per-site subdirectories are created under this path, one per hostname:
   //   local/workspace/docs.jrepp.com/{docs,drafts,folders}
@@ -120,11 +123,14 @@ providers {
   search    = "meilisearch"
 }
 
-// KNOWN LIMITATION: the search index is not yet scoped per site. Every site
-// shares these indexes, so a search on one site can return another site's
-// documents. Database and workspace storage are isolated; search is not.
-// Until that lands, run separate processes if your sites must not see each
-// other's search results.
+// Index names are prefixed per site, so docs.jrepp.com writes to
+// docs_jrepp_com_docs and notes.jrepp.com to notes_jrepp_com_docs. The names
+// below are the base; you do not add the prefix yourself.
+//
+// Multi-site hosting requires meilisearch or bleve. The Algolia path proxies
+// frontend searches through a handler that is not site-aware, so Hermes
+// refuses to start with sites configured and algolia selected rather than
+// serving one tenant's index to another.
 meilisearch {
   host                = "http://127.0.0.1:7700"
   api_key             = "change-me"

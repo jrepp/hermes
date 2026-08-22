@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/pkg/featureflags"
+	"github.com/hashicorp-forge/hermes/internal/sites"
 	"github.com/hashicorp-forge/hermes/internal/version"
 	"github.com/hashicorp-forge/hermes/pkg/algolia"
 	pkgauth "github.com/hashicorp-forge/hermes/pkg/auth"
@@ -146,13 +147,22 @@ func ginConfigHandler(
 			log,
 		)
 
+		// The frontend is served from whichever site the request arrived at, so
+		// site-dependent values in this response have to come from that site.
+		// A global base_url here would hand notes.jrepp.com short links and an
+		// OIDC callback pointing at docs.jrepp.com.
+		baseURL := cfg.BaseURL
+		if site, ok := sites.FromContext(c.Request.Context()); ok && site.BaseURL != "" {
+			baseURL = site.BaseURL
+		}
+
 		// Trim last "/"
 		shortLinkBaseURL := strings.TrimSuffix(cfg.ShortenerBaseURL, "/")
 		// Check if shortener base URL was set, if not
 		// use application base URL to create
 		// short link base URL.
 		if shortLinkBaseURL == "" {
-			shortLinkBaseURL = strings.TrimSuffix(cfg.BaseURL, "/") + "/l"
+			shortLinkBaseURL = strings.TrimSuffix(baseURL, "/") + "/l"
 		}
 
 		// Determine which authentication provider is configured
@@ -206,6 +216,11 @@ func ginConfigHandler(
 			dexIssuerURL = cfg.Dex.IssuerURL
 			dexClientID = cfg.Dex.ClientID
 			dexRedirectURL = cfg.Dex.RedirectURL
+			// Must agree with what the login handler sends, or the provider
+			// rejects the exchange: OIDC compares redirect_uri exactly.
+			if baseURL != "" {
+				dexRedirectURL = strings.TrimSuffix(baseURL, "/") + "/auth/callback"
+			}
 		}
 
 		// Determine which workspace provider is configured
@@ -218,11 +233,22 @@ func ginConfigHandler(
 			workspaceProvider = "local"
 		}
 
+		// Absent for any deployment not using Algolia -- Meilisearch and Bleve
+		// have no algolia block at all -- so this cannot be dereferenced
+		// unconditionally.
+		var algoliaDocs, algoliaDrafts, algoliaInternal, algoliaProjects string
+		if cfg.Algolia != nil {
+			algoliaDocs = cfg.Algolia.DocsIndexName
+			algoliaDrafts = cfg.Algolia.DraftsIndexName
+			algoliaInternal = cfg.Algolia.InternalIndexName
+			algoliaProjects = cfg.Algolia.ProjectsIndexName
+		}
+
 		response := &ConfigResponse{
-			AlgoliaDocsIndexName:     cfg.Algolia.DocsIndexName,
-			AlgoliaDraftsIndexName:   cfg.Algolia.DraftsIndexName,
-			AlgoliaInternalIndexName: cfg.Algolia.InternalIndexName,
-			AlgoliaProjectsIndexName: cfg.Algolia.ProjectsIndexName,
+			AlgoliaDocsIndexName:     algoliaDocs,
+			AlgoliaDraftsIndexName:   algoliaDrafts,
+			AlgoliaInternalIndexName: algoliaInternal,
+			AlgoliaProjectsIndexName: algoliaProjects,
 			AuthProvider:             authProvider,
 			CreateDocsAsUser:         createDocsAsUser,
 			DexIssuerURL:             dexIssuerURL,

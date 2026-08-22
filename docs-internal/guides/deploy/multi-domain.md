@@ -28,8 +28,8 @@ Substitute your own hostnames throughout.
 |---|---|---|
 | Database | Yes | One PostgreSQL schema per site, one connection pool each |
 | Documents | Yes | One directory per site under `local_workspace.base_path` |
+| Search index | Yes | Index names prefixed per site (`docs_jrepp_com_docs`) |
 | Sessions | Yes | Host-only cookie, and the signed token names its site |
-| Search index | **No** | All sites share one index — see [Known limitations](#known-limitations) |
 
 ## Prerequisites
 
@@ -58,10 +58,25 @@ On the server:
   is installed elsewhere, Hermes refuses to start and tells you how to move it.
 
 - **nginx** and **certbot**, for TLS.
-- **A search backend** — Meilisearch or Algolia.
+- **Meilisearch** (or Bleve, which is embedded and needs nothing installed).
+  Algolia is not supported for multi-site — see [Required providers](#required-providers).
 - **An identity provider** — Dex, Okta, or Google Workspace.
 
 DNS: point every hostname you intend to serve at the server, including aliases.
+
+## Required providers
+
+Multi-site hosting constrains two provider choices, and Hermes refuses to start
+rather than let either one leak:
+
+| Provider | Multi-site | Why |
+|---|---|---|
+| workspace = `local` | Supported | Roots each site's documents at `<base_path>/<domain>` |
+| workspace = `google` / `sharepoint` | Refused | Each addresses one tenant's storage, so every site would share it |
+| search = `meilisearch` / `bleve` | Supported | Index names and index directories are prefixed per site |
+| search = `algolia` | Refused | The frontend queries Algolia through a proxy that is not site-aware |
+
+To use Google Workspace or Algolia, run one process per site.
 
 ## 1. Create the database
 
@@ -359,13 +374,15 @@ happened on.
 
 ## Known limitations
 
-- **Search is not isolated.** All sites share one search index, so a search on
-  one site can return another site's documents. Database and workspace storage
-  are isolated. If your sites must not see each other's search results, run
-  separate processes until this lands.
 - **Project configuration and indexer registration tokens** are process-level,
   not per site.
 - **Adding a site requires a restart.**
+- **Site-less work runs against the primary site.** The instance heartbeat, the
+  health probe, and the search outbox statistics use the site named by
+  `default_site`, or the first one declared. The startup log says which.
+- **The indexer publishes to a per-site topic**, `<topic>.<site-slug>`. A
+  consumer configured for the base topic sees nothing; point it at the per-site
+  topics.
 
 ## Troubleshooting
 
@@ -383,6 +400,10 @@ happened on.
 | Provider says "invalid redirect URI" | Same | Same |
 | Session works on one subdomain, not another | Working as intended | Sessions are per site; logging in again is the expected flow |
 | `no database configured for site` | A request resolved to a site with no pool | Restart after adding the site; sites are read at startup |
+| Startup: `multi-site hosting does not support the Algolia search provider` | `search = "algolia"` with sites configured | Switch to meilisearch or bleve, or run one process per site |
+| Startup: `multi-site hosting supports only the local workspace provider` | `workspace = "google"` or `"sharepoint"` with sites configured | Same |
+| Startup: `site "x" has no search provider` | Wiring drift; should not happen | File a bug — the check exists to stop this reaching requests |
+| Searches return nothing on a new site | Documents predate the site, or the outbox has not drained | Check the per-site outbox relay in the logs |
 | Health check returns 421 | Probing a path other than `/health` without a Host header | Only `/health` bypasses routing; probe that, or send `Host:` |
 
 ## References

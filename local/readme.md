@@ -133,6 +133,7 @@ From the hostname alone, Hermes derives:
 | PostgreSQL      | schema `site_docs_jrepp_com`        |
 | Workspace       | `<base_path>/docs.jrepp.com/`       |
 | Base URL        | `https://docs.jrepp.com`            |
+| Search indexes  | prefix `docs_jrepp_com_`            |
 | OIDC callback   | `https://docs.jrepp.com/auth/callback` |
 
 Override `schema_name` or `workspace_path` only to adopt storage that already
@@ -142,10 +143,14 @@ Each site's callback URL must be registered on the OIDC client — Dex takes a
 list of `redirectURIs`. OIDC compares `redirect_uri` exactly, so a missing
 entry fails at the provider rather than in Hermes.
 
-**Search is not yet isolated.** Every site shares one search index, so a search
-on one site can return another's documents. Database and workspace storage are
-isolated. Until this lands, run separate processes if your sites must not see
-each other's results.
+Search indexes are namespaced by the same encoding, so `docs.jrepp.com` writes
+to `docs_jrepp_com_docs` and never sees `notes_jrepp_com_docs`.
+
+Multi-site hosting requires the **local** workspace provider and **meilisearch**
+or **bleve** for search. Google Workspace and SharePoint each address one
+tenant's storage, and the Algolia path proxies frontend searches through a
+handler that is not site-aware. Hermes refuses to start in those combinations
+rather than quietly serving one tenant's data to another.
 
 ### How hostnames are matched
 

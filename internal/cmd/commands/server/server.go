@@ -400,6 +400,38 @@ func (c *Command) Run(args []string) int {
 	var goog *gw.Service // Keep for auth that still uses it directly
 	var sharepointSvc *sharepointhelper.Service
 
+	// Resolve the site registry before anything that depends on per-site
+	// resources. NewRegistry rejects ambiguous hostname configuration, and it
+	// is better to refuse to start than to route requests to whichever tenant
+	// a map iteration happened to yield.
+	siteRegistry, err := sites.NewRegistry(cfg)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("error building site registry: %v", err))
+		return 1
+	}
+	for _, site := range siteRegistry.Sites() {
+		c.Log.Info("serving site",
+			"domain", site.Domain.String(),
+			"aliases", len(site.Aliases),
+			"schema", site.SchemaName,
+			"workspace", site.WorkspacePath)
+	}
+
+	// Providers built below are the process-wide defaults. In a multi-site
+	// deployment they belong to no tenant, so they are built for the primary
+	// site instead of unscoped: an unscoped provider would create an empty
+	// workspace directory and a set of unprefixed search indexes that look
+	// like a tenant nobody serves, and any code path that skipped ForRequest
+	// would quietly read from them.
+	var primaryDomain domain.Name
+	if siteRegistry.Len() > 0 {
+		primarySite := siteRegistry.Default()
+		if primarySite == nil {
+			primarySite = siteRegistry.Sites()[0]
+		}
+		primaryDomain = primarySite.Domain
+	}
+
 	switch workspaceProviderName {
 	case providerGoogle:
 		// Use Google Workspace service user auth if it is defined in the config.
@@ -441,7 +473,7 @@ func (c *Command) Run(args []string) int {
 			return 1
 		}
 
-		localCfg := cfg.LocalWorkspace.ToLocalAdapterConfig()
+		localCfg := cfg.LocalWorkspace.ToLocalAdapterConfigForDomain(primaryDomain)
 		adapter, err := localadapter.NewAdapter(localCfg)
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("error initializing local workspace adapter: %v", err))
@@ -530,13 +562,7 @@ func (c *Command) Run(args []string) int {
 		}
 
 		// Initialize modern search provider adapter.
-		searchAdapterCfg := &searchalgolia.Config{
-			AppID:           cfg.Algolia.AppID,
-			WriteAPIKey:     cfg.Algolia.WriteAPIKey,
-			DocsIndexName:   cfg.Algolia.DocsIndexName,
-			DraftsIndexName: cfg.Algolia.DraftsIndexName,
-		}
-		searchProvider, err = searchalgolia.NewAdapter(searchAdapterCfg)
+		searchProvider, err = buildSearchProvider(cfg, providerAlgolia, primaryDomain)
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("error initializing search provider: %v", err))
 			return 1
@@ -548,13 +574,11 @@ func (c *Command) Run(args []string) int {
 			return 1
 		}
 
-		meilisearchCfg := cfg.Meilisearch.ToMeilisearchAdapterConfig()
-		meilisearchAdapter, err := meilisearchadapter.NewAdapter(meilisearchCfg)
+		searchProvider, err = buildSearchProvider(cfg, "meilisearch", primaryDomain)
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("error initializing meilisearch adapter: %v", err))
 			return 1
 		}
-		searchProvider = meilisearchAdapter
 
 	case "bleve":
 		if cfg.Bleve == nil {
@@ -562,42 +586,17 @@ func (c *Command) Run(args []string) int {
 			return 1
 		}
 
-		bleveCfg := &bleveadapter.Config{
-			IndexPath: cfg.Bleve.IndexPath,
-		}
-		bleveSearchAdapter, err := bleveadapter.NewAdapter(bleveCfg)
+		searchProvider, err = buildSearchProvider(cfg, "bleve", primaryDomain)
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("error initializing bleve adapter: %v", err))
 			return 1
 		}
-		searchProvider = bleveSearchAdapter
-		c.Log.Info("using Bleve embedded search", "index_path", cfg.Bleve.IndexPath)
+		c.Log.Info("using Bleve embedded search",
+			"index_path", cfg.Bleve.IndexPathForDomain(primaryDomain))
 
 	default:
 		c.UI.Error(fmt.Sprintf("error initializing server: unknown search provider %q", searchProviderName))
 		return 1
-	}
-
-	// If using Local workspace provider, index all documents into search provider.
-	// This ensures the search index is synchronized with the filesystem on startup.
-	if workspaceProviderName == "local" {
-		// Extract the local adapter from the provider wrapper
-		if wsAdapter, ok := workspaceProvider.(*localadapter.WorkspaceAdapter); ok {
-			localAdapter := wsAdapter.GetAdapter()
-			indexer := localadapter.NewDocumentIndexer(localAdapter, searchProvider, c.Log)
-
-			c.UI.Info("Indexing documents from local workspace into search provider...")
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-			defer cancel()
-
-			if err := indexer.IndexAll(ctx); err != nil {
-				c.UI.Warn(fmt.Sprintf("warning: document indexing failed: %v", err))
-				c.UI.Warn("documents may not appear in search results until manually indexed")
-				// Don't fail startup - server can still operate with empty search index
-			} else {
-				c.UI.Info("Document indexing completed successfully")
-			}
-		}
 	}
 
 	// Initialize Jira service.
@@ -623,23 +622,6 @@ func (c *Command) Run(args []string) int {
 	// Traditional mode: use PostgreSQL
 	if val, ok := os.LookupEnv("HERMES_SERVER_POSTGRES_PASSWORD"); ok {
 		cfg.Postgres.Password = val
-	}
-
-	// Resolve the site registry before anything that depends on per-site
-	// resources. NewRegistry rejects ambiguous hostname configuration, and it
-	// is better to refuse to start than to route requests to whichever tenant
-	// a map iteration happened to yield.
-	siteRegistry, err := sites.NewRegistry(cfg)
-	if err != nil {
-		c.UI.Error(fmt.Sprintf("error building site registry: %v", err))
-		return 1
-	}
-	for _, site := range siteRegistry.Sites() {
-		c.Log.Info("serving site",
-			"domain", site.Domain.String(),
-			"aliases", len(site.Aliases),
-			"schema", site.SchemaName,
-			"workspace", site.WorkspacePath)
 	}
 
 	// Migrate. A multi-site deployment keeps no Hermes tables in the public
@@ -698,9 +680,10 @@ func (c *Command) Run(args []string) int {
 	// Instance identity is per site: each site is an independent logical
 	// Hermes with its own schema, so it needs its own row rather than
 	// inheriting whichever site happened to initialize first.
-	if err := forEachDatabase(siteDBs, siteRegistry, db, func(siteDB *gorm.DB) error {
-		return instance.Initialize(ctx, siteDB, cfg, instanceLogger)
-	}); err != nil {
+	if err := forEachSite(siteDBs, siteRegistry, cfg, db,
+		func(siteCfg *config.Config, siteDB *gorm.DB) error {
+			return instance.Initialize(ctx, siteDB, siteCfg, instanceLogger)
+		}); err != nil {
 		c.UI.Error(fmt.Sprintf("error initializing instance identity: %v", err))
 		return 1
 	}
@@ -727,17 +710,19 @@ func (c *Command) Run(args []string) int {
 	// }
 	// Document types and products are content configuration, so every site
 	// gets its own copy in its own schema.
-	if err := forEachDatabase(siteDBs, siteRegistry, db, func(siteDB *gorm.DB) error {
-		return registerDocumentTypes(*cfg, siteDB)
-	}); err != nil {
+	if err := forEachSite(siteDBs, siteRegistry, cfg, db,
+		func(siteCfg *config.Config, siteDB *gorm.DB) error {
+			return registerDocumentTypes(*siteCfg, siteDB)
+		}); err != nil {
 		c.UI.Error(fmt.Sprintf("error registering document types: %v", err))
 		return 1
 	}
 
 	// Register products.
-	if err := forEachDatabase(siteDBs, siteRegistry, db, func(siteDB *gorm.DB) error {
-		return registerProducts(cfg, algoWrite, siteDB)
-	}); err != nil {
+	if err := forEachSite(siteDBs, siteRegistry, cfg, db,
+		func(siteCfg *config.Config, siteDB *gorm.DB) error {
+			return registerProducts(siteCfg, algoWrite, siteDB)
+		}); err != nil {
 		c.UI.Error(fmt.Sprintf("error registering products: %v", err))
 		return 1
 	}
@@ -821,6 +806,114 @@ func (c *Command) Run(args []string) int {
 		}
 	}
 
+	// Build one workspace provider per site.
+	//
+	// The local adapter roots every path at <base_path>/<domain>, so two sites
+	// never write documents into the same directory. Without this the domain
+	// scoping in the adapter config exists but nothing sets it, and every site
+	// shares one flat workspace.
+	var siteWorkspace map[domain.Name]workspace.WorkspaceProvider
+	if siteRegistry.Len() > 0 {
+		if workspaceProviderName != "local" {
+			c.UI.Error(fmt.Sprintf(
+				"multi-site hosting supports only the local workspace provider, not %q.\n"+
+					"Google Workspace and SharePoint address one tenant's storage, so "+
+					"every site would share it.\n"+
+					"Run one process per site to use them.", workspaceProviderName))
+			return 1
+		}
+
+		siteWorkspace = make(map[domain.Name]workspace.WorkspaceProvider, siteRegistry.Len())
+		for _, site := range siteRegistry.Sites() {
+			localCfg := cfg.LocalWorkspace.ToLocalAdapterConfigForDomain(site.Domain)
+			adapter, err := localadapter.NewAdapter(localCfg)
+			if err != nil {
+				c.UI.Error(fmt.Sprintf(
+					"error initializing workspace for site %s: %v", site.Domain, err))
+				return 1
+			}
+			siteWorkspace[site.Domain] = localadapter.NewWorkspaceAdapter(adapter)
+			c.Log.Info("workspace for site",
+				"domain", site.Domain.String(), "path", localCfg.Root())
+		}
+	}
+
+	// Build one search provider per site.
+	//
+	// Search indexes are namespaced by the same injective encoding as the
+	// database schemas, so two sites can never share an index. A shared index
+	// would return one tenant's documents to another's search -- the same leak
+	// the per-site schema closes on the query side.
+	var siteSearch map[domain.Name]search.Provider
+	if siteRegistry.Len() > 0 {
+		if searchProviderName == providerAlgolia {
+			c.UI.Error(
+				"multi-site hosting does not support the Algolia search provider.\n" +
+					"The frontend queries Algolia through a proxy that is not site-aware, " +
+					"so searches would run against the wrong index.\n" +
+					"Use meilisearch or bleve, or run one process per site.")
+			return 1
+		}
+
+		siteSearch = make(map[domain.Name]search.Provider, siteRegistry.Len())
+		for _, site := range siteRegistry.Sites() {
+			provider, err := buildSearchProvider(cfg, searchProviderName, site.Domain)
+			if err != nil {
+				c.UI.Error(fmt.Sprintf(
+					"error initializing search for site %s: %v", site.Domain, err))
+				return 1
+			}
+			siteSearch[site.Domain] = provider
+			c.Log.Info("search namespace for site",
+				"domain", site.Domain.String(),
+				"namespace", site.Domain.SearchNamespace())
+		}
+	}
+
+	// If using the local workspace provider, index its documents into search on
+	// startup so the index matches the filesystem.
+	//
+	// This runs per site. Indexing the process-wide workspace into the
+	// process-wide indexes instead would walk one flat directory and write to
+	// the unprefixed index names -- so every site's search would be built from
+	// the wrong files, or from none.
+	if workspaceProviderName == "local" {
+		indexOne := func(name domain.Name, ws workspace.WorkspaceProvider, sp search.Provider) {
+			wsAdapter, ok := ws.(*localadapter.WorkspaceAdapter)
+			if !ok {
+				return
+			}
+
+			label := "local workspace"
+			if !name.IsZero() {
+				label = name.String()
+			}
+			c.UI.Info(fmt.Sprintf("Indexing documents from %s into search provider...", label))
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+
+			indexer := localadapter.NewDocumentIndexer(wsAdapter.GetAdapter(), sp, c.Log)
+			if err := indexer.IndexAll(ctx); err != nil {
+				// Not fatal: the server still works, documents just may not
+				// appear in search until reindexed.
+				c.UI.Warn(fmt.Sprintf("warning: indexing %s failed: %v", label, err))
+				c.UI.Warn("documents may not appear in search results until manually indexed")
+
+				return
+			}
+			c.UI.Info(fmt.Sprintf("Indexing %s completed successfully", label))
+		}
+
+		if siteRegistry.Len() > 0 {
+			for _, site := range siteRegistry.Sites() {
+				indexOne(site.Domain, siteWorkspace[site.Domain], siteSearch[site.Domain])
+			}
+		} else {
+			indexOne(domain.Name{}, workspaceProvider, searchProvider)
+		}
+	}
+
 	// Build the session signer.
 	var sessionKey, sessionTTL string
 	if cfg.Session != nil {
@@ -857,6 +950,8 @@ func (c *Command) Run(args []string) int {
 
 	srv := server.Server{
 		SiteDBs:           siteDBs,
+		SiteSearch:        siteSearch,
+		SiteWorkspace:     siteWorkspace,
 		SearchProvider:    searchProvider,
 		WorkspaceProvider: workspaceProvider,
 		GWService:         goog,
@@ -896,7 +991,13 @@ func (c *Command) Run(args []string) int {
 		{apiv2.SearchHandler(srv), "/api/v2/search/"},
 		{apiv2.SemanticSearchHandler(srv), "/api/v2/search/semantic"}, // RFC-088: Semantic search
 		{apiv2.HybridSearchHandler(srv), "/api/v2/search/hybrid"},     // RFC-088: Hybrid search
-		{apiv2.SimilarDocumentsHandler(srv), "/api/v2/documents/"},    // RFC-088: Similar documents
+		// RFC-088: Similar documents. Registered on the full path rather than
+		// on "/api/v2/documents/", which DocumentHandler already owns --
+		// http.ServeMux panics on a duplicate pattern, so this took the whole
+		// server down at startup rather than merely shadowing the handler.
+		// The trailing "/" makes it a subtree match, which is what
+		// "/api/v2/documents/{id}/similar" needs.
+		{apiv2.SimilarDocumentsHandler(srv), "/api/v2/documents/{documentID}/similar"},
 		{apiv2.AnalyticsHandler(srv), "/api/v2/web/analytics"},
 		{apiv2.WorkspaceProjectsHandler(srv), "/api/v2/workspace-projects"},
 		{apiv2.WorkspaceProjectHandler(srv), "/api/v2/workspace-projects/"},
@@ -928,24 +1029,24 @@ func (c *Command) Run(args []string) int {
 		)
 	}
 
-	// Web config endpoints are always unauthenticated so the frontend can load
-	// and determine the auth provider before attempting to authenticate.
+	// Web config and setup endpoints are always unauthenticated so the
+	// frontend can load and determine the auth provider before attempting to
+	// authenticate. They are registered once, with or without an Algolia
+	// client: registering them in each branch of a conditional is how a
+	// duplicate pattern gets added without anyone noticing, and http.ServeMux
+	// panics on those at startup rather than picking one.
+	unauthenticatedEndpoints = append(unauthenticatedEndpoints,
+		endpoint{web.ConfigHandler(cfg, algoSearch, c.Log), "/api/v2/web/config"},
+		endpoint{apiv2.SetupStatusHandler(c.flagConfig, c.Log), "/api/v2/setup/status"},
+		endpoint{apiv2.SetupConfigureHandler(c.Log), "/api/v2/setup/configure"},
+		endpoint{apiv2.OllamaValidateHandler(c.Log), "/api/v2/setup/validate-ollama"},
+	)
+
+	// The short-link redirector reads from Algolia directly, so it exists only
+	// on that path.
 	if searchProviderName == providerAlgolia && algoSearch != nil {
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
-			endpoint{web.ConfigHandler(cfg, algoSearch, c.Log), "/api/v2/web/config"},
-			endpoint{apiv2.SetupStatusHandler(c.flagConfig, c.Log), "/api/v2/setup/status"},
-			endpoint{apiv2.SetupConfigureHandler(c.Log), "/api/v2/setup/configure"},
-			endpoint{apiv2.OllamaValidateHandler(c.Log), "/api/v2/setup/validate-ollama"},
 			endpoint{links.RedirectHandler(algoSearch, algoliaClientCfg, c.Log), "/l/"},
-		)
-	} else {
-		// For non-Algolia search providers, provide minimal config handlers
-		// that return configuration without Algolia-specific data
-		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
-			endpoint{web.ConfigHandler(cfg, nil, c.Log), "/api/v2/web/config"},
-			endpoint{apiv2.SetupStatusHandler(c.flagConfig, c.Log), "/api/v2/setup/status"},
-			endpoint{apiv2.SetupConfigureHandler(c.Log), "/api/v2/setup/configure"},
-			endpoint{apiv2.OllamaValidateHandler(c.Log), "/api/v2/setup/validate-ollama"},
 		)
 	}
 
@@ -961,6 +1062,17 @@ func (c *Command) Run(args []string) int {
 		// If both Okta and Dex are disabled, add the SPA handler as an unauthenticated endpoint.
 		unauthenticatedEndpoints = append(unauthenticatedEndpoints, spaEndpoints...)
 	}
+	// Fail before listening if any site is missing a per-tenant resource. The
+	// alternative is discovering it one tenant at a time, in production.
+	siteNames := make([]domain.Name, 0, siteRegistry.Len())
+	for _, site := range siteRegistry.Sites() {
+		siteNames = append(siteNames, site.Domain)
+	}
+	if err := srv.VerifySiteResources(siteNames); err != nil {
+		c.UI.Error(fmt.Sprintf("error verifying site resources: %v", err))
+		return 1
+	}
+
 	// Register handlers.
 	for _, e := range authenticatedEndpoints {
 		// Note: auth.AuthenticateRequest supports Dex, Okta, or Google authentication.
@@ -1043,27 +1155,55 @@ func (c *Command) Run(args []string) int {
 		}()
 	}
 
-	if db != nil && searchProvider != nil {
+	// One search outbox relay per site.
+	//
+	// The outbox lives in the site's own schema, so a single relay reading the
+	// primary site's database would leave every other site's documents
+	// unindexed -- silently, since nothing errors: the rows simply sit there
+	// and search returns nothing for that tenant.
+	if searchProvider != nil {
 		ctx, cancel := context.WithCancel(c.Context)
 		defer cancel()
 
-		searchRelay, err := searchoutbox.New(searchoutbox.Config{
-			DB:       db,
-			Provider: searchProvider,
-			Logger:   c.Log.Named("search-outbox-relay"),
-		})
-		if err != nil {
-			c.Log.Error(fmt.Sprintf("failed to create search outbox relay service: %v", err))
-			return 1
+		startRelay := func(name domain.Name, siteDB *gorm.DB, provider search.Provider) error {
+			logger := c.Log.Named("search-outbox-relay")
+			if !name.IsZero() {
+				logger = logger.With("site", name.String())
+			}
+
+			searchRelay, err := searchoutbox.New(searchoutbox.Config{
+				DB:       siteDB,
+				Provider: provider,
+				Logger:   logger,
+			})
+			if err != nil {
+				return err
+			}
+
+			go func() {
+				logger.Info("starting search outbox relay service",
+					"search_provider", provider.Name())
+				if err := searchRelay.Start(ctx); err != nil && err != context.Canceled {
+					logger.Error(fmt.Sprintf("search outbox relay service failed: %v", err))
+				}
+			}()
+
+			return nil
 		}
 
-		go func() {
-			c.Log.Info("starting search outbox relay service",
-				"search_provider", searchProvider.Name())
-			if err := searchRelay.Start(ctx); err != nil && err != context.Canceled {
-				c.Log.Error(fmt.Sprintf("search outbox relay service failed: %v", err))
+		if siteRegistry.Len() > 0 {
+			if err := siteDBs.Each(func(name domain.Name, siteDB *gorm.DB) error {
+				return startRelay(name, siteDB, siteSearch[name])
+			}); err != nil {
+				c.Log.Error(fmt.Sprintf("failed to create search outbox relay service: %v", err))
+				return 1
 			}
-		}()
+		} else if db != nil {
+			if err := startRelay(domain.Name{}, db, searchProvider); err != nil {
+				c.Log.Error(fmt.Sprintf("failed to create search outbox relay service: %v", err))
+				return 1
+			}
+		}
 	}
 
 	// RFC-088: Start outbox relay goroutine (publishes outbox events to Redpanda)
@@ -1073,48 +1213,72 @@ func (c *Command) Run(args []string) int {
 		defer cancel()
 
 		brokers := kafka.GetBrokers(cfg)
-		topic := kafka.GetDocumentRevisionTopic(cfg)
+		baseTopic := kafka.GetDocumentRevisionTopic(cfg)
 
-		relayService, err := relay.New(relay.Config{
-			DB:           db,
-			Brokers:      brokers,
-			Topic:        topic,
-			PollInterval: cfg.Indexer.PollInterval,
-			BatchSize:    cfg.Indexer.BatchSize,
-			Logger:       c.Log.Named("outbox-relay"),
-		})
-		if err != nil {
-			c.Log.Error(fmt.Sprintf("failed to create outbox relay service: %v", err))
-			return 1
-		}
-
-		// Start relay goroutine
-		go func() {
-			c.Log.Info("starting outbox relay service")
-			if err := relayService.Start(ctx); err != nil {
-				c.Log.Error(fmt.Sprintf("outbox relay service failed: %v", err))
+		// One relay per site, each on its own topic.
+		//
+		// The outbox lives in the site's schema, so a single relay would strand
+		// every other site's events. Publishing them all to one topic instead
+		// would be worse: the event carries no site, so a consumer could not
+		// tell which tenant a document belongs to and would write it back to
+		// whichever one it happened to be pointed at.
+		startRelay := func(name domain.Name, siteDB *gorm.DB) error {
+			topic := baseTopic
+			logger := c.Log.Named("outbox-relay")
+			if !name.IsZero() {
+				topic = baseTopic + "." + name.SearchNamespace()
+				logger = logger.With("site", name.String())
 			}
-		}()
 
-		// Start cleanup goroutine (runs every 24 hours)
-		go func() {
-			ticker := time.NewTicker(24 * time.Hour)
-			defer ticker.Stop()
+			relayService, err := relay.New(relay.Config{
+				DB:           siteDB,
+				Brokers:      brokers,
+				Topic:        topic,
+				PollInterval: cfg.Indexer.PollInterval,
+				BatchSize:    cfg.Indexer.BatchSize,
+				Logger:       logger,
+			})
+			if err != nil {
+				return err
+			}
 
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-ticker.C:
-					if err := relayService.CleanupOldEntries(7 * 24 * time.Hour); err != nil {
-						c.Log.Error(fmt.Sprintf("failed to cleanup old outbox entries: %v", err))
+			go func() {
+				logger.Info("starting outbox relay service", "topic", topic)
+				if err := relayService.Start(ctx); err != nil {
+					logger.Error(fmt.Sprintf("outbox relay service failed: %v", err))
+				}
+			}()
+
+			// Cleanup runs every 24 hours.
+			go func() {
+				ticker := time.NewTicker(24 * time.Hour)
+				defer ticker.Stop()
+
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case <-ticker.C:
+						if err := relayService.CleanupOldEntries(7 * 24 * time.Hour); err != nil {
+							logger.Error(fmt.Sprintf("failed to cleanup old outbox entries: %v", err))
+						}
 					}
 				}
-			}
-		}()
+			}()
 
-		// Cancel relay context on shutdown
-		defer cancel()
+			return nil
+		}
+
+		var relayErr error
+		if siteRegistry.Len() > 0 {
+			relayErr = siteDBs.Each(startRelay)
+		} else if db != nil {
+			relayErr = startRelay(domain.Name{}, db)
+		}
+		if relayErr != nil {
+			c.Log.Error(fmt.Sprintf("failed to create outbox relay service: %v", relayErr))
+			return 1
+		}
 	}
 
 	// RFC-089: Start migration worker goroutine (processes migration tasks)
@@ -1315,6 +1479,13 @@ func registerProducts(
 		Data:     make(map[string]structs.ProductData, 0),
 	}
 
+	// A config with no products block leaves this nil. That is an ordinary
+	// deployment -- the shipped multi-site example is one -- not a reason to
+	// crash at startup.
+	if cfg.Products == nil {
+		return nil
+	}
+
 	for _, p := range cfg.Products.Product {
 		// Upsert product in database.
 		pm := models.Product{
@@ -1408,21 +1579,82 @@ func runMigrations(driver, dsn string) error {
 	return nil
 }
 
-// forEachDatabase runs fn against every site's database, or against the single
-// process-wide one when no sites are configured.
+// forEachSite runs fn once per site, or once against the process-wide database
+// when no sites are configured.
 //
-// Startup work that writes content configuration has to reach every schema; a
-// site whose document types were never registered looks empty rather than
-// broken, which is the harder failure to notice.
-func forEachDatabase(
-	siteDBs *dbpkg.SiteDBs, registry *sites.Registry, fallback *gorm.DB,
-	fn func(*gorm.DB) error,
+// fn receives a config whose BaseURL is that site's own. That matters more
+// than it looks: instance identity keys on BaseURL, so passing the global one
+// registered every site under the first site's hostname -- two rows, same
+// identity, and nothing to tell them apart afterwards.
+//
+// Startup work that writes content configuration also has to reach every
+// schema; a site whose document types were never registered looks empty rather
+// than broken, which is the harder failure to notice.
+func forEachSite(
+	siteDBs *dbpkg.SiteDBs, registry *sites.Registry, cfg *config.Config,
+	fallback *gorm.DB, fn func(*config.Config, *gorm.DB) error,
 ) error {
-	if registry != nil && registry.Len() > 0 {
-		return siteDBs.Each(func(_ domain.Name, siteDB *gorm.DB) error {
-			return fn(siteDB)
+	if registry == nil || registry.Len() == 0 {
+		return fn(cfg, fallback)
+	}
+
+	for _, site := range registry.Sites() {
+		siteDB, err := siteDBs.For(server.NewDomainContext(site.Domain))
+		if err != nil {
+			return fmt.Errorf("site %q: %w", site.Domain, err)
+		}
+
+		siteCfg := *cfg
+		siteCfg.BaseURL = site.BaseURL
+
+		if err := fn(&siteCfg, siteDB); err != nil {
+			return fmt.Errorf("site %q: %w", site.Domain, err)
+		}
+	}
+
+	return nil
+}
+
+// buildSearchProvider constructs a search provider scoped to one site, or to
+// the whole process when d is the zero domain.
+//
+// Index naming is the only thing that differs between the two: Meilisearch and
+// Algolia take a name prefix, Bleve a subdirectory, since a Bleve index is a
+// directory rather than a name.
+func buildSearchProvider(
+	cfg *config.Config, providerName string, d domain.Name,
+) (search.Provider, error) {
+	switch providerName {
+	case providerAlgolia:
+		if cfg.Algolia == nil {
+			return nil, fmt.Errorf("algolia configuration is required")
+		}
+		scoped := config.ScopeAlgoliaForDomain(cfg.Algolia, d)
+
+		return searchalgolia.NewAdapter(&searchalgolia.Config{
+			AppID:           scoped.AppID,
+			WriteAPIKey:     scoped.WriteAPIKey,
+			DocsIndexName:   scoped.DocsIndexName,
+			DraftsIndexName: scoped.DraftsIndexName,
+		})
+
+	case "meilisearch":
+		if cfg.Meilisearch == nil {
+			return nil, fmt.Errorf("meilisearch configuration is required")
+		}
+
+		return meilisearchadapter.NewAdapter(
+			cfg.Meilisearch.ToMeilisearchAdapterConfigForDomain(d))
+
+	case "bleve":
+		if cfg.Bleve == nil {
+			return nil, fmt.Errorf("bleve configuration is required")
+		}
+
+		return bleveadapter.NewAdapter(&bleveadapter.Config{
+			IndexPath: cfg.Bleve.IndexPathForDomain(d),
 		})
 	}
 
-	return fn(fallback)
+	return nil, fmt.Errorf("unknown search provider %q", providerName)
 }

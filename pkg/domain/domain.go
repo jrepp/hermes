@@ -39,6 +39,11 @@ const (
 	// Hermes schema.
 	schemaPrefix = "site_"
 
+	// maxSlugLength bounds the identifier-safe encoding. It is derived from
+	// PostgreSQL's limit so that schemaPrefix + Slug always fits, which lets
+	// Slug be the single place truncation happens.
+	maxSlugLength = maxSchemaLength - len(schemaPrefix)
+
 	// schemaHashLength is the number of hex characters appended when a
 	// readable schema name would exceed maxSchemaLength. 12 hex characters is
 	// 48 bits, which makes an accidental collision negligible.
@@ -222,24 +227,28 @@ func (n Name) PathSegment() string {
 	return n.name
 }
 
-// SchemaName returns the PostgreSQL schema holding this domain's data.
+// Slug returns an identifier-safe encoding of the domain, using only lowercase
+// letters, digits, and underscores.
 //
 // Dots become "_" and hyphens become "__". That mapping is injective, so
-// distinct domains always yield distinct schema names — "a.b.com" becomes
-// "site_a_b_com" while "a-b.com" becomes "site_a__b_com". A plain
-// dot-and-hyphen-to-underscore substitution would map both to the same schema
-// and silently merge two tenants.
+// distinct domains always yield distinct slugs — "a.b.com" becomes "a_b_com"
+// while "a-b.com" becomes "a__b_com". A plain dot-and-hyphen-to-underscore
+// substitution would map both to "a_b_com" and silently merge two tenants
+// wherever the slug is used as a storage key.
 //
-// If the readable form would exceed PostgreSQL's 63-character identifier
-// limit, it is truncated and a hash of the full canonical name is appended,
-// which keeps the result unique and deterministic.
-func (n Name) SchemaName() string {
+// If the readable form would exceed maxSlugLength, it is truncated and a hash
+// of the full canonical name is appended, which keeps the result unique and
+// deterministic.
+//
+// This is the one encoding used everywhere a hostname has to become an
+// identifier — PostgreSQL schemas, search index names — so those namespaces
+// cannot disagree about which domain they belong to.
+func (n Name) Slug() string {
 	if n.IsZero() {
 		return ""
 	}
 
 	var b strings.Builder
-	b.WriteString(schemaPrefix)
 	for _, r := range n.name {
 		switch r {
 		case '.':
@@ -251,20 +260,41 @@ func (n Name) SchemaName() string {
 		}
 	}
 
-	schema := b.String()
-	if len(schema) <= maxSchemaLength {
-		return schema
+	slug := b.String()
+	if len(slug) <= maxSlugLength {
+		return slug
 	}
 
 	sum := sha256.Sum256([]byte(n.name))
 	suffix := "_" + hex.EncodeToString(sum[:])[:schemaHashLength]
-	keep := maxSchemaLength - len(suffix)
 
-	return schema[:keep] + suffix
+	return slug[:maxSlugLength-len(suffix)] + suffix
 }
 
-// MarshalText implements encoding.TextMarshaler so a Name round-trips through
-// JSON and other text encodings as its canonical string.
+// SchemaName returns the PostgreSQL schema holding this domain's data.
+//
+// It is Slug with a fixed prefix, so a schema name can never collide when a
+// slug would not. maxSlugLength is chosen so the result always fits
+// PostgreSQL's 63-character identifier limit.
+func (n Name) SchemaName() string {
+	if n.IsZero() {
+		return ""
+	}
+
+	return schemaPrefix + n.Slug()
+}
+
+// SearchNamespace returns the prefix for this domain's search indexes.
+//
+// Search backends disagree about which characters an index name may contain —
+// Meilisearch allows only [A-Za-z0-9_-], so the dotted hostname cannot be used
+// directly — and the prefix has to be injective for the same reason the schema
+// name does: two sites sharing an index would return each other's documents.
+func (n Name) SearchNamespace() string {
+	return n.Slug()
+}
+
+// MarshalText implements encoding.TextMarshaler.
 func (n Name) MarshalText() ([]byte, error) {
 	return []byte(n.name), nil
 }

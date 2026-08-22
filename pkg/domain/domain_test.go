@@ -348,3 +348,99 @@ func FuzzParse(f *testing.F) {
 		}
 	})
 }
+
+// TestSlugIsInjective is the property everything downstream depends on. The
+// slug keys PostgreSQL schemas and search index names, so two domains sharing
+// one would mean two tenants sharing storage.
+func TestSlugIsInjective(t *testing.T) {
+	t.Parallel()
+
+	// Pairs chosen to collide under a naive "replace . and - with _".
+	hosts := []string{
+		"a.b.com", "a-b.com", "a.b-c.com", "a-b.c.com", "a--b.com",
+		"docs.jrepp.com", "docs-jrepp.com", "docs.jrepp.co.m",
+		"x.y.z.com", "x-y.z.com", "x.y-z.com",
+	}
+
+	seen := make(map[string]string, len(hosts))
+	for _, host := range hosts {
+		slug := domain.MustParse(host).Slug()
+		if prev, dup := seen[slug]; dup {
+			t.Errorf("%q and %q both slugify to %q", prev, host, slug)
+		}
+		seen[slug] = host
+	}
+}
+
+func TestSlugIsIdentifierSafe(t *testing.T) {
+	t.Parallel()
+
+	for _, host := range []string{
+		"docs.jrepp.com", "a-b.example.co.uk", "xn--bcher-kva.example.com",
+		"1.2.3.4", strings.Repeat("a", 60) + ".example.com",
+	} {
+		slug := domain.MustParse(host).Slug()
+		if slug == "" {
+			t.Errorf("%q slugified to the empty string", host)
+			continue
+		}
+		if slug[0] >= '0' && slug[0] <= '9' {
+			// Leading digits are fine for a search index but not for an
+			// unquoted SQL identifier, which is why SchemaName adds a prefix.
+			if strings.HasPrefix(domain.MustParse(host).SchemaName(), "site_") == false {
+				t.Errorf("%q has a digit-leading slug and no schema prefix", host)
+			}
+		}
+		for i := 0; i < len(slug); i++ {
+			c := slug[i]
+			ok := (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'
+			if !ok {
+				t.Errorf("%q slugified to %q, which contains %q", host, slug, string(c))
+				break
+			}
+		}
+	}
+}
+
+// TestSchemaNameIsSlugPlusPrefix pins the relationship, so the two encodings
+// cannot drift apart and start disagreeing about which domain owns what.
+func TestSchemaNameIsSlugPlusPrefix(t *testing.T) {
+	t.Parallel()
+
+	for _, host := range []string{
+		// Long enough to force truncation, using valid labels: a single label
+		// may not exceed 63 characters, so length comes from label count.
+		"docs.jrepp.com", "a-b.com", strings.Repeat("abcdefghij.", 20) + "example.com",
+	} {
+		n := domain.MustParse(host)
+		if got, want := n.SchemaName(), "site_"+n.Slug(); got != want {
+			t.Errorf("%q: SchemaName = %q, want %q", host, got, want)
+		}
+		if len(n.SchemaName()) > 63 {
+			t.Errorf("%q: schema name is %d bytes, over the identifier limit",
+				host, len(n.SchemaName()))
+		}
+	}
+}
+
+func TestSearchNamespaceMatchesSlug(t *testing.T) {
+	t.Parallel()
+
+	n := domain.MustParse("docs.jrepp.com")
+	if n.SearchNamespace() != n.Slug() {
+		t.Errorf("SearchNamespace = %q, Slug = %q; they must be the same encoding",
+			n.SearchNamespace(), n.Slug())
+	}
+}
+
+func TestZeroNameHasNoSlug(t *testing.T) {
+	t.Parallel()
+
+	var zero domain.Name
+	if zero.Slug() != "" {
+		t.Errorf("zero Slug = %q, want empty", zero.Slug())
+	}
+	if zero.SchemaName() != "" {
+		t.Errorf("zero SchemaName = %q, want empty", zero.SchemaName())
+	}
+}

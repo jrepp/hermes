@@ -675,18 +675,88 @@ func (lw *LocalWorkspace) smtpAdapterConfig() *localadapter.SMTPConfig {
 
 // ToMeilisearchAdapterConfig converts Meilisearch config to meilisearch adapter config.
 func (m *Meilisearch) ToMeilisearchAdapterConfig() *meilisearchadapter.Config {
+	return m.ToMeilisearchAdapterConfigForDomain(domain.Name{})
+}
+
+// ToMeilisearchAdapterConfigForDomain scopes the index names to one site.
+//
+// Every index name is prefixed with the domain's search namespace, so two
+// sites served by the same process never write into the same index. A shared
+// index would return one tenant's documents to another's search — the same
+// leak the per-site database schema prevents on the query side.
+//
+// A zero domain leaves the names as configured, which is the single-tenant
+// behaviour.
+func (m *Meilisearch) ToMeilisearchAdapterConfigForDomain(
+	d domain.Name,
+) *meilisearchadapter.Config {
 	if m == nil {
 		return nil
 	}
 
+	prefix := searchPrefix(d)
+
 	return &meilisearchadapter.Config{
 		Host:              m.Host,
 		APIKey:            m.APIKey,
-		DocsIndexName:     m.DocsIndexName,
-		DraftsIndexName:   m.DraftsIndexName,
-		ProjectsIndexName: m.ProjectsIndexName,
-		LinksIndexName:    m.LinksIndexName,
+		DocsIndexName:     prefix + m.DocsIndexName,
+		DraftsIndexName:   prefix + m.DraftsIndexName,
+		ProjectsIndexName: prefix + m.ProjectsIndexName,
+		LinksIndexName:    prefix + m.LinksIndexName,
 	}
+}
+
+// ScopeAlgoliaForDomain scopes the Algolia index names to one site.
+//
+// Note that on Algolia the index count is a billing dimension, so a
+// many-site deployment multiplies index usage. That is a deliberate trade
+// against sharing indexes, which would mean sharing documents.
+func ScopeAlgoliaForDomain(
+	a *algoliaadapter.Config, d domain.Name,
+) *algoliaadapter.Config {
+	if a == nil {
+		return nil
+	}
+
+	prefix := searchPrefix(d)
+	scoped := *a
+	scoped.DocsIndexName = prefix + a.DocsIndexName
+	scoped.DraftsIndexName = prefix + a.DraftsIndexName
+	scoped.InternalIndexName = prefix + a.InternalIndexName
+	scoped.LinksIndexName = prefix + a.LinksIndexName
+	scoped.MissingFieldsIndexName = prefix + a.MissingFieldsIndexName
+	scoped.ProjectsIndexName = prefix + a.ProjectsIndexName
+
+	return &scoped
+}
+
+// IndexPathForDomain returns the Bleve index directory for one site.
+//
+// Bleve indexes are directories, so scoping is a subdirectory rather than a
+// name prefix. A zero domain returns the configured path unchanged.
+func (b *Bleve) IndexPathForDomain(d domain.Name) string {
+	if b == nil {
+		return ""
+	}
+	if d.IsZero() {
+		return b.IndexPath
+	}
+
+	return filepath.Join(b.IndexPath, d.PathSegment())
+}
+
+// searchPrefix returns the index-name prefix for a domain, or "" for the zero
+// domain.
+//
+// It uses the same injective encoding as the PostgreSQL schema name, so the
+// two namespaces cannot disagree about which site owns what, and two domains
+// can never share a prefix.
+func searchPrefix(d domain.Name) string {
+	if d.IsZero() {
+		return ""
+	}
+
+	return d.SearchNamespace() + "_"
 }
 
 // GenerateSimplifiedConfig creates a config for simplified mode with embedded

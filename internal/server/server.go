@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/internal/jira"
+	"github.com/hashicorp-forge/hermes/pkg/domain"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
 	"github.com/hashicorp-forge/hermes/pkg/search"
@@ -47,6 +48,14 @@ type Server struct {
 	// SiteDBs holds one connection pool per site, or nil in a single-tenant
 	// deployment. ForDomain reads it.
 	SiteDBs *db.SiteDBs
+
+	// SiteSearch holds one search provider per site, each writing to indexes
+	// namespaced by that site's domain. Nil in a single-tenant deployment.
+	SiteSearch map[domain.Name]search.Provider
+
+	// SiteWorkspace holds one workspace provider per site, each rooted at that
+	// site's own directory. Nil in a single-tenant deployment.
+	SiteWorkspace map[domain.Name]workspace.WorkspaceProvider
 
 	// Jira is the Jira service for the server.
 	Jira *jira.Service

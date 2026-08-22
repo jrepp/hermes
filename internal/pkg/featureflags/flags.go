@@ -25,6 +25,14 @@ func SetAndToggle(
 	log hclog.Logger) map[string]bool {
 	featureFlags := make(map[string]bool)
 
+	// A config with no feature_flags block leaves this nil, which is the
+	// common case rather than an error: the caller is the unauthenticated
+	// /api/v2/web/config endpoint, and panicking there takes down the one
+	// request the frontend must complete before it can do anything at all.
+	if flags == nil {
+		return featureFlags
+	}
+
 	if len(flags.FeatureFlag) > 0 {
 		for _, j := range flags.FeatureFlag {
 			// Check if "Enabled" is set to enable
