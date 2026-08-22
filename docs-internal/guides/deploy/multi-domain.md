@@ -206,6 +206,9 @@ which is the safer habit.
 
 ## 5. Run under systemd
 
+A ready-to-copy unit is in
+[`scripts/deployment/systemd/hermes.service`](../../../scripts/deployment/systemd/hermes.service):
+
 ```ini
 # /etc/systemd/system/hermes.service
 [Unit]
@@ -253,7 +256,9 @@ easier to fix now than after the first document is written.
 
 ## 6. nginx and TLS
 
-One server block per site keeps the certificates and logs separate:
+One server block per site keeps the certificates and logs separate. A template
+is in
+[`scripts/deployment/systemd/nginx-site.conf.example`](../../../scripts/deployment/systemd/nginx-site.conf.example):
 
 ```nginx
 server {
@@ -328,6 +333,30 @@ bypasses hostname routing.
 
 Then log in to each site in a browser and confirm you land back on the site you
 started from.
+
+## Deploying an update
+
+Once the host is set up, updates go through
+[`scripts/deployment/deploy-remote.sh`](../../../scripts/deployment/deploy-remote.sh):
+
+```bash
+scripts/deployment/deploy-remote.sh deploy@jrepp.com --dry-run   # print the plan
+scripts/deployment/deploy-remote.sh deploy@jrepp.com             # do it
+```
+
+It builds the frontend, builds static Linux binaries, uploads them beside the
+running ones, migrates every site, moves the new binaries into place, restarts,
+and waits for `/health`. The binaries are swapped only after the migration
+succeeds, so a failed migration leaves the previous build running.
+
+It deliberately does not install packages, create databases, write nginx
+configs, or issue certificates. Those are one-time steps, and they belong here
+where they can be read before they are run.
+
+The migration DSN is read from `/etc/hermes/secrets.env` on the host, as
+`HERMES_MIGRATE_DSN`, so the database password never passes through a local
+shell history. `HERMES_REMOTE_DSN` overrides that if you would rather supply it
+from your side.
 
 ## Adding a site
 

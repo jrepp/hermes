@@ -235,7 +235,8 @@ Database: each site gets its own PostgreSQL schema, named `site_<encoded hostnam
 | 4b | Per-domain PostgreSQL schema; `srv.ForDomain(ctx)` | Done |
 | 4c | Per-domain search namespace, workspace, and outbox relays | Done |
 | 5 | Signed sessions | Done |
-| 6 | jrepp.com deployment: nginx, certbot, systemd, deploy script | Not started |
+| 6 | Deployment artifacts: systemd unit, nginx vhost, deploy script | Done |
+| 7 | Run it on jrepp.com | Not started |
 
 Backward compatibility is total for phases 0–5: with no `site` blocks configured, the registry is empty, the resolver is not installed, and sessions are issued with no site scope. Existing deployments need no configuration change.
 

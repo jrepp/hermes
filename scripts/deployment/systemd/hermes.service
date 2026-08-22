@@ -1,0 +1,48 @@
+# Hermes server, running behind nginx on a single host.
+#
+# Install to /etc/systemd/system/hermes.service. See
+# docs-internal/guides/deploy/multi-domain.md for the full procedure.
+
+[Unit]
+Description=Hermes
+Documentation=https://github.com/hashicorp-forge/hermes
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hermes
+Group=hermes
+WorkingDirectory=/opt/hermes
+
+# Secrets live here, readable only by root, loaded into the environment.
+# HERMES_SESSION_KEY is the one that must be set; without it every restart
+# logs all users out.
+EnvironmentFile=/etc/hermes/secrets.env
+
+ExecStart=/opt/hermes/bin/hermes server -config=/etc/hermes/config.hcl
+
+Restart=on-failure
+RestartSec=5s
+
+# The process needs nothing beyond its own data directory. ProtectSystem=strict
+# makes the whole filesystem read-only apart from ReadWritePaths, so the
+# workspace path from config.hcl has to be listed there.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+ReadWritePaths=/var/lib/hermes
+
+StateDirectory=hermes
+StateDirectoryMode=0750
+
+[Install]
+WantedBy=multi-user.target
