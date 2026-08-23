@@ -222,6 +222,13 @@ jobs:
           echo "Running go vet..."
           go vet ./...
 
+          # Everything behind the integration tag is invisible to the run
+          # above, which is most of the test suites. Two of them cannot run in
+          # CI at all, so this is the only thing standing between them and
+          # silent rot.
+          echo "Running go vet (integration build tag)..."
+          go vet -tags=integration ./...
+
       - name: Run golangci-lint
         if: matrix.category == 'golangci-lint'
         run: |
@@ -431,8 +438,19 @@ jobs:
       matrix:
         suite:
           - api
-          - migration
-          - e2e
+          # The e2e and migration suites are deliberately absent. It does not use
+          # testcontainers like the others: it expects the testing/
+          # docker-compose stack already up. Between them they want central
+          # Hermes on :8000, edge on :8002, meilisearch on :7701, mailhog,
+          # redpanda, a postgres on a fixed localhost:5433 with migrations
+          # already applied, and a list of containers they find by grepping
+          # `docker ps`. Neither had ever passed here: e2e ran no tests at
+          # all, and migration failed on its first prerequisite.
+          #
+          # Nothing is lost by leaving them out, because neither was running.
+          # go vet runs over the integration tag so both keep compiling.
+          # Restoring them means giving them the self-contained setup the
+          # other suites have, not adding services here.
 
     services:
       postgres:
@@ -471,17 +489,61 @@ jobs:
       - name: Make binaries executable
         run: chmod +x build/bin/*
 
+      # Every suite is behind the integration build tag, so every suite is run
+      # with it. Two were not: the e2e suite ran `go test ./...` with no tag
+      # and matched no packages, and the api suite compiled only the files
+      # that carry no tag. A suite that runs nothing reports whatever the
+      # shell last returned, which is not a statement about the code.
+      #
+      # The package list is resolved before the run and an empty list is a
+      # failure. That is the check that would have caught the e2e job, and it
+      # catches the next suite whose directory is renamed or whose tag is
+      # changed.
+      - name: Resolve packages - ${{ matrix.suite }}
+        id: suite
+        run: |
+          case "${{ matrix.suite }}" in
+            # tags is empty for api on purpose. Building that suite with the
+            # integration tag compiles ~40 tests that CI has never compiled,
+            # and they do not pass: a nil Google Workspace provider panics
+            # two draft handlers, several endpoints answer 500 where the test
+            # expects 200, a delete leaves the row behind, and some
+            # assertions predate the JSON content type the handlers now send.
+            # None of that is caused by this branch and none of it is a
+            # toolchain question, so it is quarantined rather than fixed here
+            # or hidden with continue-on-error.
+            #
+            # This is a narrower gap than the one it replaces: it is written
+            # down, and `go vet -tags=integration ./...` still compiles every
+            # one of those tests, so they cannot rot while they wait.
+            api) pkgs=./tests/api/... timeout=15m tags= ;;
+            *)
+              echo "unknown suite '${{ matrix.suite }}'" >&2
+              echo "Add it to this case statement or drop it from the matrix." >&2
+              exit 1
+              ;;
+          esac
+
+          found="$(go list -tags="$tags" "$pkgs" 2>/dev/null || true)"
+          if [ -z "$found" ]; then
+            echo "suite '${{ matrix.suite }}' matched no packages under $pkgs" >&2
+            echo "Nothing would have been tested, so this is a failure and not a pass." >&2
+            exit 1
+          fi
+          echo "Testing:"
+          echo "$found" | while read -r pkg; do echo "  $pkg"; done
+
+          {
+            echo "pkgs=$pkgs"
+            echo "timeout=$timeout"
+            echo "tags=$tags"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Run integration tests - ${{ matrix.suite }}
         run: |
-          if [ "${{ matrix.suite }}" = "api" ]; then
-            cd tests/api
-            go test -v -timeout=15m ./...
-          elif [ "${{ matrix.suite }}" = "migration" ]; then
-            go test -tags=integration -v -timeout=15m ./tests/integration/migration/...
-          elif [ "${{ matrix.suite }}" = "e2e" ]; then
-            cd tests/integration/e2e
-            go test -v -timeout=15m ./...
-          fi
+          go test -tags="${{ steps.suite.outputs.tags }}" -v \
+            -timeout="${{ steps.suite.outputs.timeout }}" \
+            "${{ steps.suite.outputs.pkgs }}"
 
   # Job 8: E2E Playwright tests
   test-e2e-playwright:

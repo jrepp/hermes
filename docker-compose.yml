@@ -15,7 +15,10 @@
 
 services:
   postgres:
-    image: postgres:17.1-alpine
+    # pgvector, not stock postgres. Migration 000013 creates the vector
+    # extension, so migrating against this stack failed on an image that does
+    # not ship it.
+    image: pgvector/pgvector:pg17
     restart: always
     environment:
       POSTGRES_USER: postgres
