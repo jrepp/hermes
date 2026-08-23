@@ -22,6 +22,14 @@ type PeopleDataRequest struct {
 //nolint:gocognit,gocyclo // Handler coordinates request parsing and directory lookup branches.
 func PeopleDataHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching any
+		// per-tenant resource; srv as constructed holds the process-wide
+		// defaults, which in a multi-site deployment belong to no site.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		switch r.Method {
 		// Using POST method to avoid logging the query in browser history
 		// and server logs

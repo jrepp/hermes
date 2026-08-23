@@ -26,6 +26,14 @@ type MeGetResponse struct {
 //nolint:gocognit,gocyclo // User info resolution has several fallbacks that are clearer inline.
 func MeHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching any
+		// per-tenant resource; srv as constructed holds the process-wide
+		// defaults, which in a multi-site deployment belong to no site.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		errResp := func(httpCode int, userErrMsg, logErrMsg string, err error) {
 			srv.Logger.Error(logErrMsg,
 				"method", r.Method,

@@ -22,6 +22,14 @@ import (
 // The index parameter can be: "docs", "drafts", "internal", or "projects"
 func SearchHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching any
+		// per-tenant resource; srv as constructed holds the process-wide
+		// defaults, which in a multi-site deployment belong to no site.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		// Only support POST for search operations
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

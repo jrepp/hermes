@@ -9,6 +9,19 @@ import (
 	"testing"
 )
 
+// tenantFields are the Server fields ForDomain rebinds per site. Reading any
+// of them from an unscoped Server serves the primary site's data to whoever
+// asked, which is the whole failure this package's scoping exists to prevent.
+//
+// The database is the obvious one, and was for a while the only one checked --
+// which is how SearchHandler came to search the primary site's index on every
+// site while touching srv.DB not once.
+var tenantFields = map[string]bool{
+	"DB":                true,
+	"SearchProvider":    true,
+	"WorkspaceProvider": true,
+}
+
 // TestHandlersScopeToTheRequestSite is a static guard on tenant isolation.
 //
 // Every V2 handler is constructed once, at startup, with a server.Server
@@ -95,7 +108,7 @@ func checkConstructor(t *testing.T, fset *token.FileSet, path string, fn *ast.Fu
 		return false
 	}
 
-	var usesDB, scopes bool
+	var usesTenantResource, scopes bool
 	ast.Inspect(fn.Body, func(n ast.Node) bool {
 		sel, ok := n.(*ast.SelectorExpr)
 		if !ok {
@@ -106,25 +119,25 @@ func checkConstructor(t *testing.T, fset *token.FileSet, path string, fn *ast.Fu
 			return true
 		}
 
-		switch sel.Sel.Name {
-		case "DB":
-			usesDB = true
+		switch {
+		case tenantFields[sel.Sel.Name]:
+			usesTenantResource = true
 			if !insideLiteral(sel.Pos()) {
-				t.Errorf("%s: %s reads srv.DB at %s, outside the request closure.\n"+
-					"That captures the process-wide database once at startup, so every "+
-					"site is served from whichever schema the default connection points at.\n"+
+				t.Errorf("%s: %s reads srv.%s at %s, outside the request closure.\n"+
+					"That captures the process-wide value once at startup, so every "+
+					"site is served from whichever tenant the default points at.\n"+
 					"Move it inside the handler and take it from the scoped srv.",
-					path, fn.Name.Name, fset.Position(sel.Pos()))
+					path, fn.Name.Name, sel.Sel.Name, fset.Position(sel.Pos()))
 			}
-		case "ForRequest", "ForDomain":
+		case sel.Sel.Name == "ForRequest", sel.Sel.Name == "ForDomain":
 			scopes = true
 		}
 
 		return true
 	})
 
-	if usesDB && !scopes {
-		t.Errorf("%s: %s uses srv.DB but never calls srv.ForRequest.\n"+
+	if usesTenantResource && !scopes {
+		t.Errorf("%s: %s uses a per-tenant resource but never calls srv.ForRequest.\n"+
 			"Add this as the first statement of the handler:\n"+
 			"\tsrv, ok := srv.ForRequest(w, r)\n"+
 			"\tif !ok {\n\t\treturn\n\t}",
@@ -188,10 +201,12 @@ func TestDatabaseHelpersAreReachedOnlyFromScopedHandlers(t *testing.T) {
 					case *ast.SelectorExpr:
 						if ident, ok := node.X.(*ast.Ident); ok && ident.Name == "srv" {
 							switch node.Sel.Name {
-							case "DB":
-								usesDB[name] = true
 							case "ForRequest", "ForDomain":
 								scoped[name] = true
+							default:
+								if tenantFields[node.Sel.Name] {
+									usesDB[name] = true
+								}
 							}
 						}
 					case *ast.CallExpr:
@@ -213,7 +228,7 @@ func TestDatabaseHelpersAreReachedOnlyFromScopedHandlers(t *testing.T) {
 		}
 
 		if len(callers[name]) == 0 {
-			t.Errorf("%s takes a server.Server and reads srv.DB, but nothing "+
+			t.Errorf("%s takes a server.Server and reads a per-tenant resource, but nothing "+
 				"calls it.\n"+
 				"Nothing establishes which site it would run against, so the "+
 				"first caller to appear will not be checked. Either take a "+
@@ -222,7 +237,7 @@ func TestDatabaseHelpersAreReachedOnlyFromScopedHandlers(t *testing.T) {
 		}
 
 		for _, root := range unscopedRoots(name, callers, scoped, map[string]bool{}) {
-			t.Errorf("%s reads srv.DB, and is reachable from %s, which never "+
+			t.Errorf("%s reads a per-tenant resource, and is reachable from %s, which never "+
 				"scopes to a site.\n"+
 				"Add to that handler:\n"+
 				"\tsrv, ok := srv.ForRequest(w, r)\n\tif !ok {\n\t\treturn\n\t}",

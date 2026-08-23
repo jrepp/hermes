@@ -40,6 +40,14 @@ type GroupsPostResponseGroup struct {
 //nolint:gocognit,gocyclo // Handler dispatches multiple group operations from one endpoint.
 func GroupsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bind to the site serving this request before touching any
+		// per-tenant resource; srv as constructed holds the process-wide
+		// defaults, which in a multi-site deployment belong to no site.
+		srv, ok := srv.ForRequest(w, r)
+		if !ok {
+			return
+		}
+
 		logArgs := []any{
 			"method", r.Method,
 			"path", r.URL.Path,
