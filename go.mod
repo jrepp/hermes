@@ -1,6 +1,6 @@
 module github.com/hashicorp-forge/hermes
 
-go 1.25.5
+go 1.27.0
 
 require (
 	github.com/algolia/algoliasearch-client-go/v3 v3.31.4
