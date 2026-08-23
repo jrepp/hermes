@@ -560,6 +560,12 @@ jobs:
       matrix:
         suite:
           - api
+          # Both of these existed and neither ran. tenancy proves two sites
+          # cannot see each other's rows; schema compares what the migrations
+          # build against what the models declare, which is the check that
+          # catches a field added without a column behind it.
+          - tenancy
+          - schema
           # The e2e and migration suites are deliberately absent. Neither uses
           # testcontainers like the others: both expect the testing/
           # docker-compose stack already up. Between them they want central
@@ -576,7 +582,10 @@ jobs:
 
     services:
       postgres:
-        image: postgres:14
+        # The migrations create the vector extension, which stock postgres
+        # does not ship. The suites that run real migrations failed on the
+        # first one against postgres:14.
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: hermes_test
@@ -637,7 +646,9 @@ jobs:
             # This is a narrower gap than the one it replaces: it is written
             # down, and `go vet -tags=integration ./...` still compiles every
             # one of those tests, so they cannot rot while they wait.
-            api) pkgs=./tests/api/... timeout=15m tags= ;;
+            api)     pkgs=./tests/api/...                 timeout=15m tags=            ;;
+            tenancy) pkgs=./tests/integration/tenancy/... timeout=25m tags=integration ;;
+            schema)  pkgs=./tests/integration/schema/...  timeout=15m tags=integration ;;
             *)
               echo "unknown suite '${{ matrix.suite }}'" >&2
               echo "Add it to this case statement or drop it from the matrix." >&2
