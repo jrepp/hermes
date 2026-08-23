@@ -67,8 +67,15 @@ jobs:
           RUN_INTEGRATION_TESTS="false"
           RUN_E2E_TESTS="false"
 
-          # Check for Go code changes
-          if echo "$CHANGED_FILES" | grep -qE '(\.go$|go\.mod|go\.sum|Makefile|\.golangci\.yml)'; then
+          # Check for Go code changes.
+          #
+          # Workflow files are in this list because a change to CI is not
+          # validated by anything else. A pull request touching only
+          # .github/workflows ran no jobs at all and reported success: the
+          # change-detection step found nothing to test, every job skipped,
+          # and the status gate treats skipped as passed. A workflow edit
+          # breaking every job would have gone green.
+          if echo "$CHANGED_FILES" | grep -qE '(\.go$|go\.mod|go\.sum|Makefile|\.golangci\.yml|^\.github/workflows/)'; then
             RUN_GO_TESTS="true"
           fi
 
