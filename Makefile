@@ -296,6 +296,11 @@ install-hooks: ## Install pre-commit hooks
 	@pip3 install pre-commit
 	@pre-commit install
 	@pre-commit install --hook-type pre-push
+	@# The commit-msg stage carries the conventional-commit and AI-branding
+	@# checks. Without this line they are configured but never run, which is
+	@# how 34 commits came to carry co-author trailers the repository's own
+	@# checker rejects.
+	@pre-commit install --hook-type commit-msg
 	@echo "✓ Pre-commit hooks installed"
 
 .PHONY: run-hooks
