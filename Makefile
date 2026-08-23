@@ -2,6 +2,10 @@
 
 # Keep in step with .github/workflows/parallel-ci.yml. .golangci.yml declares
 # `version: "2"`, so a v1 binary cannot read it.
+# How long each fuzz target runs under `make fuzz`. Short by default so the
+# target is usable in a normal loop; raise it when hunting.
+FUZZTIME ?= 30s
+
 GOLANGCI_LINT_VERSION ?= v2.6.2
 export GOLANGCI_LINT_VERSION
 
@@ -194,6 +198,20 @@ tidy: ## Tidy go.mod and go.sum
 .PHONY: pre-commit
 pre-commit: fmt vet build ## Run pre-commit checks
 	@echo "✓ Pre-commit checks complete"
+
+.PHONY: race
+race: web/stub ## Run the unit suite under the race detector
+	@echo "==> go test -race"
+	@go test -race -timeout=15m ./...
+	@echo "✓ no data races"
+
+.PHONY: fuzz
+fuzz: web/stub ## Run each fuzz target briefly (FUZZTIME=30s to change)
+	@echo "==> fuzzing (FUZZTIME=$(FUZZTIME))"
+	@go test ./pkg/domain/ -run 'FuzzParse$$' -fuzz 'FuzzParse$$' -fuzztime=$(FUZZTIME)
+	@go test ./internal/session/ -run 'FuzzVerify$$' -fuzz 'FuzzVerify$$' -fuzztime=$(FUZZTIME)
+	@go test ./internal/session/ -run 'FuzzVerifyAcrossSites$$' -fuzz 'FuzzVerifyAcrossSites$$' -fuzztime=$(FUZZTIME)
+	@echo "✓ fuzzing complete"
 
 .PHONY: verify
 verify: web/stub ## Hermetic gate: fmt, vet, build, unit tests. No Docker, no network.
