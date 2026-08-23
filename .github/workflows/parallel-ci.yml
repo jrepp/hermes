@@ -358,6 +358,120 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  # Tests that need a real database.
+  #
+  # pkg/models skips its entire database suite unless
+  # HERMES_TEST_POSTGRESQL_DSN is set, and nothing set it, so those tests had
+  # never run in CI. Ten of them were failing on main -- a model declaring a
+  # column no migration created, a required field that could not be persisted,
+  # a unique constraint that predated the second storage provider. Every one of
+  # them was a production bug, and all of them were invisible because the
+  # suite that covers them skips itself by default.
+  #
+  # pgvector rather than stock postgres: the migrations create the vector,
+  # citext and uuid-ossp extensions, and a database without pgvector fails on
+  # the first of them.
+  test-go-database:
+    name: Test Go (database-backed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run-go-tests == 'true'
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: hermes_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Create placeholder web/dist for go:embed
+        run: mkdir -p web/dist && echo "placeholder" > web/dist/index.html
+
+      # If the variable is unset these packages report success having run
+      # nothing, so the run is checked for evidence that the suite actually
+      # executed rather than skipped.
+      - name: Run database-backed tests
+        env:
+          HERMES_TEST_POSTGRESQL_DSN: "host=localhost port=5432 user=postgres password=postgres dbname=hermes_test sslmode=disable"
+        run: |
+          set -o pipefail
+          go test -v -timeout=15m ./pkg/models/... ./internal/api/... 2>&1 | tee test.log
+          if grep -q "HERMES_TEST_POSTGRESQL_DSN environment variable isn.t set" test.log; then
+            echo "::error::database tests skipped despite a DSN being set"
+            exit 1
+          fi
+
+  # A short fuzz run on every change that touches the parsers.
+  #
+  # Both targets have already earned their place. FuzzParse found a hostname
+  # that canonicalised to a form which would not itself re-parse, in 0.02
+  # seconds -- non-idempotent canonicalisation splits one tenant's storage in
+  # two. FuzzVerify found that the session token was malleable: several
+  # distinct cookie strings decoded to the same MAC and all verified as one
+  # session.
+  #
+  # Thirty seconds each is not a hunt. It is enough to catch a regression that
+  # a seed already covers, which is what a pull request needs.
+  fuzz-smoke:
+    name: Fuzz Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run-go-tests == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Create placeholder web/dist for go:embed
+        run: mkdir -p web/dist && echo "placeholder" > web/dist/index.html
+
+      - name: Fuzz
+        run: make fuzz FUZZTIME=30s
+
+      # A crash writes a reproducer into testdata; surface it rather than
+      # letting it vanish with the runner.
+      - name: Upload fuzz reproducers
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fuzz-reproducers
+          path: |
+            pkg/domain/testdata/fuzz/**
+            internal/session/testdata/fuzz/**
+          if-no-files-found: ignore
+
   # Job 5: Build and test web
   test-web:
     name: Test Web Frontend
@@ -642,6 +756,8 @@ jobs:
       - lint-go
       - build-go
       - test-go
+      - test-go-database
+      - fuzz-smoke
       - test-web
       - test-python
       - test-integration
@@ -667,6 +783,16 @@ jobs:
 
           if ! check_job "${{ needs.lint-go.result }}"; then
             echo "❌ lint-go failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.test-go-database.result }}"; then
+            echo "❌ test-go-database failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.fuzz-smoke.result }}"; then
+            echo "❌ fuzz-smoke failed"
             FAILED=true
           fi
 
