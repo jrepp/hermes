@@ -241,11 +241,27 @@ type documentIndex struct {
 	index  string
 }
 
+// documentOptions names the primary key for writes.
+//
+// meilisearch-go v0.36 replaced the bare *string primary key with a
+// DocumentOptions struct. The other fields are left at their defaults:
+// SkipCreation would stop the index being created on first write, which is how
+// every index here comes into being, and TaskCustomMetadata is only visible in
+// the task list.
+func documentOptions() *meilisearch.DocumentOptions {
+	return keyedDocumentOptions(objectIDKey)
+}
+
+// keyedDocumentOptions names a primary key other than the usual one; the links
+// index keys on its own field.
+func keyedDocumentOptions(key string) *meilisearch.DocumentOptions {
+	return &meilisearch.DocumentOptions{PrimaryKey: &key}
+}
+
 func (di *documentIndex) Index(ctx context.Context, doc *hermessearch.Document) error {
 	idx := di.client.Index(di.index)
 
-	primaryKey := objectIDKey
-	task, err := idx.AddDocumentsWithContext(ctx, []interface{}{doc}, &primaryKey)
+	task, err := idx.AddDocumentsWithContext(ctx, []interface{}{doc}, documentOptions())
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "Index",
@@ -287,8 +303,7 @@ func (di *documentIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Do
 		objects[i] = doc
 	}
 
-	primaryKey := objectIDKey
-	task, err := idx.AddDocumentsWithContext(ctx, objects, &primaryKey)
+	task, err := idx.AddDocumentsWithContext(ctx, objects, documentOptions())
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "IndexBatch",
@@ -325,7 +340,7 @@ func (di *documentIndex) IndexBatch(ctx context.Context, docs []*hermessearch.Do
 func (di *documentIndex) Delete(ctx context.Context, docID string) error {
 	idx := di.client.Index(di.index)
 
-	task, err := idx.DeleteDocumentWithContext(ctx, docID)
+	task, err := idx.DeleteDocumentWithContext(ctx, docID, nil)
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "Delete",
@@ -361,7 +376,7 @@ func (di *documentIndex) Delete(ctx context.Context, docID string) error {
 func (di *documentIndex) DeleteBatch(ctx context.Context, docIDs []string) error {
 	idx := di.client.Index(di.index)
 
-	task, err := idx.DeleteDocumentsWithContext(ctx, docIDs)
+	task, err := idx.DeleteDocumentsWithContext(ctx, docIDs, nil)
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "DeleteBatch",
@@ -543,7 +558,7 @@ func (di *documentIndex) GetFacets(ctx context.Context, facetNames []string) (*h
 func (di *documentIndex) Clear(ctx context.Context) error {
 	idx := di.client.Index(di.index)
 
-	task, err := idx.DeleteAllDocumentsWithContext(ctx)
+	task, err := idx.DeleteAllDocumentsWithContext(ctx, nil)
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "Clear",
@@ -748,8 +763,7 @@ type projectIndex struct {
 
 func (pi *projectIndex) Index(_ context.Context, project map[string]any) error {
 	idx := pi.client.Index(pi.index)
-	primaryKey := objectIDKey
-	_, err := idx.AddDocuments([]map[string]any{project}, &primaryKey)
+	_, err := idx.AddDocuments([]map[string]any{project}, documentOptions())
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "Index",
@@ -762,7 +776,7 @@ func (pi *projectIndex) Index(_ context.Context, project map[string]any) error {
 
 func (pi *projectIndex) Delete(_ context.Context, projectID string) error {
 	idx := pi.client.Index(pi.index)
-	_, err := idx.DeleteDocument(projectID)
+	_, err := idx.DeleteDocument(projectID, nil)
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "Delete",
@@ -880,7 +894,7 @@ func (pi *projectIndex) GetObject(_ context.Context, projectID string) (map[stri
 
 func (pi *projectIndex) Clear(_ context.Context) error {
 	idx := pi.client.Index(pi.index)
-	_, err := idx.DeleteAllDocuments()
+	_, err := idx.DeleteAllDocuments(nil)
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "Clear",
@@ -905,8 +919,7 @@ func (li *linksIndex) SaveLink(_ context.Context, link map[string]string) error 
 		linkAny[k] = v
 	}
 	linkAny[linkIDKey] = linkMeilisearchID(link[objectIDKey])
-	primaryKey := linkIDKey
-	_, err := idx.AddDocuments([]map[string]any{linkAny}, &primaryKey)
+	_, err := idx.AddDocuments([]map[string]any{linkAny}, keyedDocumentOptions(linkIDKey))
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "SaveLink",
@@ -919,7 +932,7 @@ func (li *linksIndex) SaveLink(_ context.Context, link map[string]string) error 
 
 func (li *linksIndex) DeleteLink(_ context.Context, objectID string) error {
 	idx := li.client.Index(li.index)
-	_, err := idx.DeleteDocument(linkMeilisearchID(objectID))
+	_, err := idx.DeleteDocument(linkMeilisearchID(objectID), nil)
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "DeleteLink",
@@ -960,7 +973,7 @@ func linkMeilisearchID(objectID string) string {
 
 func (li *linksIndex) Clear(_ context.Context) error {
 	idx := li.client.Index(li.index)
-	_, err := idx.DeleteAllDocuments()
+	_, err := idx.DeleteAllDocuments(nil)
 	if err != nil {
 		return &hermessearch.Error{
 			Op:  "Clear",
