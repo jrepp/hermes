@@ -78,6 +78,23 @@ func NewDocumentByFileID(fileID string, useSharePoint bool) Document {
 	if useSharePoint {
 		return Document{FileID: fileID}
 	}
+
+	return Document{GoogleFileID: fileID}
+}
+
+// DocumentByFileID returns a Document that Get will resolve from a file
+// identifier, whichever provider stored it.
+//
+// NewDocumentByFileID takes a boolean saying which provider is active, which
+// put provider selection in the persistence layer and made every caller carry
+// the answer. ADR-009 puts that decision in the provider interfaces; a handler
+// holding a file ID should be able to ask for the document without knowing who
+// wrote it.
+//
+// Get matches both identifier columns when only one is set, so this needs no
+// boolean. Use NewDocumentByFileID only where the provider genuinely matters,
+// which is inside an adapter.
+func DocumentByFileID(fileID string) Document {
 	return Document{GoogleFileID: fileID}
 }
 
@@ -195,8 +212,17 @@ func (d *Documents) Find(
 // 		FirstOrCreate(&d).Error
 // }
 
-// Get gets a document from database db by Google file ID, and assigns it to the
-// receiver.
+// Get gets a document from database db by its file identifier, and assigns it
+// to the receiver.
+//
+// A lookup by file identifier does not need to know which provider stored the
+// document. When exactly one identifier is supplied, both columns are matched:
+// the caller has an ID and wants the document, and which column it landed in
+// is a detail of the provider that wrote it. That is what lets handlers stop
+// carrying a useSharePoint boolean purely to decide where to put a string.
+//
+// Supplying both fields is still an exact, per-column match, so a caller that
+// does know the provider keeps the narrower query.
 func (d *Document) Get(db *gorm.DB) error {
 	if err := validation.ValidateStruct(d,
 		validation.Field(
@@ -210,7 +236,13 @@ func (d *Document) Get(db *gorm.DB) error {
 	}
 
 	query := db
-	if d.GoogleFileID != "" {
+	if d.GoogleFileID != "" && d.FileID == "" {
+		query = query.Where(
+			"google_file_id = ? OR file_id = ?", d.GoogleFileID, d.GoogleFileID)
+	} else if d.FileID != "" && d.GoogleFileID == "" {
+		query = query.Where(
+			"file_id = ? OR google_file_id = ?", d.FileID, d.FileID)
+	} else if d.GoogleFileID != "" {
 		query = query.Where("google_file_id = ?", d.GoogleFileID)
 	} else if d.FileID != "" {
 		query = query.Where("file_id = ?", d.FileID)

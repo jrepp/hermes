@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp-forge/hermes/internal/db"
 	"github.com/hashicorp-forge/hermes/internal/jira"
 	"github.com/hashicorp-forge/hermes/pkg/domain"
-	"github.com/hashicorp-forge/hermes/pkg/models"
 	"github.com/hashicorp-forge/hermes/pkg/projectconfig"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/sharepointhelper"
@@ -80,14 +79,4 @@ type Server struct {
 // GetEmailSender returns the configured workspace notification provider.
 func (s Server) GetEmailSender() workspace.NotificationProvider {
 	return s.WorkspaceProvider
-}
-
-// IsSharePoint returns true when the active workspace provider is SharePoint.
-func (s Server) IsSharePoint() bool {
-	return s.Config != nil && s.Config.Providers != nil && s.Config.Providers.Workspace == "sharepoint"
-}
-
-// NewDocumentByFileID returns a document keyed for the active workspace backend.
-func (s Server) NewDocumentByFileID(fileID string) models.Document {
-	return models.NewDocumentByFileID(fileID, s.IsSharePoint())
 }

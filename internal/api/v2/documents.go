@@ -100,7 +100,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 		// Get document from database.
 		// Support both GoogleFileID and UUID formats.
 		// Try UUID first, fall back to GoogleFileID if not found or invalid UUID.
-		model := srv.NewDocumentByFileID(docID)
+		model := models.DocumentByFileID(docID)
 		if err := model.GetByGoogleFileIDOrUUID(srv.DB, docID); err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				srv.Logger.Warn("document record not found",
@@ -194,7 +194,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 		switch reqType {
 		case relatedResourcesDocumentSubcollectionRequestType:
 			documentsResourceRelatedResourcesHandler(
-				w, r, docID, *doc, srv.Config, srv.Logger, srv.SearchProvider, srv.DB, srv.IsSharePoint())
+				w, r, docID, *doc, srv.Config, srv.Logger, srv.SearchProvider, srv.DB)
 			return
 		case shareableDocumentSubcollectionRequestType:
 			srv.Logger.Warn("invalid shareable request for documents collection",
@@ -349,8 +349,15 @@ func DocumentHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Check if document is locked (Google-only).
-			if !srv.IsSharePoint() {
+			// Locking is a Google Drive feature, and hcd.IsLocked needs the
+			// Google service to ask about it. Testing for the service rather
+			// than for "not SharePoint" states the actual dependency: a third
+			// provider would take the same path as SharePoint without anyone
+			// having to remember to add it to a negated list.
+			//
+			// The real home for this is a capability on workspace.Provider;
+			// see the provider-leakage memo.
+			if srv.GWService != nil {
 				locked, err := hcd.IsLocked(docID, srv.DB, srv.GWService, srv.Logger)
 				if err != nil {
 					srv.Logger.Error("error checking document locked status",
@@ -826,7 +833,15 @@ func DocumentHandler(srv server.Server) http.Handler {
 
 			// Replace the doc header (Google-only; SharePoint headers
 			// are managed by the Hermes Add-In for Word).
-			if !srv.IsSharePoint() {
+			// Locking is a Google Drive feature, and hcd.IsLocked needs the
+			// Google service to ask about it. Testing for the service rather
+			// than for "not SharePoint" states the actual dependency: a third
+			// provider would take the same path as SharePoint without anyone
+			// having to remember to add it to a negated list.
+			//
+			// The real home for this is a capability on workspace.Provider;
+			// see the provider-leakage memo.
+			if srv.GWService != nil {
 				if err := doc.ReplaceHeader(
 					srv.Config.BaseURL, false, getCompatProvider(srv.WorkspaceProvider),
 				); err != nil {
@@ -864,7 +879,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 			}
 
 			// Get document record from database so we can modify it for updating.
-			model := srv.NewDocumentByFileID(docID)
+			model := models.DocumentByFileID(docID)
 			if err := model.Get(srv.DB); err != nil {
 				srv.Logger.Error("error getting document from database",
 					"error", err,

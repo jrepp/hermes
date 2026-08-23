@@ -35,12 +35,11 @@ func draftsShareableHandler(
 	_ search.Provider,
 	workspaceProvider workspace.Provider,
 	db *gorm.DB,
-	useSharePoint bool,
 ) {
 	switch r.Method {
 	case httpMethodGet:
 		// Get document from database.
-		d := models.NewDocumentByFileID(docID, useSharePoint)
+		d := models.DocumentByFileID(docID)
 		if err := d.Get(db); err != nil {
 			l.Error("error getting document from database",
 				"error", err,
@@ -112,7 +111,7 @@ func draftsShareableHandler(
 		}
 
 		// Get document from database.
-		doc := models.NewDocumentByFileID(docID, useSharePoint)
+		doc := models.DocumentByFileID(docID)
 		if err := doc.Get(db); err != nil {
 			l.Error("error getting document from database",
 				"error", err,

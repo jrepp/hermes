@@ -50,6 +50,7 @@ These memos used to be ADRs; the binding rules they once carried have been retir
 - **memo-056** — Semantic search performance benchmarks.
 - **memo-059** — S3 storage implementation summary.
 - **memo-067** — SharePoint provider porting progress.
+- **memo-068** — SharePoint support leaked past the provider interfaces: what leaked, what was pulled back, and what remains.
 
 ### Analysis & metrics
 

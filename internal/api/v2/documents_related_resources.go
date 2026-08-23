@@ -59,11 +59,10 @@ func documentsResourceRelatedResourcesHandler(
 	l hclog.Logger,
 	searchProvider search.Provider,
 	db *gorm.DB,
-	useSharePoint bool,
 ) {
 	switch r.Method {
 	case httpMethodGet:
-		d := models.NewDocumentByFileID(docID, useSharePoint)
+		d := models.DocumentByFileID(docID)
 		if err := d.Get(db); err != nil {
 			l.Error("error getting document from database",
 				"error", err,
@@ -191,7 +190,7 @@ func documentsResourceRelatedResourcesHandler(
 		for _, elrr := range req.ExternalLinks {
 			elrrs = append(elrrs, models.DocumentRelatedResourceExternalLink{
 				RelatedResource: models.DocumentRelatedResource{
-					Document:  models.NewDocumentByFileID(docID, useSharePoint),
+					Document:  models.DocumentByFileID(docID),
 					SortOrder: elrr.SortOrder,
 				},
 				Name: elrr.Name,
@@ -204,15 +203,15 @@ func documentsResourceRelatedResourcesHandler(
 		for _, hdrr := range req.HermesDocuments {
 			hdrrs = append(hdrrs, models.DocumentRelatedResourceHermesDocument{
 				RelatedResource: models.DocumentRelatedResource{
-					Document:  models.NewDocumentByFileID(docID, useSharePoint),
+					Document:  models.DocumentByFileID(docID),
 					SortOrder: hdrr.SortOrder,
 				},
-				Document: models.NewDocumentByFileID(hdrr.FileID, useSharePoint),
+				Document: models.DocumentByFileID(hdrr.FileID),
 			})
 		}
 
 		// Replace related resources for document.
-		doc := models.NewDocumentByFileID(docID, useSharePoint)
+		doc := models.DocumentByFileID(docID)
 		if err := doc.ReplaceRelatedResources(db, elrrs, hdrrs); err != nil {
 			l.Error("error replacing related resources for document",
 				"error", err,

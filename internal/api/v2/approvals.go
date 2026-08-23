@@ -66,7 +66,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 		}
 
 		// Get document from database.
-		model := srv.NewDocumentByFileID(docID)
+		model := models.DocumentByFileID(docID)
 		if err := model.Get(srv.DB); err != nil {
 			srv.Logger.Error("error getting document from database",
 				"error", err,
@@ -82,7 +82,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 		// Get reviews for the document.
 		var reviews models.DocumentReviews
 		if err := reviews.Find(srv.DB, models.DocumentReview{
-			Document: srv.NewDocumentByFileID(docID),
+			Document: models.DocumentByFileID(docID),
 		}); err != nil {
 			srv.Logger.Error("error getting reviews for document",
 				"error", err,
@@ -96,7 +96,7 @@ func ApprovalsHandler(srv server.Server) http.Handler {
 		// Get group reviews for the document.
 		var groupReviews models.DocumentGroupReviews
 		if err := groupReviews.Find(srv.DB, models.DocumentGroupReview{
-			Document: srv.NewDocumentByFileID(docID),
+			Document: models.DocumentByFileID(docID),
 		}); err != nil {
 			srv.Logger.Error("error getting group reviews for document",
 				"error", err,
@@ -596,7 +596,7 @@ func updateReviewStateWithSearchOutbox(
 			}
 		}
 
-		if err := updateDocumentReviewsInDatabase(*doc, tx, false); err != nil {
+		if err := updateDocumentReviewsInDatabase(*doc, tx); err != nil {
 			return fmt.Errorf("error updating document reviews in the database: %w", err)
 		}
 
@@ -618,7 +618,7 @@ func updateReviewStateWithSearchOutbox(
 
 // updateDocumentReviewsInDatabase takes a document and updates the associated
 // document reviews in the database.
-func updateDocumentReviewsInDatabase(doc document.Document, db *gorm.DB, useSharePoint bool) error {
+func updateDocumentReviewsInDatabase(doc document.Document, db *gorm.DB) error {
 	var docReviews []models.DocumentReview
 	for _, a := range doc.Approvers {
 		u := models.User{
@@ -626,13 +626,13 @@ func updateDocumentReviewsInDatabase(doc document.Document, db *gorm.DB, useShar
 		}
 		if helpers.StringSliceContains(doc.ApprovedBy, a) {
 			docReviews = append(docReviews, models.DocumentReview{
-				Document: models.NewDocumentByFileID(doc.ObjectID, useSharePoint),
+				Document: models.DocumentByFileID(doc.ObjectID),
 				User:     u,
 				Status:   models.ApprovedDocumentReviewStatus,
 			})
 		} else if helpers.StringSliceContains(doc.ChangesRequestedBy, a) {
 			docReviews = append(docReviews, models.DocumentReview{
-				Document: models.NewDocumentByFileID(doc.ObjectID, useSharePoint),
+				Document: models.DocumentByFileID(doc.ObjectID),
 				User:     u,
 				Status:   models.ChangesRequestedDocumentReviewStatus,
 			})

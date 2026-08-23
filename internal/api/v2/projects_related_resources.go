@@ -221,7 +221,7 @@ func projectsResourceRelatedResourcesHandler(
 					ProjectID: projectID,
 					SortOrder: hdrr.SortOrder,
 				},
-				Document: srv.NewDocumentByFileID(hdrr.FileID),
+				Document: models.DocumentByFileID(hdrr.FileID),
 			})
 		}
 
