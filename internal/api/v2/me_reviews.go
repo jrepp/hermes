@@ -237,7 +237,7 @@ func MeReviewsHandler(srv server.Server) http.Handler {
 			}
 
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodGet)
 		}
 	})
 }

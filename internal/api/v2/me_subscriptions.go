@@ -132,7 +132,7 @@ func MeSubscriptionsHandler(srv server.Server) http.Handler {
 			w.WriteHeader(http.StatusOK)
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodGet, httpMethodPost)
 			return
 		}
 	})

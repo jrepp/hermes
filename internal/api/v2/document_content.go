@@ -101,7 +101,7 @@ func DocumentContentHandler(srv server.Server) http.Handler {
 		case httpMethodPut:
 			handlePutDocumentContent(w, r, srv, docID, userEmail, &model)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodGet, httpMethodPut)
 		}
 	})
 }

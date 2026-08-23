@@ -91,7 +91,7 @@ const (
 func SemanticSearchHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodPost)
 			return
 		}
 
@@ -223,7 +223,7 @@ func SemanticSearchHandler(srv server.Server) http.Handler {
 func HybridSearchHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodPost)
 			return
 		}
 
@@ -355,7 +355,7 @@ func HybridSearchHandler(srv server.Server) http.Handler {
 func SimilarDocumentsHandler(srv server.Server) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodGet)
 			return
 		}
 

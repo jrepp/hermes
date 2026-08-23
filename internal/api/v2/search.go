@@ -32,7 +32,7 @@ func SearchHandler(srv server.Server) http.Handler {
 
 		// Only support POST for search operations
 		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodPost)
 			return
 		}
 

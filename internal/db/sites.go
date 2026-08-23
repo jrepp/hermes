@@ -236,12 +236,14 @@ func migrateSite(site *sites.Site, log hclog.Logger) error {
 
 	sqlDB, err := sql.Open("postgres", dsn)
 	if err != nil {
-		return fmt.Errorf("site %q: connecting for migrations: %w", site.Domain.String(), err)
+		return fmt.Errorf("site %q: opening a connection to %s/%s: %w",
+			site.Domain.String(), site.Postgres.Host, site.Postgres.DBName, err)
 	}
 	defer func() { _ = sqlDB.Close() }()
 
 	if err := sqlDB.Ping(); err != nil {
-		return fmt.Errorf("site %q: pinging for migrations: %w", site.Domain.String(), err)
+		return fmt.Errorf("site %q: cannot reach its database at %s/%s: %w",
+			site.Domain.String(), site.Postgres.Host, site.Postgres.DBName, err)
 	}
 
 	if err := ensureSharedExtensions(sqlDB); err != nil {

@@ -216,7 +216,7 @@ func draftsShareableHandler(
 			"shareable_as_draft", doc.ShareableAsDraft,
 		)
 	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		WriteMethodNotAllowed(w, r, httpMethodGet, httpMethodPut)
 		return
 	}
 }

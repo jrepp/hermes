@@ -1030,7 +1030,7 @@ func DocumentHandler(srv server.Server) http.Handler {
 			)
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodGet, httpMethodPatch)
 			return
 		}
 	})

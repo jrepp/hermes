@@ -196,7 +196,7 @@ func GroupsHandler(srv server.Server) http.Handler {
 			}
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodPost)
 			return
 		}
 	})

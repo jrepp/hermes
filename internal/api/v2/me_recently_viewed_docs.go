@@ -131,7 +131,7 @@ func MeRecentlyViewedDocsHandler(srv server.Server) http.Handler {
 			}
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodGet)
 			return
 		}
 	})

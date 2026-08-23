@@ -54,7 +54,7 @@ type SetupConfigResponse struct {
 func SetupStatusHandler(configPath string, log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodGet)
 			return
 		}
 
@@ -86,7 +86,7 @@ func SetupStatusHandler(configPath string, log hclog.Logger) http.Handler {
 func SetupConfigureHandler(log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodPost)
 			return
 		}
 
@@ -244,7 +244,7 @@ func generateConfigFile(configPath, workspacePath, upstreamURL, ollamaURL, ollam
 func OllamaValidateHandler(log hclog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodPost)
 			return
 		}
 

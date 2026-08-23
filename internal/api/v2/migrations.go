@@ -51,7 +51,7 @@ func MigrationsHandler(srv server.Server) http.Handler {
 			case http.MethodPost:
 				createMigrationJob(w, r, srv)
 			default:
-				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				WriteMethodNotAllowed(w, r, http.MethodGet, http.MethodPost)
 			}
 
 		case strings.HasPrefix(path, "jobs/"):
@@ -78,7 +78,7 @@ func MigrationsHandler(srv server.Server) http.Handler {
 				case http.MethodDelete:
 					cancelMigrationJob(w, r, srv, jobID)
 				default:
-					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+					WriteMethodNotAllowed(w, r, http.MethodGet, http.MethodDelete)
 				}
 			case 2:
 				// /jobs/:id/:action
@@ -88,34 +88,34 @@ func MigrationsHandler(srv server.Server) http.Handler {
 					if r.Method == http.MethodPost {
 						startMigrationJob(w, r, srv, jobID)
 					} else {
-						http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+						WriteMethodNotAllowed(w, r, http.MethodPost)
 					}
 				case "pause":
 					if r.Method == http.MethodPost {
 						pauseMigrationJob(w, r, srv, jobID)
 					} else {
-						http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+						WriteMethodNotAllowed(w, r, http.MethodPost)
 					}
 				case "cancel":
 					if r.Method == http.MethodPost {
 						cancelMigrationJob(w, r, srv, jobID)
 					} else {
-						http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+						WriteMethodNotAllowed(w, r, http.MethodPost)
 					}
 				case "progress":
 					if r.Method == http.MethodGet {
 						getMigrationProgress(w, r, srv, jobID)
 					} else {
-						http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+						WriteMethodNotAllowed(w, r, http.MethodGet)
 					}
 				case "items":
 					if r.Method == http.MethodGet {
 						listMigrationItems(w, r, srv, jobID)
 					} else {
-						http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+						WriteMethodNotAllowed(w, r, http.MethodGet)
 					}
 				default:
-					http.Error(w, "Unknown action", http.StatusNotFound)
+					WriteError(w, r, http.StatusNotFound, "unknown action; use start, pause, cancel, progress, or items")
 				}
 			default:
 				http.Error(w, "Invalid path", http.StatusBadRequest)

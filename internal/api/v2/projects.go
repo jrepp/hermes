@@ -312,7 +312,7 @@ func ProjectsHandler(srv server.Server) http.Handler {
 				}, logArgs...)...)
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodGet, httpMethodPost)
 			return
 		}
 	})
@@ -566,7 +566,7 @@ func ProjectHandler(srv server.Server) http.Handler {
 					}, logArgs...)...)
 
 			default:
-				w.WriteHeader(http.StatusMethodNotAllowed)
+				WriteMethodNotAllowed(w, r, httpMethodGet, "PATCH")
 				return
 			}
 

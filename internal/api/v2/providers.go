@@ -42,20 +42,20 @@ func ProvidersHandler(srv server.Server) http.Handler {
 			case http.MethodPost:
 				registerProvider(w, r, srv)
 			default:
-				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				WriteMethodNotAllowed(w, r, http.MethodGet, http.MethodPost)
 			}
 			return
 		}
 
 		parts := strings.Split(path, "/")
 		if len(parts) == 0 || parts[0] == "" {
-			http.Error(w, "Provider ID required", http.StatusBadRequest)
+			WriteError(w, r, http.StatusBadRequest, "a provider ID is required: /api/v2/providers/{id}")
 			return
 		}
 
 		providerID, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
-			http.Error(w, "Invalid provider ID", http.StatusBadRequest)
+			WriteError(w, r, http.StatusBadRequest, "provider ID must be a number")
 			return
 		}
 
@@ -70,7 +70,7 @@ func ProvidersHandler(srv server.Server) http.Handler {
 			case http.MethodDelete:
 				removeProvider(w, r, srv, providerID)
 			default:
-				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				WriteMethodNotAllowed(w, r, http.MethodGet, http.MethodPatch, http.MethodDelete)
 			}
 		case len(parts) == 2 && parts[1] == "health":
 			// /providers/:id/health
@@ -79,9 +79,9 @@ func ProvidersHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodGet)
 		default:
-			http.Error(w, "Invalid path", http.StatusBadRequest)
+			WriteError(w, r, http.StatusBadRequest, "invalid provider path; expected /api/v2/providers/{id} or /api/v2/providers/{id}/health")
 		}
 	})
 }

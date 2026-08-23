@@ -231,7 +231,7 @@ func documentsResourceRelatedResourcesHandler(
 		)
 
 	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		WriteMethodNotAllowed(w, r, httpMethodGet, httpMethodPost, httpMethodPut)
 		return
 	}
 }

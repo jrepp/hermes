@@ -42,7 +42,12 @@ func AnalyticsHandler(srv server.Server) http.Handler {
 func ginAnalyticsHandler(srv server.Server) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method != http.MethodPost {
-			c.Status(http.StatusMethodNotAllowed)
+			c.Header("Allow", http.MethodPost)
+			c.JSON(http.StatusMethodNotAllowed, ErrorResponse{
+				Error:   c.Request.Method + " is not allowed here; use POST",
+				Path:    c.Request.URL.Path,
+				Allowed: []string{http.MethodPost},
+			})
 			return
 		}
 

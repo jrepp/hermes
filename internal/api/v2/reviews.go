@@ -677,7 +677,7 @@ func ReviewsHandler(srv server.Server) http.Handler {
 			}()
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, "POST")
 			return
 		}
 	})

@@ -580,7 +580,7 @@ func DraftsHandler(srv server.Server) http.Handler {
 			)
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodPost, httpMethodGet)
 			return
 		}
 	})
@@ -1570,7 +1570,7 @@ func DraftsDocumentHandler(srv server.Server) http.Handler {
 			)
 
 		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, httpMethodGet, httpMethodDelete, httpMethodPatch)
 			return
 		}
 	})

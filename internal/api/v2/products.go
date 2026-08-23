@@ -23,7 +23,7 @@ func ProductsHandler(srv server.Server) http.Handler {
 
 		// Only allow GET requests.
 		if r.Method != http.MethodGet {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			WriteMethodNotAllowed(w, r, http.MethodGet)
 			return
 		}
 

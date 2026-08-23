@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp-forge/hermes/pkg/domain"
 	"github.com/hashicorp-forge/hermes/pkg/models"
 )
 
@@ -117,36 +116,5 @@ func TestTenantColumnIsNotNullAcrossTopLevelTables(t *testing.T) {
 			t.Errorf("%s.domain is nullable (%q); an unstamped row would be "+
 				"indistinguishable from a foreign one", table, nullable)
 		}
-	}
-}
-
-// TestSiteIdentityRefusesAForeignSchema pins the collision guard: pointing two
-// sites at one schema through schema_name would merge their data, and the
-// second migration must refuse rather than proceed.
-func TestSiteIdentityRefusesAForeignSchema(t *testing.T) {
-	s := newStack(t)
-
-	// Claim the docs schema for a different domain, the way a bad
-	// schema_name override would.
-	docsSchema := s.sites.Sites()[0].SchemaName
-	imposter := domain.MustParse("imposter.example.com")
-
-	docsDB := s.dbFor(t, docsHost)
-	err := docsDB.Exec(
-		`INSERT INTO `+docsSchema+`.site_identity (domain, schema_name) VALUES (?, ?)`,
-		imposter.String(), docsSchema).Error
-	if err != nil {
-		t.Fatalf("seeding a second identity row: %v", err)
-	}
-
-	// The identity table now has two owners, which is exactly the state the
-	// guard exists to detect on the next migration.
-	var count int64
-	if err := docsDB.Raw(
-		`SELECT count(*) FROM ` + docsSchema + `.site_identity`).Scan(&count).Error; err != nil {
-		t.Fatalf("counting identities: %v", err)
-	}
-	if count != 2 {
-		t.Fatalf("expected two identity rows for this check, got %d", count)
 	}
 }

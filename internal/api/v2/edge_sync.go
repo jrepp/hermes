@@ -111,7 +111,7 @@ func EdgeSyncHandler(srv server.Server) http.Handler {
 				case "DELETE":
 					handleDeleteDocument(w, r, uuid, syncService, srv)
 				default:
-					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+					WriteMethodNotAllowed(w, r, httpMethodGet, "DELETE")
 				}
 				return
 			}
