@@ -135,7 +135,13 @@ func CallbackHandler(cfg config.Config, signer *session.Signer, log hclog.Logger
 		// Validate state parameter
 		state := r.URL.Query().Get("state")
 		if state == "" || state != stateCookie.Value {
-			log.Error("state mismatch", "cookie", stateCookie.Value, "param", state)
+			// The state is a single-use CSRF token; logging its value puts a
+			// credential in the log for no diagnostic gain. Whether each side
+			// was present is what actually distinguishes the cases -- a
+			// missing parameter, an expired cookie, or a genuine mismatch.
+			log.Error("OIDC state mismatch",
+				"have_cookie", stateCookie.Value != "",
+				"have_param", state != "")
 			http.Error(w, "Invalid state parameter", http.StatusBadRequest)
 			return
 		}

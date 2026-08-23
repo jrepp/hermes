@@ -118,14 +118,34 @@ func replaceScopedRelatedResources[T relatedResourceModel, D any](
 	)
 }
 
+// typedRelatedResourceTables are the tables a related resource may live in.
+//
+// The table name is interpolated into the statement below, because a table
+// cannot be a bind parameter. The value comes from a column the application
+// writes rather than from a request, so it is not attacker-controlled today --
+// but "today" is the whole of the argument, and an allowlist costs nothing.
+// Anything unexpected is an error rather than a query.
+var typedRelatedResourceTables = map[string]bool{
+	"document_related_resource_external_links":   true,
+	"document_related_resource_hermes_documents": true,
+	"project_related_resource_external_links":    true,
+	"project_related_resource_hermes_documents":  true,
+}
+
 func deleteTypedRelatedResources(
 	tx *gorm.DB,
 	rrs []relatedResourceReference,
 ) error {
 	for i := range rrs {
+		table := rrs[i].relatedResourceType
+		if !typedRelatedResourceTables[table] {
+			return fmt.Errorf(
+				"refusing to delete from unknown related resource table %q", table)
+		}
+
 		if err := tx.
 			Exec(
-				fmt.Sprintf("DELETE FROM %q WHERE id = ?", rrs[i].relatedResourceType),
+				fmt.Sprintf("DELETE FROM %q WHERE id = ?", table),
 				rrs[i].relatedResourceID,
 			).
 			Error; err != nil {
