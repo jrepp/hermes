@@ -787,9 +787,18 @@ func (c *Command) Run(args []string) int {
 
 		c.UI.Info(fmt.Sprintf("Loaded %d workspace projects from HCL config", len(projectConfig.Projects)))
 
-		// Sync workspace projects to database (backward compatible - doesn't link to instance)
+		// Sync workspace projects into every site.
+		//
+		// The projects table lives in the site's own schema, and
+		// /api/v2/workspace-projects reads whichever site is being served. A
+		// sync into the primary site alone would leave every other site
+		// reporting no projects at all, with the config file plainly declaring
+		// them.
 		c.UI.Info("Syncing workspace projects to database...")
-		if err := projectConfig.SyncToDatabase(db, cfg.Providers.ProjectsConfigPath); err != nil {
+		if err := forEachSite(siteDBs, siteRegistry, cfg, db,
+			func(_ *config.Config, siteDB *gorm.DB) error {
+				return projectConfig.SyncToDatabase(siteDB, cfg.Providers.ProjectsConfigPath)
+			}); err != nil {
 			c.UI.Error(fmt.Sprintf("error syncing workspace projects to database: %v", err))
 			return 1
 		}
@@ -797,9 +806,12 @@ func (c *Command) Run(args []string) int {
 
 		// Register projects with instance identity (links projects to this instance)
 		c.UI.Info("Registering workspace projects with instance identity...")
-		if err := projects.RegisterAllProjects(ctx, db, projectConfig, instanceLogger); err != nil {
+		if err := forEachSite(siteDBs, siteRegistry, cfg, db,
+			func(_ *config.Config, siteDB *gorm.DB) error {
+				return projects.RegisterAllProjects(ctx, siteDB, projectConfig, instanceLogger)
+			}); err != nil {
 			c.UI.Warn(fmt.Sprintf("error registering projects with instance: %v", err))
-			// Non-fatal - projects are still in DB via SyncToDatabase
+			// Non-fatal - projects are still in the database via SyncToDatabase.
 		} else {
 			c.UI.Info("Workspace projects registered with instance successfully")
 		}
@@ -821,7 +833,13 @@ func (c *Command) Run(args []string) int {
 			}
 		}
 	} else {
-		// No HCL config provided, try loading from database
+		// No HCL config provided, try loading from database.
+		//
+		// This reads the primary site only. It is used to populate
+		// Server.ProjectConfig, which no handler consults today -- handlers go
+		// to the database through their own scoped connection -- so the site it
+		// comes from does not currently matter. It will the moment anything
+		// starts reading that field.
 		c.UI.Info("No workspace projects config path provided, loading from database...")
 		projectConfig, err = projectconfig.LoadFromDatabase(db)
 		if err != nil {
@@ -1330,18 +1348,6 @@ func (c *Command) Run(args []string) int {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		// Get underlying SQL DB from GORM
-		sqlDB, err := db.DB()
-		if err != nil {
-			c.Log.Error(fmt.Sprintf("failed to get SQL DB for migration worker: %v", err))
-			return 1
-		}
-
-		// For now, create a simple provider map with just the primary provider
-		// TODO: In the future, this should use the multi-provider router
-		providerMap := make(map[string]workspace.WorkspaceProvider)
-		providerMap[workspaceProviderName] = workspaceProvider
-
 		// Set defaults for migration config
 		pollInterval := 5 * time.Second
 		if cfg.Migration.PollInterval > 0 {
@@ -1358,17 +1364,59 @@ func (c *Command) Run(args []string) int {
 			MaxConcurrency: maxConcurrency,
 		}
 
-		migrationWorker := migration.NewWorker(sqlDB, providerMap, c.Log.Named("migration-worker"), workerCfg)
-
-		// Start worker goroutine
-		go func() {
-			c.Log.Info("starting migration worker",
-				"poll_interval", pollInterval,
-				"max_concurrency", maxConcurrency)
-			if err := migrationWorker.Start(ctx); err != nil && err != context.Canceled {
-				c.Log.Error(fmt.Sprintf("migration worker failed: %v", err))
+		// One worker per site.
+		//
+		// Migration jobs are created through /api/v2/migrations, which is
+		// scoped, so a job lands in the schema of the site that asked for it.
+		// A single worker reading the primary site's database would leave every
+		// other site's jobs queued forever -- no error, just a job that never
+		// starts.
+		startWorker := func(siteName domain.Name, siteDB *gorm.DB,
+			ws workspace.WorkspaceProvider,
+		) error {
+			sqlDB, err := siteDB.DB()
+			if err != nil {
+				return fmt.Errorf("getting the SQL handle: %w", err)
 			}
-		}()
+
+			// Providers are per site for the same reason the database is: the
+			// worker reads and writes documents, and those live in the site's
+			// own workspace.
+			providerMap := map[string]workspace.WorkspaceProvider{
+				workspaceProviderName: ws,
+			}
+
+			logger := c.Log.Named("migration-worker")
+			if !siteName.IsZero() {
+				logger = logger.With("site", siteName.String())
+			}
+
+			worker := migration.NewWorker(sqlDB, providerMap, logger, workerCfg)
+
+			go func() {
+				logger.Info("starting migration worker",
+					"poll_interval", pollInterval,
+					"max_concurrency", maxConcurrency)
+				if err := worker.Start(ctx); err != nil && err != context.Canceled {
+					logger.Error(fmt.Sprintf("migration worker failed: %v", err))
+				}
+			}()
+
+			return nil
+		}
+
+		var workerErr error
+		if siteRegistry.Len() > 0 {
+			workerErr = siteDBs.Each(func(name domain.Name, siteDB *gorm.DB) error {
+				return startWorker(name, siteDB, siteWorkspace[name])
+			})
+		} else {
+			workerErr = startWorker(domain.Name{}, db, workspaceProvider)
+		}
+		if workerErr != nil {
+			c.Log.Error(fmt.Sprintf("failed to start migration worker: %v", workerErr))
+			return 1
+		}
 
 		c.Log.Info("RFC-089 migration system enabled",
 			"write_strategy", cfg.Migration.WriteStrategy,
