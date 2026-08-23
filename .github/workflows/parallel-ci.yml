@@ -95,8 +95,17 @@ jobs:
             RUN_E2E_TESTS="true"
           fi
 
-          # Check for API/internal changes that affect integration
-          if echo "$CHANGED_FILES" | grep -qE '^(internal/|pkg/|cmd/)'; then
+          # Check for changes that affect integration.
+          #
+          # go.mod and go.sum are in this list because a dependency bump is
+          # exactly the change the integration suites exist to catch, and they
+          # would otherwise be skipped: the previous rule matched source
+          # directories only, so a pull request that changed nothing but a
+          # dependency version ran no integration tests at all.
+          #
+          # tests/ is here for the same reason -- editing a suite is not a
+          # source change, and it is the change most likely to break one.
+          if echo "$CHANGED_FILES" | grep -qE '^(internal/|pkg/|cmd/|tests/)|go\.(mod|sum)$'; then
             RUN_INTEGRATION_TESTS="true"
           fi
 
