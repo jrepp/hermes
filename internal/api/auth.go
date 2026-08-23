@@ -62,8 +62,13 @@ func LoginHandler(cfg config.Config, log hclog.Logger) http.Handler {
 		// Create Dex adapter
 		adapter, err := dex.NewAdapter(dexConfigForRequest(cfg, r), log)
 		if err != nil {
-			log.Error("failed to create Dex adapter", "error", err)
-			http.Error(w, "Authentication configuration error", http.StatusInternalServerError)
+			// Building the adapter performs OIDC discovery, so this fails when
+			// the identity provider is unreachable or not yet up -- not
+			// because Hermes is misconfigured. Reporting 500 sent operators
+			// looking at Hermes during exactly the window when the answer was
+			// "Dex is down"; 502 says the dependency is the problem.
+			log.Error("failed to reach the identity provider", "error", err)
+			http.Error(w, "Identity provider unavailable", http.StatusBadGateway)
 			return
 		}
 
@@ -109,8 +114,13 @@ func CallbackHandler(cfg config.Config, signer *session.Signer, log hclog.Logger
 		// Create Dex adapter
 		adapter, err := dex.NewAdapter(dexConfigForRequest(cfg, r), log)
 		if err != nil {
-			log.Error("failed to create Dex adapter", "error", err)
-			http.Error(w, "Authentication configuration error", http.StatusInternalServerError)
+			// Building the adapter performs OIDC discovery, so this fails when
+			// the identity provider is unreachable or not yet up -- not
+			// because Hermes is misconfigured. Reporting 500 sent operators
+			// looking at Hermes during exactly the window when the answer was
+			// "Dex is down"; 502 says the dependency is the problem.
+			log.Error("failed to reach the identity provider", "error", err)
+			http.Error(w, "Identity provider unavailable", http.StatusBadGateway)
 			return
 		}
 

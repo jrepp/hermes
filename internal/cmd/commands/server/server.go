@@ -1047,14 +1047,6 @@ func (c *Command) Run(args []string) int {
 		{apiv2.WorkspaceProjectHandler(srv), "/api/v2/workspace-projects/"},
 	}
 
-	// Add Algolia-specific endpoints if using Algolia search provider.
-	if searchProviderName == providerAlgolia && algoSearch != nil {
-		authenticatedEndpoints = append(authenticatedEndpoints, endpoint{
-			algolia.AlgoliaProxyHandler(algoSearch, algoliaClientCfg, c.Log),
-			"/1/indexes/",
-		})
-	}
-
 	// Define handlers for unauthenticated endpoints.
 	unauthenticatedEndpoints := []endpoint{
 		{healthHandler(db), "/health"},
@@ -1086,13 +1078,45 @@ func (c *Command) Run(args []string) int {
 		endpoint{apiv2.OllamaValidateHandler(c.Log), "/api/v2/setup/validate-ollama"},
 	)
 
-	// The short-link redirector reads from Algolia directly, so it exists only
-	// on that path.
+	// The short-link redirector and the Algolia search proxy both read from
+	// Algolia directly, so they only function on that path. Where they do not,
+	// the paths still answer 404 rather than fall through to the single-page
+	// app: a stale short link would otherwise render the dashboard and look
+	// like the document simply had no content.
+	//
+	// Each pattern is registered exactly once with the handler chosen here.
+	// Registering them in the branches of a conditional is how a duplicate
+	// pattern gets added unnoticed, and http.ServeMux panics on those at
+	// startup rather than picking one.
+	shortLinkHandler := notFoundHandler("short links are not enabled")
+	algoliaProxyHandler := notFoundHandler("the Algolia search proxy is not enabled")
 	if searchProviderName == providerAlgolia && algoSearch != nil {
-		unauthenticatedEndpoints = append(unauthenticatedEndpoints,
-			endpoint{links.RedirectHandler(algoSearch, algoliaClientCfg, c.Log), "/l/"},
-		)
+		shortLinkHandler = links.RedirectHandler(algoSearch, algoliaClientCfg, c.Log)
+		algoliaProxyHandler = algolia.AlgoliaProxyHandler(algoSearch, algoliaClientCfg, c.Log)
 	}
+	unauthenticatedEndpoints = append(unauthenticatedEndpoints,
+		endpoint{shortLinkHandler, "/l/"},
+	)
+
+	// Anything under /api/ that matched no route above is a 404, not the
+	// single-page app.
+	//
+	// The SPA is registered at "/" and therefore catches every unmatched path,
+	// so a typo'd or removed endpoint answered 200 with a page of HTML. A
+	// client then parses that as JSON and fails somewhere unrelated to the
+	// request that caused it. ServeMux prefers the longest matching pattern,
+	// so every real route still wins over these two.
+	unauthenticatedEndpoints = append(unauthenticatedEndpoints,
+		endpoint{apiNotFoundHandler(), "/api/"},
+		endpoint{apiNotFoundHandler(), "/api/v2/"},
+	)
+
+	// The Algolia proxy stays on the authenticated side: when it is real it
+	// forwards the user's search to Algolia, and when it is not it is a 404,
+	// which is no more sensitive behind auth than in front of it.
+	authenticatedEndpoints = append(authenticatedEndpoints,
+		endpoint{algoliaProxyHandler, "/1/indexes/"},
+	)
 
 	// SPA handler - conditionally authenticated based on if Okta or Dex is enabled.
 	spaEndpoints := []endpoint{
@@ -1175,7 +1199,23 @@ func (c *Command) Run(args []string) int {
 		gc.AbortWithStatus(http.StatusInternalServerError)
 	}))
 
-	ginRouter.NoRoute(gin.WrapH(rootHandler))
+	// Everything is served through gin's NoRoute: gin owns no routes of its own
+	// here, the ServeMux below does the routing.
+	//
+	// gin presets the response status to 404 before running a NoRoute handler,
+	// because for gin that is by definition an unmatched request. Our handlers
+	// are matched -- and any of them that writes a body without calling
+	// WriteHeader, relying on net/http's implicit 200, inherited that 404
+	// instead. /api/v2/providers returned 404 with a complete, correct provider
+	// list in the body.
+	//
+	// Resetting the status first makes the implicit 200 mean what it says. A
+	// handler that wants another status still calls WriteHeader and overrides
+	// this.
+	ginRouter.NoRoute(func(gc *gin.Context) {
+		gc.Status(http.StatusOK)
+		rootHandler.ServeHTTP(gc.Writer, gc.Request)
+	})
 
 	httpServer := &http.Server{
 		Addr:              cfg.Server.Addr,
@@ -1748,4 +1788,34 @@ func buildSearchProvider(
 	}
 
 	return nil, fmt.Errorf("unknown search provider %q", providerName)
+}
+
+// apiNotFoundHandler answers unmatched API paths with a JSON 404.
+//
+// It is deliberately unauthenticated. Returning 401 would hide which paths
+// exist, but a path list is not a secret worth protecting, and making the
+// answer depend on auth state means a client debugging a typo gets a different
+// story depending on whether its cookie happens to be valid.
+// notFoundHandler answers a path that exists in some configurations but not
+// this one.
+func notFoundHandler(reason string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": reason,
+			"path":  r.URL.Path,
+		})
+	})
+}
+
+func apiNotFoundHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": "no such endpoint",
+			"path":  r.URL.Path,
+		})
+	})
 }
