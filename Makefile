@@ -278,7 +278,10 @@ ci: ## Run full CI checks locally (matches GitHub Actions)
 ci-install-tools: ## Install tools needed for local CI
 	@echo "Installing CI tools..."
 	@echo "Installing golangci-lint $(GOLANGCI_LINT_VERSION)..."
-	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
+	@# go install rather than the upstream install.sh: that script is fetched
+	@# from master while a version is pinned, and the two can disagree -- it
+	@# failed a checksum verification installing v2.13.1.
+	@env GOFLAGS= go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 	@$(MAKE) complexity-install
 	@echo "✓ CI tools installed"
 

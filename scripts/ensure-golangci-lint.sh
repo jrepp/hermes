@@ -15,8 +15,7 @@ To install the expected version:
   make ci-install-tools
 
 Or directly:
-  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \\
-    | sh -s -- -b "\$(go env GOPATH)/bin" ${REQUIRED_VERSION}
+  env GOFLAGS= go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@${REQUIRED_VERSION}
 HINT
 }
 
