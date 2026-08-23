@@ -95,8 +95,18 @@ jobs:
             RUN_E2E_TESTS="true"
           fi
 
-          # Check for API/internal changes that affect integration
-          if echo "$CHANGED_FILES" | grep -qE '^(internal/|pkg/|cmd/)'; then
+          # Check for changes that affect integration.
+          #
+          # go.mod and go.sum are in this list because a dependency bump is
+          # exactly the change the integration suites exist to catch, and they
+          # would otherwise be skipped: the previous rule matched source
+          # directories only, so a pull request that changed nothing but a
+          # dependency version ran no integration tests at all.
+          #
+          # tests/ and the migrations are here for the same reason -- a schema
+          # change is not a source change, and it is the one the schema-drift
+          # suite is for.
+          if echo "$CHANGED_FILES" | grep -qE '^(internal/|pkg/|cmd/|tests/)|go\.(mod|sum)$'; then
             RUN_INTEGRATION_TESTS="true"
           fi
 
@@ -132,6 +142,15 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   # Job 2: Lint Go code in parallel by category
+  # Every commit on a pull request is checked against the same script the
+  # commit-msg hook runs.
+  #
+  # The hook existed and was configured in .pre-commit-config.yaml, and
+  # `make install-hooks` never installed that hook type -- so the check was
+  # written, committed, and dead. Thirty-four commits landed carrying
+  # attribution trailers the script rejects outright, and nothing noticed until
+  # the messages were read by hand. A hook only guards the people who installed
+  # it; this guards the branch.
   lint-go:
     name: Lint Go (${{ matrix.category }})
     runs-on: ubuntu-latest
@@ -221,11 +240,9 @@ jobs:
         run: |
           echo "Running go vet..."
           go vet ./...
-
-          # Everything behind the integration tag is invisible to the run
-          # above, which is most of the test suites. Two of them cannot run in
-          # CI at all, so this is the only thing standing between them and
-          # silent rot.
+          # Files behind //go:build integration are invisible to the plain
+          # run, so a compile error in a test that CI does not build reaches
+          # main and only surfaces when someone runs the suite by hand.
           echo "Running go vet (integration build tag)..."
           go vet -tags=integration ./...
 
@@ -351,6 +368,120 @@ jobs:
           if-no-files-found: ignore
 
   # Job 5: Build and test web
+  # Tests that need a real database.
+  #
+  # pkg/models skips its entire database suite unless
+  # HERMES_TEST_POSTGRESQL_DSN is set, and nothing set it, so those tests had
+  # never run in CI. Ten of them were failing on main -- a model declaring a
+  # column no migration created, a required field that could not be persisted,
+  # a unique constraint that predated the second storage provider. Every one of
+  # them was a production bug, and all of them were invisible because the
+  # suite that covers them skips itself by default.
+  #
+  # pgvector rather than stock postgres: the migrations create the vector,
+  # citext and uuid-ossp extensions, and a database without pgvector fails on
+  # the first of them.
+  test-go-database:
+    name: Test Go (database-backed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run-go-tests == 'true'
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: hermes_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Create placeholder web/dist for go:embed
+        run: mkdir -p web/dist && echo "placeholder" > web/dist/index.html
+
+      # If the variable is unset these packages report success having run
+      # nothing, so the run is checked for evidence that the suite actually
+      # executed rather than skipped.
+      - name: Run database-backed tests
+        env:
+          HERMES_TEST_POSTGRESQL_DSN: "host=localhost port=5432 user=postgres password=postgres dbname=hermes_test sslmode=disable"
+        run: |
+          set -o pipefail
+          go test -v -timeout=15m ./pkg/models/... ./internal/api/... 2>&1 | tee test.log
+          if grep -q "HERMES_TEST_POSTGRESQL_DSN environment variable isn.t set" test.log; then
+            echo "::error::database tests skipped despite a DSN being set"
+            exit 1
+          fi
+
+  # A short fuzz run on every change that touches the parsers.
+  #
+  # Both targets have already earned their place. FuzzParse found a hostname
+  # that canonicalised to a form which would not itself re-parse, in 0.02
+  # seconds -- non-idempotent canonicalisation splits one tenant's storage in
+  # two. FuzzVerify found that the session token was malleable: several
+  # distinct cookie strings decoded to the same MAC and all verified as one
+  # session.
+  #
+  # Thirty seconds each is not a hunt. It is enough to catch a regression that
+  # a seed already covers, which is what a pull request needs.
+  fuzz-smoke:
+    name: Fuzz Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run-go-tests == 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Create placeholder web/dist for go:embed
+        run: mkdir -p web/dist && echo "placeholder" > web/dist/index.html
+
+      - name: Fuzz
+        run: make fuzz FUZZTIME=30s
+
+      # A crash writes a reproducer into testdata; surface it rather than
+      # letting it vanish with the runner.
+      - name: Upload fuzz reproducers
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fuzz-reproducers
+          path: |
+            pkg/domain/testdata/fuzz/**
+            internal/session/testdata/fuzz/**
+          if-no-files-found: ignore
+
   test-web:
     name: Test Web Frontend
     runs-on: ubuntu-latest
@@ -438,8 +569,14 @@ jobs:
       matrix:
         suite:
           - api
-          # The e2e and migration suites are deliberately absent. It does not use
-          # testcontainers like the others: it expects the testing/
+          # Both of these existed and neither ran. tenancy proves two sites
+          # cannot see each other's rows; schema compares what the migrations
+          # build against what the models declare, which is the check that
+          # catches a field added without a column behind it.
+          - tenancy
+          - schema
+          # The e2e and migration suites are deliberately absent. Neither uses
+          # testcontainers like the others: both expect the testing/
           # docker-compose stack already up. Between them they want central
           # Hermes on :8000, edge on :8002, meilisearch on :7701, mailhog,
           # redpanda, a postgres on a fixed localhost:5433 with migrations
@@ -454,7 +591,10 @@ jobs:
 
     services:
       postgres:
-        image: postgres:14
+        # The migrations create the vector extension, which stock postgres
+        # does not ship. The suites that run real migrations failed on the
+        # first one against postgres:14.
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: hermes_test
@@ -516,7 +656,9 @@ jobs:
             # This is a narrower gap than the one it replaces: it is written
             # down, and `go vet -tags=integration ./...` still compiles every
             # one of those tests, so they cannot rot while they wait.
-            api) pkgs=./tests/api/... timeout=15m tags= ;;
+            api)     pkgs=./tests/api/...                 timeout=15m tags=            ;;
+            tenancy) pkgs=./tests/integration/tenancy/... timeout=25m tags=integration ;;
+            schema)  pkgs=./tests/integration/schema/...  timeout=15m tags=integration ;;
             *)
               echo "unknown suite '${{ matrix.suite }}'" >&2
               echo "Add it to this case statement or drop it from the matrix." >&2
@@ -635,6 +777,8 @@ jobs:
       - lint-go
       - build-go
       - test-go
+      - test-go-database
+      - fuzz-smoke
       - test-web
       - test-python
       - test-integration
@@ -660,6 +804,16 @@ jobs:
 
           if ! check_job "${{ needs.lint-go.result }}"; then
             echo "❌ lint-go failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.test-go-database.result }}"; then
+            echo "❌ test-go-database failed"
+            FAILED=true
+          fi
+
+          if ! check_job "${{ needs.fuzz-smoke.result }}"; then
+            echo "❌ fuzz-smoke failed"
             FAILED=true
           fi
 
