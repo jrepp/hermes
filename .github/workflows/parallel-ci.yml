@@ -9,8 +9,11 @@ on:
       - 'docs-internal/**'
       - '**/*.md'
       - '.github/workflows/docs*.yml'
+  # No branch filter. A pull request targeting anything other than main --
+  # which is every pull request in a stack, since each targets its parent --
+  # ran no CI at all under `branches: [main]`. The point of stacking is that
+  # each step is reviewable, and a step nothing tested is not.
   pull_request:
-    branches: [main]
     paths-ignore:
       - 'docs/**'
       - 'docs-demo/**'
