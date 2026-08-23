@@ -91,10 +91,19 @@ provider is configured.
   genuine persistence seam: it maps a document into storage and something must
   choose the column. The right answer is for the workspace provider to supply
   the identifier, not for a boolean to be passed in.
-- **`Server.GWService` and `Server.SharePoint` remain.** Document locking
-  (`hcd.IsLocked`) is the clearest case: it belongs on `workspace.Provider` as
-  a capability, after which the last two conditions in `documents.go` disappear
-  too.
+- **`Server.GWService` and `Server.SharePoint` remain**, though nothing now
+  *branches* on them. The two conditions in `documents.go` ask the provider
+  whether it can report lock state and whether it can rewrite a header, by type
+  assertion, so a third provider takes the correct path without anyone
+  extending a vendor check. What is left are six direct calls --
+  `SearchPeople`, `ShareFile`, `RenameFile`, `ListPermissions` -- which are
+  provider operations that belong on `workspace.Provider`, not escape hatches
+  from a branch.
+
+  Locking is still not a provider method for a specific reason: `hcd.IsLocked`
+  reads the document from the provider *and writes the lock state to the
+  database*. The read belongs to the provider and the write does not, so the
+  method cannot move until they are separated.
 - **The models still carry two identity fields each.** Collapsing them onto one
   column is the honest fix and the largest: `GoogleFileID` alone appears in over
   three hundred places, and holding NULL would make it a `*string`.
@@ -104,8 +113,9 @@ provider is configured.
 
 ## Suggested order
 
-1. Add the locking capability to `workspace.Provider`; drop `GWService` from
-   the handlers.
+1. Split `hcd.IsLocked` into a provider read and a caller-side write, then move
+   the read onto `workspace.Provider`. Port the six remaining direct
+   `GWService` calls to the interface.
 2. Have the workspace provider supply the document identifier, and remove the
    last `useSharePoint`.
 3. Collapse the paired identity fields onto one column, renaming

@@ -349,16 +349,21 @@ func DocumentHandler(srv server.Server) http.Handler {
 				return
 			}
 
-			// Locking is a Google Drive feature, and hcd.IsLocked needs the
-			// Google service to ask about it. Testing for the service rather
-			// than for "not SharePoint" states the actual dependency: a third
-			// provider would take the same path as SharePoint without anyone
-			// having to remember to add it to a negated list.
+			// Ask the configured provider whether it can report lock state,
+			// rather than asking the configuration which vendor is selected.
 			//
-			// The real home for this is a capability on workspace.Provider;
-			// see the provider-leakage memo.
-			if srv.GWService != nil {
-				locked, err := hcd.IsLocked(docID, srv.DB, srv.GWService, srv.Logger)
+			// Locking exists because Google Docs refuses to delete header text
+			// carrying an unresolved suggestion; a provider with no such
+			// concept has nothing to report. A type assertion answers that
+			// directly, so a third provider takes the correct path without
+			// anyone remembering to extend a negated vendor check.
+			//
+			// hcd.IsLocked still owns the database side, which is why this is
+			// not yet a method on workspace.Provider: the read belongs to the
+			// provider, the write does not. Separating them is the next step
+			// in memo-068.
+			if locker, ok := getCompatProvider(srv.WorkspaceProvider).(hcd.GoogleDocsProvider); ok && locker != nil {
+				locked, err := hcd.IsLocked(docID, srv.DB, locker, srv.Logger)
 				if err != nil {
 					srv.Logger.Error("error checking document locked status",
 						"error", err,
@@ -833,17 +838,12 @@ func DocumentHandler(srv server.Server) http.Handler {
 
 			// Replace the doc header (Google-only; SharePoint headers
 			// are managed by the Hermes Add-In for Word).
-			// Locking is a Google Drive feature, and hcd.IsLocked needs the
-			// Google service to ask about it. Testing for the service rather
-			// than for "not SharePoint" states the actual dependency: a third
-			// provider would take the same path as SharePoint without anyone
-			// having to remember to add it to a negated list.
-			//
-			// The real home for this is a capability on workspace.Provider;
-			// see the provider-leakage memo.
-			if srv.GWService != nil {
+			// Header replacement needs a provider that can rewrite document
+			// content in place. Resolving one and testing it says whether this
+			// deployment can do that; the configured vendor name does not.
+			if headerWriter := getCompatProvider(srv.WorkspaceProvider); headerWriter != nil {
 				if err := doc.ReplaceHeader(
-					srv.Config.BaseURL, false, getCompatProvider(srv.WorkspaceProvider),
+					srv.Config.BaseURL, false, headerWriter,
 				); err != nil {
 					srv.Logger.Error("error replacing document header",
 						"error", err, "doc_id", docID)
