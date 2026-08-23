@@ -226,6 +226,13 @@ func (c *Command) Run(args []string) int {
 
 	ui.Info("starting indexer...")
 	go func() {
+		// Run does not return successfully: each backend loops forever, so the
+		// only way out is an error. The nil check is kept because that is a
+		// property of the current implementation rather than of the signature,
+		// and calling .Error() on the result directly would panic the day it
+		// changes.
+		//
+		//nolint:staticcheck // SA4023: always true today, deliberately defensive.
 		if err := idx.Run(); err != nil {
 			ui.Error(err.Error())
 		}
