@@ -160,19 +160,33 @@ jobs:
       - name: Create placeholder web/dist for go:embed
         run: mkdir -p web/dist && echo "placeholder" > web/dist/index.html
 
+      # The version lives in the Makefile so local and CI cannot drift. They
+      # were pinned separately before, with a comment asking whoever changed
+      # one to remember the other.
+      - name: Resolve golangci-lint version
+        if: matrix.category == 'golangci-lint'
+        id: golangci-version
+        run: |
+          version="$(sed -n 's/^GOLANGCI_LINT_VERSION ?= //p' Makefile)"
+          test -n "$version" || { echo "GOLANGCI_LINT_VERSION not found in Makefile" >&2; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # The version is part of the cache key. Without it a bump reinstalls
+      # nothing: the cache hits on the old binary and the new pin has no
+      # effect at all.
       - name: Cache golangci-lint binary
         if: matrix.category == 'golangci-lint'
         id: cache-golangci-lint
         uses: actions/cache@v5
         with:
           path: ~/go/bin/golangci-lint
-          key: ${{ runner.os }}-golangci-lint-v2
+          key: ${{ runner.os }}-golangci-lint-${{ steps.golangci-version.outputs.version }}
 
       - name: Install golangci-lint
         if: matrix.category == 'golangci-lint' && steps.cache-golangci-lint.outputs.cache-hit != 'true'
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-            | sh -s -- -b "$(go env GOPATH)/bin" v2.6.2
+            | sh -s -- -b "$(go env GOPATH)/bin" "${{ steps.golangci-version.outputs.version }}"
 
       - name: Install complexity tools
         if: matrix.category == 'complexity'

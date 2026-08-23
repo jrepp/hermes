@@ -6,7 +6,7 @@
 # target is usable in a normal loop; raise it when hunting.
 FUZZTIME ?= 30s
 
-GOLANGCI_LINT_VERSION ?= v2.6.2
+GOLANGCI_LINT_VERSION ?= v2.13.1
 export GOLANGCI_LINT_VERSION
 
 .PHONY: help

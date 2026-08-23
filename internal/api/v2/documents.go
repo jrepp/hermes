@@ -1275,7 +1275,7 @@ func authorizeDocumentPatchRequest(
 		reqValue := reflect.ValueOf(req)
 		for i := 0; i < reqValue.NumField(); i++ {
 			fieldValue := reqValue.Field(i)
-			if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
+			if fieldValue.Kind() == reflect.Pointer && !fieldValue.IsNil() {
 				numNonNilFields++
 			}
 		}
@@ -1313,7 +1313,7 @@ func authorizeDocumentPatchRequest(
 		reqValue := reflect.ValueOf(req)
 		for i := 0; i < reqValue.NumField(); i++ {
 			fieldValue := reqValue.Field(i)
-			if fieldValue.Kind() == reflect.Ptr && !fieldValue.IsNil() {
+			if fieldValue.Kind() == reflect.Pointer && !fieldValue.IsNil() {
 				numNonNilFields++
 			}
 		}
