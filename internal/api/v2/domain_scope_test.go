@@ -22,6 +22,34 @@ var tenantFields = map[string]bool{
 	"WorkspaceProvider": true,
 }
 
+// tenantAccess reports whether sel reads something ForDomain rebinds per site.
+//
+// srv.Config.BaseURL counts. It is not a field of Server, but ForDomain
+// replaces the config with a copy carrying the site's own origin, and handlers
+// build absolute links from it -- notification emails, and the header written
+// into the document itself. A handler that only builds a URL touches no
+// database, no index, and no workspace, so without this it would escape both
+// checks while still announcing one site's document under another's hostname.
+func tenantAccess(sel *ast.SelectorExpr) (string, bool) {
+	if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "srv" {
+		if tenantFields[sel.Sel.Name] {
+			return sel.Sel.Name, true
+		}
+
+		return "", false
+	}
+
+	inner, ok := sel.X.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "BaseURL" || inner.Sel.Name != "Config" {
+		return "", false
+	}
+	if ident, ok := inner.X.(*ast.Ident); ok && ident.Name == "srv" {
+		return "Config.BaseURL", true
+	}
+
+	return "", false
+}
+
 // TestHandlersScopeToTheRequestSite is a static guard on tenant isolation.
 //
 // Every V2 handler is constructed once, at startup, with a server.Server
@@ -114,23 +142,25 @@ func checkConstructor(t *testing.T, fset *token.FileSet, path string, fn *ast.Fu
 		if !ok {
 			return true
 		}
-		ident, ok := sel.X.(*ast.Ident)
-		if !ok || ident.Name != "srv" {
-			return true
-		}
 
-		switch {
-		case tenantFields[sel.Sel.Name]:
+		// No filter on sel.X here: srv.Config.BaseURL is a selector whose own
+		// X is a selector, so requiring an Ident up front would skip it
+		// silently. tenantAccess does the matching.
+		if field, ok := tenantAccess(sel); ok {
 			usesTenantResource = true
 			if !insideLiteral(sel.Pos()) {
 				t.Errorf("%s: %s reads srv.%s at %s, outside the request closure.\n"+
 					"That captures the process-wide value once at startup, so every "+
 					"site is served from whichever tenant the default points at.\n"+
 					"Move it inside the handler and take it from the scoped srv.",
-					path, fn.Name.Name, sel.Sel.Name, fset.Position(sel.Pos()))
+					path, fn.Name.Name, field, fset.Position(sel.Pos()))
 			}
-		case sel.Sel.Name == "ForRequest", sel.Sel.Name == "ForDomain":
-			scopes = true
+		}
+
+		if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "srv" {
+			if sel.Sel.Name == "ForRequest" || sel.Sel.Name == "ForDomain" {
+				scopes = true
+			}
 		}
 
 		return true
@@ -199,14 +229,12 @@ func TestDatabaseHelpersAreReachedOnlyFromScopedHandlers(t *testing.T) {
 				ast.Inspect(fn.Body, func(n ast.Node) bool {
 					switch node := n.(type) {
 					case *ast.SelectorExpr:
+						if _, ok := tenantAccess(node); ok {
+							usesDB[name] = true
+						}
 						if ident, ok := node.X.(*ast.Ident); ok && ident.Name == "srv" {
-							switch node.Sel.Name {
-							case "ForRequest", "ForDomain":
+							if node.Sel.Name == "ForRequest" || node.Sel.Name == "ForDomain" {
 								scoped[name] = true
-							default:
-								if tenantFields[node.Sel.Name] {
-									usesDB[name] = true
-								}
 							}
 						}
 					case *ast.CallExpr:

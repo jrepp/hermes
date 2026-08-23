@@ -9,7 +9,9 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"gorm.io/gorm"
 
+	"github.com/hashicorp-forge/hermes/internal/config"
 	"github.com/hashicorp-forge/hermes/internal/db"
+	"github.com/hashicorp-forge/hermes/internal/sites"
 	"github.com/hashicorp-forge/hermes/pkg/domain"
 	"github.com/hashicorp-forge/hermes/pkg/search"
 	"github.com/hashicorp-forge/hermes/pkg/workspace"
@@ -361,5 +363,107 @@ func TestForDomainRefusesASiteWithNoWorkspace(t *testing.T) {
 	if _, err := srv.ForDomain(
 		domain.NewContext(context.Background(), orphan)); err == nil {
 		t.Fatal("a site with no workspace provider resolved to the shared one")
+	}
+}
+
+// TestForDomainRebindsTheBaseURL covers the links handlers build.
+//
+// Notification emails and the header written into a document both come from
+// srv.Config.BaseURL. Left at the global value, a document approved on
+// notes.jrepp.com is announced with a docs.jrepp.com link -- and the header
+// case persists that wrong URL into the document itself rather than merely
+// sending it once.
+func TestForDomainRebindsTheBaseURL(t *testing.T) {
+	t.Parallel()
+
+	docs := domain.MustParse("docs.jrepp.com")
+	notes := domain.MustParse("notes.jrepp.com")
+	shared := &gorm.DB{}
+
+	srv := Server{
+		DB:     shared,
+		Config: &config.Config{BaseURL: "https://global.example.com"},
+		SiteDBs: db.NewSiteDBsWithPools(map[domain.Name]*gorm.DB{
+			docs: {}, notes: {},
+		}, shared),
+		SiteSearch: map[domain.Name]search.Provider{
+			docs: fakeProvider{name: "docs"}, notes: fakeProvider{name: "notes"},
+		},
+		SiteWorkspace: workspacesFor(docs, notes),
+	}
+
+	for _, tc := range []struct {
+		name    domain.Name
+		baseURL string
+	}{
+		{docs, "https://docs.jrepp.com"},
+		{notes, "https://notes.jrepp.com"},
+	} {
+		ctx := domain.NewContext(context.Background(), tc.name)
+		ctx = sites.NewContext(ctx, &sites.Site{Domain: tc.name, BaseURL: tc.baseURL})
+
+		scoped, err := srv.ForDomain(ctx)
+		if err != nil {
+			t.Fatalf("ForDomain(%s): %v", tc.name, err)
+		}
+		if got := scoped.Config.BaseURL; got != tc.baseURL {
+			t.Errorf("ForDomain(%s) base URL = %q, want %q", tc.name, got, tc.baseURL)
+		}
+	}
+
+	// The shared config must not be mutated: one *config.Config is used by
+	// every handler and every concurrent request.
+	if srv.Config.BaseURL != "https://global.example.com" {
+		t.Errorf("the shared config was mutated: %q", srv.Config.BaseURL)
+	}
+}
+
+// TestForDomainKeepsTheConfiguredOrigin checks that the site's own base_url is
+// used rather than a derived https://<domain>, so an operator who configured a
+// port or a plain-http private deployment gets what they asked for.
+func TestForDomainKeepsTheConfiguredOrigin(t *testing.T) {
+	t.Parallel()
+
+	dev := domain.MustParse("dev.localhost")
+	shared := &gorm.DB{}
+
+	srv := Server{
+		DB:            shared,
+		Config:        &config.Config{BaseURL: "https://global.example.com"},
+		SiteDBs:       db.NewSiteDBsWithPools(map[domain.Name]*gorm.DB{dev: {}}, shared),
+		SiteSearch:    map[domain.Name]search.Provider{dev: fakeProvider{name: "dev"}},
+		SiteWorkspace: workspacesFor(dev),
+	}
+
+	ctx := domain.NewContext(context.Background(), dev)
+	ctx = sites.NewContext(ctx, &sites.Site{
+		Domain: dev, BaseURL: "http://dev.localhost:8000",
+	})
+
+	scoped, err := srv.ForDomain(ctx)
+	if err != nil {
+		t.Fatalf("ForDomain: %v", err)
+	}
+	if got, want := scoped.Config.BaseURL, "http://dev.localhost:8000"; got != want {
+		t.Errorf("base URL = %q, want %q", got, want)
+	}
+}
+
+// TestForDomainWithoutASiteKeepsTheGlobalBaseURL covers the single-tenant
+// deployment, where there is no site to rebind to.
+func TestForDomainWithoutASiteKeepsTheGlobalBaseURL(t *testing.T) {
+	t.Parallel()
+
+	srv := Server{
+		DB:     &gorm.DB{},
+		Config: &config.Config{BaseURL: "https://hermes.example.com"},
+	}
+
+	scoped, err := srv.ForDomain(context.Background())
+	if err != nil {
+		t.Fatalf("ForDomain: %v", err)
+	}
+	if got, want := scoped.Config.BaseURL, "https://hermes.example.com"; got != want {
+		t.Errorf("base URL = %q, want %q", got, want)
 	}
 }

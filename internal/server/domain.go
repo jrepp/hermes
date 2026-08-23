@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/hashicorp-forge/hermes/internal/sites"
 	"github.com/hashicorp-forge/hermes/pkg/domain"
 )
 
@@ -46,6 +47,23 @@ func (s Server) ForDomain(ctx context.Context) (Server, error) {
 				"server: no workspace provider configured for site %q", name)
 		}
 		s.WorkspaceProvider = workspaceProvider
+
+		// Rebind the base URL to this site's origin.
+		//
+		// Handlers build absolute links from srv.Config.BaseURL -- notification
+		// emails, and the header written into the document itself. Left at the
+		// global value, a document approved on notes.jrepp.com would be
+		// announced with a docs.jrepp.com link, and the header case persists
+		// that wrong URL into the file rather than merely sending it once.
+		//
+		// The config is copied rather than mutated: one *config.Config is
+		// shared by every handler and every concurrent request, so writing to
+		// it would leak one request's site into another's.
+		if site, ok := siteFromContext(ctx); ok && site != "" && s.Config != nil {
+			scopedCfg := *s.Config
+			scopedCfg.BaseURL = site
+			s.Config = &scopedCfg
+		}
 	}
 
 	return s, nil
@@ -113,4 +131,18 @@ func (s Server) VerifySiteResources(names []domain.Name) error {
 // context just to ask about a domain.
 func NewDomainContext(name domain.Name) context.Context {
 	return domain.NewContext(context.Background(), name)
+}
+
+// siteFromContext returns the base URL of the site serving this request.
+//
+// It reads the resolved Site rather than deriving https://<domain>, so an
+// operator who configured a different origin -- a port, a path prefix, http for
+// a private deployment -- gets the origin they configured.
+func siteFromContext(ctx context.Context) (string, bool) {
+	site, ok := sites.FromContext(ctx)
+	if !ok {
+		return "", false
+	}
+
+	return site.BaseURL, true
 }
