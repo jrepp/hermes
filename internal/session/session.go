@@ -184,7 +184,17 @@ func (s *Signer) Verify(raw string, d domain.Name) (*Token, error) {
 		return nil, ErrMalformed
 	}
 
-	got, err := base64.RawURLEncoding.DecodeString(sig)
+	// Strict rejects a non-canonical encoding: the last base64 character of a
+	// 32-byte MAC carries two bits that encode nothing, and Go's decoder
+	// ignores them by default. Without this, several distinct cookie strings
+	// decode to the same MAC and all verify as one session -- so the token is
+	// malleable, and anything that ever keys on the string itself (a
+	// revocation list, a session cache, an audit trail, a rate limiter) can be
+	// handed unlimited distinct identifiers for a single session.
+	//
+	// Found by FuzzVerify, which flips one byte of an accepted token and
+	// requires it to stop being accepted.
+	got, err := base64.RawURLEncoding.Strict().DecodeString(sig)
 	if err != nil {
 		return nil, ErrMalformed
 	}
@@ -193,7 +203,9 @@ func (s *Signer) Verify(raw string, d domain.Name) (*Token, error) {
 	}
 
 	// Past this point the bytes are known to be ours.
-	body, err := base64.RawURLEncoding.DecodeString(signed[len(tokenVersion)+1:])
+	// Strict here too, for the same reason: the payload must have exactly one
+	// valid encoding, or one session has many equally valid cookie strings.
+	body, err := base64.RawURLEncoding.Strict().DecodeString(signed[len(tokenVersion)+1:])
 	if err != nil {
 		return nil, ErrMalformed
 	}

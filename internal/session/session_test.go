@@ -12,16 +12,17 @@ import (
 
 const testSecret = "test-secret-that-is-long-enough-for-hmac"
 
-func testSigner(t *testing.T) *Signer {
-	t.Helper()
+// testSigner takes a testing.TB so the fuzz targets can use it too.
+func testSigner(tb testing.TB) *Signer {
+	tb.Helper()
 
 	key, err := DeriveKey(testSecret)
 	if err != nil {
-		t.Fatalf("DeriveKey: %v", err)
+		tb.Fatalf("DeriveKey: %v", err)
 	}
 	s, err := NewSigner(key, time.Hour)
 	if err != nil {
-		t.Fatalf("NewSigner: %v", err)
+		tb.Fatalf("NewSigner: %v", err)
 	}
 
 	return s
@@ -355,5 +356,47 @@ func TestGenerateKeyIsUsable(t *testing.T) {
 	}
 	if k == other {
 		t.Fatal("GenerateKey returned the same key twice")
+	}
+}
+
+// TestVerifyRejectsNonCanonicalEncoding pins the malleability fix as an
+// ordinary test, so it is checked on every run rather than only when someone
+// remembers to fuzz.
+//
+// A 32-byte MAC needs 43 base64 characters, which carry 258 bits; the last two
+// encode nothing. Go's decoder ignores them by default, so several distinct
+// cookie strings decode to the same MAC and all verify as one session.
+func TestVerifyRejectsNonCanonicalEncoding(t *testing.T) {
+	s := testSigner(t)
+	d := domain.MustParse("docs.jrepp.com")
+
+	raw, err := s.Issue("user@jrepp.com", d)
+	if err != nil {
+		t.Fatalf("Issue: %v", err)
+	}
+	if _, err := s.Verify(raw, d); err != nil {
+		t.Fatalf("the token we just issued does not verify: %v", err)
+	}
+
+	// The final character of the signature is the one with spare bits. Try
+	// every other character in its place and require that none of them
+	// produces a second string for the same session.
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+	last := len(raw) - 1
+	accepted := 0
+	for i := 0; i < len(alphabet); i++ {
+		candidate := raw[:last] + string(alphabet[i])
+		if candidate == raw {
+			continue
+		}
+		if _, err := s.Verify(candidate, d); err == nil {
+			accepted++
+			t.Errorf("a second cookie string verifies as the same session: %q", candidate)
+		}
+	}
+	if accepted > 0 {
+		t.Errorf("%d alternative encodings were accepted; the token is malleable, "+
+			"so anything keyed on the string sees one session as many", accepted)
 	}
 }
