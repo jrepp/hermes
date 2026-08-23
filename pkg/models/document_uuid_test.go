@@ -78,6 +78,9 @@ func TestDocument_GetByUUID(t *testing.T) {
 	db, tearDownTest := setupTest(t, dsn)
 	defer tearDownTest(t)
 
+	dt := requireDocumentType(t, db, "DT1")
+	prod := requireProduct(t, db, "Product1", "P1")
+
 	t.Run("retrieves document by UUID", func(t *testing.T) {
 		// Create a document with UUID
 		uuid := docid.NewUUID()
@@ -85,6 +88,8 @@ func TestDocument_GetByUUID(t *testing.T) {
 			GoogleFileID: "test-file-id-uuid-lookup",
 			DocumentUUID: &uuid,
 			Title:        "Test Document",
+			DocumentType: DocumentType{Name: dt.Name},
+			Product:      Product{Name: prod.Name},
 		}
 		require.NoError(t, original.Create(db))
 
@@ -115,12 +120,17 @@ func TestDocument_GetByGoogleFileIDOrUUID(t *testing.T) {
 	db, tearDownTest := setupTest(t, dsn)
 	defer tearDownTest(t)
 
+	dt := requireDocumentType(t, db, "DT1")
+	prod := requireProduct(t, db, "Product1", "P1")
+
 	t.Run("retrieves by UUID string", func(t *testing.T) {
 		uuid := docid.NewUUID()
 		original := &Document{
 			GoogleFileID: "test-file-id-dual-lookup-1",
 			DocumentUUID: &uuid,
 			Title:        "Test Document UUID",
+			DocumentType: DocumentType{Name: dt.Name},
+			Product:      Product{Name: prod.Name},
 		}
 		require.NoError(t, original.Create(db))
 
@@ -135,6 +145,8 @@ func TestDocument_GetByGoogleFileIDOrUUID(t *testing.T) {
 		original := &Document{
 			GoogleFileID: "test-file-id-dual-lookup-2",
 			Title:        "Test Document GoogleFileID",
+			DocumentType: DocumentType{Name: dt.Name},
+			Product:      Product{Name: prod.Name},
 		}
 		require.NoError(t, original.Create(db))
 
@@ -149,6 +161,8 @@ func TestDocument_GetByGoogleFileIDOrUUID(t *testing.T) {
 		original := &Document{
 			GoogleFileID: "not-a-uuid-format",
 			Title:        "Test Document Non-UUID",
+			DocumentType: DocumentType{Name: dt.Name},
+			Product:      Product{Name: prod.Name},
 		}
 		require.NoError(t, original.Create(db))
 
@@ -175,12 +189,17 @@ func TestDocument_UUIDDatabaseIntegration(t *testing.T) {
 	db, tearDownTest := setupTest(t, dsn)
 	defer tearDownTest(t)
 
+	dt := requireDocumentType(t, db, "DT1")
+	prod := requireProduct(t, db, "Product1", "P1")
+
 	t.Run("UUID persists to database", func(t *testing.T) {
 		uuid := docid.NewUUID()
 		doc := &Document{
 			GoogleFileID: "test-file-id-persist",
 			DocumentUUID: &uuid,
 			Title:        "Test UUID Persistence",
+			DocumentType: DocumentType{Name: dt.Name},
+			Product:      Product{Name: prod.Name},
 		}
 		require.NoError(t, doc.Create(db))
 
@@ -196,6 +215,8 @@ func TestDocument_UUIDDatabaseIntegration(t *testing.T) {
 		doc := &Document{
 			GoogleFileID: "test-file-id-null-uuid",
 			Title:        "Test NULL UUID",
+			DocumentType: DocumentType{Name: dt.Name},
+			Product:      Product{Name: prod.Name},
 		}
 		require.NoError(t, doc.Create(db))
 
@@ -217,6 +238,8 @@ func TestDocument_UUIDDatabaseIntegration(t *testing.T) {
 			ProviderType: &providerType,
 			ProjectID:    &projectID,
 			Title:        "Test Provider and Project",
+			DocumentType: DocumentType{Name: dt.Name},
+			Product:      Product{Name: prod.Name},
 		}
 		require.NoError(t, doc.Create(db))
 

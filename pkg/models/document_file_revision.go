@@ -27,14 +27,51 @@ type DocumentFileRevision struct {
 //
 // GoogleDriveFileRevisionID is the persisted primary key column, so it is
 // authoritative for records loaded from the database. FileRevisionID is
-// `gorm:"-"` and only set in memory by provider-agnostic callers (e.g. the
-// SharePoint paths and the Algolia migration), so it is the fallback.
+// `gorm:"-"` and only set in memory by provider-agnostic callers, so it is the
+// fallback.
 func (fr *DocumentFileRevision) RevisionKey() string {
 	if fr.GoogleDriveFileRevisionID != "" {
 		return fr.GoogleDriveFileRevisionID
 	}
 
 	return fr.FileRevisionID
+}
+
+// normalizeRevisionID makes the two identifier fields agree before the record
+// reaches the database.
+//
+// There is one identity here wearing two names. GoogleDriveFileRevisionID is
+// the column, and part of the primary key; FileRevisionID is `gorm:"-"` and
+// exists so provider-agnostic callers do not have to mention Google. Callers
+// set one, the other, or both, and nothing reconciled them -- so a caller that
+// set only FileRevisionID wrote a row whose primary key was the empty string
+// and whose revision identifier was lost. pkg/document and the Algolia
+// migration both do exactly that.
+//
+// Copying between them is what makes those callers correct, and it is why a
+// record created with only FileRevisionID reads back with
+// GoogleDriveFileRevisionID set.
+func (fr *DocumentFileRevision) normalizeRevisionID() {
+	switch {
+	case fr.GoogleDriveFileRevisionID == "":
+		fr.GoogleDriveFileRevisionID = fr.FileRevisionID
+	case fr.FileRevisionID == "":
+		fr.FileRevisionID = fr.GoogleDriveFileRevisionID
+	}
+}
+
+// AfterFind mirrors the stored identifier back into the in-memory alias.
+//
+// FileRevisionID is `gorm:"-"`, so nothing populates it on a read: a record
+// loaded from the database came back with the identifier in
+// GoogleDriveFileRevisionID and an empty FileRevisionID, and any caller
+// reading the provider-agnostic name got "". Writing both on the way out is
+// the counterpart to reconciling them on the way in, and it means the field a
+// caller set is the field it reads back.
+func (fr *DocumentFileRevision) AfterFind(_ *gorm.DB) error {
+	fr.normalizeRevisionID()
+
+	return nil
 }
 
 // DocumentFileRevisions is a slice of document file revisions.
@@ -54,10 +91,14 @@ func (fr *DocumentFileRevision) Create(db *gorm.DB) error {
 		fr.DocumentID = fr.Document.ID
 	}
 
+	// One identity, two field names: reconcile them before the primary key is
+	// written from one of them.
+	fr.normalizeRevisionID()
+
 	// Validate fields.
 	if err := validation.ValidateStruct(fr,
 		validation.Field(&fr.DocumentID, validation.Required),
-		validation.Field(&fr.FileRevisionID, validation.Required),
+		validation.Field(&fr.GoogleDriveFileRevisionID, validation.Required),
 		validation.Field(&fr.Name, validation.Required),
 	); err != nil {
 		return err
@@ -105,10 +146,15 @@ func (fr *DocumentFileRevision) Get(db *gorm.DB) error {
 		fr.DocumentID = fr.Document.ID
 	}
 
+	// Same reconciliation as Create: First matches on the primary key fields,
+	// so looking a record up by FileRevisionID alone would query for the empty
+	// string and find whatever happened to be written that way.
+	fr.normalizeRevisionID()
+
 	// Validate fields.
 	if err := validation.ValidateStruct(fr,
 		validation.Field(&fr.DocumentID, validation.Required),
-		validation.Field(&fr.FileRevisionID, validation.Required),
+		validation.Field(&fr.GoogleDriveFileRevisionID, validation.Required),
 		validation.Field(&fr.Name, validation.Required),
 	); err != nil {
 		return err

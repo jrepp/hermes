@@ -60,8 +60,8 @@ func TestDocumentFileRevisionwModel(t *testing.T) {
 				Document: Document{
 					GoogleFileID: "GoogleFileID1",
 				},
-				FileRevisionID: "FileRevisionID1",
-				Name:           "Name1",
+				GoogleDriveFileRevisionID: "GoogleDriveFileRevisionID1",
+				Name:                      "Name1",
 			}
 			err := fr.Create(db)
 			requireT.NoError(err)
@@ -85,8 +85,8 @@ func TestDocumentFileRevisionwModel(t *testing.T) {
 				Document: Document{
 					GoogleFileID: "GoogleFileID1",
 				},
-				FileRevisionID: "FileRevisionID2",
-				Name:           "Name2",
+				GoogleDriveFileRevisionID: "GoogleDriveFileRevisionID2",
+				Name:                      "Name2",
 			}
 			err := fr.Create(db)
 			requireT.NoError(err)

@@ -63,7 +63,7 @@ func (d *DocumentReviews) Find(db *gorm.DB, dr DocumentReview) error {
 		db,
 		&dr.Document,
 		dr.User.EmailAddress,
-		"at least a Document's GoogleFileID or User's EmailAddress is required",
+		"at least a Document's file identifier or User's EmailAddress is required",
 		func(db *gorm.DB) (uint, error) {
 			if err := dr.User.Get(db); err != nil {
 				return 0, fmt.Errorf("error getting user: %w", err)

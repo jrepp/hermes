@@ -232,8 +232,15 @@ func findAssociatedReviews(
 	buildQuery func(documentID uint, associatedID uint) interface{},
 	dest interface{},
 ) error {
+	// A document is identified by whichever field its provider populates:
+	// GoogleFileID for Google Drive, FileID for the others. Checking
+	// GoogleFileID alone meant a review could never be looked up for a
+	// document held by any other provider -- the caller passed a perfectly
+	// good identifier and got "GoogleFileID is required".
+	documentIdentifier := document.GetFileIdentifier()
+
 	if err := validation.Validate(
-		document.GoogleFileID,
+		documentIdentifier,
 		validation.When(associatedIdentifier == "",
 			validation.Required.Error(requiredMessage),
 		),
@@ -242,7 +249,7 @@ func findAssociatedReviews(
 	}
 	if err := validation.Validate(
 		associatedIdentifier,
-		validation.When(document.GoogleFileID == "",
+		validation.When(documentIdentifier == "",
 			validation.Required.Error(requiredMessage),
 		),
 	); err != nil {
@@ -250,7 +257,7 @@ func findAssociatedReviews(
 	}
 
 	documentID := uint(0)
-	if document.GoogleFileID != "" {
+	if documentIdentifier != "" {
 		if err := document.Get(db); err != nil {
 			return fmt.Errorf("error getting document: %w", err)
 		}

@@ -26,8 +26,16 @@ type Document struct {
 	DocumentUUID       *docid.UUID `gorm:"type:uuid;uniqueIndex:idx_documents_uuid"`
 	Owner              *User       `gorm:"default:null;not null"`
 	gorm.Model
-	Title            string
-	GoogleFileID     string `gorm:"index;not null;unique"`
+	Title string
+	// GoogleFileID is the Google Drive file ID, empty for a document held by
+	// another provider.
+	//
+	// It is not marked unique. A plain unique constraint would allow only one
+	// document with an empty value, so a second SharePoint-backed document --
+	// which has a FileID and no GoogleFileID -- collided with the first.
+	// Uniqueness is enforced by a partial index that ignores empty values; see
+	// migration 000017.
+	GoogleFileID     string `gorm:"index;not null"`
 	FileID           string `gorm:"column:file_id;index"`
 	DocumentType     DocumentType
 	Product          Product

@@ -25,7 +25,7 @@ func ToAutoMigrate() []interface{} {
 		&DocumentReview{},
 		&DocumentTypeCustomField{},
 		&Group{},
-		// &IndexerFolder{}, // Commented out - causing GORM constraint rename bug
+		&IndexerFolder{},
 		&IndexerMetadata{},
 		&Product{},
 		&ProductLatestDocumentNumber{},

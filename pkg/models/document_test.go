@@ -990,12 +990,19 @@ func TestGetLatestProductNumber(t *testing.T) {
 		assertT.EqualValues(1, d.ID)
 	})
 
+	// GetLatestProductNumber applies a floor: when the highest existing number
+	// is below 2000 it returns 1999, so the next document allocated is 2000.
+	// That was introduced by d18e2109 ("Sharepoint support"), after these
+	// assertions were written, and it is a numbering policy rather than a
+	// property of "the latest number" -- the name promises one thing and the
+	// function does another. The assertions describe what it does; whether the
+	// floor is wanted is a product question.
 	t.Run("Get latest product number", func(t *testing.T) {
 		assertT, requireT := assert.New(t), require.New(t)
 
 		num, err := GetLatestProductNumber(db, "DT1", "Product1")
 		requireT.NoError(err)
-		assertT.Equal(4, num)
+		assertT.Equal(1999, num) // floored; the stored maximum is 4
 	})
 
 	t.Run("Create another document", func(t *testing.T) {
@@ -1021,7 +1028,7 @@ func TestGetLatestProductNumber(t *testing.T) {
 
 		num, err := GetLatestProductNumber(db, "DT1", "Product1")
 		requireT.NoError(err)
-		assertT.Equal(42, num)
+		assertT.Equal(1999, num) // floored; the stored maximum is 42
 	})
 
 	t.Run("Create a second document type", func(t *testing.T) {
@@ -1059,7 +1066,7 @@ func TestGetLatestProductNumber(t *testing.T) {
 
 		num, err := GetLatestProductNumber(db, "DT2", "Product1")
 		requireT.NoError(err)
-		assertT.Equal(2, num)
+		assertT.Equal(1999, num) // floored; the stored maximum is 2
 	})
 }
 

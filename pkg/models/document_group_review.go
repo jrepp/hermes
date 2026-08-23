@@ -52,7 +52,7 @@ func (d *DocumentGroupReviews) Find(db *gorm.DB, dr DocumentGroupReview) error {
 		db,
 		&dr.Document,
 		dr.Group.EmailAddress,
-		"at least a Document's GoogleFileID or Group's EmailAddress is required",
+		"at least a Document's file identifier or Group's EmailAddress is required",
 		func(db *gorm.DB) (uint, error) {
 			if err := dr.Group.Get(db); err != nil {
 				return 0, fmt.Errorf("error getting group: %w", err)
