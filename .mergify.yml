@@ -5,6 +5,49 @@
 # CI, plus the two checks in PR Validation, which run with no path filter and
 # so report on every pull request including documentation-only ones.
 queue_rules:
+  # Dependency updates first: Mergify uses the first queue whose conditions
+  # match, so this has to precede `default`.
+  #
+  # It drops the approval requirement, and only for this traffic. Nothing is
+  # lost by that -- the approval was always going to come from the
+  # auto-approve rule, never from a person reading the diff -- and the gate
+  # that actually says the bump is safe is the CI below, which is identical to
+  # `default`'s.
+  #
+  # Anything that does not match falls through to `default` and still needs an
+  # approval: majors, because they are the update most likely to need a code
+  # change beside them, and hermes-plugin, because nothing tests it.
+  - name: dependencies
+    batch_size: 5
+    batch_max_wait_time: 5min
+
+    queue_conditions:
+      - author=dependabot[bot]
+      - check-success=Parallel CI Status
+      - check-success=Commit Messages
+      - check-success=go.mod is tidy
+      - -draft
+      - label!=do-not-merge
+      - label!=work-in-progress
+      - base=main
+      - or:
+          - 'title~=(?i)^(build|ci)\(deps(-dev)?\): bump .* from .* to .*'
+          - 'title~=^Bump .* from .* to .*'
+          - 'title~=^Update .* requirement from .* to .*'
+      - '-title~=(?i)major'
+      - '-files~=^hermes-plugin/'
+
+    merge_conditions:
+      - check-success=Parallel CI Status
+      - check-success=Commit Messages
+      - check-success=go.mod is tidy
+      - "#changes-requested-reviews-by=0"
+
+    merge_method: squash
+    commit_message_format:
+      title: pr-title
+      body: pr-body
+
   - name: default
     batch_size: 5
     batch_max_wait_time: 5min
