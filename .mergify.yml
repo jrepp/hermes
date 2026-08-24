@@ -1,0 +1,207 @@
+# Merge automation.
+#
+# Adapted from jrepp/prism-data-layer. The condition names are the difference
+# that matters: this repository's gate is `Parallel CI Status` from Parallel
+# CI, plus the two checks in PR Validation, which run with no path filter and
+# so report on every pull request including documentation-only ones.
+queue_rules:
+  - name: default
+    batch_size: 5
+    batch_max_wait_time: 5min
+
+    queue_conditions:
+      - check-success=Parallel CI Status
+      - check-success=Commit Messages
+      - check-success=go.mod is tidy
+      - -draft
+      - label!=do-not-merge
+      - label!=work-in-progress
+      - base=main
+
+    merge_conditions:
+      - check-success=Parallel CI Status
+      - check-success=Commit Messages
+      - check-success=go.mod is tidy
+      - "#approved-reviews-by>=1"
+      - "#changes-requested-reviews-by=0"
+
+    merge_method: squash
+    commit_message_format:
+      title: pr-title
+      body: pr-body
+
+pull_request_rules:
+  - name: Auto-approve owner PRs
+    conditions:
+      - author=jrepp
+      - check-success=Parallel CI Status
+      - -draft
+    actions:
+      review:
+        type: APPROVE
+        message: "Automatically approving PR from repo owner"
+
+  # Patch and minor bumps only. A major is the update most likely to need a
+  # code change alongside it, and approving those unread is how a green
+  # pipeline merges a breaking change.
+  - name: Auto-approve Dependabot minor/patch updates
+    conditions:
+      - author=dependabot[bot]
+      - check-success=Parallel CI Status
+      - check-success=Commit Messages
+      - check-success=go.mod is tidy
+      - or:
+          - title~=(?i)^(build|ci)\(deps(-dev)?\): bump .* from .* to .*
+          - title~=^Bump .* from .* to .*
+          - title~=^Update .* requirement from .* to .*
+      - "-title~=(?i)major"
+    actions:
+      review:
+        type: APPROVE
+        message: "Automatically approving minor/patch dependency update"
+
+  - name: Label documentation changes
+    conditions:
+      - or:
+          - files~=^docs/
+          - files~=^docs-internal/
+          - files~=^docs-demo/
+          - files~=\.md$
+    actions:
+      label:
+        add:
+          - documentation
+
+  - name: Label infrastructure changes
+    conditions:
+      - or:
+          - files~=^\.github/
+          - files~=^Makefile$
+          - files~=^\.golangci\.yml$
+          - files~=^Dockerfile
+    actions:
+      label:
+        add:
+          - infrastructure
+
+  - name: Label Go changes
+    conditions:
+      - or:
+          - files~=^internal/
+          - files~=^pkg/
+          - files~=^cmd/
+          - files~=^tests/
+    actions:
+      label:
+        add:
+          - go
+
+  - name: Label web changes
+    conditions:
+      - files~=^web/
+    actions:
+      label:
+        add:
+          - web
+
+  - name: Label Python changes
+    conditions:
+      - or:
+          - files~=^python-client/
+          - files~=^testing/python/
+    actions:
+      label:
+        add:
+          - python
+
+  - name: Label stale PRs
+    conditions:
+      - updated-at<14 days ago
+      - -closed
+      - -merged
+    actions:
+      label:
+        add:
+          - stale
+      comment:
+        message: |
+          This PR has been inactive for 14 days. Please update it or close it if it's no longer needed.
+
+  - name: Remove stale label on update
+    conditions:
+      - label=stale
+      - updated-at>=1 day ago
+    actions:
+      label:
+        remove:
+          - stale
+
+  # Deliberately not carried over from prism-data-layer: the rule that closes
+  # stale pull requests after 30 days. This repository reviews work in stacks
+  # that sit open while the branch beneath them lands, and closing a stacked
+  # pull request detaches every child pointing at it.
+
+  - name: Auto-update PRs on main changes
+    conditions:
+      - base=main
+      - -draft
+      - -closed
+      - -merged
+      - label!=do-not-merge
+      - "#commits-behind>5"
+    actions:
+      update: {}
+
+  - name: Comment on CI failures
+    conditions:
+      - check-failure=Parallel CI Status
+      - -draft
+    actions:
+      comment:
+        message: |
+          Parallel CI failed. Run the same checks locally before pushing again:
+
+          ```bash
+          make lint
+          make test
+          ```
+
+  - name: Label draft PRs
+    conditions:
+      - draft
+    actions:
+      label:
+        add:
+          - work-in-progress
+
+  - name: Remove WIP label when draft is removed
+    conditions:
+      - -draft
+      - label=work-in-progress
+    actions:
+      label:
+        remove:
+          - work-in-progress
+
+  - name: Label conflicting PRs
+    conditions:
+      - conflict
+    actions:
+      label:
+        add:
+          - has-conflicts
+      comment:
+        message: |
+          This PR has merge conflicts with the base branch. Please resolve them.
+
+  - name: Remove conflict label when resolved
+    conditions:
+      - -conflict
+      - label=has-conflicts
+    actions:
+      label:
+        remove:
+          - has-conflicts
+
+merge_protections_settings:
+  auto_merge_conditions: true
