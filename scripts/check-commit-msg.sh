@@ -46,6 +46,21 @@ if echo "$COMMIT_MSG" | grep -qE "^Revert "; then
     exit 0
 fi
 
+# Skip commits written by the dependency bot.
+#
+# These messages are generated, not authored, and two of the rules below reject
+# them outright. The AI-branding list matches bare words anywhere in the text,
+# case-insensitively, so a changelog line quoted from upstream that happens to
+# say "cursor", "assistant" or "gemini" fails the commit -- and the release
+# notes Dependabot pastes in routinely run past the 2000-character ceiling.
+# Neither says anything about the change. A rule that cannot be satisfied by
+# the author it applies to is a rule that blocks the queue instead of the
+# defect, and the branding rule exists to keep human commits clean.
+if echo "$COMMIT_MSG" | grep -qE "^Signed-off-by: dependabot\[bot\]"; then
+    echo -e "${GREEN}✓ Dependabot commit - skipping validation${NC}"
+    exit 0
+fi
+
 # ============================================================================
 # AI BRANDING DETECTION
 # ============================================================================
