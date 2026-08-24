@@ -50,10 +50,14 @@ pull_request_rules:
       - check-success=Parallel CI Status
       - check-success=Commit Messages
       - check-success=go.mod is tidy
+      # Single-quoted, all three. The first contains ": " inside the regex,
+      # and unquoted that makes YAML read the list item as a mapping rather
+      # than a condition string -- valid YAML, rejected by Mergify's schema.
+      # The other two are quoted to keep the block uniform.
       - or:
-          - title~=(?i)^(build|ci)\(deps(-dev)?\): bump .* from .* to .*
-          - title~=^Bump .* from .* to .*
-          - title~=^Update .* requirement from .* to .*
+          - 'title~=(?i)^(build|ci)\(deps(-dev)?\): bump .* from .* to .*'
+          - 'title~=^Bump .* from .* to .*'
+          - 'title~=^Update .* requirement from .* to .*'
       - "-title~=(?i)major"
       # hermes-plugin matches no rule in detect-changes and has no test
       # script, so every job skips and the gate reports green in three seconds
