@@ -101,3 +101,22 @@ jobs:
 
       - name: Verify dependencies are downloadable and verified
         run: go mod verify
+
+  # The Mergify configuration is not YAML-checked by anything else, and being
+  # valid YAML is not the same as being a valid configuration: a condition
+  # containing ": " parses as a mapping rather than a string, loads without
+  # complaint, and is rejected by Mergify's schema. That shipped once already.
+  mergify-config:
+    name: Mergify config is valid
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install the Mergify CLI
+        run: curl -fsSL https://raw.githubusercontent.com/Mergifyio/mergify-cli/main/install.sh | sh
+
+      - name: Validate .mergify.yml
+        run: mergify config validate --config-file .mergify.yml
