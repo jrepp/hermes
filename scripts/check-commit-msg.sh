@@ -49,13 +49,18 @@ fi
 # Skip commits written by the dependency bot.
 #
 # These messages are generated, not authored, and two of the rules below reject
-# them outright. The AI-branding list matches bare words anywhere in the text,
-# case-insensitively, so a changelog line quoted from upstream that happens to
-# say "cursor", "assistant" or "gemini" fails the commit -- and the release
-# notes Dependabot pastes in routinely run past the 2000-character ceiling.
-# Neither says anything about the change. A rule that cannot be satisfied by
-# the author it applies to is a rule that blocks the queue instead of the
-# defect, and the branding rule exists to keep human commits clean.
+# them outright. The branding list is matched with no word boundaries and
+# case-insensitively, and several of its entries are ordinary English words
+# that also happen to name an editor, so a changelog line quoted from upstream
+# is enough to fail the commit -- and the release notes Dependabot pastes in
+# routinely run past the 2000-character ceiling. Neither says anything about
+# the change. A rule that cannot be satisfied by the author it applies to is a
+# rule that blocks the queue instead of the defect, and the branding rule
+# exists to keep hand-written commits clean.
+#
+# The entries are deliberately not repeated here. This file is the one place
+# they are allowed to appear, in the list itself, and a comment naming them
+# would put them into any diff or message that quotes it.
 if echo "$COMMIT_MSG" | grep -qE "^Signed-off-by: dependabot\[bot\]"; then
     echo -e "${GREEN}✓ Dependabot commit - skipping validation${NC}"
     exit 0
