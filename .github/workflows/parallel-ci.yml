@@ -89,8 +89,14 @@ jobs:
             RUN_PYTHON_TESTS="true"
           fi
 
-          # Check for testing infrastructure changes
-          if echo "$CHANGED_FILES" | grep -qE '^testing/'; then
+          # Check for testing infrastructure changes.
+          #
+          # tests/e2e-playwright is here for the reason tests/ was added to the
+          # integration rule: editing a suite is the change most likely to
+          # break it, and it matched nothing that ran it. A dependency bump
+          # inside the Playwright project reported green having run no
+          # Playwright.
+          if echo "$CHANGED_FILES" | grep -qE '^(testing/|tests/e2e-playwright/)'; then
             RUN_INTEGRATION_TESTS="true"
             RUN_E2E_TESTS="true"
           fi

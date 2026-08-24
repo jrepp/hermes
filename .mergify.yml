@@ -55,6 +55,11 @@ pull_request_rules:
           - title~=^Bump .* from .* to .*
           - title~=^Update .* requirement from .* to .*
       - "-title~=(?i)major"
+      # hermes-plugin matches no rule in detect-changes and has no test
+      # script, so every job skips and the gate reports green in three seconds
+      # having run nothing. Approving on that is approving on silence. These
+      # stay open for a person until something actually builds the add-in.
+      - "-files~=^hermes-plugin/"
     actions:
       review:
         type: APPROVE
@@ -182,6 +187,79 @@ pull_request_rules:
       label:
         remove:
           - work-in-progress
+
+  # Size labelling, carried over from prism-data-layer unchanged. File count
+  # rather than lines changed: Mergify has no lines-changed attribute.
+  - name: Label PR size - XS
+    conditions:
+      - "#files<=5"
+    actions:
+      label:
+        add:
+          - size/xs
+        remove:
+          - size/s
+          - size/m
+          - size/l
+          - size/xl
+
+  - name: Label PR size - S
+    conditions:
+      - "#files>5"
+      - "#files<=10"
+    actions:
+      label:
+        add:
+          - size/s
+        remove:
+          - size/xs
+          - size/m
+          - size/l
+          - size/xl
+
+  - name: Label PR size - M
+    conditions:
+      - "#files>10"
+      - "#files<=20"
+    actions:
+      label:
+        add:
+          - size/m
+        remove:
+          - size/xs
+          - size/s
+          - size/l
+          - size/xl
+
+  - name: Label PR size - L
+    conditions:
+      - "#files>20"
+      - "#files<=50"
+    actions:
+      label:
+        add:
+          - size/l
+        remove:
+          - size/xs
+          - size/s
+          - size/m
+          - size/xl
+
+  - name: Label PR size - XL
+    conditions:
+      - "#files>50"
+    actions:
+      label:
+        add:
+          - size/xl
+        remove:
+          - size/xs
+          - size/s
+          - size/m
+          - size/l
+      comment:
+        message: |
+          This PR is very large (XL). Consider breaking it into smaller, more reviewable PRs.
 
   - name: Label conflicting PRs
     conditions:
