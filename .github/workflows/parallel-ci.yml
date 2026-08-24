@@ -13,13 +13,13 @@ on:
   # which is every pull request in a stack, since each targets its parent --
   # ran no CI at all under `branches: [main]`. The point of stacking is that
   # each step is reviewable, and a step nothing tested is not.
+  # No path filter either. A required status check has to exist on every pull
+  # request to be required at all: when the whole workflow is filtered out,
+  # GitHub creates no check, and a branch rule waiting on it -- or Mergify
+  # waiting on it -- waits forever rather than passing. Every job below is
+  # already gated on detect-changes, so a documentation-only pull request runs
+  # detect-changes and the status job and nothing else, and reports green.
   pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - 'docs-demo/**'
-      - 'docs-internal/**'
-      - '**/*.md'
-      - '.github/workflows/docs*.yml'
 
 # Cancel in-progress runs for the same PR/branch
 concurrency:
